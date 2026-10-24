@@ -51362,7 +51362,10 @@
       "supermarket",
       "doctor",
       "post",
-      "cityHall"
+      "cityHall",
+      "newHollowCommons",
+      "moonstoneWorkshop",
+      "earthriseLookout"
     ],
     "forgeRuns": [
       6,
@@ -52192,5 +52195,5 @@
       "seenGeneration": 5
     }
   },
-  "contentDigest": "726b135a0101ae99766e6084e13586ed7336d157b8a8a7e8994f4c55b56b2848"
+  "contentDigest": "33d79a1b31326af9548faffb50769db277e0bf7c5c26dbbdcf4a463431491506"
 }

@@ -16,10 +16,22 @@ export const MOON_SAUCER_PAD = Object.freeze({
 export const MOON_SAUCER_CYCLE = 150;
 const APPROACH = Object.freeze({ start: 6, end: 18 });
 const DEPARTURE = Object.freeze({ start: 80, end: 92 });
+// Settled on the pad until lift-off: the stop where its guests step off.
+const PARKED = Object.freeze({ start: 34, end: 70 });
 const cyclePhase = (time) => ((time % MOON_SAUCER_CYCLE) + MOON_SAUCER_CYCLE) % MOON_SAUCER_CYCLE;
 const ramp = (phase, from, length) => smooth01(Math.max(0, Math.min(1, (phase - from) / length)));
 
 export const moonSaucerBuilt = (town) => (town?.buildings?.[MOON_SAUCER_PAD.id] ?? 0) >= 1;
+
+/** The saucer's visitor arrival, like the valley transports': at rest once per cycle. */
+export function moonSaucerArrival(time) {
+  const phase = cyclePhase(time);
+  return {
+    arrived: phase >= PARKED.start && phase < PARKED.end,
+    sinceArrival: phase - PARKED.start,
+    visit: Math.floor(time / MOON_SAUCER_CYCLE),
+  };
+}
 
 /** Flight and wake share this sky corridor. All sideways travel is high above
  * the lots; the final descent and initial lift are vertical over the pad. */
@@ -83,20 +95,20 @@ export function moonSaucerPose(time, reduced = false) {
     };
   if (phase < 30)
     return { ...pose, y: lerp(8, 0.85, ramp(phase, 22, 8)), spin: 0.7, phase: 'descent' };
-  if (phase < 34)
+  if (phase < PARKED.start)
     return {
       ...pose,
       y: lerp(0.85, pad.y, ramp(phase, 30, 4)),
       spin: 0.3 * (1 - ramp(phase, 30, 4)),
       phase: 'settle',
     };
-  if (phase < 70) return pose;
+  if (phase < PARKED.end) return pose;
   if (phase < 78)
     return {
       ...pose,
-      y: lerp(pad.y, 8, ramp(phase, 70, 8)),
+      y: lerp(pad.y, 8, ramp(phase, PARKED.end, 8)),
       legs: 1 - ramp(phase, 72, 5),
-      spin: ramp(phase, 70, 4),
+      spin: ramp(phase, PARKED.end, 4),
       phase: 'lift-off',
     };
   return {

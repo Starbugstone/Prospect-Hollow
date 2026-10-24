@@ -208,6 +208,8 @@
       @inspect="emit('inspect', $event)"
       @collect="emit('select', $event)"
       @close="closeMoon"
+      @vip-spend="emit('vip-spend', $event)"
+      @villager-label="showMoonVillagerLabel"
     />
   </div>
 </template>
@@ -319,7 +321,10 @@ watch(
   moonOpen,
   (open) => {
     emit('settlement-change', open ? 'moon' : 'valley');
+    // The other map's named VIP is no longer on screen; the valley names its own again.
+    showVillagerLabel(null);
     scene?.setMotion(motionEnabled());
+    if (!open) scene?.projectVillager();
   },
   { flush: 'sync' },
 );
@@ -542,6 +547,9 @@ const showVillagerLabel = (label) =>
     label,
     (next, current) => next.name === current.name && next.live === current.live,
   );
+// One label names a VIP on whichever map is on screen.
+const showValleyVillagerLabel = (label) => moonOpen.value || showVillagerLabel(label);
+const showMoonVillagerLabel = (label) => moonOpen.value && showVillagerLabel(label);
 const showPlaqueLabel = (label) =>
   followLabel(plaqueLabel, plaqueElement, label, (next, current) => next.name === current.name);
 const choose = (id) => {
@@ -764,7 +772,7 @@ async function initialize() {
       onGuestVip: (at) => emit('guest-vip', at),
       onHelmet: (origin) => emit('helmet', origin),
       onHelmetZoom: () => emit('helmet-zoom'),
-      onVillagerLabel: showVillagerLabel,
+      onVillagerLabel: showValleyVillagerLabel,
       onPlaqueLabel: showPlaqueLabel,
       onEventInset: (view) => {
         eventInset.value = view;

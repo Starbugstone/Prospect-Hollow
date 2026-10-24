@@ -3,6 +3,7 @@ import { eraEvolution } from '../../data/eras';
 import { villagerIdentity } from '../../data/villagers';
 import { hasVisitorTransport } from '../../data/visitorArrivals';
 import {
+  VIP_MARKER,
   townWardrobe,
   residentOutfit,
   vipOutfit,
@@ -172,19 +173,19 @@ export function addPerson(
   scarf.visible = satchel.visible = sash.visible = false;
   if (visitor) {
     for (const x of [-0.065, 0.065])
-      accents.push(d.box(vip, 0.035, wardrobe.coat * 0.62, 0.025, x, 0.15, 0.105, '#e9c878'));
-    const badge = d.box(vip, 0.09, 0.09, 0.035, -0.1, 0.22, 0.125, '#ffd15b');
+      accents.push(d.box(vip, 0.035, wardrobe.coat * 0.62, 0.025, x, 0.15, 0.105, VIP_MARKER.trim));
+    const badge = d.box(vip, 0.09, 0.09, 0.035, -0.1, 0.22, 0.125, VIP_MARKER.badge);
     badge.rotation.z = Math.PI / 4;
     badge.name = 'VIP gold badge';
-    d.box(scarf, 0.25, 0.055, 0.025, 0, 0.305, 0.115, '#e9c878');
-    d.box(scarf, 0.055, 0.19, 0.025, 0.06, 0.19, 0.115, '#e9c878');
+    d.box(scarf, 0.25, 0.055, 0.025, 0, 0.305, 0.115, VIP_MARKER.trim);
+    d.box(scarf, 0.055, 0.19, 0.025, 0.06, 0.19, 0.115, VIP_MARKER.trim);
     d.rod(satchel, [-0.1, 0.29, 0.11], [0.23, -0.14, 0.11], 0.015, '#8b674a');
     d.box(satchel, 0.15, 0.22, 0.15, 0.24, -0.15, 0.025, '#8b674a', true);
     d.box(satchel, 0.13, 0.06, 0.16, 0.24, -0.06, 0.03, '#ad8961', true);
-    const ribbon = d.box(sash, 0.075, wardrobe.coat + 0.12, 0.035, 0, 0.13, 0.145, '#e9c878');
+    const ribbon = d.box(sash, 0.075, wardrobe.coat + 0.12, 0.035, 0, 0.13, 0.145, VIP_MARKER.trim);
     ribbon.rotation.z = -0.58;
     ribbon.name = 'Live visitor diagonal sash';
-    const rosette = d.box(sash, 0.105, 0.105, 0.04, 0.11, -0.035, 0.15, '#e9c878');
+    const rosette = d.box(sash, 0.105, 0.105, 0.04, 0.11, -0.035, 0.15, VIP_MARKER.trim);
     rosette.rotation.z = Math.PI / 4;
   }
   const arms = [],

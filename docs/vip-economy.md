@@ -22,6 +22,23 @@ validated records at the action's position in the journal and its own exported c
 client-supplied amounts cannot increase it. Unknown versions are rejected. MoneyBudget
 counts the entire VIP credit as new money, without mining's multiplier normalization.
 
+## Settlements
+
+VIPs visit New Hollow on the Moon under the same rules and code as the valley. Moon
+transports are registered in the shared `VISITOR_ARRIVAL_SITES` with
+`settlement: 'moon'`: a climber docking at the Ribbon landing and the visiting saucer at
+rest on the Saucer Pad. `MoonVipArrivals` extends `TownVipArrivals`, so each arrival
+draws once (`vipVisitor`, 25%), only one arriving VIP tours at a time and a Moon view
+opened mid-dwell never replays that arrival. Tours use the shared itinerary
+(`visitOrder`, `tourPairs`, `vipVisitCount`, `updateItinerary`) along the Moon's public
+paths, hatch to hatch; purchases emit the same receipt, through `TownView` and
+`campaignStore.collectVipSpending`, as a `vip-spend` action the server checks against
+`economy.vipBuildings`. The Moon shops are `newHollowCommons` (the settlement hall, as
+the valley's city hall), `moonstoneWorkshop` (a keepsake shop) and `earthriseLookout`
+(a paid view, as the museum). Homes, utilities, the greenhouse farm, the garden dome,
+the rover barn and the transport pads are not shops. The valley rests while the Moon
+map is open, so the two never earn at once.
+
 ## Active-town balance evidence (2026-10-24)
 
 Reproduce from the repository root, after installing dependencies in Docker:
@@ -74,3 +91,19 @@ The approved base ten is implemented for new v2 receipts. VIPs remain supplement
 to mining and below the full-town saloon's hourly income. The integrated rerun in
 [the economy balance check](economy-balance.md) measures the effect on town progression.
 No payout, visit or progression rule creates a move cap or puzzle timer.
+
+### New Hollow on the Moon
+
+The same probe plays a full Twin Hollows Moon (3 eligible shops, both transports) for
+**64 seeds × six hours = 384 active hours** through the real `MoonScene` transports,
+`MoonVipArrivals` and Moon tours at the settlers' walking pace. Moon walks are short,
+so with the valley elevator's 46-second climber cadence a first run earned about
+**2.8 purchases/hour, 112%** of the valley. The Moon side was tuned instead of the shipped
+valley terms: a climber reaches the Moon on every third valley trip
+(`MOON_CLIMBER_CYCLE`, 138 seconds); the saucer keeps its 150-second cycle.
+
+- Arrivals/hour: climber **26.17**, saucer **24**; **12.47 VIP draws/hour**.
+- The one-active rule admits **8.06 VIPs/hour**; each tour plan set is a sightseeing
+  lap, two two-shop plans, one one-shop plan and one sightseeing pair.
+- **2.0156 purchases/hour**, **80.3%** of the valley's 2.5104: **20.16** coins/hour at
+  chapter 1 and **1,834.22** at chapter 91 (valley 25.10 and 2,284.48).

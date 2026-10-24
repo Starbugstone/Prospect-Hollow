@@ -6,14 +6,24 @@ import { createTownControls } from '../TownControls';
 import { createTapGesture } from '../TownTapGesture';
 import { PARCEL_OUTLINE_COLOR, parcelOutlineGeometry } from '../TownParcelOutline';
 import { TownPrimitives } from '../TownPrimitives';
-import { MoonSaucer } from './MoonSaucer';
+import { MoonSaucer, moonSaucerArrival } from './MoonSaucer';
 import { TownFramePacer } from '../TownFramePacer';
 import { TownRenderQuality } from '../TownRenderQuality';
 import { TownUpgradeGlow } from '../TownUpgradeGlow';
 import { MoonConstruction, finishKey } from './MoonConstruction';
 import { TownConstruction, constructionParts } from '../TownConstruction';
-import { renderMoonBuilding } from '../buildings/moon';
+import { MOON_CLIMBER, renderMoonBuilding } from '../buildings/moon';
 import { MOON_PALETTE as p } from '../../../data/futureArchitecture';
+import { eraEvolution } from '../../../data/eras';
+import { vipVisitor } from '../../../data/villagers';
+import { hoverVillager, projectVillager, showVillager } from '../TownLabelProjection';
+import {
+  MoonVipArrivals,
+  animateMoonVip,
+  dressMoonVip,
+  moonClimberArrival,
+  moonClimberLift,
+} from './MoonVips';
 import {
   MOON_LOTS,
   MOON_RING_ROAD,
@@ -384,12 +394,25 @@ export function moonRoofHeight(lot) {
 export class MoonScene {
   constructor(
     canvas,
-    { onLabels = () => {}, onEarth = () => {}, onSelect = () => {}, reducedMotion = false } = {},
+    {
+      onLabels = () => {},
+      onEarth = () => {},
+      onSelect = () => {},
+      onVipSpend = () => {},
+      onVillagerLabel = () => {},
+      reducedMotion = false,
+      vipsHidden = false,
+    } = {},
   ) {
     this.canvas = canvas;
     this.onLabels = onLabels;
     this.onEarth = onEarth;
     this.onSelect = onSelect;
+    // The valley's VIP contract: purchases go to the shared receipt flow, and a named
+    // visitor's tag goes to the valley's label. A shared town has no VIPs at all.
+    this.onVipSpend = onVipSpend;
+    this.onVillagerLabel = onVillagerLabel;
+    this.vipsHidden = vipsHidden;
     this.reducedMotion = reducedMotion;
     this.d = new TownPrimitives();
     this.scene = new THREE.Scene();
@@ -442,6 +465,11 @@ export class MoonScene {
     this.saucer = new MoonSaucer(this.d, this.scene, this.camera);
     this.buildings = this.d.group(this.scene);
     this.life = this.d.group(this.scene);
+    // VIP visitors live outside the settlers' group, so a rebuild never cuts a tour short.
+    this.world = this.d.group(this.scene);
+    this.world.name = 'New Hollow VIP visitors';
+    this.visitorTransports = new Map();
+    this.vipArrivals = new MoonVipArrivals(this);
     this.lots = Object.entries(MOON_LOTS).map(([id, [x, z]]) => ({
       id,
       position: new THREE.Vector3(x, 3.4, z),
@@ -478,8 +506,14 @@ export class MoonScene {
     this.onPointerMove = (event) => {
       this.tapGesture.move(event);
       // Hover feedback only while no button is held, so drags and pans never raycast.
-      if (!this.tapGesture.pressed)
-        canvas.style.cursor = this.hitsEarth(event) || this.pick(event) ? 'pointer' : 'grab';
+      if (this.tapGesture.pressed) return;
+      // A mouse over a VIP names them, as in the valley.
+      if (event.pointerType === 'mouse') hoverVillager(this, event.clientX, event.clientY);
+      canvas.style.cursor = this.hitsEarth(event) || this.pick(event) ? 'pointer' : 'grab';
+    };
+    this.onPointerLeave = (event) => {
+      if (!this.tapGesture.pressed && event.pointerType === 'mouse')
+        hoverVillager(this, -Infinity, -Infinity);
     };
     this.onPointerCancel = (event) => {
       this.tapGesture.cancel(event);
@@ -488,6 +522,7 @@ export class MoonScene {
     surface.addEventListener('pointerdown', this.onPointerDown);
     surface.addEventListener('pointerup', this.onPointerUp);
     surface.addEventListener('pointermove', this.onPointerMove);
+    surface.addEventListener('pointerleave', this.onPointerLeave);
     surface.addEventListener('pointercancel', this.onPointerCancel);
     surface.addEventListener('lostpointercapture', this.onPointerCancel);
     this.elapsed = 0;
@@ -504,6 +539,8 @@ export class MoonScene {
   /** Rebuild the lots when the town's Moon buildings change. */
   update(town) {
     this.town = town;
+    // VIP tours read the town's finished shops and paths; a tour under way carries on.
+    this.vipArrivals?.attach(town);
     syncMoonMonuments(this, town);
     // Sites record their height before their meshes merge into the monument batch.
     this.monuments?.traverse((site) => {
@@ -541,6 +578,7 @@ export class MoonScene {
       const lot = this.d.group(finished.has(id) ? this.scene : this.buildings, x, 0, z);
       lot.rotation.y = rotation;
       renderMoonBuilding(this.d, lot, id, levels[n]);
+      if (id === 'ribbonLanding') this.climber = lot.getObjectByName(MOON_CLIMBER) ?? null;
       // A tap over a low building reaches the lot behind it, as on screen.
       (this.roofs ??= {})[id] = moonRoofHeight(lot);
       if (finished.has(id)) this.revealLot(id, lot, this.previousLevels?.[n] ?? 0);
@@ -626,6 +664,7 @@ export class MoonScene {
     this.construction.update(time, this.reducedMotion);
     this.updateLotReveals(time, this.reducedMotion);
     this.saucer.step(time, this.reducedMotion);
+    this.moveTransports(time);
     this.monuments?.userData.update(this.reducedMotion ? 0 : time);
     for (const settler of this.settlers ?? []) animateMoonSettler(settler, time);
     // Rovers circle the ring road.
@@ -634,6 +673,34 @@ export class MoonScene {
       w.root.position.set(Math.cos(a) * (w.radius + 0.3), 0, Math.sin(a) * (w.radius + 0.3));
       w.root.rotation.y = -a - (w.dir > 0 ? 0 : Math.PI);
     }
+  }
+  /**
+   * The climber rides the ribbon; the climber and the saucer publish their arrivals the
+   * way the valley's transports do, for the shared VIP arrivals to read.
+   */
+  moveTransports(time) {
+    const transports = this.visitorTransports;
+    if (!transports) return;
+    const climber = this.climber?.parent ? this.climber : null;
+    // A landing settling under its construction reveal keeps its climber docked.
+    const docked = this.reducedMotion || this.lotReveals?.has('ribbonLanding');
+    if (climber) climber.position.y = docked ? 0 : moonClimberLift(time);
+    if (climber && !docked)
+      transports.set('ribbonLanding', { ...moonClimberArrival(time), root: climber });
+    else transports.delete('ribbonLanding');
+    const craft = this.saucer?.craft;
+    if (craft) transports.set('saucerPad', { ...moonSaucerArrival(time), root: craft.root });
+    else transports.delete('saucerPad');
+  }
+  // The shared VIP arrivals call these, as they call the valley diorama's.
+  drawVip(seed, visit = 0) {
+    return this.vipsHidden ? null : vipVisitor(seed, visit);
+  }
+  setVillagerIdentity(actor, identity, outfitSeed) {
+    dressMoonVip(this.d, actor, identity, eraEvolution(this.town?.era), outfitSeed);
+  }
+  animatePerson(actor, time) {
+    animateMoonVip(this, actor, time);
   }
   // Now and then a meteor streaks across the sky: a celebration, never a hazard.
   meteor(time) {
@@ -676,6 +743,7 @@ export class MoonScene {
   }
   setMotion(enabled) {
     this.animating = enabled;
+    this.motionEnabled = enabled;
     this.pacer.reset();
     this.renderer.setAnimationLoop(enabled ? this.tick : null);
     if (!enabled) this.requestFrame();
@@ -720,8 +788,12 @@ export class MoonScene {
     target.position.y = top / 2;
     target.updateMatrixWorld();
   }
-  /** A tap opens the parcel under it, or the valley from Earth. It never moves the camera. */
+  /**
+   * A tap names the VIP under it, opens the parcel under it, or the valley from Earth.
+   * It never moves the camera.
+   */
   tap(event) {
+    if (showVillager(this, event.clientX, event.clientY, true)) return null;
     if (this.hitsEarth(event)) return this.onEarth();
     const id = this.pick(event);
     if (id) this.onSelect(id);
@@ -784,6 +856,7 @@ export class MoonScene {
     this.construction.update(this.elapsed, value);
     this.updateLotReveals(this.elapsed, value);
     this.saucer.step(this.elapsed, value);
+    this.moveTransports(this.elapsed);
     this.requestFrame();
   }
   // Paced like the valley: a fast display does not draw more than 60 frames a second.
@@ -795,6 +868,7 @@ export class MoonScene {
     if (this.reducedMotion) return;
     this.elapsed += delta;
     this.move(this.elapsed);
+    this.vipArrivals?.update();
     this.meteor(this.elapsed);
     this.render();
   }
@@ -810,6 +884,8 @@ export class MoonScene {
   }
   render() {
     this.renderer.render(this.scene, this.camera);
+    // A named VIP's tag follows them every frame and leaves when they go indoors.
+    if (this.namedVillager) projectVillager(this);
     if (!this.viewChanged) return;
     this.viewChanged = false;
     this.projectLabels();
@@ -886,14 +962,18 @@ export class MoonScene {
     this.controls.update();
   }
   dispose() {
+    this.disposed = true;
+    cancelAnimationFrame(this.hoverFrame);
     this.presentation?.dispose();
     this.saucer.dispose();
+    this.vipArrivals?.dispose();
     this.renderer.setAnimationLoop(null);
     if (this.frame) cancelAnimationFrame(this.frame);
     this.observer.disconnect();
     this.surface.removeEventListener('pointerdown', this.onPointerDown);
     this.surface.removeEventListener('pointerup', this.onPointerUp);
     this.surface.removeEventListener('pointermove', this.onPointerMove);
+    this.surface.removeEventListener('pointerleave', this.onPointerLeave);
     this.surface.removeEventListener('pointercancel', this.onPointerCancel);
     this.surface.removeEventListener('lostpointercapture', this.onPointerCancel);
     this.controls.dispose();

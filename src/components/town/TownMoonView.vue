@@ -222,6 +222,9 @@ const emit = defineEmits([
   'collect',
   'presentation-ready',
   'presentation-unavailable',
+  // The valley's VIP flow: a purchase receipt, and the named VIP's tag for the shared label.
+  'vip-spend',
+  'villager-label',
 ]);
 const canvas = ref(null);
 const viewElement = ref(null);
@@ -361,6 +364,10 @@ async function start() {
       onEarth: () => emit('close'),
       // A tapped lot or monument site opens like its label.
       onSelect: (id) => choose(id),
+      onVipSpend: (receipt) => emit('vip-spend', receipt),
+      onVillagerLabel: (label) => emit('villager-label', label),
+      // A shared town is only a view: VIP guests visit the owner's own game.
+      vipsHidden: props.readOnly,
     });
     scene.update(props.town);
     scene.setSelected(selectedLot.value);
@@ -419,8 +426,12 @@ defineExpose({
     presentationTime = time;
     scene?.presentationFrame(time, props.reducedMotion);
   },
+  // A coin popup rises from the lot's label, or from the lot itself when its label is
+  // tucked away.
   collectionOrigin: (id) => {
-    const lot = shownLots.value.find((lot) => lot.id === id);
+    const lot =
+      shownLots.value.find((lot) => lot.id === id) ??
+      labels.value.find((lot) => lot.id === id && lot.visible);
     return { x: lot?.x ?? 50, y: lot?.y ?? 50 };
   },
 });

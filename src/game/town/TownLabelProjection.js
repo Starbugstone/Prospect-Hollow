@@ -205,8 +205,18 @@ export function selectVillager(d, actor, toggle = true) {
   projectVillager(d);
 }
 
+// Pointer hover can fire many times per frame: evaluate only the latest position.
+export function hoverVillager(d, clientX, clientY) {
+  d.hoverPoint = [clientX, clientY];
+  d.hoverFrame ||= requestAnimationFrame(() => {
+    d.hoverFrame = 0;
+    if (!d.disposed) showVillager(d, ...d.hoverPoint);
+  });
+}
+
 // A click names (pins) the villager under the pointer; hovering names them until the
 // pointer moves on. Only clicking the pinned visitor again dismisses a pinned name.
+// Every settlement's map names its VIPs here (the Moon's through its own scene).
 export function showVillager(d, clientX, clientY, pin = false) {
   if (!pin && d.villagerLabelPinned && d.namedVillager) return true;
   const nearest = villagerAt(d, clientX, clientY);

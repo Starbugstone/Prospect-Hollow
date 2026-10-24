@@ -44,6 +44,7 @@ import {
   focusTownPlace,
 } from './TownCamera';
 import {
+  hoverVillager,
   projectLabelPositions,
   projectPlaque,
   projectVillager,
@@ -280,13 +281,8 @@ export class TownDiorama extends TownPrimitives {
   showVillager(clientX, clientY, pin) {
     return showVillager(this, clientX, clientY, pin);
   }
-  // Pointer hover can fire many times per frame: evaluate only the latest position.
   hoverVillager(clientX, clientY) {
-    this.hoverPoint = [clientX, clientY];
-    this.hoverFrame ||= requestAnimationFrame(() => {
-      this.hoverFrame = 0;
-      if (!this.disposed) showVillager(this, ...this.hoverPoint);
-    });
+    hoverVillager(this, clientX, clientY);
   }
   selectVillager(actor, toggle) {
     selectVillager(this, actor, toggle);

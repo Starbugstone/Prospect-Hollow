@@ -2020,6 +2020,29 @@ foreach ($fixtures->fixtures as $fixture) {
     }
 }
 
+// New Hollow's shops take VIP purchases on the valley's terms; its other buildings do not.
+foreach ($fixtures->fixtures as $fixture) {
+    if ($fixture->name !== 'VIP purchase at a New Hollow shop') {
+        continue;
+    }
+    $vipStart = $validator->accept($fixture->before, null, $fixture->serverNow);
+    $vipResult = $validator->accept($fixture->after, $vipStart, $fixture->serverNow);
+    assertIntegrity(
+        $vipResult->town->coins ===
+            $vipStart->town->coins + $rules['economy']['vipSpend']['bases'][2],
+        'a Moon shop VIP purchase pays the valley amount',
+    );
+    foreach (['settlerDomes', 'saucerPad'] as $building) {
+        $elsewhere = integrityData($fixture->after);
+        $elsewhere['integrity']['actions'][0]['data']['buildingId'] = $building;
+        integrityDenied(
+            fn() => $validator->accept(integrityObject($elsewhere), $vipStart, $fixture->serverNow),
+            'save_integrity_mismatch',
+            "VIP purchase at the Moon's $building",
+        );
+    }
+}
+
 // A newly generated protected encounter earns a bounty at creation, before the
 // later acknowledgment transfers it to the wallet.
 foreach ($fixtures->fixtures as $fixture) {

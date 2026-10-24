@@ -237,6 +237,8 @@ function willowkinTree(d, g, x, y, z, scale = 1) {
 
 // The Moon end of the ribbon: the anchor tower, a docked climber and cargo bays.
 const RIBBON_HEIGHT = 140;
+// The landing's climber, docked when drawn; the Moon scene moves it along the ribbon.
+export const MOON_CLIMBER = 'Moon ribbon climber';
 const FORMS = {
   saucerPad(d, g, level) {
     // Keep the whole vertical flight column empty. The service hatch and cargo
@@ -281,9 +283,12 @@ const FORMS = {
     ribbon.name = 'Moon ribbon';
     // Sky parts are not the building: taps on the sky around them pass by.
     ribbon.userData.sky = true;
-    const climber = d.box(g, 0.85, 1.1, 0.85, 0, 5.4, 0, p.shell, true);
-    climber.castShadow = false;
-    d.box(g, 0.9, 0.16, 0.9, 0, 5.0, 0, p.flower).castShadow = false;
+    // The climber rides the ribbon, so it stays out of the merged settlement mesh.
+    const climber = d.group(g);
+    climber.name = MOON_CLIMBER;
+    climber.userData.animated = true;
+    d.box(climber, 0.85, 1.1, 0.85, 0, 5.4, 0, p.shell, true).castShadow = false;
+    d.box(climber, 0.9, 0.16, 0.9, 0, 5.0, 0, p.flower).castShadow = false;
     module(d, g, -2.9, 1.6, 1.8, 1.4, 1.2);
     airlock(d, g, 0, 0.75, 1.32);
     if (level >= 2) {
