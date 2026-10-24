@@ -94,7 +94,10 @@ New settlements reuse these contracts; they never get a reduced copy.
   `testing/town-controls.test.js` checks the gestures.
 - **Map overlays hold only labels, action buttons and the header.** Lists, dropdowns,
   directories and letters belong in the Build, Story or More tabs. ESLint rejects
-  `details`, `ul`, `ol`, `select` and `dialog` in `TownScene.vue` and `TownMoonView.vue`.
+  `details`, `summary`, `ul`, `ol`, `select` and `dialog` in `MAP_OVERLAY_FILES`
+  (`eslint.config.js`): both maps and every component drawn inside TownView's
+  `.town-map-frame`. `testing/map-overlays.test.js` fails when the frame or a component
+  drawn in it uses one, or when such a component is missing from that list.
 - **Moon parcels share one pad shape.** Every Moon parcel stands on the same pad:
   building lots built, empty or under construction, monument sites open, in work or
   built, and any lot or site added later. The pad is currently an octagon. The drawn pad
