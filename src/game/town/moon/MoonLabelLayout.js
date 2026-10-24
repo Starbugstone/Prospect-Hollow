@@ -20,9 +20,7 @@ export function moonMapLabel({ id, x, y }, { width, height }) {
 // overflow labels may hide; the building directory remains available.
 export function layoutMoonLabels(labels, width, height) {
   if (!width || !height) return labels;
-  const w = width < 1000 ? 104 : 128,
-    h = height < 450 ? 44 : 52,
-    gap = 6,
+  const gap = 6,
     top = width < 600 ? 164 : height < 450 ? 110 : 112,
     bottom = height - (height < 450 ? 42 : 120),
     placed = [];
@@ -40,9 +38,11 @@ export function layoutMoonLabels(labels, width, height) {
   // Back lots claim their nearest space first, so an appended monument does not
   // get pushed in front of the buildings nearer the camera merely by catalog order.
   const result = [...labels]
-    .sort((a, b) => a.y - b.y || a.x - b.x)
+    .sort((a, b) => (a.rank ?? 5) - (b.rank ?? 5) || a.y - b.y || a.x - b.x)
     .map((label) => {
       if (!label.visible) return label;
+      const w = label.width ?? (width < 1000 ? 104 : 128),
+        h = label.height ?? (height < 450 ? 44 : 52);
       const anchor = { x: (label.x * width) / 100, y: (label.y * height) / 100 };
       const preferred = {
         x: clamp(anchor.x, w / 2 + gap, width - w / 2 - gap),
@@ -84,8 +84,8 @@ export function layoutMoonLabels(labels, width, height) {
         anchor: { x: label.x, y: label.y },
       };
     });
-  // All labels share dimensions within this viewport. Reassigning their slots
-  // preserves every clearance while reducing the total distance to the buildings;
+  // Reassign equally sized slots to preserve every clearance while reducing
+  // the total distance to the buildings;
   // a late label must not inherit a distant slot just because earlier ones claimed
   // better space first. Strict improvements keep the small relaxation stable.
   const distance = (label, slot) =>
@@ -98,6 +98,7 @@ export function layoutMoonLabels(labels, width, height) {
       for (let j = i + 1; j < shown.length; j++) {
         const a = shown[i],
           b = shown[j];
+        if (a.width !== b.width || a.height !== b.height) continue;
         if (distance(a, b) + distance(b, a) >= distance(a, a) + distance(b, b) - 0.01) continue;
         [a.x, b.x] = [b.x, a.x];
         [a.y, b.y] = [b.y, a.y];
@@ -108,6 +109,8 @@ export function layoutMoonLabels(labels, width, height) {
   for (const label of shown) {
     const action = actions.find((point) => point.id === label.id);
     if (action) label.actionPoint = { x: (action.x / width) * 100, y: (action.y / height) * 100 };
+    const w = label.width,
+      h = label.height;
     const anchor = { x: (label.anchor.x * width) / 100, y: (label.anchor.y * height) / 100 };
     const x = (label.x * width) / 100,
       y = (label.y * height) / 100;

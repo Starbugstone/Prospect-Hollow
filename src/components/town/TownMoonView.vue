@@ -3,7 +3,7 @@
   <section
     ref="viewElement"
     class="town-moon-view"
-    :class="{ 'is-fallback': unavailable }"
+    :class="{ 'is-fallback': unavailable, 'is-compact': compact }"
     role="region"
     :aria-label="t('New Hollow on the Moon')"
     @pointerdown.stop
@@ -82,6 +82,7 @@
         class="town-moon-lot"
         :data-moon-lot="lot.id"
         :class="{
+          'is-pin': lot.collapsed,
           built: !!(town.buildings[lot.id] || monumentChoice(lot.id)),
           open: AREA_BY_ID[lot.id] ? status(lot.id) === 'open' : availableIds.includes(lot.id),
           'is-ready': indicators[lot.id] === 'ready' || status(lot.id) === 'ready',
@@ -93,19 +94,34 @@
           width: `${lot.width ?? 104}px`,
           height: `${lot.height ?? 52}px`,
         }"
+        :aria-label="lotLabel(lot.id)"
+        :title="lotLabel(lot.id)"
+        @focus="revealOnFocus($event, lot.id)"
         @click="
           !readOnly && canCollectMoonstones && lot.id === 'moonstoneWorkshop'
             ? emit('collect', lot.id)
             : choose(lot.id)
         "
       >
-        <strong>{{ t(AREA_BY_ID[lot.id]?.label ?? BUILDING_BY_ID[lot.id].shortName) }}</strong>
-        <small>{{
+        <span v-if="lot.collapsed" class="moon-lot-pin" aria-hidden="true"></span>
+        <img
+          v-else-if="compact && TOWN_ACTIONS[indicators[lot.id]]"
+          class="moon-inline-action"
+          :src="TOWN_ACTIONS[indicators[lot.id]].icon"
+          alt=""
+        />
+        <strong v-if="!lot.collapsed">{{
+          t(AREA_BY_ID[lot.id]?.label ?? BUILDING_BY_ID[lot.id].shortName)
+        }}</strong>
+        <small v-if="!lot.collapsed">{{
           AREA_BY_ID[lot.id] || (lot.id === 'moonstoneWorkshop' && canCollectMoonstones)
             ? statusLabel(lot.id)
             : buildingStatusLabel(town, lot.id, indicators[lot.id], availableIds.includes(lot.id))
         }}</small>
-        <span v-if="indicators[lot.id] === 'upgrade'" class="moon-upgrade-hint" aria-hidden="true"
+        <span
+          v-if="!lot.collapsed && indicators[lot.id] === 'upgrade'"
+          class="moon-upgrade-hint"
+          aria-hidden="true"
           >↑</span
         >
       </button>
@@ -129,6 +145,14 @@
         <img :src="TOWN_ACTIONS[indicators[lot.id]].icon" alt="" />
       </button>
     </div>
+    <details v-show="!props.presentation" class="moon-lot-directory">
+      <summary>{{ t('Moon lots') }}</summary>
+      <ul>
+        <li v-for="lot in allLots" :key="lot.id">
+          <button type="button" @click="choose(lot.id)">{{ lotLabel(lot.id) }}</button>
+        </li>
+      </ul>
+    </details>
     <header class="town-moon-header">
       <button type="button" class="town-moon-back" @click="emit('close')">
         <span aria-hidden="true">←</span> {{ t('Back to the valley') }}
@@ -179,6 +203,11 @@ import {
 } from '../../data/townLandmarks';
 import TownMoonMonument from './TownMoonMonument.vue';
 import { layoutMoonLabels, moonMapLabel } from '../../game/town/moon/MoonLabelLayout';
+import {
+  compactMoonViewport,
+  moonLabelDensity,
+  moonLabelNeedsAttention,
+} from '../../game/town/moon/MoonLabelDensity';
 import { plotUnlocked, collectionCooldownRemaining } from '../../game/town/TownRules';
 import TownMoon from './TownMoon.vue';
 import TownMoonstoneBalance from './TownMoonstoneBalance.vue';
@@ -214,6 +243,9 @@ let labelObserver;
 const unavailable = ref(false);
 // Replaced whole on camera frames that move a label, so it needs no deep reactivity.
 const labels = shallowRef([]);
+const cameraDistance = ref(Infinity);
+const selectedLot = ref(null);
+const compact = computed(() => compactMoonViewport(viewport.value.width, viewport.value.height));
 let scene = null,
   disposed = false;
 
@@ -249,22 +281,51 @@ const mapApproaches = computed(() =>
     points: route.points.map(([x, z]) => `${x * 1.3},${6 + z * 1.05}`).join(' '),
   })),
 );
-const shownLots = computed(() =>
-  unavailable.value
-    ? layoutMoonLabels(
-        [...mapLots.value, ...mapMonuments.value].map((lot) => ({
-          ...moonMapLabel(lot, viewport.value),
-          action: !!TOWN_ACTIONS[props.indicators[lot.id]],
-        })),
-        viewport.value.width,
-        viewport.value.height,
-      ).filter((lot) => lot.visible)
-    : labels.value.filter((lot) => lot.visible),
-);
+const allLots = computed(() => [...mapLots.value, ...mapMonuments.value]);
+const needsAttention = (id) =>
+  moonLabelNeedsAttention({
+    status: status(id),
+    action: TOWN_ACTIONS[props.indicators[id]],
+    collectable: id === 'moonstoneWorkshop' && canCollectMoonstones.value,
+  });
+const shownLots = computed(() => {
+  const { width, height } = viewport.value;
+  const projected = unavailable.value
+    ? allLots.value.map((lot) => moonMapLabel(lot, viewport.value))
+    : labels.value;
+  return layoutMoonLabels(
+    moonLabelDensity(
+      projected.map((lot) => ({
+        ...lot,
+        attention: needsAttention(lot.id),
+        action: !!TOWN_ACTIONS[props.indicators[lot.id]],
+      })),
+      width,
+      height,
+      { near: !unavailable.value && cameraDistance.value <= 48, selected: selectedLot.value },
+    ),
+    width,
+    height,
+  ).filter((lot) => lot.visible);
+});
 const actionLots = computed(() =>
-  shownLots.value.filter((lot) => TOWN_ACTIONS[props.indicators[lot.id]]),
+  compact.value ? [] : shownLots.value.filter((lot) => TOWN_ACTIONS[props.indicators[lot.id]]),
 );
-const choose = (id) => emit(props.readOnly ? 'inspect' : 'select', id);
+const choose = (id) => {
+  selectedLot.value = id;
+  emit(props.readOnly ? 'inspect' : 'select', id);
+};
+function revealOnFocus(event, id) {
+  if (event.target.matches(':focus-visible')) selectedLot.value = id;
+}
+function lotLabel(id) {
+  const name = t(AREA_BY_ID[id]?.label ?? BUILDING_BY_ID[id].shortName);
+  const detail =
+    AREA_BY_ID[id] || (id === 'moonstoneWorkshop' && canCollectMoonstones.value)
+      ? statusLabel(id)
+      : buildingStatusLabel(props.town, id, props.indicators[id], props.availableIds.includes(id));
+  return `${name} · ${detail}`;
+}
 const updateAvailable = () => {
   scene?.setAvailable(
     Object.keys(props.indicators).filter((id) => props.indicators[id] === 'upgrade'),
@@ -324,7 +385,10 @@ async function start() {
     if (disposed || !canvas.value) return;
     scene = new MoonScene(canvas.value, {
       reducedMotion: props.reducedMotion,
-      onLabels: (next) => (labels.value = next),
+      onLabels: (next, distance) => {
+        labels.value = next;
+        cameraDistance.value = distance;
+      },
       // Tapping Earth over the rim returns to the valley.
       onEarth: () => emit('close'),
     });
@@ -451,5 +515,89 @@ defineExpose({
   font-size: 20px;
   font-weight: 900;
   width: 24px;
+}
+</style>
+
+<style scoped>
+.town-moon-lot.is-pin {
+  min-height: 0;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: none;
+}
+.moon-lot-pin {
+  width: 10px;
+  height: 10px;
+  border: 2px solid #fbf8ea;
+  border-radius: 50%;
+  background: #345166;
+  box-shadow: 0 1px 4px #10162b;
+}
+.town-moon-lot:active:not(:disabled) {
+  transform: translate(-50%, -100%) scale(0.97);
+}
+.town-moon-lot:focus-visible {
+  outline: 3px solid #89e2f5;
+  outline-offset: 2px;
+}
+.is-compact .town-moon-lot:not(.is-pin) {
+  min-height: 0;
+  padding: 2px 5px;
+  font-size: 10px;
+}
+.moon-inline-action {
+  position: absolute;
+  left: -8px;
+  top: -8px;
+  width: 24px;
+  height: 24px;
+  pointer-events: none;
+}
+.moon-lot-directory {
+  display: none;
+  position: absolute;
+  right: 12px;
+  bottom: 124px;
+  max-width: calc(100% - 24px);
+  padding: 8px 12px;
+  border: 1px solid #b9c2a4;
+  border-radius: 10px;
+  background: #fbf8eaf2;
+  color: #3f5547;
+  font-size: 13px;
+}
+.is-compact .moon-lot-directory,
+:global(.town-labels-hidden .moon-lot-directory) {
+  display: block;
+}
+:global(.town-in-cinematic .moon-lot-directory) {
+  visibility: hidden;
+}
+.moon-lot-directory summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+.moon-lot-directory ul {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  max-height: 35vh;
+  overflow: auto;
+}
+.moon-lot-directory button {
+  width: 100%;
+  padding: 8px;
+  text-align: left;
+  cursor: pointer;
+}
+@media (min-width: 600px) and (max-height: 450px) {
+  .moon-lot-directory {
+    bottom: 8px;
+    left: 12px;
+    right: auto;
+  }
 }
 </style>

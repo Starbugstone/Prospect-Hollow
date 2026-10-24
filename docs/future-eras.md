@@ -249,16 +249,32 @@ docker stop hollow-moon-web
 
 `testing/browser/moon-labels.cjs` uses the same Docker browser setup. Substitute
 that filename in the second command to check WebGL and SVG at 1440×900, 900×360
-and 375×740. It checks every lot/site label for overlap, screen bounds, leader
-anchors and touch selection. Run it after changing lunar labels or camera framing.
+and 375×740. It checks every lot/site label or pin for overlap, screen bounds,
+leader anchors, touch/keyboard selection, the accessible directory and compact
+coverage. Set `PH_SCREENSHOT_DIR` to save the corresponding captures. Run it after changing lunar labels or camera framing.
 
 Moon labels retain their projected building anchors and move only to clear other
-labels or screen controls. Displaced labels connect their nearest edge to their
-own anchor. Collection/finish targets stay by their own building, clamped below
-the header, and labels reserve their touch areas. Both maps share
-the valley's rectangle collision helper in `TownLabels.js`. SVG projection accounts
-for the centred, letterboxed viewBox. Portrait framing preserves orbit and relative
-zoom while keeping the outer lunar lots in view.
+labels or screen controls. Displaced labels and pins connect to their own anchor.
+Both settlements use the priority and distant-detail contract in `TownLabels.js`:
+selection and work take precedence over routine level names. On a Moon canvas
+narrower than 600px or shorter than 450px, completed lots use 10px pins inside
+28px named buttons. Open/buildable lots, construction, ready work, collections
+and unfinished monument sites keep full names and statuses. Compact action icons
+sit inside those cards rather than consuming a second large overlay. At a relative
+camera distance of 48 or less, nearby names return within the same budget; keyboard
+focus reveals one name, and activating any pin opens the usual building details.
+A **Moon lots** directory also reaches off-screen lots and remains available when
+the village-label setting is off. Cinematics hide these controls.
+
+`MoonLabelDensity.js` caps routine name expansion at 25% of canvas area, counting
+full button rectangles (including transparent pin hit areas). Attention cards
+and selection take priority; all 13 current lots needing attention simultaneously
+still fit under the budget at both 375×740 and 900×360. The budget excludes shared
+header/footer chrome and panels explicitly opened by the player. Larger future
+catalogs must extend the worst-case regression before shipping. Desktop placement
+and external finish/collection targets are unchanged. SVG projection uses the same
+density and collision rules with the centred, letterboxed viewBox. Portrait framing
+preserves orbit and relative zoom while keeping the outer lunar lots in view.
 
 `PH_TEST_ORIGIN` points the check at another server.
 

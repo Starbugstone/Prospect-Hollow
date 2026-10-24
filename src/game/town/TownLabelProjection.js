@@ -2,7 +2,7 @@ import { Vector3 } from 'three';
 import { constructionReady } from './TownRules';
 import { overlapsEventInset } from './TownInset';
 import { forEachWalker } from './TownWalkers';
-import { labelsOverlap } from './TownLabels';
+import { labelsOverlap, townLabelRank, townLabelDetail } from './TownLabels';
 
 // Screen placement of building labels, collection icons and the named-villager tag.
 // Runs on every camera frame, so it reuses scratch vectors instead of cloning.
@@ -12,11 +12,13 @@ const inFront = (p) => p.z > -1 && p.z < 1;
 // The label's draw order: the mine, the tutorial's plot and the selection, ready builds,
 // the guided goal, then affordable plots; nearer labels win among equals.
 function labelRank(d, id) {
-  if (id === 'mine') return 0;
-  if (id === d.coachPlot || id === d.selected) return 1;
-  if (constructionReady(d.town.projects[id])) return 2;
-  if (id === d.guidedPlot) return 3;
-  return d.availablePlots?.has(id) ? 4 : 5;
+  return townLabelRank({
+    essential: id === 'mine',
+    selected: id === d.coachPlot || id === d.selected,
+    ready: constructionReady(d.town.projects[id]),
+    guided: id === d.guidedPlot,
+    available: d.availablePlots?.has(id),
+  });
 }
 
 export function projectLabelPositions(d) {
@@ -68,13 +70,12 @@ export function projectLabelPositions(d) {
         (Math.abs(p.x) * width) / 2 + labelWidth / 2 + 8 < width / 2 &&
         p.y < 0.84 &&
         p.y > (width < 600 ? -0.42 : -0.78) &&
-        (!distant ||
-          id === 'mine' ||
-          id === d.selected ||
-          id === d.guidedPlot ||
-          id === d.coachPlot ||
-          !!town.projects[id] ||
-          (!town.buildings[id] && d.availablePlots?.has(id))),
+        townLabelDetail({
+          distant,
+          essential: id === 'mine',
+          selected: id === d.selected || id === d.guidedPlot || id === d.coachPlot,
+          attention: !!town.projects[id] || (!town.buildings[id] && d.availablePlots?.has(id)),
+        }),
     };
   });
   // Higher-ranked labels claim their space first; overlapping later ones hide.
