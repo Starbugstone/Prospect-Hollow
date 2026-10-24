@@ -35,6 +35,7 @@ import {
   createHonours,
   creditCounter,
   creditRun,
+  creditContinuous,
   evaluateHonours,
   mergeHonours,
   normalizeHonours,
@@ -578,7 +579,7 @@ export const useCampaignStore = defineStore('campaign', {
     endRun(runId) {
       if (this.activeRun === runId) this.activeRun = null;
     },
-    recordContinuous({ id, runId, jewels, score }) {
+    recordContinuous({ id, runId, jewels, score, tally = null }) {
       const at = Date.now();
       const run = this.continuousRun;
       if (
@@ -600,16 +601,37 @@ export const useCampaignStore = defineStore('campaign', {
         CONTINUOUS_COIN_CAP - previous.coins,
         Math.max(0, earned - run.credited),
       );
-      run.credited = Math.max(run.credited, earned);
       const best = Math.max(previous.score, score);
-      if (!delta && previous.score === best && this.continuousRecords[id]) return true;
-      this.continuousRecords[id] = { coins: previous.coins + delta, score: best };
-      this.town.coins = Math.min(Number.MAX_SAFE_INTEGER, this.town.coins + delta);
-      // After the existing continuous coin allowance is earned, score remains a
-      // statistic. Unlimited play must not create a command for every later match.
-      if (delta) this.recordAction('continuous', { runId, levelId: id, jewels, score, at });
-      this.save();
-      return true;
+      const claim = tally ? { version: 1, ...runClaim(tally), mine: { ...tally.mine } } : null;
+      const changed = claim && JSON.stringify(claim) !== JSON.stringify(run.honours);
+      if (!delta && previous.score === best && this.continuousRecords[id] && !changed) return true;
+      // Collection continues beyond the coin allowance. Old callers without a
+      // breakdown retain their legacy receipt behavior.
+      const receipt =
+        delta || changed || (claim && best > previous.score)
+          ? {
+              kind: 'continuous',
+              data: { runId, levelId: id, jewels, score, at, ...(claim ? { honours: claim } : {}) },
+            }
+          : null;
+      return this.commit(
+        {
+          continuousRecords: {
+            ...this.continuousRecords,
+            [id]: { coins: previous.coins + delta, score: best },
+          },
+          continuousRun: {
+            ...run,
+            credited: Math.max(run.credited, earned),
+            ...(claim ? { honours: claim } : {}),
+          },
+          town: { ...this.town, coins: Math.min(Number.MAX_SAFE_INTEGER, this.town.coins + delta) },
+          ...(claim
+            ? { honours: creditContinuous(this.honours, run.honours, claim, id, score) }
+            : {}),
+        },
+        receipt,
+      );
     },
     resetProgress() {
       const next = defaults();

@@ -1038,6 +1038,9 @@ final class SaveIntegrity
                             $this->rules['levels'][$data['levelId']]['miningMultiplier'],
                     ),
                 );
+                if (array_key_exists('honours', $data)) {
+                    $this->creditContinuous($context, $data['levelId'], $data, false);
+                }
             } elseif (
                 $action['kind'] === 'victory' &&
                 isset($context['run']) &&
@@ -1845,6 +1848,9 @@ final class SaveIntegrity
                     'score' => max($previous['score'], $this->metric($d['score'] ?? null, 'score')),
                 ];
                 $this->addCoins($s, $delta);
+                if (array_key_exists('honours', $d)) {
+                    $this->creditContinuous($context, $level, $d);
+                }
                 break;
             case 'power-spend':
                 $id = $d['itemId'] ?? '';
@@ -2315,6 +2321,79 @@ final class SaveIntegrity
         }
         $context['honours'] = $counts;
     }
+    /**
+     * Versioned cumulative continuous claims. Legacy receipts omit honours and
+     * keep their coin semantics. New claims are bounded by known keys, the total
+     * jewels and authored element counts; only growth since the prior claim counts.
+     * Baseline enrollment remembers the claim without crediting an uploaded history twice.
+     */
+    private function creditContinuous(
+        array &$context,
+        int $level,
+        array $d,
+        bool $credit = true,
+    ): void {
+        $claim = $d['honours'] ?? null;
+        $previous = $context['run']['honours'] ?? [];
+        $jewels = $this->count($d['jewels'] ?? null, 'continuous.jewels');
+        if (
+            !is_array($claim) ||
+            ($claim['version'] ?? null) !== 1 ||
+            $jewels < ($context['run']['honourJewels'] ?? 0) ||
+            array_diff(array_keys($claim), ['version', 'gems', 'fusions', 'mine'])
+        ) {
+            self::mismatch('continuous.honours');
+        }
+        $counts = Honours::counts($context['honours'] ?? null);
+        foreach (['gems', 'fusions', 'mine'] as $counter) {
+            $map = $claim[$counter] ?? null;
+            $known =
+                $counter === 'mine'
+                    ? array_keys($this->rules['levels'][$level]['honourElements'] ?? [])
+                    : $this->rules['honours'][$counter];
+            if (!is_array($map)) {
+                self::mismatch('continuous.honours.' . $counter);
+            }
+            foreach ($previous[$counter] ?? [] as $key => $count) {
+                if (($map[$key] ?? 0) < $count) {
+                    self::mismatch('continuous.honours.regression');
+                }
+            }
+            foreach ($map as $key => $count) {
+                if (
+                    !in_array($key, $known, true) ||
+                    !self::integer($count) ||
+                    ($counter === 'mine' &&
+                        $count > $this->rules['levels'][$level]['honourElements'][$key])
+                ) {
+                    self::mismatch('continuous.honours.' . $counter);
+                }
+                if ($credit) {
+                    $delta = $count - ($previous[$counter][$key] ?? 0);
+                    $counts = Honours::credit($counts, $counter, $delta, (string) $key);
+                    if ($counter === 'gems') {
+                        $counts = Honours::credit($counts, 'continuousGems', $delta);
+                    }
+                }
+            }
+            if (array_sum($map) > $jewels) {
+                self::mismatch('continuous.honours.' . $counter);
+            }
+        }
+        if ($credit) {
+            if (array_sum($claim['gems']) > 0) {
+                $counts['continuousLevels']['level-' . $level] = 1;
+            }
+            $counts['continuousBest'] = max(
+                $counts['continuousBest'],
+                $this->count($d['score'] ?? null, 'continuous.score'),
+            );
+            $context['honours'] = $counts;
+        }
+        $context['run']['honours'] = $claim;
+        $context['run']['honourJewels'] = $jewels;
+    }
+
     private function clock(mixed $at, array $context, int $now): int
     {
         if (!self::integer($at)) {

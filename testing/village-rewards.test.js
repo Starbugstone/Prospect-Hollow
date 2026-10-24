@@ -317,7 +317,11 @@ describe('Continuous play for amusement', () => {
     game.startLevel(1, 'continuous');
     const before = structuredClone(JSON.parse(JSON.stringify(campaign.town.projects)));
     game.remainingLayers = 0;
-    game._applyScoring([{ cleared: Array(100).fill(0), collectedJewels: Array(300).fill({}) }]);
+    const steps = [
+      { cleared: Array(100).fill(0), collectedJewels: Array(300).fill({ type: 'ruby' }) },
+    ];
+    game._applyScoring(steps);
+    game.commitResolution({ board: game.board, steps, layersCleared: 0 });
     game.completeLevel();
     expect(game.sessionActive).toBe(true);
     expect(game.levelCleared).toBe(false);

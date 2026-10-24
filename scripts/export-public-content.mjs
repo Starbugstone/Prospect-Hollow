@@ -42,6 +42,9 @@ const SERVER_MEASURES = [
   'powers',
   'social',
   'landmark',
+  'buildingLevels',
+  'resource',
+  'landmarks',
 ];
 for (const definition of HONOURS.definitions) {
   if (!SERVER_MEASURES.includes(definition.measure.kind))
@@ -79,6 +82,7 @@ const schema = {
           metal: definition.metal,
           tab: definition.tab,
           goal: definition.goal,
+          version: definition.version,
           measure: definition.measure,
         },
       ]),

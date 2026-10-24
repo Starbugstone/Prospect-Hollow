@@ -202,7 +202,9 @@ export function exitLevel(store) {
   const campaign = useCampaignStore();
   campaign.endRun(store.runId);
   campaign.settlePendingChests();
-  store.syncContinuous();
+  // A move still animating has not committed its collection or score. Completed
+  // moves already synced in commitResolution; leaving cannot bank a preview.
+  if (!store.animationInProgress) store.syncContinuous();
   store.playMode = 'normal';
   store.syncRunClock(false);
   store.sessionVersion += 1;
@@ -243,6 +245,7 @@ export function syncContinuous(store) {
     runId: store.runId,
     jewels: store.collectedJewels,
     score: store.score,
+    tally: store.honourTally,
   });
 }
 

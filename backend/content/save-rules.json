@@ -52162,7 +52162,7 @@
     "issuedRun": 0,
     "settledRun": 0,
     "honours": {
-      "version": 4,
+      "version": 5,
       "earned": {},
       "counts": {
         "gems": {},
@@ -52170,13 +52170,16 @@
         "fusions": {},
         "forge": 0,
         "guardian": 0,
+        "continuousGems": 0,
+        "continuousBest": 0,
+        "continuousLevels": {},
         "visitors": 0,
         "travels": 0
       },
       "showcase": [],
       "backfilled": 0,
-      "seenGeneration": 4
+      "seenGeneration": 5
     }
   },
-  "contentDigest": "f28fbc379e61ed57858b21741c752c21a41d239dfc347d690c4887848ad8111d"
+  "contentDigest": "9b6a78abaf2d28f831e6fa16b16163827a22208234f3455bcefb8435006e057a"
 }

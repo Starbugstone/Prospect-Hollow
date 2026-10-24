@@ -89,7 +89,16 @@ function replayed(array $values = []): array
 {
     return canonical(
         array_replace(
-            ['gems' => [], 'mine' => [], 'fusions' => [], 'forge' => 0, 'guardian' => 0],
+            [
+                'gems' => [],
+                'mine' => [],
+                'fusions' => [],
+                'forge' => 0,
+                'guardian' => 0,
+                'continuousGems' => 0,
+                'continuousBest' => 0,
+                'continuousLevels' => [],
+            ],
             $values,
         ),
     );
@@ -155,7 +164,7 @@ $adminAudit = 'honours-test-' . bin2hex(random_bytes(4));
 try {
     // ---------- Shared definitions ----------
     check(
-        $schema['honours']['version'] === 4 &&
+        $schema['honours']['version'] === 5 &&
             $schema['honours']['showcaseSlots'] === 3 &&
             $schema['honours']['counters'] === [
                 'gems' => 'map',
@@ -163,15 +172,38 @@ try {
                 'fusions' => 'map',
                 'forge' => 'number',
                 'guardian' => 'number',
+                'continuousGems' => 'number',
+                'continuousBest' => 'number',
+                'continuousLevels' => 'map',
                 'visitors' => 'number',
                 'travels' => 'number',
             ],
         'the public schema exports the honours constants and counters from the registry',
     );
-    $kinds = ['stars', 'score', 'era', 'count', 'distinct', 'powers', 'social', 'landmark'];
+    $kinds = [
+        'stars',
+        'score',
+        'era',
+        'count',
+        'distinct',
+        'powers',
+        'social',
+        'landmark',
+        'buildingLevels',
+        'resource',
+        'landmarks',
+    ];
     foreach ($definitions as $id => $definition) {
         check(
-            array_keys($definition) === ['family', 'rank', 'metal', 'tab', 'goal', 'measure'] &&
+            array_keys($definition) === [
+                'family',
+                'rank',
+                'metal',
+                'tab',
+                'goal',
+                'version',
+                'measure',
+            ] &&
                 str_starts_with($id, $definition['family'] . '-') &&
                 in_array($definition['measure']['kind'], $kinds, true) &&
                 (is_int($definition['goal']) || is_float($definition['goal'])),
@@ -260,6 +292,106 @@ try {
         'visitors see the verified monument distinction',
     );
 
+    foreach ($schema['personalisation']['areas'] as $area) {
+        $f = flow('optional landmark ' . $area['id'] . ': construction and upgrades');
+        $base = $validator->accept(
+            $f->before,
+            null,
+            $f->serverNow,
+            false,
+            [],
+            'site-' . $area['id'],
+        );
+        $saved = $validator->accept(
+            $f->after,
+            $base,
+            $f->serverNow,
+            false,
+            [],
+            'site-' . $area['id'],
+        );
+        $saved = $catalog->keep($saved, null, $noSocial);
+        check(
+            in_array('landmark-patron-bronze', $saved->honours->verified, true),
+            'a validated purchase at ' . $area['id'] . ' verifies the shared site measure',
+        );
+        if ($area['id'] === 'earthrise-plaza') {
+            check(
+                in_array('new-hollow-gold', $saved->honours->verified, true) &&
+                    in_array('saucer-welcome-bronze', $saved->honours->verified, true),
+                'completed Moon buildings and the optional pad verify from the validated town',
+            );
+        }
+        if ($area['currency'] === 'moonstones') {
+            check(
+                in_array('moonstone-reserve-gold', $saved->honours->verified, true),
+                'moonstone spending retains lifetime resource proof at ' . $area['id'],
+            );
+        }
+    }
+    $continuousFlow = flow('continuous honours grow beyond the coin allowance without a victory');
+    $continuousBase = $validator->accept(
+        $continuousFlow->before,
+        null,
+        $continuousFlow->serverNow,
+        false,
+        [],
+        'continuous-honours',
+    );
+    $continuousSaved = $validator->accept(
+        $continuousFlow->after,
+        $continuousBase,
+        $continuousFlow->serverNow,
+        false,
+        [],
+        'continuous-honours',
+    );
+    $continuousSaved = $catalog->keep($continuousSaved, null, $noSocial);
+    check(
+        counters($continuousSaved)['gems'] === ['ruby' => 2600] &&
+            counters($continuousSaved)['mine'] === ['relics' => 2] &&
+            counters($continuousSaved)['continuousGems'] === 2600,
+        'cumulative continuous claims credit only growth, including beyond the coin allowance',
+    );
+    check(
+        !array_diff(
+            ['gem-ruby-bronze', 'fusion-bronze', 'endless-seam-bronze', 'continuous-score-silver'],
+            $continuousSaved->honours->verified,
+        ),
+        'the server verifies version-2 mastery and new continuous ranks from its own counters',
+    );
+    check(
+        $continuousSaved->town->completedRuns === $continuousBase->town->completedRuns &&
+            $continuousSaved->records == $continuousBase->records &&
+            !in_array('score-bronze', $continuousSaved->honours->verified, true),
+        'continuous play cannot complete puzzles, award normal score ranks or advance eras',
+    );
+    $retry = $validator->accept(
+        $continuousFlow->after,
+        $continuousSaved,
+        $continuousFlow->serverNow,
+        false,
+        [],
+        'continuous-honours',
+    );
+    check(
+        counters($retry) === counters($continuousSaved),
+        'retrying continuous receipts never credits twice',
+    );
+    $seams = array_fill_keys(array_map(fn($n) => 'level-' . $n, range(1, 546)), 1);
+    check(
+        count(Honours::counts(asObject(['continuousLevels' => $seams]))['continuousLevels']) ===
+            546,
+        'continuous seam history retains the full fixed range rather than the ordinary 64-key counter bound',
+    );
+    $legacyAward = asObject(asArray($continuousSaved));
+    $legacyAward->honours->earned->{'gem-ruby-bronze'}->version = 1;
+    check(
+        $catalog->keep($legacyAward, null, $noSocial)->honours->earned->{'gem-ruby-bronze'}
+            ->version === 1,
+        'the approved version-2 measure never rewrites a legacy earned requirement version',
+    );
+
     // ---------- Storage bounds ----------
     check(kept([], []) === 'absent', 'a save without honours stays without honours');
     foreach (['garbage', [1, 2], 7, null, true] as $junk) {
@@ -274,6 +406,9 @@ try {
             'fusions' => (object) [],
             'forge' => 0,
             'guardian' => 0,
+            'continuousGems' => 0,
+            'continuousBest' => 0,
+            'continuousLevels' => (object) [],
             'visitors' => 0,
             'travels' => 0,
         ],
@@ -307,6 +442,9 @@ try {
             'fusions' => ['bomb+cross' => 2],
             'forge' => 2,
             'guardian' => 1,
+            'continuousGems' => 0,
+            'continuousBest' => 0,
+            'continuousLevels' => (object) [],
             'visitors' => 2,
             'travels' => 4,
         ],
@@ -392,6 +530,9 @@ try {
                 'fusions' => ['bomb+cross' => 3],
                 'forge' => 0,
                 'guardian' => 0,
+                'continuousGems' => 0,
+                'continuousBest' => 0,
+                'continuousLevels' => [],
                 'visitors' => 0,
                 'travels' => 0,
             ],
@@ -493,6 +634,9 @@ try {
             'fusions' => ['bomb+cross' => 3, 'cross+cross' => 2],
             'forge' => 3,
             'guardian' => 0,
+            'continuousGems' => 0,
+            'continuousBest' => 0,
+            'continuousLevels' => [],
             'visitors' => 4,
             'travels' => 6,
         ],
@@ -551,6 +695,9 @@ try {
         'fusions' => ['bomb+cross' => 1, 'cross+cross' => 2],
         'forge' => 1,
         'guardian' => 1,
+        'continuousGems' => 0,
+        'continuousBest' => 0,
+        'continuousLevels' => [],
     ]);
     $enrolled = $validator->accept($offline->before, null, $clock, false, [], 'offline-town');
     check(
@@ -649,6 +796,9 @@ try {
         'fusions' => ['cross+cross' => 2],
         'forge' => 1,
         'guardian' => 1,
+        'continuousGems' => 0,
+        'continuousBest' => 0,
+        'continuousLevels' => [],
     ]);
     foreach (
         [
@@ -908,7 +1058,7 @@ try {
         check(
             str_contains(
                 $public->projection($odd, 'Odd', 'honours'),
-                '"honours":{"version":4,"earned":{},"showcase":[]}',
+                '"honours":{"version":5,"earned":{},"showcase":[]}',
             ),
             'garbage still projects an empty object',
         );

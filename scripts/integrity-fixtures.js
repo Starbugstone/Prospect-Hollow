@@ -398,6 +398,27 @@ export function createIntegrityFixtures() {
       },
     );
     fixture(
+      'continuous honours grow beyond the coin allowance without a victory',
+      (profile) => {
+        profile.town.buildings.museum = 1;
+        for (let id = 1; id <= 249; id++) profile.records[id] = { score: 1, stars: 1 };
+      },
+      (campaign) => {
+        const runId = campaign.beginRun('continuous', 249);
+        const visit = (ruby, score, relics) =>
+          campaign.recordContinuous({
+            id: 249,
+            runId,
+            jewels: ruby,
+            score,
+            tally: { gems: { ruby }, fusions: { 'bomb+cross': 1 }, mine: { relics } },
+          });
+        expectSuccess(visit(600, 25000, 1), 'continuous first collection');
+        expectSuccess(visit(600, 25000, 1), 'continuous retry');
+        expectSuccess(visit(2600, 100000, 2), 'continuous collection beyond coins');
+      },
+    );
+    fixture(
       'era progression uses the shared next-era gate',
       (profile) => develop(profile),
       (campaign) => {

@@ -191,7 +191,7 @@ describe('The run tally', () => {
     expect(game.honourTally.fusions).toEqual({ 'bomb+cross': 2 });
   });
 
-  it('credits nothing for continuous play or a puzzle left unfinished', async () => {
+  it('credits committed continuous collection but nothing for an unfinished normal puzzle', async () => {
     const profile = freshProfile();
     profile.records[1] = { score: 10, stars: 1 };
     profile.town.buildings.museum = 1;
@@ -200,7 +200,9 @@ describe('The run tally', () => {
     expect(game.startLevel(1, 'continuous')).toBe(true);
     await swap(game);
     expect(game.collectedJewels).toBeGreaterThan(0);
-    expect(game.honourTally).toEqual({ gems: {}, fusions: {} });
+    expect(total(game.honourTally.gems)).toBeGreaterThan(0);
+    const continuousCounts = JSON.parse(JSON.stringify(campaign.honours.counts));
+    expect(continuousCounts.gems).toEqual(game.honourTally.gems);
     game.remainingLayers = 0;
     game.completeLevel();
     game.exitLevel();
@@ -214,7 +216,23 @@ describe('The run tally', () => {
     game.remainingLayers = 0;
     game.completeLevel();
     expect(game.levelCleared).toBe(true);
+    expect(campaign.honours.counts).toEqual(continuousCounts);
+  });
+
+  it('does not bank a continuous score or collection when leaving before animation commits', () => {
+    const profile = freshProfile();
+    profile.records[1] = { score: 1, stars: 1 };
+    profile.town.buildings.museum = 1;
+    const campaign = open(profile);
+    const game = gameStore();
+    game.startLevel(1, 'continuous');
+    game.animationInProgress = true;
+    game._applyScoring([
+      { cleared: Array(300).fill(0), collectedJewels: Array(300).fill({ type: 'ruby' }) },
+    ]);
+    game.exitLevel();
     expect(campaign.honours.counts).toEqual(createHonours().counts);
+    expect(campaign.continuousRecords).toEqual({});
   });
 });
 
@@ -269,6 +287,24 @@ describe('The town handoff', () => {
     });
     expect(damaged.honourTally).toEqual({ gems: { topaz: 2 }, fusions: { 'bomb+cross': 1 } });
   });
+
+  it('preserves the continuous claim across handoff without recrediting the first window’s gems', async () => {
+    const profile = freshProfile();
+    profile.records[1] = { score: 1, stars: 1 };
+    profile.town.buildings.museum = 1;
+    open(profile);
+    const game = gameStore();
+    game.startLevel(1, 'continuous');
+    await swap(game);
+    const first = JSON.parse(JSON.stringify(counts()));
+    const next = transfer(game);
+    next.syncContinuous();
+    expect(counts()).toEqual(first);
+    next.inputPaused = false;
+    await swap(next);
+    expect(counts().gems).toEqual(next.honourTally.gems);
+    expect(counts().continuousGems).toBe(total(next.honourTally.gems));
+  });
 });
 
 describe('Crediting a victory', () => {
@@ -311,6 +347,71 @@ describe('Crediting a victory', () => {
     const runId = campaign.beginRun('continuous', 1);
     campaign.recordVictory({ id: 1, runId, score: 100, target: 6000, combo: 1, tally });
     expect(counts()).toEqual(createHonours().counts);
+  });
+
+  it('credits continuous deltas after the coin allowance, persists receipts and never credits them as victories', () => {
+    const profile = freshProfile();
+    profile.records[1] = { score: 10, stars: 1 };
+    profile.town.buildings.museum = 1;
+    const campaign = open(profile, { guarded: true });
+    const runId = campaign.beginRun('continuous', 1);
+    const visit = (ruby, score = 25000) =>
+      campaign.recordContinuous({
+        id: 1,
+        runId,
+        jewels: ruby,
+        score,
+        tally: { gems: { ruby }, fusions: { 'bomb+cross': 1 }, mine: {} },
+      });
+    expect(visit(600)).toBe(true);
+    expect(visit(600)).toBe(true);
+    expect(visit(2600, 100000)).toBe(true);
+    expect(counts().gems).toEqual({ ruby: 2600 });
+    expect(counts().continuousGems).toBe(2600);
+    expect(counts().fusions).toEqual({ 'bomb+cross': 1 });
+    expect(stored().earned['gem-ruby-bronze'].version).toBe(2);
+    expect(stored().earned['endless-seam-bronze']).toBeTruthy();
+    expect(campaign.integrity.actions.filter((a) => a.kind === 'continuous')).toHaveLength(2);
+    expect(campaign.integrity.actions.at(-1).data).toMatchObject({
+      jewels: 2600,
+      honours: { version: 1, gems: { ruby: 2600 } },
+    });
+    expect(campaign.town.completedRuns).toBe(0);
+    expect(campaign.records).toEqual(profile.records);
+    expect(
+      campaign.recordVictory({ id: 1, runId, score: 1e8, target: 1, combo: 10, tally }),
+    ).toEqual([]);
+    expect(counts().gems.ruby).toBe(2600);
+    const normalId = campaign.beginRun('normal', 1);
+    campaign.recordVictory({ id: 1, runId: normalId, score: 1, target: 6000, combo: 1, tally });
+    expect(counts().gems.ruby).toBe(2605);
+    expect(counts().continuousGems).toBe(2600);
+  });
+
+  it('rolls back a failed continuous save with its cumulative claim and retries collection once', () => {
+    const profile = freshProfile();
+    profile.records[1] = { score: 1, stars: 1 };
+    profile.town.buildings.museum = 1;
+    const campaign = open(profile);
+    const runId = campaign.beginRun('continuous', 1);
+    const request = {
+      id: 1,
+      runId,
+      jewels: 600,
+      score: 25000,
+      tally: { gems: { ruby: 600 }, fusions: {}, mine: {} },
+    };
+    const original = JSON.parse(JSON.stringify(campaign.honours));
+    const save = vi.spyOn(localStorage, 'setItem').mockImplementation(() => {
+      throw Error('full');
+    });
+    expect(campaign.recordContinuous(request)).toBe(false);
+    expect(campaign.honours).toEqual(original);
+    expect(campaign.continuousRun.honours).toBeUndefined();
+    save.mockRestore();
+    expect(campaign.recordContinuous(request)).toBe(true);
+    expect(campaign.honours.counts.continuousGems).toBe(600);
+    expect(campaign.honours.counts.gems.ruby).toBe(600);
   });
 
   it('credits mine elements from the completed level configuration, replays included', () => {

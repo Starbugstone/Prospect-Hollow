@@ -13,6 +13,9 @@ import {
   MINE_ELEMENTS,
   NON_MASTERY_ELEMENTS,
   NON_MILESTONE_ERAS,
+  NON_SETTLEMENT_HONOURS,
+  NON_RESOURCE_HONOURS,
+  NON_MONUMENT_HONOURS,
   QUARTERMASTER,
   RANK_METALS,
   SCORE_FROM_LEVEL,
@@ -24,6 +27,9 @@ import {
   createRunTally,
   creditCounter,
   creditRun,
+  creditContinuous,
+  tallyContinuousMine,
+  consumedElements,
   eraStep,
   evaluateHonours,
   honourCollection,
@@ -50,7 +56,8 @@ import { ERAS } from '../src/data/eras';
 import { OBSTACLES } from '../src/data/obstacles';
 import { LEVEL_COUNT, POWERS } from '../src/data/campaign';
 import { bonusCapacity } from '../src/data/rewards';
-import { BUILDING_BY_ID } from '../src/data/town';
+import { BUILDING_BY_ID, BUILDINGS, createTown } from '../src/data/town';
+import { TOWN_CURRENCIES } from '../src/data/townCurrency';
 import { getLevelStarTarget } from '../src/data/starRating';
 import { useCampaignStore, SAVE_KEY } from '../src/stores/campaignStore';
 import { HONOUR_NOTICE_MODES, useSettingsStore } from '../src/stores/settingsStore';
@@ -161,6 +168,36 @@ describe('The honours registry', () => {
     expect(QUARTERMASTER.powers).toBeLessThanOrEqual(POWERS.length);
   });
 
+  it('requires an honours decision for every settlement, town currency and monument site', () => {
+    const measures = HONOURS.definitions.map((rank) => rank.measure);
+    const settlements = new Set(
+      [...BUILDINGS, ...PERSONAL_AREAS].map((entry) => entry.settlement ?? 'valley'),
+    );
+    for (const id of settlements)
+      expect(measures.some((m) => m.settlement === id) !== !!NON_SETTLEMENT_HONOURS[id], id).toBe(
+        true,
+      );
+    const resources = new Set([
+      ...TOWN_CURRENCIES,
+      ...Object.keys(createTown())
+        .filter((key) => key.endsWith('Earned'))
+        .map((key) => key.slice(0, -6)),
+    ]);
+    for (const id of resources)
+      expect(measures.some((m) => m.resource === id) !== !!NON_RESOURCE_HONOURS[id], id).toBe(true);
+    for (const { id } of PERSONAL_AREAS)
+      expect(
+        measures.some((m) => m.area === id || m.areas?.includes(id)) !== !!NON_MONUMENT_HONOURS[id],
+        id,
+      ).toBe(true);
+    // New Moon buildings must not be hidden behind the settlement's existing coverage.
+    for (const building of BUILDINGS.filter((b) => b.settlement === 'moon'))
+      expect(
+        measures.some((m) => m.buildings?.includes(building.id)),
+        building.id,
+      ).toBe(true);
+  });
+
   it('keeps the generated level element index in step with the level definitions', () => {
     const live = Object.fromEntries(
       generateLevelConfigs()
@@ -199,6 +236,107 @@ describe('The honours registry', () => {
 });
 
 describe('Measures', () => {
+  it('counts completed Moon building levels, the optional pad and lifetime currency independently of gems', () => {
+    const moon = town({
+      buildings: {
+        ribbonLanding: 3,
+        settlerDomes: 3,
+        craterIceWell: 3,
+        earthlightGreenhouse: 3,
+        willowkinDome: 3,
+      },
+      projects: { roverBarn: { level: 3 } },
+      moonstonesEarned: 60,
+      moonstones: 0,
+    });
+    expect(added({ town: moon })).toEqual(
+      expect.arrayContaining([
+        'new-hollow-bronze',
+        'new-hollow-silver',
+        'moonstone-reserve-bronze',
+        'moonstone-reserve-silver',
+      ]),
+    );
+    expect(added({ town: moon })).not.toContain('new-hollow-gold');
+    expect(added({ town: moon })).not.toContain('saucer-welcome-bronze');
+    expect(added({ town: moon })).not.toContain('gem-moonstone-bronze');
+    expect(added({ town: town({ buildings: { saucerPad: 1 } }) })).toContain(
+      'saucer-welcome-bronze',
+    );
+    expect(added({ town: town({ moonstones: 1000, moonstonesEarned: 9 }) })).not.toContain(
+      'moonstone-reserve-bronze',
+    );
+    for (const value of [-1, NaN, '180', 1.5])
+      expect(added({ town: town({ moonstonesEarned: value }) })).not.toContain(
+        'moonstone-reserve-bronze',
+      );
+  });
+
+  it('sponsors every monument site with valid choices while preserving Monument Square’s shipped meaning', () => {
+    for (const area of PERSONAL_AREAS) {
+      const t = town({ personalisation: { areas: { [area.id]: [area.choices[0]] } } });
+      const ids = added({ town: t });
+      expect(ids, area.id).toContain('landmark-patron-bronze');
+      expect(ids.includes('monument-gold'), area.id).toBe(area.id === 'monument');
+      t.personalisation.areas[area.id] = ['invented-design'];
+      expect(added({ town: t }), area.id).not.toContain('landmark-patron-bronze');
+    }
+  });
+
+  it('credits continuous collection cumulatively with version 2 mastery and leaves completion measures untouched', () => {
+    const claim = { gems: { ruby: 500 }, fusions: { 'bomb+cross': 1 }, mine: { relics: 10 } };
+    let honours = creditContinuous(createHonours(), null, claim, 1, 25000);
+    honours = creditContinuous(honours, claim, claim, 1, 25000);
+    expect(honours.counts.gems.ruby).toBe(500);
+    expect(honours.counts.mine.relics).toBe(10);
+    expect(honours.counts.continuousGems).toBe(500);
+    const ids = added({ honours });
+    expect(ids).toEqual(
+      expect.arrayContaining([
+        'gem-ruby-bronze',
+        'fusion-bronze',
+        'mine-relics-bronze',
+        'continuous-score-bronze',
+      ]),
+    );
+    expect(ids.some((id) => /^(stars|ages|score)-/.test(id))).toBe(false);
+    for (const family of HONOURS.families.filter((f) => /^(gem-|mine-|fusion$)/.test(f.id)))
+      for (const rank of family.ranks) expect(rank.version).toBe(2);
+    const legacy = earned(['gem-ruby-bronze']);
+    const result = evaluateHonours(state({ honours: legacy }));
+    expect(result.honours.earned['gem-ruby-bronze']).toEqual(legacy.earned['gem-ruby-bronze']);
+    expect(result.honours.earned['gem-ruby-bronze'].version).toBe(1);
+  });
+
+  it('counts partial mine consumption once and excludes recovery pieces', () => {
+    const config = {
+      board: [{ type: 'relic' }],
+      tiles: [
+        { signal: 'lantern', signalHealth: 1 },
+        { bonusOnly: true, health: 2 },
+      ],
+      oreOrders: [{ target: 3 }],
+    };
+    const tally = createRunTally();
+    expect(consumedElements(config, { board: [], tiles: [], oreOrders: [] })).toEqual({
+      relics: 1,
+      lanterns: 1,
+      oreOrders: 1,
+      gates: 1,
+    });
+    tallyContinuousMine(tally, config, config.board, config.tiles, [{ target: 3, progress: 0 }]);
+    expect(tally.mine).toEqual({});
+    const tiles = [
+      { signal: 'lantern', signalHealth: 0 },
+      { bonusOnly: true, health: 1 },
+    ];
+    tallyContinuousMine(tally, config, [], tiles, [{ target: 3, progress: 3 }]);
+    expect(tally.mine).toEqual({ relics: 1, lanterns: 1, oreOrders: 1 });
+    tiles[1].health = 0;
+    tallyContinuousMine(tally, config, [], tiles, [{ target: 3, progress: 3 }], { recovery: true });
+    tallyContinuousMine(tally, config, [], tiles, [{ target: 3, progress: 3 }]);
+    expect(tally.mine.gates).toBeUndefined();
+  });
   it('counts three-star puzzles for the stars ladder', () => {
     expect(added({ records: stars(24) })).toEqual([]);
     expect(added({ records: stars(25) })).toEqual(['stars-bronze']);
@@ -395,6 +533,7 @@ describe('Saved honours', () => {
     });
     expect(Object.keys(honours.earned)).toEqual(['future-honour']);
     expect(honours.counts).toEqual({
+      ...createHonours().counts,
       gems: { ruby: 4 },
       mine: { lanterns: 3 },
       fusions: { 'bomb+cross': 2 },
@@ -471,6 +610,10 @@ describe('Saved honours', () => {
       'forge',
       'quartermaster',
       'monument',
+      'new-hollow',
+      'saucer-welcome',
+      'moonstone-reserve',
+      'landmark-patron',
     ]);
     expect(friends.families.map((family) => family.id)).toEqual(['visitors', 'explorer']);
   });
