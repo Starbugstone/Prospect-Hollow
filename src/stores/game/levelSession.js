@@ -139,17 +139,10 @@ export function resetRunPresentation(store) {
   store.reshuffleNotice = null;
 }
 
-export function startLevel(store, levelId, mode = 'normal', { debugReplay = false } = {}) {
+export function startLevel(store, levelId, mode = 'normal') {
   performanceMark('mine-intent');
   const campaign = useCampaignStore();
-  if (
-    !['normal', 'continuous'].includes(mode) ||
-    !(
-      campaign.canPlay(levelId, mode) ||
-      (debugReplay && mode === 'normal' && campaign.isUnlocked(levelId))
-    )
-  )
-    return false;
+  if (!['normal', 'continuous'].includes(mode) || !campaign.canPlay(levelId, mode)) return false;
   const config = levelConfig(levelId);
   if (!config) return false;
   store.playMode = mode;

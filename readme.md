@@ -24,9 +24,9 @@ Swipe two neighboring gems, or tap them in turn, to match three. Four in a line 
 
 **Moves are unlimited.** Missing an optional speed or score target never ends play or blocks completion. A board without a legal match reshuffles for free. Completed obstacles leave ordinary cells. Stars depend on score and cascades, as explained in [star ratings](docs/star-ratings.md).
 
-Normal puzzle completions pay coins, award chests and advance active construction projects. Tap a ready building to finish it and activate its benefits. A builder hammer can fund and finish an eligible new project instantly. Every Frontier building has three stages; later eras modernize existing buildings and add new plots. Era advancement depends on town construction rather than mine progress.
+Normal puzzle completions pay coins, award chests and advance active construction projects. Tap a ready building to finish it and activate its benefits. A builder hammer can fund and finish an eligible new project instantly. Every Frontier building has three stages; later eras modernize existing buildings and add new plots. Era advancement depends on town construction rather than mine progress. In Twin Hollows, the last era, the town also builds New Hollow on the Moon, which plays like the valley: tap a parcel in 3D to open it, build from the same Build tab and read New Hollow's letters in the Story tab.
 
-The village's bottom tabs open Village, Build, Mine, Story and More. More includes the museum, supplies, shared towns, help and settings. Build the museum to replay completed puzzles or enter continuous play. Continuous play has no objective finish and awards no chests, stars or construction progress; its coin allowance is 25 per level across all visits, while play can continue after that allowance is used.
+The village's bottom tabs open Village, Build, Mine, Personalise, Story and More; a new town's guided first buildings use a shorter bar. More holds town projects, the museum, Town Honours, supplies, shared towns, help and settings. Build the museum to replay completed puzzles or enter continuous play. Continuous play has no objective finish and awards no chests, stars or construction progress; its coin allowance is 25 per level across all visits, while play can continue after that allowance is used.
 
 English and French, keyboard board controls, high contrast, audio settings and reduced motion are supported. Local progress retains the legacy `crystal-cascade-profile-v3` storage key. Settings can export and import JSON backups; accounts can back up three independent towns with conflict recovery. See [browser saving](docs/backend/browser-saving.md) before changing save behavior.
 
@@ -34,35 +34,25 @@ The current campaign extends through Tomorrow City (325–372), the [five deeper
 
 Use the [documentation index](docs/README.md) for current gameplay, architecture, art and backend guides. [Historical reports](docs/history/README.md) retain earlier designs and measurements.
 
-## Testing resources from the console
+## Test saves and diagnostics
 
-Open the running game's browser developer console and run:
+The game has no console cheats: nothing typed in the browser console adds coins, unlocks levels or finishes an era. To try a later era, a finished town or a saved encounter, generate the disposable era saves in Docker:
 
-```js
-prospectDebug.grant({ coins: 100000, hammers: 5 });
+```sh
+docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD":/app -w /app node:24-bookworm-slim npm run demo:eras
 ```
 
-This adds 100,000 coins, tops up builder hammers to their normal cap of 5, saves immediately, and returns the new balances. Run it again whenever you need more resources. Change `coins` or `hammers` to choose the amounts; `prospectDebug.grant()` uses the same defaults. The console tools exist in development (`npm run dev`) and on the preprod site; production builds leave them out. To test a production build locally with them, build with `VITE_DEBUG_TOOLS=true`.
+This writes a `.json` save and a `.console.js` snippet for each state to the ignored `output/era-demo/`. Use a disposable browser profile: running a `.console.js` snippet in the game's console replaces that origin's progress with the fixture and reloads. [Settlement eras](docs/settlement-eras.md#try-an-era-immediately) lists every fixture. Export your save in Settings first if you want to keep it.
 
-Two more console cheats save immediately:
-
-```js
-prospectDebug.prepareEra(); // Fully upgrade the current era; wait for your transition click.
-prospectDebug.prepareEra('industrial'); // Prepare the end of a chosen era.
-prospectDebug.mineStage(12); // Unlock and open chapter 12 (starting at level 67).
-```
-
-Run `prepareEra` after exiting the mine. It returns to the village with every building available in that era fully built and upgraded, construction completed, and old incidents and presentations dismissed. Click the town square's era-change action when ready; the cheat does not start the next era or its cinematic. Era IDs, in order: `frontier`, `river-rail`, `industrial`, `post-war`, `motor-age`, `aviation`, `broadcast`, `contemporary`, `tomorrow`, `canopy`, `riverlight`, `skysail`, `stargazer`, `moonward`, `twin-hollows`. The final era has no next-era button. Choosing an earlier era removes later-era buildings from this test town. Puzzle records and inventory are preserved.
-
-`mineStage` accepts a **chapter number from 1–91**, not a level number. It opens that chapter's first puzzle immediately, ending any current run. Missing earlier levels are marked completed with zero score and one star to unlock the chapter; existing scores are preserved. Skipped levels grant no coins, chests, chapter gifts or construction progress. You can also revisit earlier chapters without building the museum. Unlocks persist across reloads; re-run the command to revisit a chosen chapter. Both cheats save immediately; export your save in Settings first if you want to keep an untouched copy. On the preprod site, a signed-in town keeps cloud saving after any console cheat: the server accepts the changed town as a new starting point. A local server needs `SAVE_TESTING_TOOLS=true` for the same. Invalid values are rejected and failed saves restore the previous state.
-
-To preview the **three-star completion celebration**, enter the mine and run:
+Development (`npm run dev`), the preprod site and builds made with `VITE_DEBUG_TOOLS=true` also expose read-only diagnostics as `prospectDebug`; production builds leave them out. They never change the save:
 
 ```js
-prospectDebug.completeMine(); // Unlock every mine level, give each 3 stars, and queue the celebration.
+prospectDebug.townTimings(); // Town construction and rebuild phase timings, plus long tasks.
+await prospectDebug.townFrameStats(5); // Per-frame render costs over five seconds.
+prospectDebug.showNavigation(true); // Draw villager navigation footprints and routes.
 ```
 
-Then use **Back to village**. The celebration starts on returning to the village, after any pending raid or era transition. The command leaves the current puzzle running and saves all 546 levels as completed with three stars. Existing scores and best times are preserved; previously unplayed levels get a zero score. It grants no coins, chests, chapter gifts, inventory or construction progress. Run it again inside the mine to re-arm the celebration even if you already watched it. The command requires an active mine session; if needed, `prospectDebug.mineStage(1)` opens one, including on an already completed save without a museum. Export your save in Settings first if you want to preserve your real progress. Failed saves restore both records and the celebration receipt.
+The [rendering performance log](docs/town-rendering-performance-log.md#on-device-checks-for-preprod) explains how to read them.
 
 ## Development and checks
 
@@ -72,7 +62,7 @@ All local checks run in Docker. Use this prefix for `npm run verify`, individual
 docker run --rm --user "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD":/app -w /app node:24-bookworm-slim npm run verify
 ```
 
-`verify` runs formatting, ESLint and knip, generated-footprint checks, regression tests and a production build with chunk budgets. Level simulations are separate: run `npm run test:levels` with the same Docker prefix after changing levels, star targets, scoring or bonuses. Board animation, gravity and shape changes also require the [board motion check](docs/deep-mine-levels.md#board-motion-check). See [contributor rules](AGENTS.md) for backend checks and permanent gameplay contracts.
+`verify` runs formatting, ESLint and knip, generated-footprint checks, regression tests and a production build with chunk budgets. Level simulations are separate: run `npm run test:levels` with the same Docker prefix after changing levels, star targets, scoring or bonuses. Board animation, gravity and shape changes also require the [board motion check](docs/deep-mine-levels.md#board-motion-check). See [contributor rules](AGENTS.md) for backend checks, permanent gameplay contracts and the settlement map rules every map shares.
 
 The [scripts index](scripts/README.md) describes asset generation, balance measurement, browser reviews and hosting tools. Reproducible screenshots, review exports and local demo saves belong in ignored `output/`; see [workspace maintenance](docs/workspace-maintenance.md).
 
@@ -82,7 +72,7 @@ The [scripts index](scripts/README.md) describes asset generation, balance measu
 - `src/game/phaser/`: board rendering, animation and input.
 - `src/game/town/`: Three.js town layout, buildings, actors, incidents and cinematics.
 - `src/data/`: shared campaign, era, building, reward, event and honours definitions.
-- `src/stores/`, `src/services/`: game state, persistence, cloud sync and developer tools.
+- `src/stores/`, `src/services/`: game state, persistence, cloud sync and read-only developer diagnostics.
 - `src/components/`: town, mine, account and share-link interfaces.
 - `src/assets/`, `public/art/`: authored meshes and runtime artwork; preserve authoring sources.
 - `backend/`: PHP/Symfony account-save API.

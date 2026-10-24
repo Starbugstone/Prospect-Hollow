@@ -2160,7 +2160,9 @@ foreach (
         $defense . ' completing full cover replays the waiting raid as protected',
     );
 }
-// Console testing tools re-baseline a tracked town only where the server allows them.
+// The removed console testing tools left 'testing' receipts in some development and
+// preprod saves. Like any receipt the game rules do not know, an unacknowledged one never
+// reconciles, whatever the server origin or a leftover SAVE_TESTING_TOOLS flag.
 $cheated = integrityData($midAnchor);
 $cheated['town']['coins'] += 100000;
 $cheated['builderHammers'] = 5;
@@ -2168,29 +2170,29 @@ $cheated['integrity']['actions'] = [
     integrityAction(3, 'testing', ['command' => 'grant', 'at' => $now]),
 ];
 $origin = $_ENV['APP_ORIGIN'] ?? null;
-$_ENV['APP_ORIGIN'] = 'https://prospecthollow.starbugstone.com';
-unset($_ENV['SAVE_TESTING_TOOLS']);
-assertIntegrity(!SaveIntegrity::testingToolsAllowed(), 'production does not allow testing tools');
-integrityDenied(
-    fn() => $validator->accept(integrityObject($cheated), $midAnchor, $now),
-    'save_integrity_mismatch',
-    'testing receipt on a production server',
-);
 $_ENV['SAVE_TESTING_TOOLS'] = 'true';
-assertIntegrity(
-    $validator->accept(integrityObject($cheated), $midAnchor, $now)->town->coins === 100003,
-    'an explicitly flagged server accepts testing receipts',
-);
+foreach (
+    ['https://prospecthollow.starbugstone.com', 'https://preprod.prospecthollow.starbugstone.com']
+    as $server
+) {
+    $_ENV['APP_ORIGIN'] = $server;
+    integrityDenied(
+        fn() => $validator->accept(integrityObject($cheated), $midAnchor, $now),
+        'save_rules_unsupported',
+        'a testing receipt on ' . $server,
+    );
+}
 unset($_ENV['SAVE_TESTING_TOOLS']);
-$_ENV['APP_ORIGIN'] = 'https://preprod.prospecthollow.starbugstone.com';
-$cheatAnchor = $validator->accept(integrityObject($cheated), $midAnchor, $now);
+// An admin override is the recovery path for such a town: it re-baselines the upload
+// without replaying it, keeping a puzzle in progress and its credit.
+$cheatAnchor = $validator->acceptOverride(integrityObject($cheated), $midAnchor, $now, '');
 $cheatReceipt = SaveIntegrity::receipt($cheatAnchor);
 assertIntegrity(
     $cheatAnchor->town->coins === 100003 &&
         $cheatAnchor->builderHammers === 5 &&
         $cheatReceipt['status'] === 'baseline' &&
         $cheatReceipt['ackSequence'] === 3,
-    'preprod accepts a testing receipt as a new unverified baseline',
+    'an admin override re-baselines a town with an old testing receipt',
 );
 $afterCheat = integrityData($cheatAnchor);
 $afterCheat['town']['coins'] = 100005;
@@ -2205,14 +2207,14 @@ $afterCheat['integrity']['actions'] = [
 ];
 assertIntegrity(
     $validator->accept(integrityObject($afterCheat), $cheatAnchor, $now)->town->coins === 100005,
-    'a puzzle in progress keeps its run and credit across a testing baseline',
+    'a puzzle in progress keeps its run and credit across an override baseline',
 );
 $forged = integrityData($cheatAnchor);
 $forged['town']['coins'] += 1;
 integrityDenied(
     fn() => $validator->accept(integrityObject($forged), $cheatAnchor, $now),
     'save_integrity_mismatch',
-    'direct coin injection after a testing baseline',
+    'direct coin injection after an override baseline',
 );
 if ($origin === null) {
     unset($_ENV['APP_ORIGIN']);

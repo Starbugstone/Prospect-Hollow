@@ -47,7 +47,7 @@ up Playwright on WSL.
 | ----------------------------------------------------------------------- | --------------------------------------------------------------------------- |
 | `verify-mine-feedback.js`                                               | Checks that tips, celebrations and targeting never move or cover the board. |
 | `capture-completion-fireworks.js`                                       | Captures the three-star celebration frames from an era-demo save.           |
-| `capture-vip-review.js`, `package-vip-review.py`                        | Captures and packages the VIP visitor review.                               |
+| `capture-vip-review.js`, `package-vip-review.py`                        | Captures the VIP visitor review from era-demo saves and packages it.        |
 | `town-actor-review.html`, `town-actor-review.js`                        | Villager outfit and construction review page served by Vite.                |
 | `era-art-review.html`, `era-art-review.js`, `package-era-art-review.py` | Era review galleries and archives under ignored `output/`.                  |
 

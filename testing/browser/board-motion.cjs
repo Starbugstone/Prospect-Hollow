@@ -9,7 +9,6 @@ const origin = process.env.PH_TEST_ORIGIN || 'http://127.0.0.1:8192';
 const MOVES = Number(process.env.PH_MOTION_MOVES || 5);
 // The reported level 376, every shaped-board family, and a rectangular control.
 const LEVELS = (process.env.PH_MOTION_LEVELS || '13,373,376,385,397').split(',').map(Number);
-const LEVELS_PER_CHAPTER = 6;
 const FRAME = 1000 / 60;
 // Gems closer than this, in cells, are drawn on top of each other. Neighbouring lanes
 // of a diagonal funnel pass corner to corner at about 0.71; stacked refills are at 0.
@@ -215,32 +214,29 @@ function stutters({ frames }) {
       });
       context.setDefaultTimeout(60000);
       await context.addInitScript(installClock, level);
+      // A disposable profile with every earlier level played, so this level is the next
+      // one the mine opens. It lives only in this throwaway browser context.
+      await context.addInitScript(
+        ({ key, level }) => {
+          const records = {};
+          for (let id = 1; id < level; id++) records[id] = { score: 0, stars: 1 };
+          localStorage.setItem(
+            key,
+            JSON.stringify({ schemaVersion: 2, records, seenTips: ['town'], town: {} }),
+          );
+        },
+        { key: 'crystal-cascade-profile-v3', level },
+      );
       const page = await context.newPage();
       const errors = [];
       page.on('pageerror', (error) => errors.push(error.message));
       await page.goto(origin, { timeout: 180000 });
+      const store = `document.querySelector('#app')?.__vue_app__?.config.globalProperties.$pinia._s.get('game')`;
       // A cold Vite dev server optimises dependencies on the first visit.
-      await page.waitForFunction(() => window.prospectDebug, null, { timeout: 180000 });
-      // mineStage opens a chapter's first level; a later level needs the next chapter,
-      // or, in the last chapter, the whole mine marked played (a throwaway profile).
-      const chapter = Math.ceil(level / LEVELS_PER_CHAPTER);
-      const first = (chapter - 1) * LEVELS_PER_CHAPTER + 1;
-      const store = `document.querySelector('#app').__vue_app__.config.globalProperties.$pinia._s.get('game')`;
-      await page.evaluate(
-        level === first
-          ? `prospectDebug.mineStage(${chapter})`
-          : `(() => {
-              try {
-                prospectDebug.mineStage(${chapter + 1});
-              } catch {
-                prospectDebug.mineStage(${chapter});
-                prospectDebug.completeMine();
-              }
-            })()`,
-      );
+      await page.waitForFunction(`!!${store}`, null, { timeout: 180000 });
+      if (!(await page.evaluate(`${store}.startLevel(${level}, 'normal')`)))
+        throw new Error(`${level}: the seeded profile cannot open this level`);
       await page.waitForFunction(`!!${store}.renderer?.animator`);
-      if (level !== first)
-        await page.evaluate(`${store}.startLevel(${level}, 'normal', { debugReplay: true })`);
       await page.waitForFunction(
         `(() => { const g = ${store}; return g.renderer?.animator && !g.animationInProgress && g.currentLevelId === ${level}; })()`,
       );

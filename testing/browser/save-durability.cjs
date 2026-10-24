@@ -158,8 +158,27 @@ const fs = require('node:fs');
     }
     const a = await device(),
       b = await device();
-    const grant = (d, coins) =>
-      d.page.evaluate((coins) => window.prospectDebug.grant({ coins, hammers: 0 }), coins);
+    // Local progress through the normal game: win the next level, collecting exactly
+    // `coins` gems in chapter 1 (1x depth). Its chest waits unopened, so the wallet
+    // grows by exactly that amount.
+    const earn = (d, coins) =>
+      d.page.evaluate((coins) => {
+        const campaign = window.stores().get('campaign');
+        const id = campaign.nextLevel,
+          before = campaign.town.coins;
+        const runId = campaign.beginRun('normal', id);
+        campaign.recordVictory({
+          id,
+          runId,
+          score: 100,
+          target: 6000,
+          combo: 1,
+          jewels: coins,
+          chooseRewards: true,
+        });
+        if (campaign.town.coins !== before + coins)
+          throw new Error(`Level ${id} did not pay exactly ${coins} coins.`);
+      }, coins);
     const sync = async (d) => {
       await d.page.waitForFunction(async () => !(await window.cloudModule()).cloud.busy);
       const result = await d.page.evaluate(async () => (await window.cloudModule()).syncNow());
@@ -183,9 +202,9 @@ const fs = require('node:fs');
       }, id);
     // Real independent browser stores model phone + computer with one cloud town.
     b.mode.offline = true;
-    await grant(b, 7);
+    await earn(b, 7);
     await a.page.getByRole('button', { name: 'Build for free', exact: true }).click();
-    await grant(a, 10);
+    await earn(a, 10);
     await sync(a);
     assert.equal(remote.profile.town.coins, 60);
     assert.equal(remote.profile.town.buildings.well, 1);
@@ -197,8 +216,8 @@ const fs = require('node:fs');
     assert.equal(copies[0].coins, 57);
     const firstId = copies[0].id;
     b.mode.offline = true;
-    await grant(b, 5);
-    await grant(a, 8);
+    await earn(b, 5);
+    await earn(a, 8);
     await sync(a);
     b.mode.offline = false;
     await sync(b);
@@ -240,14 +259,14 @@ const fs = require('node:fs');
     assert.equal(await current(b), 68);
     // A permanent rejection does not poll and newer valid progress is not held behind it.
     b.mode.reject = 413;
-    await grant(b, 1);
+    await earn(b, 1);
     await sync(b);
     await b.page.getByRole('alert').filter({ hasText: 'Cloud saving is paused' }).waitFor();
     const count = requests.filter((r) => r.mode === b.mode && r.method === 'PUT').length;
     await b.page.waitForTimeout(3500);
     assert.equal(requests.filter((r) => r.mode === b.mode && r.method === 'PUT').length, count);
     b.mode.reject = 0;
-    await grant(b, 1);
+    await earn(b, 1);
     await sync(b);
     assert.equal(remote.profile.town.coins, 70);
     // An IndexedDB failure must keep dirty progress until the player retries.
@@ -258,9 +277,9 @@ const fs = require('node:fs');
       };
     });
     b.mode.offline = true;
-    await grant(b, 3);
+    await earn(b, 3);
     await sync(a);
-    await grant(a, 10);
+    await earn(a, 10);
     await sync(a);
     b.mode.offline = false;
     await sync(b);
