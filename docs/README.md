@@ -15,6 +15,7 @@ are independent; puzzle moves remain unlimited.
 - [The floating seam, 403–546](hollow-mine-levels.md): lenses, phase seals, portal pads,
   gravity and floatstones, including the latest mechanic videos.
 - [Town Honours](honours.md): permanent ranks, extension rules and measured goals.
+- [Combined economy balance](economy-balance.md): mining, town income, moonstones and honours pacing.
 - [Town personalisation](town-personalisation.md): crest, distinctions and monuments.
 
 ## Architecture and artwork
