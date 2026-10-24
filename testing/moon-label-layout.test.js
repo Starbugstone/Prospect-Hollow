@@ -171,3 +171,24 @@ it.each([
       ),
     ).toBe(false);
 });
+
+it('publishes relative zoom even when projected anchors do not move', () => {
+  const updates = [];
+  const camera = new PerspectiveCamera(48, 1.6, 0.1, 600);
+  const scene = Object.assign(Object.create(MoonScene.prototype), {
+    camera,
+    canvas: { clientWidth: 375, clientHeight: 740 },
+    controls: { target: new Vector3() },
+    overviewScale: 2,
+    lots: [{ id: 'lot', position: new Vector3(0, 0, -20) }],
+    onLabels: (labels, distance) => updates.push({ labels, distance }),
+  });
+  scene.projectLabels();
+  camera.position.z = 10;
+  camera.updateMatrixWorld();
+  scene.projectLabels();
+  expect(updates).toHaveLength(2);
+  expect(updates[1].distance).toBe(5);
+  expect(updates[0].labels[0].x).toBe(updates[1].labels[0].x);
+  expect(updates[0].labels[0].y).toBe(updates[1].labels[0].y);
+});

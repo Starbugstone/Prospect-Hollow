@@ -1,4 +1,3 @@
-import { layoutMoonLabels } from './MoonLabelLayout';
 import { MOON_MONUMENT_AREAS, syncMoonMonuments, moonMonumentPresentation } from './MoonMonuments';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
@@ -678,14 +677,16 @@ export class MoonScene {
           point.z > -1 && point.z < 1 && Math.abs(point.x) < 1.05 && Math.abs(point.y) < 1.05,
       };
     });
+    const distance =
+      this.camera.position.distanceTo(this.controls.target) / (this.overviewScale ?? 1);
     const key =
-      `${this.canvas.clientWidth}x${this.canvas.clientHeight}:` +
+      `${this.canvas.clientWidth}x${this.canvas.clientHeight}:${Math.round(distance * 10)}:` +
       labels
         .map((l) => `${l.id}${Math.round(l.x * 10)},${Math.round(l.y * 10)}${l.visible}`)
         .join();
     if (key === this.labelKey) return;
     this.labelKey = key;
-    this.onLabels(layoutMoonLabels(labels, this.canvas.clientWidth, this.canvas.clientHeight));
+    this.onLabels(labels, distance);
   }
   hitsEarth(event) {
     const box = this.canvas.getBoundingClientRect();

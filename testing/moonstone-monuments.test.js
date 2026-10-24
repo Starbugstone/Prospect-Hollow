@@ -213,6 +213,7 @@ it('recalculates label spacing when the canvas scales without changing aspect ra
   const scene = Object.assign(Object.create(MoonScene.prototype), {
     canvas: { clientWidth: 720, clientHeight: 450 },
     camera: new PerspectiveCamera(48, 1.6, 0.1, 600),
+    controls: { target: new Vector3() },
     lots: [{ id: 'site', position: new Vector3(0, 0, -10) }],
     onLabels,
   });
