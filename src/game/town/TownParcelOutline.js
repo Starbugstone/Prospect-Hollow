@@ -6,10 +6,10 @@ import { DoubleSide, Mesh, MeshBasicMaterial, RingGeometry, Shape, ShapeGeometry
 // geometry lies flat around the parcel's centre; callers place and turn it.
 // One warm amber for every map's selection outline: it reads on the valley's pale
 // ground and on grey regolith alike.
-export const PARCEL_OUTLINE_COLOR = '#e09a2c';
+const PARCEL_OUTLINE_COLOR = '#e09a2c';
 // The valley's frame: clear of the parcel and wide enough to read on pale ground.
 export const PARCEL_OUTLINE = Object.freeze({ gap: 0.12, width: 0.14 });
-export function parcelOutlineGeometry(parcel, { gap, width } = PARCEL_OUTLINE) {
+function parcelOutlineGeometry(parcel, { gap, width } = PARCEL_OUTLINE) {
   if (parcel.shape === 'rect') {
     const frame = (grow) => {
       const left = parcel.minX - parcel.x - grow,

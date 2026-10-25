@@ -117,7 +117,7 @@ New settlements reuse these contracts; they never get a reduced copy.
   `valleyLot`/`valleyParcel` (`src/game/town/TownParcels.js`): its lot (the fenced lot,
   the airport field or a garden parcel) joined with the drawn model, refreshed when a
   plot is redrawn in place. Each monument site is one circle (`valleySites`). The tap
-  fallback, the selection outline (`parcelOutlineGeometry`, shared with the Moon) and the
+  fallback, the selection outline (`parcelOutlineMesh`, shared with the Moon) and the
   empty-lot fence read it; the upgrade glow hugs the base of what is built on it (parts
   high overhead never widen it) and stays a faint low band (`GLOW_WALL`) on every map. `testing/valley-parcels.test.js`
   covers every plot, site and swap.
