@@ -8,6 +8,8 @@ import {
   frameEnd,
   frameStart,
   setFrameContext,
+  slowEnd,
+  slowStart,
   watchLongTasks,
 } from './TownProfiler';
 
@@ -534,9 +536,11 @@ export class TownDiorama extends TownPrimitives {
       !this.canvas.clientHeight
     )
       return;
-    const started = frameStart();
+    const started = frameStart(),
+      slow = slowStart();
     if (this.drawFrame(true)) this.projectLabels();
     frameEnd('render', started);
+    slowEnd('slow-render', slow);
   }
   projectLabels() {
     const started = frameStart();
@@ -545,7 +549,8 @@ export class TownDiorama extends TownPrimitives {
   }
 
   tick(now) {
-    const started = frameStart();
+    const started = frameStart(),
+      slow = slowStart();
     try {
       if (this.contextUnavailable) return;
       const pacer = (this.pacer ??= new TownFramePacer());
@@ -591,6 +596,7 @@ export class TownDiorama extends TownPrimitives {
       }
     } finally {
       frameEnd('tick', started);
+      slowEnd('slow-tick', slow);
     }
   }
   playRaid(event, onPhase, onComplete, onCue) {

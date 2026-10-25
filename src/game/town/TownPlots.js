@@ -652,10 +652,12 @@ export function tryActivatePlot(d) {
   d.parcels?.set(id, parcel);
   if (id !== 'mine') d.upgradeGlow?.add(id, parcelBounds(parcel));
   d.refreshSelection?.(id);
-  d.navigation.replaceOwner(`plot:${id}`, entries, construction ? 'temporary-reveal' : 'completed');
+  timeTown('activate-navigation', () =>
+    d.navigation.replaceOwner(`plot:${id}`, entries, construction ? 'temporary-reveal' : 'completed'),
+  );
   // A first opening can extend frontage paving or overhead service wires. Refresh
   // only those scenery roots here instead of leaving them stale until a full rebuild.
-  const scenery = refreshScenery(d);
+  const scenery = timeTown('activate-scenery', () => refreshScenery(d));
   const actors = walkers(d);
   const view = d,
     generation = d.generation;
@@ -664,23 +666,28 @@ export function tryActivatePlot(d) {
     for (const actor of actors) yield* repairRoute(view, actor);
   }
   d.cancelRouteWork?.();
-  d.cancelRouteWork = scheduleWork(repairRoutes(), {
+  d.cancelRouteWork = scheduleWork(timedSteps('route-repair', repairRoutes()), {
     isCurrent: () => generation === d.generation,
   });
   if (movingPart) attachMovingPart(d, group, movingPart);
   if (construction)
-    d.construction = new TownConstruction(d, group, movingPart?.rotor, previous.parts, partKeys);
+    d.construction = timeTown(
+      'activate-reveal',
+      () => new TownConstruction(d, group, movingPart?.rotor, previous.parts, partKeys),
+    );
   // New overhead wires replace every plot's service drop, not just this one.
-  d.refreshServiceDrops(scenery.includes('power') ? undefined : id);
+  timeTown('activate-service-drops', () =>
+    d.refreshServiceDrops(scenery.includes('power') ? undefined : id),
+  );
   // A finished airport, port or station modernization restyles its vehicle too.
-  refreshTransport(d, id, d.town);
+  timeTown('activate-transport', () => refreshTransport(d, id, d.town));
   timeTown('activate-statics', () =>
     d.buildingRenderer.sync(d.world.children.filter((child) => child.userData.static)),
   );
   d.clearGroup(previous.group);
   d.frameCache.valid = false;
   timeTown('activate-actors', () => d.rebuildActors());
-  d.render();
+  timeTown('activate-render', () => d.render());
   recordTownTiming('activate', started, { building: id, construction: !!construction, scenery });
   const reveal = d.construction;
   if (reveal)
@@ -911,7 +918,7 @@ export function rebuildTown(
   d.anchors = [];
   d.town = town;
   d.guidedPlot = nextGoal(town)?.id;
-  d.staticScenery.update(d, town);
+  timeTown('update-scenery', () => d.staticScenery.update(d, town));
   const mineWorks = d.staticScenery.entries.get('mine-works')?.group;
   if (mineWorks) updateMineGrowth(mineWorks, mineGrowth(mineProgress));
   // City-scale eras (and Motor Age, built on a city shell) need the wider orbit.
@@ -922,6 +929,7 @@ export function rebuildTown(
       : town.era !== 'frontier'
         ? 160
         : 110;
+  const plotsStarted = performance.now();
   for (const {
     id,
     position: [x, z],
@@ -978,21 +986,24 @@ export function rebuildTown(
     const centre = point(x, groundHeight(x, z) + 2, z);
     d.anchors.push({ id: area.id, site: true, width: 0, position: centre, collection: centre });
   }
+  recordTownTiming('update-plots', plotsStarted);
   if (prepared && prepared !== adopted) d.clearGroup(prepared.group);
   // Model preparation can be expensive. Start the reveal clock on its first visible frame.
   if (d.construction) {
     d.lastFrame = 0;
     d.pacer?.reset();
   }
-  d.refreshServiceDrops();
-  d.navigation = townNavigation(d.world);
+  timeTown('update-service-drops', () => d.refreshServiceDrops());
+  d.navigation = timeTown('update-navigation', () => townNavigation(d.world));
   // A new renderer/catalog may restore a completed wing around an accepted
   // runtime position. Revalidate retained residents once against the rebuilt
   // index before its first frame, including station workers with held routes.
   // Clear positions, identities, work phases and pending destinations stay put.
   const placementRoads = townTracks(town).filter((road) => road.width >= 0.85);
   for (const actors of retainedActorGroups) revalidateRetainedActors(d, actors, placementRoads);
-  d.buildingRenderer.sync(d.world.children.filter((child) => child.userData.static));
+  timeTown('update-statics', () =>
+    d.buildingRenderer.sync(d.world.children.filter((child) => child.userData.static)),
+  );
   d.renderer.shadowMap.needsUpdate = true;
   // A town grown by a tap keeps the camera where the player left it.
   if (d.overview && !d.keepCamera) d.frameTown();
@@ -1000,11 +1011,11 @@ export function rebuildTown(
   drawNavigation(d);
   performanceMark('geometry-ready');
   performanceMark('navigation-ready');
-  d.render();
+  timeTown('update-render', () => d.render());
   const generation = d.generation;
   const populate = () => {
     if (d.disposed || generation !== d.generation) return;
-    const work = d.populateLife(town);
+    const work = timedSteps('life', d.populateLife(town));
     if (d.deferLife)
       d.cancelLifeWork = scheduleWork(work, {
         budget: 8,
