@@ -2112,16 +2112,13 @@ html:has(.town-museum[open]) {
   background: transparent;
 }
 
-/* Optional monuments in the Build tab, below the era's buildings, and New Hollow's
-   lots while the Moon is open. */
-.town-monument-list,
-.town-moon-lot-list {
+/* Optional monuments in the Build tab, below the era's buildings. */
+.town-monument-list {
   margin-top: 28px;
   padding-top: 20px;
   border-top: 1px solid #e1e2d2;
 }
-.town-monument-list h3,
-.town-moon-lot-list h3 {
+.town-monument-list h3 {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -2131,21 +2128,18 @@ html:has(.town-museum[open]) {
     serif;
   color: #3d5446;
 }
-.town-monument-list h3 svg,
-.town-moon-lot-list h3 svg {
+.town-monument-list h3 svg {
   width: 20px;
   height: 20px;
   color: #8a6427;
 }
-.town-monument-list h3 small,
-.town-moon-lot-list h3 small {
+.town-monument-list h3 small {
   font: 600 10px var(--font-body);
   letter-spacing: 1px;
   text-transform: uppercase;
   color: #8a856a;
 }
-.town-monument-list .town-building-list,
-.town-moon-lot-list .town-building-list {
+.town-monument-list .town-building-list {
   margin-top: 14px;
 }
 
