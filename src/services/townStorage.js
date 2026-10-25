@@ -125,9 +125,7 @@ export function createTownStorage({
     }
     const selectedKey = session()?.getItem(SELECTION_KEY) ?? fallbackSelection;
     const account = accountOf();
-    return account && selectedKey.startsWith(ownerPrefix(account.id))
-      ? selectedKey
-      : SAVE_KEY;
+    return account && selectedKey.startsWith(ownerPrefix(account.id)) ? selectedKey : SAVE_KEY;
   }
   function rememberPreference(id, owner) {
     // This is only a default for new tabs, never a save or an ownership record.
