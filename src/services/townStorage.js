@@ -53,11 +53,12 @@ const freshMeta = (name = 'My town') => ({
   conflict: null,
 });
 export const ACCOUNT_KEY = 'prospect-account-v2';
-export const TOWN_PREFIX = 'prospect-town-v2:';
+// Every account town key starts with its owner's prefix.
+const ownerPrefix = (owner) => `prospect-town-v2:${owner}:`;
 const SELECTION_KEY = 'prospect-selected-town-v2';
 const PREFERRED_PREFIX = 'prospect-preferred-town-v2:';
 const CREATION_PREFIX = 'prospect-creation-v2:';
-export const townKey = (id, owner) => (owner ? `${TOWN_PREFIX}${owner}:${id}` : SAVE_KEY);
+export const townKey = (id, owner) => (owner ? `${ownerPrefix(owner)}${id}` : SAVE_KEY);
 // Only ever passed straight to write(), which serializes it; no defensive copy.
 const rootOf = (entry) => ({
   ...entry.profile,
@@ -124,7 +125,7 @@ export function createTownStorage({
     }
     const selectedKey = session()?.getItem(SELECTION_KEY) ?? fallbackSelection;
     const account = accountOf();
-    return account && selectedKey.startsWith(`${TOWN_PREFIX}${account.id}:`)
+    return account && selectedKey.startsWith(ownerPrefix(account.id))
       ? selectedKey
       : SAVE_KEY;
   }
@@ -334,7 +335,7 @@ export function createTownStorage({
       const store = storage();
       for (let i = 0; i < (store?.length ?? 0); i++) {
         const key = store.key(i);
-        if (key?.startsWith(`${TOWN_PREFIX}${owner}:`)) {
+        if (key?.startsWith(ownerPrefix(owner))) {
           const entry = entryOf(read(key));
           if (entry) result.push(entry);
         }
@@ -408,7 +409,7 @@ export function createTownStorage({
       for (let i = 0; i < (storage()?.length ?? 0); i++) {
         const key = storage().key(i);
         if (
-          key.startsWith(`${TOWN_PREFIX}${owner}:`) ||
+          key.startsWith(ownerPrefix(owner)) ||
           key === `${PREFERRED_PREFIX}${owner}` ||
           key === `${CREATION_PREFIX}${owner}`
         )
