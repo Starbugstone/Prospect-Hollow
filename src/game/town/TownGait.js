@@ -1,3 +1,8 @@
+// A valley villager's walking pace in world units per second: residents, visitors,
+// VIPs and anyone leaving a worksite. The sheriff patrols faster; Moon settlers keep
+// their own pace along the ring.
+export const VILLAGER_WALK_SPEED = 0.55;
+
 // The walk cycle every villager shares, in the valley and on the Moon: legs stride
 // with a bending knee and arms swing against them. `step` advances by a full turn per
 // stride; standing figures relax their arms. Figures follow the villager skeleton:

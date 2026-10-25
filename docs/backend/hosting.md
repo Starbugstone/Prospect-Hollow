@@ -19,13 +19,13 @@ This replacement starts at schema version **10** on a fresh database; `backend/b
 
 ## FTP release
 
-Run `./scripts/build-release.sh` on a machine with Docker. It creates `release/app` with the frontend, PHP application, dependencies and the generated public appearance allowlist. It refuses to overwrite an existing bundle.
+Run `./scripts/build-release.sh` on a machine with Docker. It creates `release/app` with the frontend, PHP application, dependencies and `backend/content`, freshly generated: the public appearance allowlist with the Town Honours catalog, and the save rules. It refuses to overwrite an existing bundle.
 
 The host needs PHP 8.3+, PDO with `pdo_mysql` or `pdo_pgsql`, **intl**, ctype, iconv and the extensions required by Composer; MySQL 8+/InnoDB or PostgreSQL; HTTPS; SMTP; Apache rewrite and headers modules. Only `app/public` may be web-accessible. Put code, credentials and `var` outside the web root. Give PHP write access to `var` only.
 
-Import `backend/schema.sql` (MySQL) or `backend/schema-postgresql.sql` into a **new** database, or run `php bin/migrate.php`. Configure `app/.env.local` using `backend/.env.example`: exact HTTPS `APP_ORIGIN`, random `APP_SECRET`, database connection, encrypted SMTP and verified sender. Require SMTP TLS and retain certificate verification. Configure PHP `post_max_size=16M`, `upload_max_filesize=2M` and the web-server request limit **9 MiB**. The API limits town uploads to **8 MiB plus 64 KiB** for the request wrapper, while other requests retain the **1,100,000-byte** limit. The gameplay snapshot excluding queued integrity actions, and the stored snapshot after acknowledgment, remain limited to **1 MiB**. Keep error display disabled.
+Create a **new** database and run `php bin/migrate.php`: it installs `backend/schema.sql` (MySQL) or `backend/schema-postgresql.sql`, then every later schema version in order. Importing the base schema alone leaves the database at version 10, which `/api/health` never reports as ready. Configure `app/.env.local` using `backend/.env.example`: exact HTTPS `APP_ORIGIN`, random `APP_SECRET`, database connection, encrypted SMTP and verified sender. Require SMTP TLS and retain certificate verification. Configure PHP `post_max_size=16M`, `upload_max_filesize=2M` and the web-server request limit **9 MiB**. The API limits town uploads to **8 MiB plus 64 KiB** for the request wrapper, while other requests retain the **1,100,000-byte** limit. The gameplay snapshot excluding queued integrity actions, and the stored snapshot after acknowledgment, remain limited to **1 MiB**. Keep error display disabled.
 
-`APP_ORIGIN` checks scheme, host and port. Configure `TRUSTED_PROXIES` only for known proxies when TLS terminates upstream. Do not weaken the origin check. Verify `/api/v1/health`, email sign-in, attachment, offline play/reconnect and account recovery on the host before release. No deployment has been performed by this change.
+`APP_ORIGIN` checks scheme, host and port. Configure `TRUSTED_PROXIES` only for known proxies when TLS terminates upstream. Do not weaken the origin check. Verify `/api/v1/health`, email sign-in, attachment, offline play/reconnect and account recovery on the host before release.
 
 The server-time money estimate defaults to `SAVE_MONEY_GUARD_MODE=observe`: unusually large batches are marked for review without stopping cloud saves. The server-only `hold` mode refuses batches above the carried allowance while preserving local progress and the last cloud save. This is a generous heuristic, not proof of cheating; see [save integrity](save-integrity.md#server-time-money-estimate) before enabling enforcement. Budget checks use server milliseconds and run only during existing synchronization.
 
@@ -43,7 +43,7 @@ Run `php bin/cleanup.php` daily to remove expired sessions (player and admin), l
 
 Use `./scripts/backup-database.sh` for local PostgreSQL dumps. Protect backups as account data; restore into a separate database and verify account recovery and revisions before switching traffic. Hosting backup schedules, SMTP delivery and disaster recovery remain operator responsibilities. The previous benchmark measured the removed authoritative prototype and is historical evidence only.
 
-Quality CI tests both databases, the packaged application and the hosting hooks. Independent o2switch pollers deploy the exact `preprod` commit to preprod and the exact `main` commit to production, each only after successful push CI for its configured branch. GitHub uploads no deployment artifact. This branch removes the Azure workflow and disables Vercel Git deployments; these files must reach `main` as part of the production migration.
+Quality CI tests both databases, the packaged application and the hosting hooks. Independent o2switch pollers deploy the exact `preprod` commit to preprod and the exact `main` commit to production, each only after successful push CI for its configured branch. GitHub uploads no deployment artifact. There is no Azure workflow, and `vercel.json` disables Vercel Git deployments on every branch, `main` included.
 
 ## Admin panel
 

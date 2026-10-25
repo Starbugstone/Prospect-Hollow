@@ -1,6 +1,6 @@
-const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
+const { chromium, preparePage, testOrigin } = require('./helpers.cjs');
 (async () => {
   const browser = await chromium.launch({ headless: true });
   try {
@@ -34,60 +34,14 @@ const fs = require('node:fs');
       });
       context.setDefaultTimeout(20000);
       const mode = { offline: false, reject: 0, expired: false };
-      await context.addInitScript(
-        ({ owner, id, remote }) => {
-          const get = HTMLCanvasElement.prototype.getContext;
-          HTMLCanvasElement.prototype.getContext = function (kind, ...args) {
-            return /webgl/i.test(kind) ? null : get.call(this, kind, ...args);
-          };
-          if (!localStorage.getItem('prospect-account-v2')) {
-            localStorage.setItem(
-              'prospect-account-v2',
-              JSON.stringify({
-                account: { id: owner, email: 'review@example.test' },
-                generation: crypto.randomUUID(),
-              }),
-            );
-            localStorage.setItem(
-              'prospect-town-v2:' + owner + ':' + id,
-              JSON.stringify({
-                ...remote.profile,
-                _cloud: {
-                  version: 2,
-                  active: {
-                    id,
-                    owner,
-                    name: remote.name,
-                    baseRevision: remote.revision,
-                    sequence: 0,
-                    dirty: false,
-                  },
-                },
-              }),
-            );
-          }
-          window.cloudModule = async () => {
-            const active = document.querySelector('#app').__vue_app__._instance.setupState.cloud;
-            const urls = performance
-              .getEntriesByType('resource')
-              .map((e) => e.name)
-              .filter((url) => new URL(url).pathname === '/src/services/cloudProfile.js')
-              .reverse();
-            for (const url of urls) {
-              const module = await import(url);
-              if (module.cloud === active) return module;
-            }
-            throw new Error('Cannot locate the mounted cloud module.');
-          };
-          window.stores = () => {
-            const p = document.querySelector('#app').__vue_app__._context.provides;
-            return Object.getOwnPropertySymbols(p)
-              .map((k) => p[k])
-              .find((v) => v?._s?.get)?._s;
-          };
+      await context.addInitScript(preparePage, {
+        webgl: false,
+        account: {
+          id: owner,
+          email: 'review@example.test',
+          towns: [{ id, name: remote.name, revision: remote.revision, profile: remote.profile }],
         },
-        { owner, id, remote },
-      );
+      });
       await context.route('**/api/v1/**', async (route) => {
         const req = route.request(),
           path = new URL(req.url()).pathname.split('/api/v1/')[1];
@@ -152,7 +106,7 @@ const fs = require('node:fs');
       });
       const page = await context.newPage();
       page.on('pageerror', (error) => errors.push(error.message));
-      await page.goto((process.env.PH_TEST_ORIGIN || 'http://127.0.0.1:8192') + '/?play=' + id);
+      await page.goto(testOrigin() + '/?play=' + id);
       await page.getByRole('button', { name: 'Play level 1', exact: true }).waitFor();
       return { context, page, mode };
     }

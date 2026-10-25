@@ -3,7 +3,7 @@
 // node scripts/measure-economy-balance.mjs normal.json continuous.json
 import { readFileSync } from 'node:fs';
 import { createServer } from 'vite';
-import { CurvePath, LineCurve3, Vector3, Group } from 'three';
+import { loadValleyVipTour } from './vip-tour-harness.mjs';
 const normal = JSON.parse(readFileSync(process.argv[2], 'utf8')).results;
 const continuous = JSON.parse(readFileSync(process.argv[3], 'utf8')).results;
 const loader = await createServer({
@@ -22,21 +22,9 @@ try {
   const { miningDepthBonus } = await load('data/economy');
   const { CONTINUOUS_COIN_CAP } = await load('data/rewards');
   const { vipSpend, VIP_SPEND_VERSION } = await load('data/vipVisits');
-  const { vipVisitor } = await load('data/villagers');
-  const { TownVipArrivals } = await load('game/town/TownVipArrivals');
-  const { TownItineraries, updateItinerary } = await load('game/town/TownItineraries');
-  const { TownNavigation, walkPath } = await load('game/town/TownNavigation');
-  const { trainJourney, boatJourney } = await load('game/town/TownEraActivity');
-  const { airplaneArrival } = await load('game/town/TownAviation');
-  const { elevatorArrival } = await load('game/town/buildings/future');
-  const journeys = {
-    railDepot: trainJourney,
-    riverPort: boatJourney,
-    airport: airplaneArrival,
-    spaceElevator: elevatorArrival,
-  };
+  const { valleyVipTour } = await loadValleyVipTour(load);
   const vipCache = new Map();
-  // Same authored-tour harness as measure-vip-income, applied to the CURRENT
+  // The authored-tour harness of measure-vip-income, applied to the CURRENT
   // unfinished town, one uninterrupted hour at a time. No rate extrapolation.
   function vipHour(town, seed) {
     const key = JSON.stringify([
@@ -50,51 +38,8 @@ try {
     if (vipCache.has(key)) return vipCache.get(key);
     let purchases = 0;
     const dt = 0.1;
-    const d = {
-      town,
-      elapsed: 0,
-      navigation: new TownNavigation(),
-      world: new Group(),
-      visitorTransports: new Map(),
-      actors: [],
-      lifeReady: true,
-      drawVip: (s, visit) => vipVisitor(s, visit),
-      setVillagerIdentity: (actor, identity) => {
-        actor.root.userData.villager = identity;
-      },
-      onVipSpend: () => purchases++,
-      person: ({ route, seed, visitor }) => {
-        const curve = new CurvePath();
-        const points = route.map(([x, z]) => new Vector3(x, 0.07, z));
-        points.push(...points.slice(1, -1).reverse(), points[0]);
-        for (let i = 1; i < points.length; i++) curve.add(new LineCurve3(points[i - 1], points[i]));
-        return {
-          root: new Group(),
-          curve,
-          duration: curve.getLength() / 0.55,
-          seed,
-          visitor,
-          walkPath: walkPath(points.map((p) => p.toArray())),
-          motion: { routeDistance: 0 },
-        };
-      },
-      animatePerson: (actor) => {
-        actor.motion ??= { routeDistance: 0 };
-        updateItinerary(d, actor, d.elapsed);
-        if (!actor.routeResting) actor.motion.routeDistance += 0.55 * dt;
-      },
-    };
-    d.itineraries = new TownItineraries(d);
-    d.vipArrivals = new TownVipArrivals(d, seed * 7919 + 7);
-    d.vipArrivals.attach(town);
-    for (const actor of d.vipArrivals.actors)
-      for (const step of d.itineraries.prepare(actor)) void step;
-    for (let tick = 0; tick < 3600 / dt; tick++) {
-      d.elapsed = tick * dt;
-      for (const [id, journey] of Object.entries(journeys))
-        d.visitorTransports.set(id, { ...journey(d.elapsed), root: { visible: true } });
-      d.vipArrivals.update();
-    }
+    const tour = valleyVipTour({ town, seed, dt, onPurchase: () => purchases++ });
+    for (let tick = 0; tick < 3600 / dt; tick++) tour.frame(tick * dt);
     vipCache.set(key, purchases);
     return purchases;
   }

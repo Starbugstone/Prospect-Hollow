@@ -4,6 +4,7 @@ import { Vector3 } from 'three';
 import { prepareRoute, routePose } from './TownRoutes';
 import { finishWork } from '../PresentationWork';
 import { cellKey } from './TownMath';
+import { VILLAGER_WALK_SPEED } from './TownGait';
 
 // Physical footprint plus a visible gap. No mesh intersections or physics bodies.
 import { NPC_BODY_MARGIN } from '../../data/townClearances';
@@ -619,7 +620,7 @@ export function prepareActorWalk(d, actor, offset = 0.9) {
     actor.motion.routeDistance = routeDistanceAt(actor.walkPath, actor.motion.x, actor.motion.z);
   actor.navigation = d.navigation;
   actor.walkSpeed ??= actor.curve.getLength() / actor.duration;
-  actor.duration = actor.walkPath.total / (actor.walkSpeed || 0.55);
+  actor.duration = actor.walkPath.total / (actor.walkSpeed || VILLAGER_WALK_SPEED);
   actor.duration = Math.max(0.1, actor.duration);
   actor.walkPose = standingPose(actor);
 }

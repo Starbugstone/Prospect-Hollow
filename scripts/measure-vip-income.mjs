@@ -3,7 +3,8 @@
 // It measures the valley and New Hollow on the Moon, each for its own active hours
 // (the valley rests while the Moon map is open).
 import { createServer } from 'vite';
-import { CurvePath, LineCurve3, Vector3, Group } from 'three';
+import { Group } from 'three';
+import { loadValleyVipTour } from './vip-tour-harness.mjs';
 const server = await createServer({
   server: { middlewareMode: true },
   appType: 'custom',
@@ -15,13 +16,8 @@ try {
   const { vipVisitor } = await load('data/villagers');
   const { vipVisitCount, vipVisitBuildings, vipSpend, VIP_SPEND_VERSION } =
     await load('data/vipVisits');
-  const { TownVipArrivals } = await load('game/town/TownVipArrivals');
-  const { TownItineraries, updateItinerary } = await load('game/town/TownItineraries');
-  const { TownNavigation, walkPath } = await load('game/town/TownNavigation');
+  const { valleyVipTour, VILLAGER_WALK_SPEED } = await loadValleyVipTour(load);
   const { TownPrimitives } = await load('game/town/TownPrimitives');
-  const { trainJourney, boatJourney } = await load('game/town/TownEraActivity');
-  const { airplaneArrival } = await load('game/town/TownAviation');
-  const { elevatorArrival } = await load('game/town/buildings/future');
   const { saloonIncomeRate } = await load('game/town/TownRules');
   const { arrivalSeed } = await load('data/visitorArrivals');
   const { MoonScene } = await load('game/town/moon/MoonScene');
@@ -70,66 +66,18 @@ try {
   });
 
   // The valley: the production transport schedules, arrivals and street itineraries.
-  const journeys = {
-    railDepot: trainJourney,
-    riverPort: boatJourney,
-    airport: airplaneArrival,
-    spaceElevator: elevatorArrival,
-  };
   const planStops = [0, 0, 0];
   const valley = simulate(16, (seed, totals) => {
-    const d = {
+    const tour = valleyVipTour({
       town,
-      elapsed: 0,
-      navigation: new TownNavigation(),
-      world: new Group(),
-      visitorTransports: new Map(),
-      actors: [],
-      lifeReady: true,
-      drawVip: (s, visit) => vipVisitor(s, visit),
-      setVillagerIdentity: (actor, identity) => {
-        actor.root.userData.villager = identity;
-        totals.admitted++;
-      },
-      onVipSpend: () => totals.purchases++,
-      person: ({ route, seed, visitor }) => {
-        const curve = new CurvePath();
-        const points = route.map(([x, z]) => new Vector3(x, 0.07, z));
-        points.push(...points.slice(1, -1).reverse(), points[0]);
-        for (let i = 1; i < points.length; i++) curve.add(new LineCurve3(points[i - 1], points[i]));
-        return {
-          root: new Group(),
-          curve,
-          duration: curve.getLength() / 0.55,
-          seed,
-          visitor,
-          walkPath: walkPath(points.map((p) => p.toArray())),
-          motion: { routeDistance: 0 },
-        };
-      },
-      animatePerson: (actor) => {
-        actor.motion ??= { routeDistance: 0 };
-        updateItinerary(d, actor, d.elapsed);
-        if (!actor.routeResting) actor.motion.routeDistance += 0.55 * dt;
-      },
-    };
-    d.itineraries = new TownItineraries(d);
-    d.vipArrivals = new TownVipArrivals(d, seed * 7919 + 7);
-    d.vipArrivals.attach(town);
-    for (const actor of d.vipArrivals.actors) {
-      for (const step of d.itineraries.prepare(actor)) void step;
+      seed,
+      dt,
+      onAdmit: () => totals.admitted++,
+      onPurchase: () => totals.purchases++,
+    });
+    for (const actor of tour.arrivals.actors)
       for (const plan of actor.itinerary?.plans ?? []) planStops[plan.stops.length]++;
-    }
-    return {
-      arrivals: d.vipArrivals,
-      transports: d.visitorTransports,
-      frame(time) {
-        d.elapsed = time;
-        for (const [id, journey] of Object.entries(journeys))
-          d.visitorTransports.set(id, { ...journey(time), root: { visible: true } });
-        d.vipArrivals.update();
-      },
-    };
+    return tour;
   });
 
   // New Hollow: the Moon scene's own transports, VIP arrivals and suited tours, walked
@@ -189,8 +137,7 @@ try {
   console.log(
     JSON.stringify(
       {
-        model:
-          'Active town hours (valley 96, Moon 384); real schedules, VIP admission and authored tours (valley 0.55 units/s, Moon settler pace); excludes crowd/geometry collisions and interruptions',
+        model: `Active town hours (valley 96, Moon 384); real schedules, VIP admission and authored tours (valley ${VILLAGER_WALK_SPEED} units/s, Moon settler pace); excludes crowd/geometry collisions and interruptions`,
         vipEconomyVersion: VIP_SPEND_VERSION,
         visitCountDistribution: visitCounts.map((n) => n / 100000),
         saloonCoinsPerHour: saloonIncomeRate(town),

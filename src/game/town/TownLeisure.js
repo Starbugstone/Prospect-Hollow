@@ -3,6 +3,7 @@ import { buildingWalk } from './TownPedestrians';
 import { leisureModel } from './LeisureAssets';
 import { available } from './assets/MeshCatalog';
 import { PLOTS } from './TownLayout';
+import { VILLAGER_WALK_SPEED } from './TownGait';
 
 // A bounded cast on the existing scene clock. No timers, reward callbacks or
 // independent animation loops: pause, hidden views and reduced motion all apply.
@@ -57,7 +58,7 @@ export function addLeisureActivity(d, town) {
   const update = (time) => {
     visit.visible = path.total > 0;
     if (!visit.visible) return;
-    const pose = routeStepPose(path, time * 0.55, (visit.userData.pose ??= {}));
+    const pose = routeStepPose(path, time * VILLAGER_WALK_SPEED, (visit.userData.pose ??= {}));
     visit.position.set(pose.x, pose.y, pose.z);
     visit.rotation.y = pose.heading;
     legs.forEach((group) =>
