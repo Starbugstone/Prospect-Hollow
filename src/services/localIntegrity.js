@@ -56,7 +56,6 @@ const INTERNAL_ACTIONS = new Set([
   'recordAction',
   'completeProject',
   'rewardProjects',
-  'awardReward',
   'updateEarnedHonours',
 ]);
 // Every other campaign action must be read-only: the plugin leaves it unwrapped, so a

@@ -260,14 +260,13 @@ describe('ore order collection', () => {
       moves: 10000,
       oreOrders: [{ color: 'ruby', target: 2, progress: 1 }],
     });
-    expect(game.goalTotal).toBe(2);
-    expect(game.goalProgress).toBe(1);
+    expect(game.remainingOre).toBe(1);
     game.completeLevel();
     expect(game.levelCleared).toBe(false);
     expect(game.sessionActive).toBe(true);
     game._applyScoring([{ collectedJewels: [createGem('ruby')], cleared: [0] }]);
     game.completeLevel();
-    expect(game.goalProgress).toBe(2);
+    expect(game.remainingOre).toBe(0);
     expect(game.levelCleared).toBe(true);
   });
 

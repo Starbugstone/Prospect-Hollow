@@ -89,7 +89,6 @@ it('does not give arbitrary commits, callbacks or reward helpers a mutation capa
       campaign.records[1] = { stars: 3 };
     }),
   ).toBe(false);
-  expect(campaign.awardReward({ kind: 'coins', quantity: 99999 })).toBe(false);
   expect(campaign.recordAction('reward-grant', { quantity: 99999 })).toBe(false);
   expect(campaign.completeProject({ ...campaign.town, coins: 99999 })).toBe(false);
   expect(campaign.town.coins).toBe(0);

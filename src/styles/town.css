@@ -65,7 +65,7 @@
 .town-view {
   max-width: 1368px;
   margin: auto;
-  padding: 38px 24px 22px;
+  padding: 24px;
   font-family: 'Segoe UI', sans-serif;
 }
 .town-view button:focus-visible,
@@ -86,6 +86,7 @@
   min-width: 0;
 }
 .town-map-frame {
+  scroll-margin-top: 112px;
   background: #eadab5;
   border: 1px solid #ded5bd;
   border-radius: 17px;
@@ -269,15 +270,9 @@
   }
 }
 @media (max-width: 850px) {
-  .town-view {
-    padding-bottom: 102px;
-  }
-  .town-view {
-    padding-top: 27px;
-  }
   .town-building-preview {
     grid-column: 1;
-    grid-row: 2 / 7;
+    grid-row: 2 / 5;
     align-self: center;
   }
   .town-restored-note {
@@ -326,9 +321,6 @@
   .world-nav {
     gap: 2px;
   }
-  .town-view {
-    padding: 24px 14px 105px;
-  }
   .town-map-frame {
     border-radius: 11px;
   }
@@ -349,17 +341,6 @@
 /* The SVG mine illustration on the landing page and in the tour. */
 .town-mine-entrance {
   cursor: pointer;
-  outline: none;
-}
-.town-mine-entrance:focus-visible .mine-hit-area {
-  stroke: #385c48;
-  stroke-width: 5;
-  fill: #f9edcd22;
-}
-.town-mine-entrance:hover .mine-label rect,
-.town-mine-entrance:focus-visible .mine-label rect {
-  fill: #345644;
-  stroke-width: 4;
 }
 .mine-cart {
   animation: mine-cart-roll 7s ease-in-out infinite;
@@ -460,9 +441,6 @@
   border-radius: inherit;
 }
 @media (max-width: 550px) {
-  .town-scene {
-    aspect-ratio: 1;
-  }
   .town-scene-labels button {
     min-height: 32px;
     padding: 7px;
@@ -932,9 +910,6 @@
 }
 
 @media (max-width: 850px) {
-  .town-building-preview {
-    grid-row: 2 / 5;
-  }
   .town-project-progress,
   .town-service {
     grid-column: 1 / -1;
@@ -1051,9 +1026,6 @@
     padding: 0.4rem 0.7rem;
   }
 }
-.town-map-frame {
-  scroll-margin-top: 90px;
-}
 .town-has-raid .town-raid-banner {
   position: absolute;
   top: 0;
@@ -1105,13 +1077,6 @@
   position: sticky;
   top: 0;
   z-index: 50;
-}
-.town-view {
-  padding-top: 24px;
-  padding-bottom: 24px;
-}
-.town-map-frame {
-  scroll-margin-top: 112px;
 }
 .town-journal-content {
   background: #eeedde;
@@ -1975,8 +1940,7 @@ html:has(.town-museum[open]) {
   line-height: 1.45;
 }
 .town-labels-hidden .town-scene-labels,
-.town-labels-hidden .town-moon-lots,
-.town-labels-hidden .mine-label {
+.town-labels-hidden .town-moon-lots {
   display: none;
 }
 .town-in-cinematic > button,
@@ -1985,8 +1949,7 @@ html:has(.town-museum[open]) {
 .town-in-cinematic .town-action-icons,
 .town-in-cinematic .town-resource-bar,
 .town-in-cinematic .town-settlement-notice,
-.town-in-cinematic .town-moon-header,
-.town-in-cinematic .mine-label {
+.town-in-cinematic .town-moon-header {
   visibility: hidden;
 }
 
@@ -2119,16 +2082,13 @@ html:has(.town-museum[open]) {
   background: transparent;
 }
 
-/* Optional monuments in the Build tab, below the era's buildings, and New Hollow's
-   lots while the Moon is open. */
-.town-monument-list,
-.town-moon-lot-list {
+/* Optional monuments in the Build tab, below the era's buildings. */
+.town-monument-list {
   margin-top: 28px;
   padding-top: 20px;
   border-top: 1px solid #e1e2d2;
 }
-.town-monument-list h3,
-.town-moon-lot-list h3 {
+.town-monument-list h3 {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -2138,21 +2098,18 @@ html:has(.town-museum[open]) {
     serif;
   color: #3d5446;
 }
-.town-monument-list h3 svg,
-.town-moon-lot-list h3 svg {
+.town-monument-list h3 svg {
   width: 20px;
   height: 20px;
   color: #8a6427;
 }
-.town-monument-list h3 small,
-.town-moon-lot-list h3 small {
+.town-monument-list h3 small {
   font: 600 10px var(--font-body);
   letter-spacing: 1px;
   text-transform: uppercase;
   color: #8a856a;
 }
-.town-monument-list .town-building-list,
-.town-moon-lot-list .town-building-list {
+.town-monument-list .town-building-list {
   margin-top: 14px;
 }
 

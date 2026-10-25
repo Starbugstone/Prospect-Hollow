@@ -32,9 +32,13 @@ afterEach(() => {
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });
+// Grants a chest drop directly and saves it, as the reward routes do.
 const award = (id, quantity = 1) => {
+  const campaign = useCampaignStore();
   const drop = CHEST_DROPS.find((drop) => drop.id === id);
-  return useCampaignStore().awardReward({ ...drop, quantity });
+  const granted = grantReward(campaign, { ...drop, quantity });
+  if (granted) campaign.save();
+  return granted;
 };
 
 describe('A village with lasting choices', () => {
@@ -215,7 +219,7 @@ describe('Bounded, saved chest rewards', () => {
       const campaign = useCampaignStore(),
         slot = campaign.powers.find((p) => p.id === id);
       slot.quantity = 2;
-      campaign.awardReward({ id, label: slot.label, kind: 'power', quantity: 3 });
+      grantReward(campaign, { id, label: slot.label, kind: 'power', quantity: 3 });
       expect(slot.quantity).toBe(3);
       expect(campaign.town.coins).toBe(20);
       const result = award(id);

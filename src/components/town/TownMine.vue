@@ -3,12 +3,7 @@
     class="town-mine-entrance"
     :data-era="era"
     :data-profile="profile.key"
-    :role="decorative ? undefined : 'button'"
-    :tabindex="decorative ? undefined : 0"
     :aria-label="t('Enter the mine: play level {value0}', { value0: level })"
-    @click="$emit('enter')"
-    @keydown.enter.prevent="$emit('enter')"
-    @keydown.space.prevent="$emit('enter')"
   >
     <rect
       class="mine-hit-area"
@@ -205,25 +200,6 @@
           r="5"
           fill="#394543"
       /></g>
-      <g v-if="!decorative" class="mine-label" transform="translate(0 103)"
-        ><rect
-          x="-93"
-          y="-17"
-          width="186"
-          height="35"
-          rx="17"
-          fill="#e1f0c0"
-          stroke="#e7d1a0"
-          stroke-width="2"
-        /><text
-          y="6"
-          text-anchor="middle"
-          fill="#405b35"
-          font-family="Georgia, serif"
-          font-size="18"
-          >{{ t('Mine · Level') }} {{ level }} →</text
-        ></g
-      >
     </g>
   </g>
 </template>
@@ -235,7 +211,6 @@ import { mineGrowth } from '../../data/mineGrowth';
 import { t } from '../../i18n';
 const props = defineProps({
   level: { type: Number, default: 1 },
-  decorative: Boolean,
   era: { type: String, default: 'frontier' },
 });
 const appearance = computed(() => mineAppearance(props.era));
@@ -255,5 +230,4 @@ const hillsideBuildings = computed(() =>
     { feature: 'lantern-sorting', x: 32, y: -80 },
   ].filter(({ feature }) => features.value.has(feature)),
 );
-defineEmits(['enter']);
 </script>

@@ -78,7 +78,7 @@ describe('Expansion campaign', () => {
     });
     const campaign = useCampaignStore();
     expect(campaign.nextLevel).toBe(37);
-    expect(campaign.totalStars).toBe(72);
+    expect(Object.values(campaign.records).reduce((sum, record) => sum + record.stars, 0)).toBe(72);
     for (let id = 37; id <= 60; id++) {
       expect(campaign.isUnlocked(id)).toBe(true);
       expect(campaign.isUnlocked(id + 1)).toBe(false);

@@ -241,7 +241,6 @@
   gap: 0.7rem;
 }
 .account-benefits span,
-.account-avatar,
 .account-envelope,
 .town-slot-plus {
   display: grid;
@@ -253,8 +252,7 @@
   background: #e9efdf;
   color: #315940;
 }
-.account-benefits svg,
-.account-avatar svg {
+.account-benefits svg {
   width: 1.1rem;
   height: 1.1rem;
 }
@@ -735,21 +733,6 @@
 .account-danger summary,
 .account-panel .account-danger h2 {
   color: #a53a2a;
-}
-.account-identity {
-  display: flex;
-  align-items: center;
-  gap: 0.8rem;
-}
-.account-identity > span:last-child {
-  display: grid;
-}
-.account-identity small {
-  color: #64756a;
-}
-.account-avatar {
-  width: 2.5rem;
-  height: 2.5rem;
 }
 @keyframes cloud-spin {
   to {

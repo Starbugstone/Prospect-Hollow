@@ -366,8 +366,6 @@ export const useCampaignStore = defineStore('campaign', {
     },
     completedCount: (state) => Object.keys(state.records).length,
     completion: (state) => campaignCompletion(state.records),
-    totalStars: (state) =>
-      Object.values(state.records).reduce((sum, record) => sum + record.stars, 0),
   },
   actions: {
     // Persist a change atomically: apply it, save, and restore every listed field if the
@@ -979,15 +977,6 @@ export const useCampaignStore = defineStore('campaign', {
         ? { projects: projects.map((project) => project.id), hammers }
         : null;
       return hammers;
-    },
-    awardReward(reward) {
-      const at = Date.now();
-      const granted = grantReward(this, reward);
-      if (granted) {
-        this.recordAction('reward-grant', { reward, at });
-        this.save();
-      }
-      return granted;
     },
     resolveBandits() {
       const at = Date.now();
