@@ -1,5 +1,6 @@
 import { ERAS } from './eras';
 import { canAffordPrice, currencyBalance, payPrice } from './townCurrency';
+import { HOME_SETTLEMENT, MOON_SETTLEMENT, settlementId, settlementPlaces } from './settlements';
 
 // Era-sponsored monument sites open every other era, alongside the timeless Monument
 // Square. Each era site offers three designs drawn from what that era brings to the
@@ -397,7 +398,7 @@ const plots = [
     [0, -33],
     ['first-footprints', 'earthrise-arch', 'orbital-beacon'],
     'south',
-    'moon',
+    MOON_SETTLEMENT,
   ],
   [
     'moonstone-garden',
@@ -406,7 +407,7 @@ const plots = [
     [48, -102],
     ['moonstone-fountain', 'homeward-obelisk', 'lunar-pavilion'],
     'south',
-    'valley',
+    HOME_SETTLEMENT,
     'moonstones',
     moonstoneLevelPrices,
   ],
@@ -417,7 +418,7 @@ const plots = [
     [-16, -30],
     ['moonstone-henge', 'earthlight-spire', 'crater-amphitheatre'],
     'south',
-    'moon',
+    MOON_SETTLEMENT,
     'moonstones',
     moonstoneLevelPrices,
   ],
@@ -429,7 +430,7 @@ export const PERSONAL_AREAS = plots.map(
     era,
     positions: [position],
     facing: facing ?? 'south',
-    settlement: settlement ?? 'valley',
+    settlement: settlement ?? HOME_SETTLEMENT,
     currency: currency ?? 'coins',
     ...(levelPrices === undefined ? {} : { levelPrices }),
     choices,
@@ -439,9 +440,9 @@ export const PERSONAL_AREAS = plots.map(
 );
 // Incomplete historical definitions belong to the valley; unknown settlements do
 // not acquire a renderer implicitly. Save normalization always uses the full catalog.
-export const areaSettlement = (area) => area?.settlement ?? 'valley';
-export const areasForSettlement = (settlement = 'valley', areas = PERSONAL_AREAS) =>
-  areas.filter((area) => areaSettlement(area) === settlement);
+export const areaSettlement = settlementId;
+export const areasForSettlement = (settlement = HOME_SETTLEMENT, areas = PERSONAL_AREAS) =>
+  settlementPlaces(settlement, areas);
 export const areaUnlocked = (town, area) =>
   ERAS.findIndex((e) => e.id === town.era) >= ERAS.findIndex((e) => e.id === area.era);
 // Five permanent milestones; era growth never adds another bill. Each paid level is

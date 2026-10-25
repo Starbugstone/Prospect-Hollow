@@ -1,3 +1,4 @@
+import { HOME_SETTLEMENT, MOON_SETTLEMENT, settlementId } from './settlements';
 // A visitor transport publishes its actual stopped vehicle and arrival cycle.
 // Valley entrance routes use offsets from the building plot; destinations use the
 // existing pedestrian street graph. A source in another settlement names it and walks
@@ -52,15 +53,15 @@ export const VISITOR_ARRIVAL_SITES = {
   },
   // New Hollow's transports: guests ride a climber down the ribbon or land on the saucer
   // pad, then step out of the lot's hatch onto the public path (`moonApproaches`).
-  ribbonLanding: { settlement: 'moon' },
-  saucerPad: { settlement: 'moon' },
+  ribbonLanding: { settlement: MOON_SETTLEMENT },
+  saucerPad: { settlement: MOON_SETTLEMENT },
 };
 const ARRIVAL_SOURCES = Object.keys(VISITOR_ARRIVAL_SITES);
 /** The visitor sources of one settlement, in their stable order. */
 export const visitorTransports = (settlement) =>
-  ARRIVAL_SOURCES.filter((id) => (VISITOR_ARRIVAL_SITES[id].settlement ?? 'valley') === settlement);
-export const VISITOR_TRANSPORTS = visitorTransports('valley');
-export const MOON_VISITOR_TRANSPORTS = visitorTransports('moon');
+  ARRIVAL_SOURCES.filter((id) => settlementId(VISITOR_ARRIVAL_SITES[id]) === settlement);
+export const VISITOR_TRANSPORTS = visitorTransports(HOME_SETTLEMENT);
+export const MOON_VISITOR_TRANSPORTS = visitorTransports(MOON_SETTLEMENT);
 // Each source draws its own VIPs. Valley sources keep their seeds; later ones follow on.
 export const arrivalSeed = (seed, id) => seed + ARRIVAL_SOURCES.indexOf(id) * 101;
 // Valley visitors who walk in from the road become VIPs only without a valley transport.

@@ -177,6 +177,7 @@ import {
   monumentWork,
 } from '../../data/townLandmarks';
 import TownMoonMonument from './TownMoonMonument.vue';
+import { MOON_SETTLEMENT } from '../../data/settlements';
 import { layoutMoonLabels, moonMapLabel } from '../../game/town/moon/MoonLabelLayout';
 import {
   compactMoonViewport,
@@ -254,7 +255,7 @@ const mapLots = computed(() =>
   Object.entries(MOON_LOTS).map(([id, [x, z]]) => ({ id, x: x * 1.3, y: 6 + z * 1.05 })),
 );
 const monumentSites = computed(() =>
-  areasForSettlement('moon').filter((area) => areaUnlocked(props.town, area)),
+  areasForSettlement(MOON_SETTLEMENT).filter((area) => areaUnlocked(props.town, area)),
 );
 const mapMonuments = computed(() =>
   monumentSites.value.map((area) => ({

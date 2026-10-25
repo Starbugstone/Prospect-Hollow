@@ -494,9 +494,9 @@ describe('the valley’s arrival rules on the Moon', () => {
       'utf8',
     );
     expect(scene).toMatch(/@vip-spend="emit\('vip-spend', \$event\)"/);
-    expect(scene).toMatch(/@villager-label="showMoonVillagerLabel"/);
+    expect(scene).toMatch(/@villager-label="showSettlementVillagerLabel"/);
     expect(scene).toMatch(
-      /showMoonVillagerLabel = \(label\) => moonOpen\.value && showVillagerLabel/,
+      /showSettlementVillagerLabel = \(label\) =>\s+shown\.value !== HOME_SETTLEMENT && showVillagerLabel/,
     );
   });
 });

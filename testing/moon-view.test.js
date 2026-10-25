@@ -162,7 +162,12 @@ it('rebuilds the Moon scene for what it draws, not for coins', async () => {
 describe('The Moon’s upgrade glow follows the valley’s rule', () => {
   it('glows the lots whose indicator is "upgrade", and none during a cinematic', async () => {
     const moon = sfc(SCENE);
-    const view = find(sceneAst, (node) => node.tag === 'TownMoonView');
+    // TownScene draws the open settlement's map, the Moon's being TownMoonView.
+    const view = find(
+      sceneAst,
+      (node) => node.tag === 'component' && bound(node, 'is') === 'settlementMap',
+    );
+    expect(moon.scriptSetup.content).toMatch(/SETTLEMENT_MAPS = \{ moon: TownMoonView \}/);
     expect(bound(view, 'upgrade-ids')).toBe('cinematic ? [] : upgradeIds');
     expect(moon.scriptSetup.content).toMatch(/indicators\.value\[id\] === 'upgrade'/);
     const scene = { setUpgradeable: vi.fn(), setLabelActions: vi.fn() };
@@ -220,19 +225,19 @@ describe('Navigation reaches the camera of the map on screen', () => {
       },
     });
     const moon = { cameraAction: vi.fn(), focusPlace: vi.fn(() => true) };
-    state.moonView.value = moon;
+    state.settlementView.value = moon;
     return { state, valley: state.scene, moon };
   }
   const press = (target) => ({ pointerId: 1, clientX: 5, clientY: 5, button: 0, target });
-  const onMoon = { closest: (selector) => (selector === '.town-moon-view' ? {} : null) };
+  const onMoon = { closest: (selector) => (selector === '.town-settlement-map' ? {} : null) };
   const onValley = { closest: () => null };
 
   it('keeps Moon input out of the valley’s taps and camera', async () => {
     let covered;
     const { state, valley } = await townScene((setup) => {
-      setup.moonOpen.value = true;
+      setup.shown.value = 'moon';
       covered = setup.scene.setCovered.mock.calls.at(-1);
-      setup.moonOpen.value = false;
+      setup.shown.value = 'valley';
     });
     // While the Moon is open, the valley's camera gestures are off.
     expect(covered).toEqual([true]);
@@ -249,7 +254,7 @@ describe('Navigation reaches the camera of the map on screen', () => {
   it('sends keys, the Village reset and Build rows to the Moon while it is open', async () => {
     const { state, valley, moon } = await townScene();
     const key = (name) => ({ key: name, preventDefault: vi.fn() });
-    state.moonOpen.value = true;
+    state.shown.value = 'moon';
     state.cameraKey(key('ArrowLeft'));
     state.resetView();
     expect(moon.cameraAction.mock.calls).toEqual([['left'], ['reset']]);
@@ -259,7 +264,7 @@ describe('Navigation reaches the camera of the map on screen', () => {
     expect(valley.focusPlace).not.toHaveBeenCalled();
     // A valley place closes the Moon and moves the valley's camera.
     await state.focusPlace('well');
-    expect(state.moonOpen.value).toBe(false);
+    expect(state.shown.value).toBe('valley');
     expect(valley.focusPlace).toHaveBeenCalledWith('well');
     state.cameraKey(key('Home'));
     expect(valley.cameraAction).toHaveBeenCalledWith('reset');

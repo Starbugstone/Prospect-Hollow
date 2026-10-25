@@ -1,6 +1,9 @@
 import { advanceStoredPuzzleProduction } from './puzzleProduction';
-import { MOON_LOTS, moonstoneKeepsakes } from './moonSettlement';
+import { moonstoneKeepsakes } from './moonSettlement';
 import { wholeNumberOrZero as count } from './saveFormat';
+// town.js creates each town's moonstones; this module only reads its building list
+// inside functions, after both modules have loaded.
+import { MOONSTONE_BUILDINGS } from './town';
 
 export const MOONSTONE_VERSION = 2;
 export const MOONSTONE_ECONOMY = Object.freeze({
@@ -52,7 +55,7 @@ export function earnMoonstones(town, amount) {
   };
 }
 export function rewardMoonBuilding(before, after, id) {
-  const amount = Object.hasOwn(MOON_LOTS, id)
+  const amount = MOONSTONE_BUILDINGS.includes(id)
     ? Math.max(0, (after.buildings[id] ?? 0) - (before.buildings[id] ?? 0))
     : 0;
   return amount ? earnMoonstones(after, amount) : after;

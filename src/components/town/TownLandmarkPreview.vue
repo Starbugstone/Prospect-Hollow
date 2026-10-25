@@ -419,6 +419,7 @@
 import { computed, useId } from 'vue';
 import { MOONSTONE_LANDMARK_FORMS } from '../../game/town/TownMoonstoneLandmarks';
 import { LANDMARK_BY_ID, PERSONAL_AREAS, LANDMARK_PROGRESSION } from '../../data/townLandmarks';
+import { settlementOf } from '../../data/settlements';
 const props = defineProps({
   choice: { type: String, required: true },
   stage: { type: Number, default: 1 },
@@ -433,11 +434,14 @@ const option = computed(() => ({
 }));
 const form = computed(() => option.value.form);
 const mineral = computed(() => MOONSTONE_LANDMARK_FORMS.includes(form.value));
-const lunar = computed(
-  () => PERSONAL_AREAS.find((area) => area.choices.includes(props.choice))?.settlement === 'moon',
+// The site's settlement (settlements.js): its own sky and stone.
+const settlement = computed(() =>
+  settlementOf(PERSONAL_AREAS.find((area) => area.choices.includes(props.choice))),
 );
-// The town's paint, or the stone, trim and brass every unpainted monument shares.
-const walls = computed(() => props.paint?.walls || (lunar.value ? '#e5e8e7' : '#ddd1b5'));
+const lunar = computed(() => settlement.value.art === 'moon');
+// The town's paint, or the settlement's stone and the trim and brass every unpainted
+// monument shares.
+const walls = computed(() => props.paint?.walls || settlement.value.monumentStone);
 const trim = computed(() => props.paint?.trim || '#655343');
 const accent = computed(() => props.paint?.accent || '#cc954f');
 const timeless = computed(

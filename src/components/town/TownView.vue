@@ -665,7 +665,8 @@
 </template>
 <script setup>
 import TownSettlementNotice from './TownSettlementNotice.vue';
-import { townEventStage } from '../../game/town/TownEventSettlement';
+import { placeSettlement, townEventStage } from '../../game/town/TownEventSettlement';
+import { HOME_SETTLEMENT, settlementId } from '../../data/settlements';
 import { TOWN_PRESENTATIONS } from '../../data/townPresentations';
 import TownPersonalise from './TownPersonalise.vue';
 import TownMonumentSite from './TownMonumentSite.vue';
@@ -922,12 +923,11 @@ const projectGoal = computed(() => {
   return open.find((project) => project.id === campaign.townProjectFocus) ?? open[0] ?? null;
 });
 // Build lists the settlement on screen first (the valley or New Hollow), in the same
-// order and with the same tap that buys, finishes or opens a place in both.
-const placeSettlement = (id) =>
-  BUILDING_BY_ID[id]?.settlement ?? AREA_BY_ID[id]?.settlement ?? 'valley';
+// order and with the same tap that buys, finishes or opens a place in both. Each row
+// carries its place's settlement (settlements.js).
 const hereFirst = (places) =>
   places
-    .map((place, n) => [placeSettlement(place.id) === settlement.value ? 0 : 1, n, place])
+    .map((place, n) => [settlementId(place) === settlement.value ? 0 : 1, n, place])
     .sort((a, b) => a[0] - b[0] || a[1] - b[1])
     .map(([, , place]) => place);
 const buildList = computed(() => {
@@ -939,7 +939,7 @@ const buildList = computed(() => {
   );
 });
 const townScene = ref(null);
-const settlement = ref('valley');
+const settlement = ref(HOME_SETTLEMENT);
 const eraRevealed = ref(false);
 const eraReady = ref(false);
 const eraFallback = ref(false);
@@ -1011,6 +1011,7 @@ const monumentSites = computed(() =>
       const prices = area.choices.map((id) => landmarkPrice(area, id, 1));
       return {
         id: area.id,
+        settlement: area.settlement,
         name: area.label,
         icon: landmarkPayment(town.value, area, 0).icon,
         colour: '#c9a35a',
@@ -1022,6 +1023,7 @@ const monumentSites = computed(() =>
     const upgrade = landmarkOffer(town.value, area, choice);
     return {
       id: area.id,
+      settlement: area.settlement,
       name: LANDMARK_BY_ID[choice].label,
       icon: landmarkPayment(town.value, area, 0).icon,
       colour: LANDMARK_BY_ID[choice].colour,
@@ -1255,7 +1257,7 @@ function closeMuseum() {
 const firstLightsOpen = computed(
   () =>
     props.active &&
-    settlement.value === 'valley' &&
+    settlement.value === HOME_SETTLEMENT &&
     town.value.era === 'industrial' &&
     town.value.buildings.powerHouse > 0 &&
     !town.value.firstLightsSeen &&
@@ -1305,8 +1307,7 @@ const playingRaid = computed(() => eventStage.value.raid);
 const openingPresentation = computed(() => eventStage.value.presentation);
 const waitingEvent = computed(() => eventStage.value.waiting);
 function watchWaitingEvent() {
-  if (waitingEvent.value?.settlement === 'moon') townScene.value?.openMoon();
-  else townScene.value?.closeMoon();
+  townScene.value?.showSettlement(waitingEvent.value?.settlement);
 }
 
 watch(
@@ -1351,7 +1352,8 @@ const { playRaidCue } = useTownAudio(() => ({
   raid: playingRaid.value ? `${playingRaid.value.id}-${raidPhase.value}` : null,
   raidKind: playingRaid.value ? eventKind(playingRaid.value) : null,
   // Village panels pause the diorama, but its music and ambience keep playing.
-  paused: !props.active || paused.value || eraPlaying.value || settlement.value === 'moon',
+  paused:
+    !props.active || paused.value || eraPlaying.value || settlement.value !== HOME_SETTLEMENT,
 }));
 const event = computed(() => town.value.events[BANDIT_EVENT]);
 const readyRaidDefenses = computed(() =>
@@ -1398,7 +1400,7 @@ const coaching = computed(
   () =>
     props.active &&
     !!tutorial.value &&
-    settlement.value === 'valley' &&
+    settlement.value === HOME_SETTLEMENT &&
     !activeRaid.value &&
     !town.value.transition?.pending &&
     !openingPresentation.value &&
@@ -1601,9 +1603,10 @@ function showConstruction(keepDirectory = false, locate = true) {
     keepCamera: locate === KEEP_CAMERA,
   };
   if (!keepDirectory) mapFrame.value?.scrollIntoView({ behavior: 'instant', block: 'nearest' });
-  // Moon work happens on the Moon map.
-  if (!keepDirectory && BUILDING_BY_ID[selected.value]?.settlement === 'moon')
-    nextTick(() => townScene.value?.openMoon());
+  // Work in another settlement happens on that settlement's map.
+  const where = placeSettlement(selected.value);
+  if (!keepDirectory && where !== HOME_SETTLEMENT)
+    nextTick(() => townScene.value?.showSettlement(where));
 }
 function finishBuilding(id, keepDirectory = false, locate = true) {
   performanceMark('build-tap');

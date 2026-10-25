@@ -8,12 +8,13 @@ import {
   monumentWork,
   siteYaw,
 } from '../../../data/townLandmarks';
+import { MOON_SETTLEMENT } from '../../../data/settlements';
 import { buildLandmark } from '../TownLandmarks';
 import { moonParcelPad } from '../buildings/moon';
 import { buildMonumentWorks } from '../TownMonumentWorks';
 import { TownPresentation } from '../TownPresentation';
 
-export const MOON_MONUMENT_AREAS = areasForSettlement('moon');
+export const MOON_MONUMENT_AREAS = areasForSettlement(MOON_SETTLEMENT);
 export const moonMonumentSignature = (town) =>
   JSON.stringify(
     MOON_MONUMENT_AREAS.map((area) => [
