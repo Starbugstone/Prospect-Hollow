@@ -1940,8 +1940,7 @@ html:has(.town-museum[open]) {
   line-height: 1.45;
 }
 .town-labels-hidden .town-scene-labels,
-.town-labels-hidden .town-moon-lots,
-.town-labels-hidden .mine-label {
+.town-labels-hidden .town-moon-lots {
   display: none;
 }
 .town-in-cinematic > button,
@@ -1950,8 +1949,7 @@ html:has(.town-museum[open]) {
 .town-in-cinematic .town-action-icons,
 .town-in-cinematic .town-resource-bar,
 .town-in-cinematic .town-settlement-notice,
-.town-in-cinematic .town-moon-header,
-.town-in-cinematic .mine-label {
+.town-in-cinematic .town-moon-header {
   visibility: hidden;
 }
 
