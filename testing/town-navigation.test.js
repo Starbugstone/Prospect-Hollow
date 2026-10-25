@@ -548,3 +548,43 @@ it('never caches a route that was paused while footprints changed', () => {
   expect(fresh).not.toBe(step.value);
   for (const point of fresh.points) expect(navigation.clear(point)).toBe(true);
 });
+
+// Issue #54: a new building used to make every walker re-check its whole route in the
+// same frame. Prepared paths whose own points stay clear of the change keep their
+// clearance; paths near it are checked again as before.
+it('renews the clearance of prepared paths away from a changed footprint only', () => {
+  const nav = new TownNavigation([pole(0, 0, 1), pole(0, 10, 1)]);
+  const near = nav.plan([
+    [-4, 0.07, 0],
+    [4, 0.07, 0],
+  ]);
+  const far = nav.plan([
+    [-4, 0.07, 20],
+    [4, 0.07, 20],
+  ]);
+  // A route's prepared record describes the straight samples it was planned from;
+  // its detour bends outside them, where a late footprint must still be noticed.
+  const detour = nav.route(
+    prepareRoute([
+      [-4, 10],
+      [4, 10],
+    ]),
+  );
+  const bend = detour.points.reduce((a, p) => (Math.abs(p[2] - 10) > Math.abs(a[2] - 10) ? p : a));
+  expect(Math.abs(bend[2] - 10)).toBeGreaterThan(1);
+  let revision = nav.revision;
+  nav.replaceOwner('plot:late', [{ ...pole(0, 1.6, 0.2), owner: 'plot:late' }]);
+  expect(nav.revision).toBe(revision + 1);
+  expect(far.clearance.revision).toBe(nav.revision);
+  expect(detour.clearance.revision).toBe(nav.revision);
+  expect(near.clearance.revision).toBe(revision);
+  expect(near.invalidated).toBe(true);
+  revision = nav.revision;
+  const outward = Math.sign(bend[2] - 10) * 0.35;
+  nav.replaceOwner('plot:later', [
+    { ...pole(bend[0], bend[2] + outward, 0.05), owner: 'plot:later' },
+  ]);
+  expect(detour.invalidated).toBeUndefined();
+  expect(detour.clearance.revision).toBe(revision);
+  expect(far.clearance.revision).toBe(nav.revision);
+});
