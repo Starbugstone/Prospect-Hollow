@@ -1,6 +1,12 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const { chromium, preparePage, testOrigin } = require('./helpers.cjs');
+const {
+  chromium,
+  closeTownPanel,
+  openNextStep,
+  preparePage,
+  testOrigin,
+} = require('./helpers.cjs');
 (async () => {
   const browser = await chromium.launch({ headless: true });
   try {
@@ -68,7 +74,8 @@ const { chromium, preparePage, testOrigin } = require('./helpers.cjs');
       const page = await context.newPage();
       page.on('pageerror', (e) => errors.push(e.message));
       await page.goto(origin + (signedIn ? '/?play=' + ids[0] : '/play'));
-      await page.getByRole('button', { name: 'Play level 1', exact: true }).waitFor();
+      await openNextStep(page, 1);
+      await closeTownPanel(page);
       return { page, context };
     }
     const { page } = await device(true);

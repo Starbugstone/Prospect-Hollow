@@ -1,6 +1,12 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const { chromium, preparePage, testOrigin } = require('./helpers.cjs');
+const {
+  chromium,
+  closeTownPanel,
+  openNextStep,
+  preparePage,
+  testOrigin,
+} = require('./helpers.cjs');
 (async () => {
   const browser = await chromium.launch({ headless: true });
   try {
@@ -107,7 +113,8 @@ const { chromium, preparePage, testOrigin } = require('./helpers.cjs');
       const page = await context.newPage();
       page.on('pageerror', (error) => errors.push(error.message));
       await page.goto(testOrigin() + '/?play=' + id);
-      await page.getByRole('button', { name: 'Play level 1', exact: true }).waitFor();
+      await openNextStep(page, 1);
+      await closeTownPanel(page);
       return { context, page, mode };
     }
     const a = await device(),
@@ -157,7 +164,9 @@ const { chromium, preparePage, testOrigin } = require('./helpers.cjs');
     // Real independent browser stores model phone + computer with one cloud town.
     b.mode.offline = true;
     await earn(b, 7);
+    await openNextStep(a.page);
     await a.page.getByRole('button', { name: 'Build for free', exact: true }).click();
+    await closeTownPanel(a.page);
     await earn(a, 10);
     await sync(a);
     assert.equal(remote.profile.town.coins, 60);
@@ -180,7 +189,8 @@ const { chromium, preparePage, testOrigin } = require('./helpers.cjs');
     assert.equal(copies.length, 2);
     assert.deepEqual(copies.map((c) => c.coins).sort(), [57, 65]);
     await b.page.reload();
-    await b.page.getByRole('button', { name: 'Play level 1', exact: true }).waitFor();
+    await openNextStep(b.page);
+    await closeTownPanel(b.page);
     assert.equal((await archive(b)).length, 2);
     await b.page.getByRole('button', { name: 'Compare saves', exact: true }).click();
     await b.page.getByRole('combobox').selectOption(firstId);
@@ -272,7 +282,8 @@ const { chromium, preparePage, testOrigin } = require('./helpers.cjs');
       );
     }, cachedId);
     await b.page.getByRole('dialog').waitFor({ state: 'hidden' });
-    await b.page.getByRole('button', { name: 'Play level 1', exact: true }).waitFor();
+    await openNextStep(b.page);
+    await closeTownPanel(b.page);
     const callsWhileExpired = requests.length;
     await b.page.getByRole('button', { name: 'Sign in again', exact: true }).click();
     await b.page.getByText('Towns stored on this device', { exact: true }).click();

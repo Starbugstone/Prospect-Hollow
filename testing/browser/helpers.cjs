@@ -119,6 +119,25 @@ async function openFixture(page, name, html) {
   await page.goto(`${testOrigin()}/${name}`);
 }
 
+// The town is ready once the Build tab's Next Step panel offers the next level, as the
+// player sees it. Opens the Build tab and returns that panel's "Play level" button, for
+// `level` or any level; `closeTownPanel` returns to the village. Tabs are found by id;
+// the button label is English.
+async function openNextStep(page, level) {
+  // The dev server loads the town module by module; allow for a slow first visit.
+  await page.locator('.town-tab-build').click({ timeout: 120000 });
+  const play = page.locator('.town-build-next').getByRole('button', {
+    name: level ? `Play level ${level}` : /^Play level \d+$/,
+    exact: !!level,
+  });
+  await play.waitFor();
+  return play;
+}
+async function closeTownPanel(page) {
+  await page.locator('.town-tab-village').click();
+  await page.locator('.town-build-next').waitFor({ state: 'detached' });
+}
+
 module.exports = {
   chromium,
   SOFTWARE_WEBGL,
@@ -129,4 +148,6 @@ module.exports = {
   fixturePage,
   moonPage,
   openFixture,
+  openNextStep,
+  closeTownPanel,
 };
