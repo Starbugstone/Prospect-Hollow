@@ -1,5 +1,6 @@
 import { horizonMaterial } from './TownAtmosphere';
 import { finishWork } from '../PresentationWork';
+import { placedCopy } from './TownGeometries';
 import * as THREE from 'three';
 import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 
@@ -147,10 +148,10 @@ export class TownStatics {
             sources.push(object);
         });
         for (const object of sources) {
-          const geometry = object.geometry.clone();
-          geometry.applyMatrix4(object.matrixWorld);
-          if (object.material.userData.signAtlas)
-            addSign(signKey(object.material, object.castShadow), geometry);
+          const sign = !!object.material.userData.signAtlas;
+          // Colored batches drop texture coordinates (see `colored`).
+          const geometry = placedCopy(object.geometry, object.matrixWorld, sign ? null : 'uv');
+          if (sign) addSign(signKey(object.material, object.castShadow), geometry);
           else
             (object.castShadow ? geometries : shadowless).push(
               colored(geometry, object.material.color),
