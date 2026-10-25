@@ -12,7 +12,8 @@ scripts run with `blender --background --python <script>`.
 | `generate-footprints.mjs`, `footprint-generator.js`      | Builds building footprints; `--check` fails on drift (`npm run check:footprints`).                        |
 | `check-bundle-budget.mjs`                                | Fails the build when a JavaScript chunk exceeds its budget.                                               |
 | `create-era-demo.mjs`                                    | Writes disposable demo saves for each era (`npm run demo:eras`).                                          |
-| `export-public-content.mjs`                              | Writes the building, era and level ids the backend's public-town projection accepts.                      |
+| `export-public-content.mjs`                              | Writes the public-town allowlist and the honours and distinctions catalog the server verifies.            |
+| `export-honour-levels.mjs`                               | Writes the mine elements each level uses for the museum's honour icons; `--check` detects drift.          |
 | `export-save-rules.mjs`, `save-rules.js`                 | Exports shared accounting rules for cloud save integrity; `--check` detects stale definitions.            |
 | `create-integrity-fixtures.mjs`, `integrity-fixtures.js` | Generates actual frontend action snapshots for PHP accounting regression checks; `--check` detects drift. |
 
@@ -30,12 +31,17 @@ scripts run with `blender --background --python <script>`.
 
 ## Balance measurements
 
-| Script                         | Purpose                                                                        |
-| ------------------------------ | ------------------------------------------------------------------------------ |
-| `measure-campaign.mjs`         | Deterministic hint-led playthroughs, optionally against another checkout.      |
-| `measure-town-progression.mjs` | Replays those measurements through construction, rewards and chest strategies. |
-| `compare-town-economy.mjs`     | Replays the same mining payouts against two content revisions.                 |
-| `calibrate-star-targets.mjs`   | Proposes star score targets from measured scores; never overwrites them.       |
+| Script                         | Purpose                                                                                                                                          |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `measure-campaign.mjs`         | Deterministic hint-led playthroughs, optionally against another checkout.                                                                        |
+| `measure-town-progression.mjs` | Replays those measurements through construction, rewards and chest strategies.                                                                   |
+| `compare-town-economy.mjs`     | Replays the same mining payouts against two content revisions.                                                                                   |
+| `calibrate-star-targets.mjs`   | Proposes star score targets from measured scores; never overwrites them.                                                                         |
+| `measure-economy-balance.mjs`  | Plays the measured payouts through the whole economy: production, prices, honours and VIP hours ([economy balance](../docs/economy-balance.md)). |
+| `measure-honours.mjs`          | Reports the fixed honour ranks' pacing from normal and continuous measurements ([honours](../docs/honours.md)).                                  |
+| `measure-moonstones.mjs`       | Compares moonstone workshop production and prices from the measured payouts ([moonstones](../docs/moonstones.md)).                               |
+| `measure-vip-income.mjs`       | VIP arrivals, admissions and purchases per active hour in the valley and on the Moon ([VIP economy](../docs/vip-economy.md)).                    |
+| `vip-tour-harness.mjs`         | The valley VIP tour harness shared by the economy and VIP measurements.                                                                          |
 
 ## Browser reviews (Playwright callbacks)
 
@@ -43,13 +49,25 @@ Start Vite, open a disposable browser session, then run a callback with
 `playwright-cli run-code "$(cat scripts/<file>)"`. The media-tooling skill sets
 up Playwright on WSL.
 
-| Script                                                                  | Purpose                                                                     |
-| ----------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| `verify-mine-feedback.js`                                               | Checks that tips, celebrations and targeting never move or cover the board. |
-| `capture-completion-fireworks.js`                                       | Captures the three-star celebration frames from an era-demo save.           |
-| `capture-vip-review.js`, `package-vip-review.py`                        | Captures the VIP visitor review from era-demo saves and packages it.        |
-| `town-actor-review.html`, `town-actor-review.js`                        | Villager outfit and construction review page served by Vite.                |
-| `era-art-review.html`, `era-art-review.js`, `package-era-art-review.py` | Era review galleries and archives under ignored `output/`.                  |
+| Script                                           | Purpose                                                              |
+| ------------------------------------------------ | -------------------------------------------------------------------- |
+| `capture-completion-fireworks.js`                | Captures the three-star celebration frames from an era-demo save.    |
+| `capture-vip-review.js`, `package-vip-review.py` | Captures the VIP visitor review from era-demo saves and packages it. |
+
+## Review pages (served by Vite)
+
+Open `/scripts/<page>.html` on the dev server. They draw production models and never
+touch a save.
+
+| Script                                                                                         | Purpose                                                                                                 |
+| ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `town-actor-review.html`, `town-actor-review.js`                                               | Villager outfit and construction review page.                                                           |
+| `cozy-building-review.html`, `cozy-building-review.js`                                         | The six cozy-era landmarks with their geometry budgets.                                                 |
+| `cozy-character-review.html`, `cozy-character-review.js`                                       | Canopy and Riverlight villagers and animals.                                                            |
+| `era-art-review.html`, `era-art-review.js`, `era-art-fixtures.js`, `package-era-art-review.py` | Era review galleries built from review towns (`era-art-fixtures.js`), archived under ignored `output/`. |
+
+Pass/fail browser checks, such as the board motion and mine feedback checks, live in
+`testing/browser/` and share `testing/browser/helpers.cjs`.
 
 ## Hosting
 

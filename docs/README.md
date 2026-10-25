@@ -16,6 +16,8 @@ are independent; puzzle moves remain unlimited.
   gravity and floatstones, including the latest mechanic videos.
 - [Town Honours](honours.md): permanent ranks, extension rules and measured goals.
 - [Combined economy balance](economy-balance.md): mining, town income, moonstones and honours pacing.
+- [Moonstones](moonstones.md): the saved Moon resource, workshop production, sales and monuments.
+- [VIP economy](vip-economy.md): VIP purchases in the valley and on the Moon, and their measurements.
 - [Town personalisation](town-personalisation.md): crest, distinctions and monuments.
 
 ## Architecture and artwork
@@ -24,6 +26,10 @@ are independent; puzzle moves remain unlimited.
 - [Era visual guide](wiki/Era-Visual-Guide.md): current art references and reproducible review exports.
 - [Tomorrow City gallery](tomorrow-city-gallery.md): rounded buildings and transport.
 - [Later eras](future-eras.md): Skysail, Stargazer, Moonward and Twin Hollows.
+- [Construction in New Hollow](moon-construction.md): the Moon's shared build flow,
+  worksites, settlers and VIP visitors.
+- [Town visual coherence review](town-visual-coherence-review.md): the October 2026
+  15-era visual audit and its maintained follow-ups.
 - [Airport art](airport-art.md): layout, aircraft animation and verification.
 - [Rendering performance log](town-rendering-performance-log.md): dated measurements and rendering changes.
 
