@@ -55,6 +55,7 @@ import { levelElements } from '../src/data/honours.js';
 import { GEM_TYPES } from '../src/game/engine/GemFactory.js';
 import { FUSION_STYLES } from '../src/game/engine/BonusFusion.js';
 import { freshProfile } from '../src/stores/campaignStore.js';
+import { SUPPORTED_SAVE_SCHEMAS } from '../src/data/saveFormat.js';
 
 // Object keys are canonicalized so the digest survives formatting and irrelevant
 // authoring key-order changes. Content and array order still affect the digest.
@@ -235,6 +236,8 @@ export function buildSaveRules(history = readSaveRuleHistory()) {
   const payload = {
     version: 1,
     profileSchemaVersion: defaultProfile.schemaVersion,
+    // Every save format the game reads; the server accepts the same list.
+    supportedSchemaVersions: SUPPORTED_SAVE_SCHEMAS,
     maxSafeInteger: Number.MAX_SAFE_INTEGER,
     levelCount: LEVEL_COUNT,
     levelsPerChapter: LEVELS_PER_CHAPTER,

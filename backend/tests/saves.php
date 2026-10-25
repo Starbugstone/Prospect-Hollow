@@ -391,7 +391,7 @@ try {
     );
     $bad = profile();
     $bad->schemaVersion = 99;
-    status(
+    $unsupported = status(
         422,
         callApi(
             'PUT',
@@ -400,6 +400,13 @@ try {
             $a,
         ),
         'future schema preserved',
+    );
+    // The accepted list and the error payload both come from the exported save rules.
+    check(
+        $unsupported['code'] === 'save_format_unsupported' &&
+            $unsupported['supportedSchemaVersions'] === $saveRules->supportedSchemaVersions &&
+            in_array($saveRules->profileSchemaVersion, $saveRules->supportedSchemaVersions, true),
+        'unsupported schema reports every accepted save format',
     );
     $bad = profile();
     $bad->extra = str_repeat('x', 1048576);

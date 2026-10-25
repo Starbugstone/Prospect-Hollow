@@ -4,11 +4,11 @@ import { LEVEL_COUNT } from '../data/campaign';
 import { chestReward } from '../data/rewards';
 import { knownChestTerms } from '../data/economy';
 import { MOONSTONE_ECONOMY, MOONSTONE_VERSION, moonstoneCapacity } from '../data/moonstones';
+import { SUPPORTED_SAVE_SCHEMAS, isWholeNumber } from '../data/saveFormat';
 
 export const MAX_SAVE_FILE_BYTES = 5 * 1024 * 1024;
 const invalidSave = () => new Error('Choose a valid Prospect Hollow save JSON file.');
 const isObject = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
-const nonnegativeInteger = (value) => Number.isSafeInteger(value) && value >= 0;
 
 /**
  * Serialize campaign progress into a versioned JSON backup without writing to storage.
@@ -79,7 +79,7 @@ export function parseSaveFile(text) {
     throw invalidSave();
   }
   if (!isObject(file) || file.format !== SAVE_KEY) throw invalidSave();
-  if (file.version !== 1 || ![2, 3, 4].includes(file.profile?.schemaVersion))
+  if (file.version !== 1 || !SUPPORTED_SAVE_SCHEMAS.includes(file.profile?.schemaVersion))
     throw new Error('This save format is not supported by this version of the game.');
   const profile = file.profile;
   if (
@@ -97,28 +97,27 @@ export function parseSaveFile(text) {
     !Object.values(profile.continuousRecords).every(
       (record) =>
         isObject(record) &&
-        nonnegativeInteger(record.coins) &&
+        isWholeNumber(record.coins) &&
         Number.isFinite(record.score) &&
         record.score >= 0,
     ) ||
     !Array.isArray(profile.powers) ||
     !profile.powers.every(
-      (power) =>
-        isObject(power) && typeof power.id === 'string' && nonnegativeInteger(power.quantity),
+      (power) => isObject(power) && typeof power.id === 'string' && isWholeNumber(power.quantity),
     ) ||
     !isObject(profile.town) ||
-    !nonnegativeInteger(profile.town.coins) ||
+    !isWholeNumber(profile.town.coins) ||
     !isObject(profile.town.buildings) ||
-    !Object.values(profile.town.buildings).every(nonnegativeInteger) ||
-    !nonnegativeInteger(profile.builderHammers) ||
-    !nonnegativeInteger(profile.issuedRun) ||
-    !nonnegativeInteger(profile.settledRun) ||
+    !Object.values(profile.town.buildings).every(isWholeNumber) ||
+    !isWholeNumber(profile.builderHammers) ||
+    !isWholeNumber(profile.issuedRun) ||
+    !isWholeNumber(profile.settledRun) ||
     profile.settledRun > profile.issuedRun ||
     !Array.isArray(profile.pendingChests) ||
     !profile.pendingChests.every(
       (chest) =>
         isObject(chest) &&
-        nonnegativeInteger(chest.runId) &&
+        isWholeNumber(chest.runId) &&
         chest.runId > 0 &&
         chest.runId === profile.settledRun &&
         ['completion', 'score', 'speed'].includes(chest.source) &&
@@ -140,19 +139,19 @@ export function parseSaveFile(text) {
     (![1, MOONSTONE_VERSION].includes(profile.town.moonstoneVersion) ||
       (profile.schemaVersion >= 4 && profile.town.moonstoneVersion !== MOONSTONE_VERSION) ||
       (profile.schemaVersion < 4 && profile.town.moonstoneVersion === MOONSTONE_VERSION) ||
-      !nonnegativeInteger(profile.town.moonstones) ||
-      !nonnegativeInteger(profile.town.moonstonesEarned) ||
+      !isWholeNumber(profile.town.moonstones) ||
+      !isWholeNumber(profile.town.moonstonesEarned) ||
       profile.town.moonstones > profile.town.moonstonesEarned ||
       !isObject(profile.town.moonstoneProduction) ||
-      !nonnegativeInteger(profile.town.moonstoneProduction.progress) ||
+      !isWholeNumber(profile.town.moonstoneProduction.progress) ||
       profile.town.moonstoneProduction.progress >= MOONSTONE_ECONOMY.runs ||
       (profile.town.moonstoneVersion === 1
-        ? !nonnegativeInteger(profile.town.moonstoneProduction.charge) ||
+        ? !isWholeNumber(profile.town.moonstoneProduction.charge) ||
           profile.town.moonstoneProduction.charge >
             (profile.town.buildings.moonstoneWorkshop ?? 0) ||
           (profile.town.moonstoneProduction.charge > 0 &&
             profile.town.moonstoneProduction.progress > 0)
-        : !nonnegativeInteger(profile.town.moonstoneProduction.stored) ||
+        : !isWholeNumber(profile.town.moonstoneProduction.stored) ||
           profile.town.moonstoneProduction.stored > moonstoneCapacity(profile.town)))
   )
     throw new Error('This save contains invalid moonstones.');

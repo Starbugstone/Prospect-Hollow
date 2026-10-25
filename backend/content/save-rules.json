@@ -1,6 +1,11 @@
 {
   "version": 1,
   "profileSchemaVersion": 4,
+  "supportedSchemaVersions": [
+    2,
+    3,
+    4
+  ],
   "maxSafeInteger": 9007199254740991,
   "levelCount": 546,
   "levelsPerChapter": 6,
@@ -52195,5 +52200,5 @@
       "seenGeneration": 5
     }
   },
-  "contentDigest": "33d79a1b31326af9548faffb50769db277e0bf7c5c26dbbdcf4a463431491506"
+  "contentDigest": "bffef6cf79af133ea1f7eba2b5531b2161bbbb435d423e8d06e4aeaacd3337d1"
 }

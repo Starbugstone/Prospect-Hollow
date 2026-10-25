@@ -40,14 +40,15 @@ final class SaveService
     }
     public static function profile(mixed $profile): string
     {
+        $supported = SaveIntegrity::supportedSchemaVersions();
         if (
             !($profile instanceof \stdClass) ||
-            !in_array($profile->schemaVersion ?? null, [2, 3, 4], true)
+            !in_array($profile->schemaVersion ?? null, $supported, true)
         ) {
             throw new ApiError(
                 422,
                 'This save needs a compatible game version. Your local copy is safe.',
-                ['code' => 'save_format_unsupported', 'supportedSchemaVersions' => [2, 3]],
+                ['code' => 'save_format_unsupported', 'supportedSchemaVersions' => $supported],
             );
         }
         foreach (['town', 'records', 'continuousRecords'] as $key) {
@@ -95,7 +96,9 @@ final class SaveService
                 ? ['crest' => TownPersonalisation::normalize($town->personalisation)->crest]
                 : [],
             'coins' =>
-                is_int($coins) || is_float($coins) ? max(0, min(9007199254740991, $coins)) : 0,
+                is_int($coins) || is_float($coins)
+                    ? max(0, min(JsonNumber::MAX_SAFE_INTEGER, $coins))
+                    : 0,
             'buildings' => count(
                 array_filter(
                     $buildings,
