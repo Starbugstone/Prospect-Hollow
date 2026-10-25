@@ -22,7 +22,7 @@ export function finishEra(id, era) {
   return ERAS[Math.max(0, introduced)].id;
 }
 export const eraBuildingLevel = (town, id) => {
-  if (town.era === 'frontier' || BUILDING_BY_ID[id]?.introducedEra === town.era)
+  if (town.era === FRONTIER_ERA || BUILDING_BY_ID[id]?.introducedEra === town.era)
     return town.buildings[id] ?? 0;
   // A building this era leaves alone is already finished for it.
   if (!modernizesInEra(town.era, id)) return ERA_BUILDING_LEVELS;
@@ -46,7 +46,7 @@ export function isEraComplete(town) {
     (b) =>
       town.buildings[b.id] === b.upgrades.length &&
       !town.projects[b.id] &&
-      (town.era === 'frontier' || eraBuildingLevel(town, b.id) === ERA_BUILDING_LEVELS),
+      (town.era === FRONTIER_ERA || eraBuildingLevel(town, b.id) === ERA_BUILDING_LEVELS),
   );
 }
 export function eraGate(town) {
@@ -81,7 +81,7 @@ export function normalizeEraState(town, saved) {
     if (ERA_BY_ID[era]?.enabled && eraIndex(era) <= eraIndex(town.era)) town.buildingEras[id] = era;
     const level = saved?.buildingEraLevels?.[id];
     town.buildingEraLevels[id] =
-      town.buildingEras[id] !== 'frontier'
+      town.buildingEras[id] !== FRONTIER_ERA
         ? Number.isInteger(level) && level >= 1 && level <= ERA_BUILDING_LEVELS
           ? level
           : 1

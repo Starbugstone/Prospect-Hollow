@@ -2183,6 +2183,80 @@ foreach (
         $defense . ' completing full cover replays the waiting raid as protected',
     );
 }
+// Saloon takings, raid sizes and losses, the incident event, the construction run cap
+// and incident gates come from the exported catalog (scripts/save-rules.js). A catalog
+// without them refuses replay; one with other numbers rejects the game's own uploads.
+foreach (
+    [
+        ['economy', 'saloonIncome'],
+        ['economy', 'raid'],
+        ['economy', 'banditEvent'],
+        ['maxConstructionRuns'],
+        ['eras', 'frontier', 'incidentGate'],
+    ]
+    as $path
+) {
+    $missing = $rules;
+    $node = &$missing;
+    foreach (array_slice($path, 0, -1) as $key) {
+        $node = &$node[$key];
+    }
+    unset($node[end($path)]);
+    unset($node);
+    integrityDenied(
+        fn() => (new SaveIntegrity($missing))->accept(integrityProfile($rules, $now), null, $now),
+        'save_rules_unsupported',
+        'a catalog without ' . implode('.', $path) . ' refuses replay',
+    );
+}
+foreach ($fixtures->fixtures as $fixture) {
+    if ($fixture->name === 'saloon collection preserves four offline hours') {
+        $saloonFixture = $fixture;
+    }
+}
+$richerSaloon = $rules;
+$richerSaloon['economy']['saloonIncome']['rate'] *= 2;
+$richerValidator = new SaveIntegrity($richerSaloon);
+$saloonStart = $richerValidator->accept(
+    $saloonFixture->before,
+    null,
+    $saloonFixture->baselineServerNow ?? $saloonFixture->serverNow,
+);
+integrityDenied(
+    fn() => $richerValidator->accept(
+        $saloonFixture->after,
+        $saloonStart,
+        $saloonFixture->serverNow,
+    ),
+    'save_integrity_mismatch',
+    'saloon takings follow the exported income rate',
+);
+$biggerGangs = $rules;
+$biggerGangs['economy']['raid']['smallestGang'] = 12;
+foreach ($biggerGangs['economy']['raid']['gangSizes'] as &$step) {
+    $step['riders'] = 12;
+}
+unset($step);
+$gatedFrontier = $rules;
+$gatedFrontier['eras']['frontier']['incidentGate'] = ['railDepot'];
+$otherEvent = $rules;
+$otherEvent['economy']['banditEvent'] = 'another-trail';
+foreach (
+    [
+        'raid sizes follow the exported gang table' => $biggerGangs,
+        'raids wait for an exported incident gate' => $gatedFrontier,
+        'raids are saved under the exported event id' => $otherEvent,
+    ]
+    as $label => $changedRaidRules
+) {
+    $changedRaid = new SaveIntegrity($changedRaidRules);
+    $changedAnchor = $changedRaid->accept(integrityObject($freshRaid), null, $moneyClock);
+    integrityDenied(
+        fn() => $changedRaid->accept(integrityObject($raidAfter), $changedAnchor, $moneyClock),
+        'save_integrity_mismatch',
+        $label,
+    );
+}
 // The removed console testing tools left 'testing' receipts in some development and
 // preprod saves. Like any receipt the game rules do not know, an unacknowledged one never
 // reconciles, whatever the server origin or a leftover SAVE_TESTING_TOOLS flag.

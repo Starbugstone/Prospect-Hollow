@@ -10,6 +10,7 @@
   "levelCount": 546,
   "levelsPerChapter": 6,
   "eraBuildingLevels": 3,
+  "maxConstructionRuns": 2,
   "eraOrder": [
     "frontier",
     "river-rail",
@@ -34,6 +35,7 @@
       "requiresPower": false,
       "electricity": false,
       "incident": "bandits",
+      "incidentGate": null,
       "waterworks": [
         0,
         0,
@@ -715,6 +717,10 @@
       "requiresPower": false,
       "electricity": false,
       "incident": "cargo-theft",
+      "incidentGate": [
+        "railDepot",
+        "riverPort"
+      ],
       "waterworks": [
         15,
         30,
@@ -2098,6 +2104,10 @@
       "requiresPower": true,
       "electricity": true,
       "incident": "workshop-fire",
+      "incidentGate": [
+        "powerHouse",
+        "mill"
+      ],
       "waterworks": [
         50,
         55,
@@ -3799,6 +3809,7 @@
       "requiresPower": false,
       "electricity": true,
       "incident": "workshop-fire",
+      "incidentGate": null,
       "waterworks": [
         63,
         66,
@@ -5725,6 +5736,7 @@
       "requiresPower": false,
       "electricity": true,
       "incident": "workshop-fire",
+      "incidentGate": null,
       "waterworks": [
         77,
         85,
@@ -7885,6 +7897,7 @@
       "requiresPower": false,
       "electricity": true,
       "incident": "workshop-fire",
+      "incidentGate": null,
       "waterworks": [
         99,
         105,
@@ -10210,6 +10223,7 @@
       "requiresPower": false,
       "electricity": true,
       "incident": "workshop-fire",
+      "incidentGate": null,
       "waterworks": [
         117,
         123,
@@ -12667,6 +12681,7 @@
       "requiresPower": false,
       "electricity": true,
       "incident": "storm-cleanup",
+      "incidentGate": null,
       "waterworks": [
         137,
         145,
@@ -15337,6 +15352,7 @@
       "requiresPower": false,
       "electricity": true,
       "incident": "storm-cleanup",
+      "incidentGate": null,
       "waterworks": [
         161,
         169,
@@ -18202,6 +18218,7 @@
       "requiresPower": false,
       "electricity": true,
       "incident": "storm-cleanup",
+      "incidentGate": null,
       "waterworks": [
         179,
         181,
@@ -21220,6 +21237,7 @@
       "requiresPower": false,
       "electricity": true,
       "incident": "storm-cleanup",
+      "incidentGate": null,
       "waterworks": [
         185,
         187,
@@ -24391,6 +24409,7 @@
       "requiresPower": false,
       "electricity": true,
       "incident": "storm-cleanup",
+      "incidentGate": null,
       "waterworks": [
         195,
         201,
@@ -27715,6 +27734,7 @@
       "requiresPower": false,
       "electricity": true,
       "incident": "storm-cleanup",
+      "incidentGate": null,
       "waterworks": [
         213,
         219,
@@ -31192,6 +31212,7 @@
       "requiresPower": false,
       "electricity": true,
       "incident": "storm-cleanup",
+      "incidentGate": null,
       "waterworks": [
         233,
         241,
@@ -34822,6 +34843,7 @@
       "requiresPower": false,
       "electricity": true,
       "incident": "storm-cleanup",
+      "incidentGate": null,
       "waterworks": [
         265,
         281,
@@ -51496,11 +51518,36 @@
     },
     "bountyPerCaptured": 10,
     "banditEvent": "dusty-trail-visitors",
-    "introOrder": [
-      "well",
-      "farm",
-      "home"
-    ],
+    "saloonIncome": {
+      "rate": 2.25,
+      "happinessPercent": 1.25,
+      "dinerBonus": 0.05
+    },
+    "raid": {
+      "gangSizes": [
+        {
+          "development": 70,
+          "riders": 10
+        },
+        {
+          "development": 50,
+          "riders": 8
+        },
+        {
+          "development": 30,
+          "riders": 6
+        },
+        {
+          "development": 16,
+          "riders": 4
+        }
+      ],
+      "smallestGang": 2,
+      "lossPerRider": 5,
+      "lossCap": 30,
+      "coinShare": 10,
+      "keepCoins": 50
+    },
     "spaceHelmetDebut": "tomorrow",
     "spaceHelmetRewardHours": {
       "owner": 1,
@@ -52200,5 +52247,5 @@
       "seenGeneration": 5
     }
   },
-  "contentDigest": "bffef6cf79af133ea1f7eba2b5531b2161bbbb435d423e8d06e4aeaacd3337d1"
+  "contentDigest": "a734e1f0b745fb20d663e32c91a74191ba97d9e1664eb372b3d4e84d73be038c"
 }

@@ -22,7 +22,6 @@ import {
   roundedForm,
 } from '../src/data/roundedArchitecture';
 import { BUILDINGS, BUILDING_BY_ID, createTown } from '../src/data/town';
-import { purchasePrice } from '../src/data/economy';
 import { advanceEra, eraGate, plotInEra } from '../src/game/town/TownEras';
 import { buildWithHammer, plotUnlocked, upgradeOffer } from '../src/game/town/TownRules';
 import { buildingBenefit } from '../src/game/town/TownBenefits';
@@ -494,9 +493,9 @@ describe('Tomorrow City buildings', () => {
       const major = id === 'skyPods';
       const costs = BUILDING_BY_ID[id].upgrades.map((upgrade) => upgrade.cost);
       expect(offer.cost, id).toBe(costs[0]);
-      // The shared catalog markup applies on top of the era's authored prices.
+      // The era's new-building prices are the quoted prices; landmarks add their premium.
       costs.forEach((price, i) =>
-        expect(price, id).toBe(purchasePrice(Math.ceil(prices[i] * (major ? 1.25 : 1)))),
+        expect(price, id).toBe(Math.ceil(prices[i] * (major ? 1.25 : 1))),
       );
       expect(BUILDING_BY_ID[id].upgrades[0].runs, id).toBe(major ? 2 : 1);
     }

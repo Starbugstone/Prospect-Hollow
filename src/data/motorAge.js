@@ -1,4 +1,3 @@
-import { eraEvolution } from './eras';
 // Four civic projects continue the existing three-stage village progression.
 export const MOTOR_AGE_BUILDINGS = [
   [
@@ -63,8 +62,8 @@ export const MOTOR_AGE_BUILDINGS = [
   unlock,
   introducedEra: 'motor-age',
   stages: ['Empty plot', 'Motor Age · Level 1', 'Motor Age · Level 2', 'Motor Age · Level 3'],
+  // Each level costs the Motor Age's newBuildingPrices (BUILDINGS in town.js).
   upgrades: benefits.map((benefit, index) => ({
-    cost: [4320, 6000, 7920][index],
     runs: index ? 2 : 1,
     title: index ? 'Expand {building}' : 'Build {building}',
     benefit,
@@ -72,7 +71,6 @@ export const MOTOR_AGE_BUILDINGS = [
     speaker: 'Ada · the caretaker',
   })),
 }));
-export const MOTOR_AGE_LEVEL_PRICES = eraEvolution('motor-age').prices;
 export const MOTOR_AGE_VARIANTS = {
   cityHall: [
     'Prospect city hall',

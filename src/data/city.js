@@ -3,9 +3,6 @@ import { ERAS, ERA_BY_ID, eraEvolution } from './eras';
 // City growth adds bounded capacity. Modernizing an existing service does not multiply it.
 export const CITY_ERAS = ERAS.filter((era) => era.evolution.style === 'city').map((era) => era.id);
 export const isCityEra = (era) => eraEvolution(era).style === 'city';
-export const CITY_LEVEL_PRICES = Object.fromEntries(
-  CITY_ERAS.map((era) => [era, eraEvolution(era).prices]),
-);
 // Large civic landmarks carry a modest premium; earnings and rewards stay unchanged.
 export const isMajorCityBuilding = (id) =>
   ['airport', 'skyline', 'cityHomes', 'skyPods', 'spaceElevator', 'ribbonLanding'].includes(id);
@@ -690,11 +687,8 @@ export const CITY_BUILDINGS = [
     'Empty plot',
     ...[1, 2, 3].map((level) => `${ERA_BY_ID[building.introducedEra].label} · Level ${level}`),
   ],
+  // Each level costs the era's newBuildingPrices (BUILDINGS in town.js).
   upgrades: [1, 2, 3].map((level, index) => ({
-    cost: cityBuildingPrice(
-      building.id,
-      eraEvolution(building.introducedEra).newBuildingPrices[index],
-    ),
     runs: isMajorCityBuilding(building.id) && index === 0 ? 2 : 1,
     title: index ? 'Expand {building}' : 'Build {building}',
     benefit: cityBenefit(building.effects, level),

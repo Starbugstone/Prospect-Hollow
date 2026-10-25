@@ -35,8 +35,6 @@ final class Honours
         'continuousBest' => 'number',
         'continuousLevels' => 'map',
     ];
-    /** The town's incident, BANDIT_EVENT in src/data/town.js. */
-    private const INCIDENT = 'dusty-trail-visitors';
     /**
      * Different signed-in players who visited a town, each account once. The owner's own
      * signed-in visits are never recorded; signed-out visits stay in the guestbook only.
@@ -392,15 +390,16 @@ final class Honours
      *
      * @param array<string, mixed> $counts
      * @param array<string, mixed> $town
+     * @param string $incident The town's incident event (economy.banditEvent in save-rules.json).
      * @return array<string, mixed>
      */
-    public static function seed(array $counts, array $town): array
+    public static function seed(array $counts, array $town, string $incident): array
     {
         if (is_int($town['lastCollections']['blacksmith'] ?? null)) {
             $counts['forge'] = max($counts['forge'], 1);
         }
-        $incident = $town['events'][self::INCIDENT] ?? null;
-        if (($incident['seen'] ?? null) === true && self::protectedIncident($incident)) {
+        $event = $town['events'][$incident] ?? null;
+        if (($event['seen'] ?? null) === true && self::protectedIncident($event)) {
             $counts['guardian'] = max($counts['guardian'], 1);
         }
         return $counts;
