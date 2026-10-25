@@ -24,7 +24,6 @@ final class Honours
     private const EVIDENCE_KEYS = 8;
     private const COUNT_KEYS = 64;
     private const VERIFIED = 256;
-    private const MAX = 9007199254740991;
     /** The counters the integrity replay credits and keeps in the checkpoint context. */
     public const REPLAYED = [
         'gems' => 'map',
@@ -36,8 +35,6 @@ final class Honours
         'continuousBest' => 'number',
         'continuousLevels' => 'map',
     ];
-    /** The town's incident, BANDIT_EVENT in src/data/town.js. */
-    private const INCIDENT = 'dusty-trail-visitors';
     /**
      * Different signed-in players who visited a town, each account once. The owner's own
      * signed-in visits are never recorded; signed-out visits stay in the guestbook only.
@@ -376,9 +373,12 @@ final class Honours
         ?string $key = null,
     ): array {
         if ($count > 0 && $key === null) {
-            $counts[$counter] = min(self::MAX, $counts[$counter] + $count);
+            $counts[$counter] = min(JsonNumber::MAX_SAFE_INTEGER, $counts[$counter] + $count);
         } elseif ($count > 0) {
-            $counts[$counter][$key] = min(self::MAX, ($counts[$counter][$key] ?? 0) + $count);
+            $counts[$counter][$key] = min(
+                JsonNumber::MAX_SAFE_INTEGER,
+                ($counts[$counter][$key] ?? 0) + $count,
+            );
         }
         return $counts;
     }
@@ -390,15 +390,16 @@ final class Honours
      *
      * @param array<string, mixed> $counts
      * @param array<string, mixed> $town
+     * @param string $incident The town's incident event (economy.banditEvent in save-rules.json).
      * @return array<string, mixed>
      */
-    public static function seed(array $counts, array $town): array
+    public static function seed(array $counts, array $town, string $incident): array
     {
         if (is_int($town['lastCollections']['blacksmith'] ?? null)) {
             $counts['forge'] = max($counts['forge'], 1);
         }
-        $incident = $town['events'][self::INCIDENT] ?? null;
-        if (($incident['seen'] ?? null) === true && self::protectedIncident($incident)) {
+        $event = $town['events'][$incident] ?? null;
+        if (($event['seen'] ?? null) === true && self::protectedIncident($event)) {
             $counts['guardian'] = max($counts['guardian'], 1);
         }
         return $counts;
@@ -465,7 +466,7 @@ final class Honours
     {
         $goal = $definition['goal'] ?? null;
         $value =
-            $state !== null && self::number($goal)
+            $state !== null && JsonNumber::finite($goal)
                 ? $this->value($definition['measure'] ?? null, $state)
                 : null;
         return $value !== null && $value >= $goal;
@@ -522,11 +523,11 @@ final class Honours
                     ),
                 )
                 : null,
-            'powers' => self::number($threshold)
+            'powers' => JsonNumber::finite($threshold)
                 ? count(
                     array_filter(
                         $state['powers'],
-                        fn($power) => self::number($power['quantity'] ?? null) &&
+                        fn($power) => JsonNumber::finite($power['quantity'] ?? null) &&
                             $power['quantity'] >= $threshold,
                     ),
                 )
@@ -570,7 +571,7 @@ final class Honours
         $best = null;
         foreach ($state['records'] as $id => $record) {
             $score = $record['score'] ?? null;
-            if (!ctype_digit((string) $id) || (int) $id < $from || !self::number($score)) {
+            if (!ctype_digit((string) $id) || (int) $id < $from || !JsonNumber::finite($score)) {
                 continue;
             }
             $target = $this->rules()->starScoreTarget((int) $id);
@@ -623,7 +624,8 @@ final class Honours
                 if (
                     count($evidence) < self::EVIDENCE_KEYS &&
                     preg_match(self::EVIDENCE_KEY, (string) $key) &&
-                    (self::number($value, -INF) || (is_string($value) && mb_strlen($value) <= 40))
+                    (JsonNumber::finite($value, -INF) ||
+                        (is_string($value) && mb_strlen($value) <= 40))
                 ) {
                     $evidence[(string) $key] = $value;
                 }
@@ -702,17 +704,14 @@ final class Honours
     /** A safe non-negative integer, as safeCount() in the client; anything else is zero. */
     private static function count(mixed $value): int
     {
-        return is_int($value) && $value >= 0 && $value <= self::MAX ? $value : 0;
+        return is_int($value) && $value >= 0 && $value <= JsonNumber::MAX_SAFE_INTEGER ? $value : 0;
     }
 
     private static function positive(mixed $value): ?int
     {
-        return is_int($value) && $value > 0 && $value <= self::MAX ? $value : null;
-    }
-
-    private static function number(mixed $value, float $min = 0): bool
-    {
-        return (is_int($value) || is_float($value)) && is_finite((float) $value) && $value >= $min;
+        return is_int($value) && $value > 0 && $value <= JsonNumber::MAX_SAFE_INTEGER
+            ? $value
+            : null;
     }
 
     /** @param array<string, mixed> $honours */

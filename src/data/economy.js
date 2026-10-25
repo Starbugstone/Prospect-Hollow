@@ -42,6 +42,3 @@ export const knownChestTerms = ({ economyVersion = 1, era }) =>
   economyVersion >= 1 &&
   economyVersion <= CHEST_ECONOMY_VERSION &&
   (economyVersion < 3 || Object.hasOwn(ERA_BY_ID, era));
-
-// Agreed per-era level prices. Mining windfalls never increase a quoted price.
-export const RIVER_RAIL_LEVEL_PRICES = eraEvolution('river-rail').prices;

@@ -6,7 +6,6 @@ const projects = [
     'A road to the east bank',
     '#919b94',
     'Cross the river and open the east-bank district.',
-    600,
     [],
   ],
   [
@@ -16,7 +15,6 @@ const projects = [
     'A welcome for river trade',
     '#859b92',
     'A working quay with occasional steamboat visits.',
-    500,
     [],
   ],
   [
@@ -26,7 +24,6 @@ const projects = [
     'The rails reach Prospect Hollow',
     '#b19675',
     'Build the station and its connecting railway together. Room for two visitors, with spare food and water.',
-    650,
     [],
   ],
   [
@@ -36,7 +33,6 @@ const projects = [
     'News from beyond the valley',
     '#baad88',
     'A civic landmark for letters and telegraph dispatches.',
-    400,
     [],
   ],
   [
@@ -46,7 +42,6 @@ const projects = [
     'A home for river and rail freight',
     '#998878',
     'Cargo storage completes the working riverfront.',
-    500,
     [{ id: 'bridge', level: 1 }],
   ],
   [
@@ -56,7 +51,6 @@ const projects = [
     'A bed at the end of the journey',
     '#c2aa8a',
     'Room for two visitors, with spare food and water.',
-    550,
     [{ id: 'bridge', level: 1 }],
   ],
   [
@@ -66,7 +60,6 @@ const projects = [
     'New neighbors across the river',
     '#ba9279',
     'Room for ten residents, if there is food and water.',
-    600,
     [{ id: 'bridge', level: 1 }],
   ],
   [
@@ -76,12 +69,11 @@ const projects = [
     'Fresh food for the larger town',
     '#8f9c7a',
     'Food for ten more people. No coin production.',
-    550,
     [{ id: 'bridge', level: 1 }],
   ],
 ];
 export const RIVER_RAIL_BUILDINGS = projects.map(
-  ([id, name, shortName, purpose, color, benefit, cost, unlock]) => ({
+  ([id, name, shortName, purpose, color, benefit, unlock]) => ({
     id,
     name,
     shortName,
@@ -97,19 +89,16 @@ export const RIVER_RAIL_BUILDINGS = projects.map(
       'River & Rail · Level 2',
       'River & Rail · Level 3',
     ],
+    // Each level costs River & Rail's newBuildingPrices (BUILDINGS in town.js).
     upgrades: [
       {
-        // Later mining pays several times the opening yield. Keep a new
-        // district a sequence of choices instead of one cheap shopping trip.
-        cost: cost * 4,
         runs: id === 'bridge' || id === 'railDepot' ? 2 : 1,
         title: 'Build {building}',
         benefit,
         story: benefit,
         speaker: 'Ada · the caretaker',
       },
-      ...[2, 3].map((level) => ({
-        cost: cost + (level - 1) * 200,
+      ...[2, 3].map(() => ({
         runs: 1,
         title: 'Expand {building}',
         benefit: ['home5', 'market'].includes(id)

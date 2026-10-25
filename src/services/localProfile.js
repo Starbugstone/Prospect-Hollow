@@ -1,4 +1,5 @@
 import { townStorage, SAVE_KEY } from './townStorage';
+import { SAVE_SCHEMA_VERSION } from '../data/saveFormat';
 export { SAVE_KEY };
 let paused = 0,
   loadedId = null,
@@ -18,7 +19,7 @@ export const localProfile = {
       if (current != null) {
         const data = current;
         loadedId = data?._cloud?.active.id ?? null;
-        if (data?.schemaVersion > 4)
+        if (data?.schemaVersion > SAVE_SCHEMA_VERSION)
           return {
             data,
             readOnly: true,

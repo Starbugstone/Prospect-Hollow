@@ -1,12 +1,12 @@
 import { createMoonstones } from './moonstones';
 import { createPersonalisation } from './townPersonalisation';
 import { PROGRESSION_VERSION, hasShortProgression } from './buildingProgression';
-import { purchasePrice, RIVER_RAIL_LEVEL_PRICES } from './economy';
+import { purchasePrice } from './economy';
 import { FRONTIER_BUILDINGS } from './frontier';
-import { FRONTIER_ERA, createEraState } from './eras';
+import { FRONTIER_ERA, createEraState, eraEvolution } from './eras';
 import { RIVER_RAIL_BUILDINGS } from './riverRail';
-import { INDUSTRIAL_BUILDINGS, INDUSTRIAL_LEVEL_PRICES } from './industrial';
-import { CITY_BUILDINGS } from './city';
+import { INDUSTRIAL_BUILDINGS } from './industrial';
+import { CITY_BUILDINGS, cityBuildingPrice } from './city';
 import { MOTOR_AGE_BUILDINGS } from './motorAge';
 import { LEISURE_BUILDINGS } from './leisure';
 
@@ -555,6 +555,13 @@ for (const building of ORIGINAL_BUILDINGS) {
     });
   }
 }
+// A plot an era introduces costs that era's newBuildingPrices at each level, with the
+// major-landmark premium; plots of eras without them pay their own authored cost.
+export const newBuildingPrice = (building, index) => {
+  const price = eraEvolution(building.introducedEra).newBuildingPrices?.[index];
+  return price == null ? null : cityBuildingPrice(building.id, price);
+};
+
 export const BUILDINGS = [
   ...ORIGINAL_BUILDINGS,
   ...FRONTIER_BUILDINGS,
@@ -591,12 +598,7 @@ export const BUILDINGS = [
 ].map((building) => {
   const upgrades = building.upgrades.map((upgrade, index) => ({
     ...upgrade,
-    cost:
-      building.introducedEra === 'river-rail'
-        ? RIVER_RAIL_LEVEL_PRICES[index]
-        : building.introducedEra === 'industrial'
-          ? INDUSTRIAL_LEVEL_PRICES[index]
-          : purchasePrice(upgrade.cost),
+    cost: newBuildingPrice(building, index) ?? purchasePrice(upgrade.cost),
   }));
   const short = hasShortProgression(building.id);
   return {

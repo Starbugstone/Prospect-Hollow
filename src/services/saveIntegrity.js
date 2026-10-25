@@ -2,10 +2,10 @@
 // server anchors its sequence against the last accepted save and checks the rules.
 import { markRaw, toRaw } from 'vue';
 import { jsonCopy } from './jsonCopy';
+import { isWholeNumber as sequence } from '../data/saveFormat';
 // Replacing a journal is reactive, but historical receipts never change. Keeping
 // their tree raw avoids proxying every old command during existing local saves.
 const plain = (value) => (value && typeof value === 'object' ? markRaw(toRaw(value)) : value);
-const sequence = (value) => Number.isSafeInteger(value) && value >= 0;
 const journal = (value) =>
   value?.version === 1 &&
   typeof value.epoch === 'string' &&

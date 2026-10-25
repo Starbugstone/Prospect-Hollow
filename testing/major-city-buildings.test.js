@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest';
 import { BUILDINGS, BUILDING_BY_ID, createTown } from '../src/data/town';
-import { CITY_LEVEL_PRICES } from '../src/data/city';
+import { eraEvolution } from '../src/data/eras';
 import { eraIndex, eraBuildingLevel } from '../src/game/town/TownEras';
 import {
   advanceConstruction,
@@ -53,7 +53,10 @@ it.each(['airport', 'skyline'])(
     town.buildingEras[id] = BUILDING_BY_ID[id].introducedEra;
     for (let level = 0; level < 3; level++) {
       const offer = upgradeOffer(town, id);
-      expect(offer).toMatchObject({ runs: 1, cost: CITY_LEVEL_PRICES.contemporary[level] * 1.25 });
+      expect(offer).toMatchObject({
+        runs: 1,
+        cost: eraEvolution('contemporary').prices[level] * 1.25,
+      });
       town = normalizeTown(advanceConstruction(purchase(town, id, offer.stage)));
       expect(constructionReady(town.projects[id])).toBe(true);
       town = finishConstruction(town, id, offer.stage);

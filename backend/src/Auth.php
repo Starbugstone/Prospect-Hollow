@@ -30,21 +30,13 @@ final class Auth
         }
         return $origin;
     }
-    private function secret(): string
-    {
-        $secret = Env::get('APP_SECRET');
-        if (!is_string($secret) || strlen($secret) < 32) {
-            throw new \RuntimeException('APP_SECRET must be at least 32 bytes.');
-        }
-        return $secret;
-    }
     public function cookieName(): string
     {
         return str_starts_with($this->origin(), 'https:') ? '__Host-cascade' : 'cascade_local';
     }
     public function hash(string $value): string
     {
-        return hash_hmac('sha256', $value, $this->secret());
+        return hash_hmac('sha256', $value, Env::appSecret());
     }
     /** The guestbook key of a signed-in visitor: stable per account, never the account ID. */
     public function visitorKey(string $player): string

@@ -14,6 +14,7 @@ import { LEVEL_COUNT } from './campaign';
 import { ERAS } from './eras';
 import { OBSTACLES } from './obstacles';
 import { isPlayerDistinction } from './playerDistinctions';
+import { wholeNumberOrZero } from './saveFormat';
 import { getLevelStarTarget } from './starRating';
 import { BANDIT_EVENT } from './town';
 import { PERSONAL_AREAS } from './townLandmarks';
@@ -292,8 +293,7 @@ export const elementArt = (element) =>
 
 // ---------- Measures ----------
 const MAX_COUNT = Number.MAX_SAFE_INTEGER;
-const safeCount = (value) =>
-  Number.isSafeInteger(value) && value >= 0 ? Math.min(MAX_COUNT, value) : 0;
+const safeCount = wholeNumberOrZero;
 const sum = (map) => Object.values(map ?? {}).reduce((total, count) => total + safeCount(count), 0);
 
 // The best single completed normal puzzle for the score family. Continuous records
@@ -868,7 +868,6 @@ const maxCounts = (a, b) =>
       ];
     }),
   );
-const generation = (value) => (Number.isSafeInteger(value) && value >= 0 ? value : 0);
 
 function normalizeEarned(entry) {
   if (!entry || typeof entry !== 'object') return null;
@@ -911,8 +910,9 @@ export function normalizeHonours(saved) {
       ),
     ),
   ].slice(0, SHOWCASE_SLOTS);
-  honours.backfilled = generation(saved.backfilled);
-  if (saved.seenGeneration !== undefined) honours.seenGeneration = generation(saved.seenGeneration);
+  honours.backfilled = wholeNumberOrZero(saved.backfilled);
+  if (saved.seenGeneration !== undefined)
+    honours.seenGeneration = wholeNumberOrZero(saved.seenGeneration);
   return honours;
 }
 

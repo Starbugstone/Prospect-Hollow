@@ -1,5 +1,6 @@
 import { advanceStoredPuzzleProduction } from './puzzleProduction';
 import { MOON_LOTS, moonstoneKeepsakes } from './moonSettlement';
+import { wholeNumberOrZero as count } from './saveFormat';
 
 export const MOONSTONE_VERSION = 2;
 export const MOONSTONE_ECONOMY = Object.freeze({
@@ -11,7 +12,6 @@ export const MOONSTONE_ECONOMY = Object.freeze({
   saleCoins: 250,
 });
 const validMoonstoneAmount = (amount) => Number.isSafeInteger(amount) && amount > 0;
-const count = (value) => (Number.isSafeInteger(value) && value >= 0 ? value : 0);
 export const createMoonstones = () => ({
   moonstoneVersion: MOONSTONE_VERSION,
   moonstones: 0,

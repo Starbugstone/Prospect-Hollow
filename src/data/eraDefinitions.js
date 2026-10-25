@@ -31,6 +31,8 @@ import { ERA_SUPPLY_STEP } from './townNeeds';
  * @property {string} roadStyle Surface treatment registered in roadStyles.js.
  * @property {boolean} roadBridge Continuous surfaced bridge deck instead of timber steps.
  * @property {string} incident
+ * @property {readonly string[]|null} incidentGate The era's incidents wait until one of
+ *   these plots is built; null starts them as soon as the town has residents.
  * @property {readonly number[]|null} prices Three modernization prices; never mining rewards.
  * @property {string|null} cityAssets Blender asset family shared by city eras.
  * @property {string|null} detailAsset
@@ -39,7 +41,11 @@ import { ERA_SUPPLY_STEP } from './townNeeds';
  * @property {boolean} digitalCity
  * @property {boolean} tallCity
  * @property {string|null} cityDescription
- * @property {readonly number[]|null} newBuildingPrices
+ * @property {readonly number[]|null} newBuildingPrices The coin price of each level of a
+ *   plot this era introduces; major city landmarks add their premium. Without them a
+ *   plot pays its own authored cost through the shared purchase multiplier.
+ * @property {boolean} repricesEarlierPlots Plots from earlier eras that are still being
+ *   built also take this era's newBuildingPrices.
  * @property {boolean} cityBoat
  * @property {readonly number[]} waterworks Water capacity at each modernization tier.
  * @property {readonly number[]} farmCapacity Additional farm capacity at each tier.
@@ -158,6 +164,7 @@ export function defineEra(definition) {
     roadStyle: 'dirt',
     roadBridge: false,
     incident: 'bandits',
+    incidentGate: null,
     prices: null,
     cityAssets: null,
     detailAsset: null,
@@ -167,6 +174,7 @@ export function defineEra(definition) {
     tallCity: false,
     cityDescription: null,
     newBuildingPrices: null,
+    repricesEarlierPlots: false,
     cityBoat: false,
     waterworks: null,
     farmCapacity: null,
@@ -196,6 +204,15 @@ export function defineEra(definition) {
       !evolution.upgradeDescriptions.every((text) => typeof text === 'string' && text.length))
   )
     throw new Error(`Missing modernization copy for era ${definition.id}`);
+  if (evolution.repricesEarlierPlots && !evolution.newBuildingPrices)
+    throw new Error(`Missing new building prices for era ${definition.id}`);
+  if (
+    evolution.incidentGate != null &&
+    (!Array.isArray(evolution.incidentGate) ||
+      !evolution.incidentGate.length ||
+      !evolution.incidentGate.every((id) => typeof id === 'string' && id))
+  )
+    throw new Error(`Invalid incident gate for era ${definition.id}`);
   if (style !== 'frontier' && !evolution.prices)
     throw new Error(`Missing modernization prices for era ${definition.id}`);
   if (

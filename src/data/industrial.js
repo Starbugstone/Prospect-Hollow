@@ -13,7 +13,6 @@ export const INDUSTRIAL_BUILDINGS = [
     'Power house',
     'The first electric lights',
     '#aa795c',
-    2400,
     2,
     [],
     'Light the square and main streets. Unlock electric modernization without fuel or upkeep.',
@@ -24,7 +23,6 @@ export const INDUSTRIAL_BUILDINGS = [
     'Fire station',
     'Neighbors looking after neighbors',
     '#b06e58',
-    1800,
     1,
     [],
     'The fire brigade responds to small workshop fires. Buildings remain intact; no upkeep is required.',
@@ -35,7 +33,6 @@ export const INDUSTRIAL_BUILDINGS = [
     'Row houses',
     'More neighbors on a familiar street',
     '#a38673',
-    2600,
     2,
     [{ id: 'powerHouse', level: 1 }],
     'Room for sixteen residents, with spare food and water. Modernize the old town well for more water.',
@@ -46,7 +43,6 @@ export const INDUSTRIAL_BUILDINGS = [
     'Light mill',
     'A new craft beside the river',
     '#9b8065',
-    2200,
     2,
     [
       { id: 'powerHouse', level: 1 },
@@ -54,7 +50,7 @@ export const INDUSTRIAL_BUILDINGS = [
     ],
     'A working mill and loading yard complete the industrial district. No production chains.',
   ],
-].map(([id, name, shortName, purpose, color, cost, runs, unlock, benefit]) => ({
+].map(([id, name, shortName, purpose, color, runs, unlock, benefit]) => ({
   id,
   name,
   shortName,
@@ -64,8 +60,8 @@ export const INDUSTRIAL_BUILDINGS = [
   introducedEra: 'industrial',
   unlock,
   stages: ['Empty plot', 'Industrial · Level 1', 'Industrial · Level 2', 'Industrial · Level 3'],
+  // Each level costs the Industrial era's newBuildingPrices (BUILDINGS in town.js).
   upgrades: [1, 2, 3].map((level) => ({
-    cost,
     runs: level === 1 ? runs : 2,
     title: level === 1 ? 'Build {building}' : 'Expand {building}',
     benefit:
@@ -138,7 +134,6 @@ export const INDUSTRIAL_VARIANTS = {
   hotel: ['Riverside brick hotel', 'Brickwork and a sheltered entrance welcome the same visitors.'],
   bridge: ['Prospect civic bridge', 'Stone approach posts mark the familiar river crossing.'],
 };
-export const INDUSTRIAL_LEVEL_PRICES = eraEvolution('industrial').prices;
 export const hasElectricity = (town) =>
   eraEvolution(town.era).electricity && town.buildings.powerHouse > 0;
 // Lamps are [x, z, base height]. The first four stand on the square's own corners

@@ -20,13 +20,31 @@ final class SaveIntegrity
     private static ?array $catalog = null;
     public function __construct(?array $rules = null)
     {
-        if ($rules === null) {
-            $path = dirname(__DIR__) . '/content/save-rules.json';
-            $rules = self::$catalog ??= is_file($path)
-                ? json_decode(file_get_contents($path), true, 64, JSON_THROW_ON_ERROR)
-                : [];
+        $this->rules = $rules ?? self::catalog();
+    }
+    private static function catalog(): array
+    {
+        $path = dirname(__DIR__) . '/content/save-rules.json';
+        return self::$catalog ??= is_file($path)
+            ? json_decode(file_get_contents($path), true, 64, JSON_THROW_ON_ERROR)
+            : [];
+    }
+    /**
+     * The save formats the game reads, SUPPORTED_SAVE_SCHEMAS in src/data/saveFormat.js.
+     * @return list<int>
+     */
+    public static function supportedSchemaVersions(): array
+    {
+        $versions = self::catalog()['supportedSchemaVersions'] ?? null;
+        if (
+            !is_array($versions) ||
+            !$versions ||
+            !array_is_list($versions) ||
+            array_filter($versions, fn($version) => !self::integer($version, 1))
+        ) {
+            self::incompatible();
         }
-        $this->rules = $rules;
+        return $versions;
     }
     private static function invalid(string $field): never
     {
@@ -75,9 +93,37 @@ final class SaveIntegrity
         }
         if (
             ($this->rules['version'] ?? null) !== 1 ||
-            !self::integer($this->rules['eraBuildingLevels'] ?? null, 1)
+            !self::integer($this->rules['eraBuildingLevels'] ?? null, 1) ||
+            !self::integer($this->rules['maxConstructionRuns'] ?? null, 1) ||
+            !is_string($this->rules['eraOrder'][0] ?? null)
         ) {
             self::incompatible();
+        }
+        $this->incidentId();
+        $income = $this->rules['economy']['saloonIncome'] ?? null;
+        $raid = $this->rules['economy']['raid'] ?? null;
+        if (
+            !is_array($income) ||
+            !JsonNumber::finite($income['rate'] ?? null) ||
+            !JsonNumber::finite($income['happinessPercent'] ?? null) ||
+            !JsonNumber::finite($income['dinerBonus'] ?? null) ||
+            !is_array($raid) ||
+            !is_array($raid['gangSizes'] ?? null) ||
+            !self::integer($raid['smallestGang'] ?? null, 1) ||
+            !self::integer($raid['lossPerRider'] ?? null) ||
+            !self::integer($raid['lossCap'] ?? null) ||
+            !self::integer($raid['coinShare'] ?? null, 1) ||
+            !self::integer($raid['keepCoins'] ?? null)
+        ) {
+            self::incompatible();
+        }
+        foreach ($raid['gangSizes'] as $step) {
+            if (
+                !self::integer($step['development'] ?? null) ||
+                !self::integer($step['riders'] ?? null, 1)
+            ) {
+                self::incompatible();
+            }
         }
         $vipSpend = $this->rules['economy']['vipSpend'] ?? null;
         if (
@@ -123,7 +169,15 @@ final class SaveIntegrity
             }
             $era = $this->rules['eras'][$id];
             foreach (
-                ['enabled', 'style', 'incident', 'waterworks', 'farmCapacity', 'buildingOffers']
+                [
+                    'enabled',
+                    'style',
+                    'incident',
+                    'incidentGate',
+                    'waterworks',
+                    'farmCapacity',
+                    'buildingOffers',
+                ]
                 as $key
             ) {
                 if (!array_key_exists($key, $era)) {
@@ -134,7 +188,10 @@ final class SaveIntegrity
                 !is_bool($era['enabled']) ||
                 !is_array($era['waterworks']) ||
                 !is_array($era['farmCapacity']) ||
-                !is_array($era['buildingOffers'])
+                !is_array($era['buildingOffers']) ||
+                ($era['incidentGate'] !== null &&
+                    (!is_array($era['incidentGate']) ||
+                        array_filter($era['incidentGate'], fn($id) => !is_string($id))))
             ) {
                 self::incompatible();
             }
@@ -154,20 +211,19 @@ final class SaveIntegrity
                     self::incompatible();
                 }
                 foreach (['chestTarget', 'starScoreTarget', 'speedTargetMs'] as $field) {
-                    if (!self::number($targets[$field] ?? null)) {
+                    if (!JsonNumber::finite($targets[$field] ?? null)) {
                         self::incompatible();
                     }
                 }
             }
         }
     }
-    private static function integer(mixed $value, int $min = 0, int $max = 9007199254740991): bool
-    {
+    private static function integer(
+        mixed $value,
+        int $min = 0,
+        int $max = JsonNumber::MAX_SAFE_INTEGER,
+    ): bool {
         return is_int($value) && $value >= $min && $value <= $max;
-    }
-    private static function number(mixed $value, float $min = 0): bool
-    {
-        return (is_int($value) || is_float($value)) && is_finite((float) $value) && $value >= $min;
     }
     private static function associative(mixed $value): bool
     {
@@ -287,7 +343,7 @@ final class SaveIntegrity
                 $town['moonstonesEarned'] >
                     $buildingCredit +
                         min(
-                            9007199254740991,
+                            JsonNumber::MAX_SAFE_INTEGER,
                             (($town['completedRuns'] ?? 0) + $continuousCredit) *
                                 $this->rules['buildings']['moonstoneWorkshop']['maxLevel'],
                         )
@@ -379,7 +435,7 @@ final class SaveIntegrity
                 if (!is_array($record)) {
                     self::invalid($key . '.' . $id);
                 }
-                if (isset($record['score']) && !self::number($record['score'])) {
+                if (isset($record['score']) && !JsonNumber::finite($record['score'])) {
                     self::invalid($key . '.' . $id . '.score');
                 }
                 if ($key === 'records' && !self::integer($record['stars'] ?? null, 1, 3)) {
@@ -387,7 +443,7 @@ final class SaveIntegrity
                 }
                 if (
                     isset($record['bestTimeMs']) &&
-                    !self::number($record['bestTimeMs'], 0.000001)
+                    !JsonNumber::finite($record['bestTimeMs'], 0.000001)
                 ) {
                     self::invalid('records.' . $id . '.bestTimeMs');
                 }
@@ -562,6 +618,15 @@ final class SaveIntegrity
             self::invalid('town.nextRaidRun');
         }
     }
+    /** The saved town event every era's incident uses, BANDIT_EVENT in src/data/town.js. */
+    private function incidentId(): string
+    {
+        $id = $this->rules['economy']['banditEvent'] ?? null;
+        if (!is_string($id) || $id === '') {
+            self::incompatible();
+        }
+        return $id;
+    }
     private function eraIndex(string $id): int
     {
         $index = array_search($id, $this->rules['eraOrder'], true);
@@ -602,7 +667,7 @@ final class SaveIntegrity
                 self::integer($project['wins'], 0, 1)
             ) {
                 $p['town']['coins'] = (int) min(
-                    9007199254740991,
+                    JsonNumber::MAX_SAFE_INTEGER,
                     $p['town']['coins'] +
                         ($building['legacyUpgradeCosts'][$project['stage'] - 1] ?? 0),
                 );
@@ -631,7 +696,7 @@ final class SaveIntegrity
         }
         unset($quantity);
         $p['town']['coins'] = (int) min(
-            9007199254740991,
+            JsonNumber::MAX_SAFE_INTEGER,
             $p['town']['coins'] + $overflow * $this->rules['rewards']['overflowCoins'],
         );
         $p['powers'] = $powers;
@@ -855,13 +920,9 @@ final class SaveIntegrity
             );
         }
         $body = rtrim(strtr(base64_encode(gzcompress($payload, 6)), '+/', '-_'), '=');
-        $secret = Env::get('APP_SECRET');
-        if (!is_string($secret) || strlen($secret) < 32) {
-            throw new \RuntimeException('Save checkpoints need the configured application secret.');
-        }
         return $body .
             '.' .
-            hash_hmac('sha256', 'prospect-hollow:save-checkpoint:v1:' . $body, $secret);
+            hash_hmac('sha256', 'prospect-hollow:save-checkpoint:v1:' . $body, Env::appSecret());
     }
     private function readCheckpoint(mixed $token, string $townId): ?array
     {
@@ -876,11 +937,13 @@ final class SaveIntegrity
         ) {
             return null;
         }
-        $secret = Env::get('APP_SECRET');
         if (
-            !is_string($secret) ||
             !hash_equals(
-                hash_hmac('sha256', 'prospect-hollow:save-checkpoint:v1:' . $parts[0], $secret),
+                hash_hmac(
+                    'sha256',
+                    'prospect-hollow:save-checkpoint:v1:' . $parts[0],
+                    Env::appSecret(),
+                ),
                 $parts[1],
             )
         ) {
@@ -1456,15 +1519,15 @@ final class SaveIntegrity
                 $stars = $record['stars'] ?? null;
                 if (
                     !is_array($record) ||
-                    !self::number($record['score'] ?? null, -PHP_FLOAT_MAX) ||
-                    !self::number($stars, 1) ||
+                    !JsonNumber::finite($record['score'] ?? null, -PHP_FLOAT_MAX) ||
+                    !JsonNumber::finite($stars, 1) ||
                     $stars > 3 ||
                     floor($stars) != (float) $stars
                 ) {
                     continue;
                 }
                 $records[$id] = ['score' => max(0, $record['score']), 'stars' => (int) $stars];
-                if (self::number($record['bestTimeMs'] ?? null, 0.000001)) {
+                if (JsonNumber::finite($record['bestTimeMs'] ?? null, 0.000001)) {
                     $records[$id]['bestTimeMs'] = $record['bestTimeMs'];
                 }
             }
@@ -1499,7 +1562,11 @@ final class SaveIntegrity
      */
     private function honourCounters(array $branch, array $town, ?array $latest = null): array
     {
-        $counts = Honours::seed(Honours::counts($branch['honours'] ?? null), $town);
+        $counts = Honours::seed(
+            Honours::counts($branch['honours'] ?? null),
+            $town,
+            $this->incidentId(),
+        );
         $branch['honours'] =
             $latest === null
                 ? $counts
@@ -1566,9 +1633,7 @@ final class SaveIntegrity
     ): void {
         $coins = $state['town']['coins'];
         $pending = array_column($state['pendingChests'], 'id');
-        $bounty = $this->bountyEntitlement(
-            $state['town']['events']['dusty-trail-visitors'] ?? null,
-        );
+        $bounty = $this->bountyEntitlement($state['town']['events'][$this->incidentId()] ?? null);
         $this->apply($state, $context, $kind, $data, $now);
         $minted = 0;
         $reserved = 0;
@@ -1609,7 +1674,7 @@ final class SaveIntegrity
         // entitlements. Seeing an accepted encounter merely transfers that value.
         $newBounty = max(
             0,
-            $this->bountyEntitlement($state['town']['events']['dusty-trail-visitors'] ?? null) -
+            $this->bountyEntitlement($state['town']['events'][$this->incidentId()] ?? null) -
                 $bounty,
         );
         $reserved += $newBounty;
@@ -1676,7 +1741,10 @@ final class SaveIntegrity
     }
     private function addCoins(array &$state, int|float $coins): void
     {
-        $state['town']['coins'] = (int) min(9007199254740991, $state['town']['coins'] + $coins);
+        $state['town']['coins'] = (int) min(
+            JsonNumber::MAX_SAFE_INTEGER,
+            $state['town']['coins'] + $coins,
+        );
     }
     private function grant(array &$state, array $reward): void
     {
@@ -1740,7 +1808,7 @@ final class SaveIntegrity
     }
     private function metric(mixed $value, string $field): int|float
     {
-        if (!self::number($value)) {
+        if (!JsonNumber::finite($value)) {
             self::mismatch($field);
         }
         return $value;
@@ -1760,12 +1828,15 @@ final class SaveIntegrity
                     self::mismatch($key);
                 }
                 if ((int) $tier >= 2) {
-                    $subtotal += min(9007199254740991, $count * ((int) $tier - 1) * $step);
+                    $subtotal += min(
+                        JsonNumber::MAX_SAFE_INTEGER,
+                        $count * ((int) $tier - 1) * $step,
+                    );
                 }
             }
         }
         return (int) min(
-            9007199254740991,
+            JsonNumber::MAX_SAFE_INTEGER,
             $subtotal * $this->rules['levels'][$level]['miningMultiplier'],
         );
     }
@@ -2012,7 +2083,7 @@ final class SaveIntegrity
                     !$amount ||
                     !self::integer($at) ||
                     $this->cooldown($town, 'moonstoneWorkshop', $at) ||
-                    $town['moonstonesEarned'] > 9007199254740991 - $amount
+                    $town['moonstonesEarned'] > JsonNumber::MAX_SAFE_INTEGER - $amount
                 ) {
                     self::mismatch('moonstone-collect');
                 }
@@ -2034,7 +2105,7 @@ final class SaveIntegrity
                     $coins = $amount * $this->rules['economy']['moonstones']['saleCoins'];
                     if (
                         !$s['town']['buildings']['moonstoneWorkshop'] ||
-                        $coins > 9007199254740991 - $s['town']['coins']
+                        $coins > JsonNumber::MAX_SAFE_INTEGER - $s['town']['coins']
                     ) {
                         self::mismatch($kind);
                     }
@@ -2073,7 +2144,7 @@ final class SaveIntegrity
                 }
                 $coins = min(
                     $s['town']['income']['stored'],
-                    9007199254740991 - $s['town']['coins'],
+                    JsonNumber::MAX_SAFE_INTEGER - $s['town']['coins'],
                 );
                 if (!$coins) {
                     self::mismatch('saloon-collect');
@@ -2092,7 +2163,7 @@ final class SaveIntegrity
                     $coins = min(
                         $s['town']['income']['stored'],
                         $this->incomeRate($s['town']),
-                        9007199254740991 - $s['town']['coins'],
+                        JsonNumber::MAX_SAFE_INTEGER - $s['town']['coins'],
                     );
                     $this->addCoins($s, $coins);
                     $s['town']['income']['stored'] -= $coins;
@@ -2167,7 +2238,7 @@ final class SaveIntegrity
                 $this->encounter($s, $context, $d, $now);
                 break;
             case 'raid-bell':
-                $event = &$s['town']['events']['dusty-trail-visitors'];
+                $event = &$s['town']['events'][$this->incidentId()];
                 if (
                     !$event ||
                     $event['id'] !== ($d['raidId'] ?? null) ||
@@ -2185,7 +2256,7 @@ final class SaveIntegrity
                 $event['outcome'] = $loss ? 'stolen' : 'harmless';
                 break;
             case 'raid-seen':
-                $event = &$s['town']['events']['dusty-trail-visitors'];
+                $event = &$s['town']['events'][$this->incidentId()];
                 if (!$event || $event['id'] !== ($d['raidId'] ?? null) || $event['seen']) {
                     self::mismatch('raid-seen');
                 }
@@ -2197,7 +2268,7 @@ final class SaveIntegrity
                         ? min($event['gangSize'], $event['sheriffLevel'] * 2) *
                             $this->rules['economy']['bountyPerCaptured']
                         : 0;
-                $bounty = min($bounty, 9007199254740991 - $s['town']['coins']);
+                $bounty = min($bounty, JsonNumber::MAX_SAFE_INTEGER - $s['town']['coins']);
                 if (Honours::protectedIncident($event)) {
                     $context['honours'] = Honours::credit($context['honours'], 'guardian');
                 }
@@ -2269,7 +2340,7 @@ final class SaveIntegrity
         $score = $this->metric($d['score'] ?? null, 'score');
         $combo = $this->metric($d['combo'] ?? 0, 'combo');
         $elapsed = $d['elapsedMs'] ?? null;
-        if ($elapsed !== null && !self::number($elapsed)) {
+        if ($elapsed !== null && !JsonNumber::finite($elapsed)) {
             self::mismatch('elapsedMs');
         }
         $target = $targets['starScoreTarget'];
@@ -2291,9 +2362,16 @@ final class SaveIntegrity
             $s['records'][$level]['bestTimeMs'] = $previous['bestTimeMs'];
         }
         $this->accrue($s, $context, $d['at'] ?? null, $now);
-        $s['town']['completedRuns'] = min(9007199254740991, $s['town']['completedRuns'] + 1);
+        $s['town']['completedRuns'] = min(
+            JsonNumber::MAX_SAFE_INTEGER,
+            $s['town']['completedRuns'] + 1,
+        );
         foreach ($s['town']['projects'] as &$project) {
-            $project['wins'] = min(2, $project['required'], $project['wins'] + 1);
+            $project['wins'] = min(
+                $this->rules['maxConstructionRuns'],
+                $project['required'],
+                $project['wins'] + 1,
+            );
         }
         unset($project);
         $this->advanceForge($s['town']);
@@ -2617,12 +2695,13 @@ final class SaveIntegrity
     private function incomeRate(array $town): int
     {
         $stats = $this->populationStats($town);
+        $income = $this->rules['economy']['saloonIncome'];
         return (int) floor(
-            (2.25 *
+            ($income['rate'] *
                 $this->service($town, 'saloon') *
                 $stats['population'] *
-                (100 + 1.25 * $stats['happiness']) *
-                (1 + ($town['buildings']['diner'] ?? 0) * 0.05)) /
+                (100 + $income['happinessPercent'] * $stats['happiness']) *
+                (1 + ($town['buildings']['diner'] ?? 0) * $income['dinerBonus'])) /
                 100,
         );
     }
@@ -2637,7 +2716,7 @@ final class SaveIntegrity
     private function helmetReward(array $town, string $finder): int
     {
         $hours = $this->rules['economy']['spaceHelmetRewardHours'][$finder] ?? null;
-        if (!self::number($hours)) {
+        if (!JsonNumber::finite($hours)) {
             self::incompatible();
         }
         return (int) floor($this->incomeRate($town) * $hours);
@@ -2648,14 +2727,10 @@ final class SaveIntegrity
      */
     public static function helmetReceipt(string $townId, int $foundAt): string
     {
-        $secret = Env::get('APP_SECRET');
-        if (!is_string($secret) || strlen($secret) < 32) {
-            throw new \RuntimeException('Space-helmet receipts need the application secret.');
-        }
         return hash_hmac(
             'sha256',
             'prospect-hollow:helmet-find:v1:' . $townId . ':' . $foundAt,
-            $secret,
+            Env::appSecret(),
         );
     }
     private function cooldown(array $town, string $id, int $at): bool
@@ -2741,7 +2816,7 @@ final class SaveIntegrity
             if (
                 !$project ||
                 $project['stage'] !== ($d['expectedStage'] ?? null) ||
-                $project['wins'] < min(2, $project['required'])
+                $project['wins'] < min($this->rules['maxConstructionRuns'], $project['required'])
             ) {
                 self::mismatch('building-finish');
             }
@@ -2752,7 +2827,7 @@ final class SaveIntegrity
                 $town['buildings'][$id] = $project['stage'];
                 $town['buildingEras'][$id] = $project['targetEra'] ?? $town['era'];
                 $town['buildingEraLevels'][$id] =
-                    $town['era'] === 'frontier' ? 0 : $project['stage'];
+                    $town['era'] === $this->rules['eraOrder'][0] ? 0 : $project['stage'];
             }
             unset($town['projects'][$id]);
             $this->reinforce($s);
@@ -2775,7 +2850,8 @@ final class SaveIntegrity
             $town['buildings'][$id] = $modern ? $town['buildings'][$id] : $offer['stage'] + 1;
             $town['buildingEras'][$id] = $town['era'];
             $town['buildingEraLevels'][$id] =
-                $offer['eraLevel'] ?? ($town['era'] === 'frontier' ? 0 : $offer['stage'] + 1);
+                $offer['eraLevel'] ??
+                ($town['era'] === $this->rules['eraOrder'][0] ? 0 : $offer['stage'] + 1);
             $this->reinforce($s);
             $this->settleForge($town);
         } else {
@@ -2824,7 +2900,7 @@ final class SaveIntegrity
     }
     private function earnMoonstones(array &$town, int $amount): void
     {
-        $amount = min($amount, 9007199254740991 - $town['moonstonesEarned']);
+        $amount = min($amount, JsonNumber::MAX_SAFE_INTEGER - $town['moonstonesEarned']);
         $town['moonstones'] += $amount;
         $town['moonstonesEarned'] += $amount;
     }
@@ -2958,40 +3034,39 @@ final class SaveIntegrity
     {
         $this->accrue($s, $context, $d['at'] ?? null, $now);
         $town = &$s['town'];
-        $prior = $town['events']['dusty-trail-visitors'] ?? null;
+        $prior = $town['events'][$this->incidentId()] ?? null;
         $built = $town['buildings'];
         $kind = $this->rules['eras'][$town['era']]['incident'];
         $event = $d['event'] ?? null;
         $next = $d['nextRaidRun'] ?? null;
         $population = $this->populationStats($town)['population'];
+        $raid = $this->rules['economy']['raid'];
+        // An era with an incident gate waits until one of those plots is built.
+        $gate = $this->rules['eras'][$town['era']]['incidentGate'];
         $ready =
             $population > 0 &&
             self::integer($town['nextRaidRun']) &&
             $town['completedRuns'] >= $town['nextRaidRun'] &&
             (!$prior || $prior['seen']) &&
-            ($town['era'] !== 'river-rail' || $built['railDepot'] > 0 || $built['riverPort'] > 0) &&
-            ($town['era'] !== 'industrial' || $built['powerHouse'] > 0 || $built['mill'] > 0);
+            ($gate === null || array_filter($gate, fn($id) => ($built[$id] ?? 0) > 0));
         if ($ready) {
             $development = array_sum($built);
-            $riders =
-                $development >= 70
-                    ? 10
-                    : ($development >= 50
-                        ? 8
-                        : ($development >= 30
-                            ? 6
-                            : ($development >= 16
-                                ? 4
-                                : 2)));
+            $riders = $raid['smallestGang'];
+            foreach ($raid['gangSizes'] as $step) {
+                if ($development >= $step['development']) {
+                    $riders = $step['riders'];
+                    break;
+                }
+            }
             $protection = $this->protection($this->defenses($town), $riders, $kind);
             $loss =
                 $protection === 1.0
                     ? 0
                     : min(
-                        30,
-                        ceil(5 * $riders * (1 - $protection)),
-                        floor($town['coins'] / 10),
-                        max(0, $town['coins'] - 50),
+                        $raid['lossCap'],
+                        ceil($raid['lossPerRider'] * $riders * (1 - $protection)),
+                        floor($town['coins'] / $raid['coinShare']),
+                        max(0, $town['coins'] - $raid['keepCoins']),
                     );
             $expected = [
                 'id' => ($prior['id'] ?? 0) + 1,
@@ -3021,7 +3096,7 @@ final class SaveIntegrity
             if (!self::same($event, $expected)) {
                 self::mismatch('raid-encounter');
             }
-            $town['events']['dusty-trail-visitors'] = $expected;
+            $town['events'][$this->incidentId()] = $expected;
             $town['coins'] -= (int) $loss;
             $town['nextRaidRun'] = null;
         } elseif ($event !== null && !self::same($event, $prior)) {
@@ -3032,8 +3107,8 @@ final class SaveIntegrity
             if (
                 !self::integer(
                     $next,
-                    min(9007199254740991, $town['completedRuns'] + $min),
-                    min(9007199254740991, $town['completedRuns'] + $max),
+                    min(JsonNumber::MAX_SAFE_INTEGER, $town['completedRuns'] + $min),
+                    min(JsonNumber::MAX_SAFE_INTEGER, $town['completedRuns'] + $max),
                 )
             ) {
                 self::mismatch('nextRaidRun');
@@ -3046,10 +3121,10 @@ final class SaveIntegrity
     private function reinforce(array &$s): void
     {
         $town = &$s['town'];
-        if (!isset($town['events']['dusty-trail-visitors'])) {
+        if (!isset($town['events'][$this->incidentId()])) {
             return;
         }
-        $event = &$town['events']['dusty-trail-visitors'];
+        $event = &$town['events'][$this->incidentId()];
         if ($event['seen']) {
             return;
         }
@@ -3074,7 +3149,11 @@ final class SaveIntegrity
         // The shared calculation returns a float: PHP divides evenly divisible integers
         // to int 1, and full cover must still equal 1.0 for a 'protected' outcome.
         $protection = $this->protection($defenses, $event['gangSize'], $kind);
-        $remaining = ceil(5 * $event['gangSize'] * (1 - $protection));
+        $remaining = ceil(
+            $this->rules['economy']['raid']['lossPerRider'] *
+                $event['gangSize'] *
+                (1 - $protection),
+        );
         $loss = min(
             $event['loss'],
             !empty($event['bellRung']) ? floor($remaining / 2) : $remaining,
@@ -3094,8 +3173,8 @@ final class SaveIntegrity
             ($d['expectedEra'] ?? null) !== $town['era'] ||
             !$next ||
             !$this->rules['eras'][$next]['enabled'] ||
-            (!empty($town['events']['dusty-trail-visitors']) &&
-                !$town['events']['dusty-trail-visitors']['seen']) ||
+            (!empty($town['events'][$this->incidentId()]) &&
+                !$town['events'][$this->incidentId()]['seen']) ||
             !$this->eraComplete($town)
         ) {
             self::mismatch('era-advance');
@@ -3133,7 +3212,7 @@ final class SaveIntegrity
             if (
                 $level !== $definition['maxLevel'] ||
                 isset($town['projects'][$id]) ||
-                ($town['era'] !== 'frontier' && $eraLevel !== $this->rules['eraBuildingLevels'])
+                ($index > 0 && $eraLevel !== $this->rules['eraBuildingLevels'])
             ) {
                 return false;
             }
@@ -3146,7 +3225,10 @@ final class SaveIntegrity
         $definition = $this->rules['buildings'][$id];
         $level = $town['buildings'][$id] ?? 0;
         $level = is_int($level) ? min($definition['maxLevel'], $level) : 0;
-        if ($town['era'] === 'frontier' || $definition['introducedEra'] === $town['era']) {
+        if (
+            $town['era'] === $this->rules['eraOrder'][0] ||
+            $definition['introducedEra'] === $town['era']
+        ) {
             return $level;
         }
         // An era with a `modernizes` list leaves every other building finished.
@@ -3199,7 +3281,7 @@ final class SaveIntegrity
                 !in_array($project['id'], $before, true)
             ) {
                 $s['builderHammers'] = (int) min(
-                    9007199254740991,
+                    JsonNumber::MAX_SAFE_INTEGER,
                     $s['builderHammers'] + $project['hammers'],
                 );
             }
@@ -3221,6 +3303,6 @@ final class SaveIntegrity
     public function starScoreTarget(int $level): int|float|null
     {
         $target = $this->rules['levels'][$level]['starScoreTarget'] ?? null;
-        return self::number($target) && $target > 0 ? $target : null;
+        return JsonNumber::finite($target) && $target > 0 ? $target : null;
     }
 }
