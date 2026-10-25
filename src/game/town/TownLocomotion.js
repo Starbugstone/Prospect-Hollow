@@ -372,7 +372,7 @@ export function updateTownLocomotion(d, h = LOCOMOTION_STEP) {
     a.y = root.position.y;
     a.hold =
       a.behaviorHold ||
-      (a.liveVisitor && d.liveVisitorsReducedMotion) ||
+      (a.liveVisitor && d.reducedMotion) ||
       (!!a.work && !a.workRoutine) ||
       a.routeResting ||
       (a.species && !MOVING_ANIMALS.has(a.state));

@@ -4,6 +4,9 @@ import { areaUnlocked } from '../../../data/townLandmarks';
 import * as THREE from 'three';
 import { createTownControls } from '../TownControls';
 import { createTapGesture } from '../TownTapGesture';
+import { cameraAction, focusCamera } from '../TownCamera';
+import { keepCameraAboveTerrain } from '../TownLandscape';
+import { loseContext, watchContextLoss } from '../TownRenderer';
 import { PARCEL_OUTLINE_COLOR, parcelOutlineGeometry } from '../TownParcelOutline';
 import { TownPrimitives } from '../TownPrimitives';
 import { MoonSaucer, moonSaucerArrival } from './MoonSaucer';
@@ -400,6 +403,7 @@ export class MoonScene {
       onSelect = () => {},
       onVipSpend = () => {},
       onVillagerLabel = () => {},
+      onUnavailable = () => {},
       reducedMotion = false,
       vipsHidden = false,
     } = {},
@@ -408,6 +412,10 @@ export class MoonScene {
     this.onLabels = onLabels;
     this.onEarth = onEarth;
     this.onSelect = onSelect;
+    // A lost context or a failed draw goes to the owner's shared graphics recovery.
+    this.onUnavailable = onUnavailable;
+    // The camera floor, focus moves and the unveiling read the Moon's own ground.
+    this.terrainHeight = moonHeight;
     // The valley's VIP contract: purchases go to the shared receipt flow, and a named
     // visitor's tag goes to the valley's label. A shared town has no VIPs at all.
     this.onVipSpend = onVipSpend;
@@ -474,39 +482,56 @@ export class MoonScene {
       id,
       position: new THREE.Vector3(x, 3.4, z),
     }));
-    // Keep native overlay buttons outside the pointer-capture surface.
-    // The valley's gestures: drag to orbit, middle or right drag to pan, wheel to zoom.
-    this.controls = createTownControls(this.camera, canvas);
-    this.controls.target.set(0, 0, 4);
-    this.controls.minDistance = 22;
-    this.controls.maxDistance = 115;
-    this.controls.minPolarAngle = 0.55;
-    this.controls.maxPolarAngle = 1.38;
-    this.controls.addEventListener('change', () => this.requestFrame());
-    this.controls.update();
+    // The valley's gestures on the valley's surface: the canvas's parent, which holds the
+    // lot labels and action buttons too, so a drag that starts on a label still orbits.
+    const surface = canvas.parentElement;
+    this.attachCamera(surface);
     // A tap (not a drag) on a lot opens it, like a valley plot; on Earth it returns
     // to the valley. Taps never move the camera.
     this.raycaster = new THREE.Raycaster();
     this.raycaster.layers.set(PICK_LAYER);
     this.pickTargets = this.d.group(this.scene);
     this.pickTargets.name = 'Moon lot tap targets';
-    // Taps share the canvas surface with OrbitControls.
-    const surface = canvas;
+    this.attachInput(surface);
+    this.elapsed = 0;
+    this.construction = new MoonConstruction(this);
+    this.upgradeGlow = new TownUpgradeGlow(this.scene);
+    this.addParcels();
+    this.signature = '';
+    this.pacer = new TownFramePacer();
+    this.tick = this.tick.bind(this);
+    this.observer = new ResizeObserver(() => this.resize());
+    this.observer.observe(canvas);
+    this.resize();
+    this.unwatchContext = watchContextLoss(this);
+  }
+  // The valley's context-loss contract (TownRenderer): stop and hand over to the owner.
+  handleContextLoss(event) {
+    loseContext(this, event);
+  }
+  /**
+   * The valley's tap gesture on the camera's surface: one still pointer with the primary
+   * button, and the trailing click swallowed outside the Moon view. A press on the scene
+   * or on a lot's label or action button may become a tap; a label's opens its lot, as
+   * a valley label does.
+   */
+  attachInput(surface) {
+    const canvas = this.canvas;
     this.surface = surface;
-    // The valley's tap gesture: one still pointer with the primary button, and the
-    // trailing click swallowed outside the Moon view.
     this.tapGesture = createTapGesture({
-      map: () => canvas.parentElement,
-      onTap: (event) => this.tap(event),
+      map: () => surface,
+      onTap: (event, lot) => (lot ? this.onSelect(lot) : this.tap(event)),
     });
     this.onPointerDown = (event) => {
-      if (event.target === canvas) this.tapGesture.down(event);
+      const label = event.target.closest?.('[data-moon-lot], [data-moon-action]');
+      if (event.target === canvas || label)
+        this.tapGesture.down(event, label?.dataset.moonLot ?? label?.dataset.moonAction);
     };
     this.onPointerUp = (event) => this.tapGesture.up(event);
     this.onPointerMove = (event) => {
       this.tapGesture.move(event);
       // Hover feedback only while no button is held, so drags and pans never raycast.
-      if (this.tapGesture.pressed) return;
+      if (this.tapGesture.pressed || event.target !== canvas) return;
       // A mouse over a VIP names them, as in the valley.
       if (event.pointerType === 'mouse') hoverVillager(this, event.clientX, event.clientY);
       canvas.style.cursor = this.hitsEarth(event) || this.pick(event) ? 'pointer' : 'grab';
@@ -525,16 +550,40 @@ export class MoonScene {
     surface.addEventListener('pointerleave', this.onPointerLeave);
     surface.addEventListener('pointercancel', this.onPointerCancel);
     surface.addEventListener('lostpointercapture', this.onPointerCancel);
-    this.elapsed = 0;
-    this.construction = new MoonConstruction(this);
-    this.upgradeGlow = new TownUpgradeGlow(this.scene);
-    this.addParcels();
-    this.signature = '';
-    this.pacer = new TownFramePacer();
-    this.tick = this.tick.bind(this);
-    this.observer = new ResizeObserver(() => this.resize());
-    this.observer.observe(canvas);
-    this.resize();
+  }
+  /** Drag to orbit, middle or right drag to pan, wheel and pinch to zoom: the valley's set. */
+  attachCamera(surface) {
+    this.controls = createTownControls(this.camera, surface);
+    this.controls.target.set(0, 0, 4);
+    this.controls.minDistance = 22;
+    this.controls.maxDistance = 115;
+    this.controls.minPolarAngle = 0.55;
+    this.controls.maxPolarAngle = 1.38;
+    this.cameraChanged = this.cameraChanged.bind(this);
+    this.controls.addEventListener('change', this.cameraChanged);
+    this.controls.update();
+  }
+  // Every camera change keeps the camera above the Moon's hills, as the valley does.
+  cameraChanged() {
+    if (
+      keepCameraAboveTerrain(
+        this.camera.position,
+        this.controls.target,
+        this.controls.minPolarAngle,
+        this.terrainHeight,
+      )
+    )
+      this.controls.update();
+    this.requestFrame();
+  }
+  /** The keyboard's stepped camera moves, shared with the valley; `reset` frames New Hollow. */
+  cameraAction(action) {
+    cameraAction(this, action);
+  }
+  /** Explicit navigation (a Build row) turns the camera to a lot or site; taps never do. */
+  focusPlace(id) {
+    const parcel = moonParcels().find((place) => place.id === id);
+    return !!parcel && focusCamera(this, [parcel.x, parcel.z], parcel.kind === 'site' ? 34 : 30);
   }
   /** Rebuild the lots when the town's Moon buildings change. */
   update(town) {
@@ -682,8 +731,9 @@ export class MoonScene {
     const transports = this.visitorTransports;
     if (!transports) return;
     const climber = this.climber?.parent ? this.climber : null;
-    // A landing settling under its construction reveal keeps its climber docked.
-    const docked = this.reducedMotion || this.lotReveals?.has('ribbonLanding');
+    // A landing settling under its construction reveal keeps its climber docked. The
+    // climber is a vehicle: it keeps riding with reduced motion, as valley vehicles do.
+    const docked = this.lotReveals?.has('ribbonLanding');
     if (climber) climber.position.y = docked ? 0 : moonClimberLift(time);
     if (climber && !docked)
       transports.set('ribbonLanding', { ...moonClimberArrival(time), root: climber });
@@ -704,7 +754,11 @@ export class MoonScene {
   }
   // Now and then a meteor streaks across the sky: a celebration, never a hazard.
   meteor(time) {
-    if (this.reducedMotion) return;
+    // A celebration effect: reduced motion leaves it out.
+    if (this.reducedMotion) {
+      if (this.streak) this.streak.visible = false;
+      return;
+    }
     if (!this.streak) {
       const material = new THREE.MeshBasicMaterial({
         color: '#fff3c8',
@@ -745,10 +799,11 @@ export class MoonScene {
     this.animating = enabled;
     this.motionEnabled = enabled;
     this.pacer.reset();
-    this.renderer.setAnimationLoop(enabled ? this.tick : null);
+    this.renderer.setAnimationLoop(enabled && !this.contextUnavailable ? this.tick : null);
     if (!enabled) this.requestFrame();
   }
-  setAvailable(ids) {
+  // The valley's upgrade glow rule: the lots whose indicator is 'upgrade' (TownScene).
+  setUpgradeable(ids) {
     if (this.upgradeGlow.setAvailable(ids)) this.requestFrame();
   }
   /** Every parcel's glow and tap target follow its pad, from the one parcel contract. */
@@ -851,8 +906,14 @@ export class MoonScene {
     this.labelKey = null;
     this.requestFrame();
   }
+  /**
+   * The app's reduced-motion setting, with the valley's policy
+   * (docs/era-architecture.md#reduced-motion): reveals, the meteor, monument motion and
+   * the saucer's wake and dust stop; settlers, rovers, the climber and the saucer move.
+   */
   setReducedMotion(value) {
     this.reducedMotion = value;
+    this.meteor(this.elapsed);
     this.construction.update(this.elapsed, value);
     this.updateLotReveals(this.elapsed, value);
     this.saucer.step(this.elapsed, value);
@@ -861,29 +922,38 @@ export class MoonScene {
   }
   // Paced like the valley: a fast display does not draw more than 60 frames a second.
   tick(now) {
-    if (!this.pacer.due(now)) return;
+    if (this.contextUnavailable || !this.pacer.due(now)) return;
     const delta = this.lastNow ? Math.min(0.1, (now - this.lastNow) / 1000) : 0;
     this.lastNow = now;
-    // Nothing moves: camera, resize and lot changes request their own frames.
-    if (this.reducedMotion) return;
     this.elapsed += delta;
     this.move(this.elapsed);
     this.vipArrivals?.update();
     this.meteor(this.elapsed);
-    this.render();
+    // A presentation draws its own frames, so the Moon is drawn once a frame, as in the
+    // valley (TownDiorama.tick).
+    if (!this.presentation) this.render();
   }
   // Camera, resize and lot changes come through here; only they move the lot labels.
   requestFrame() {
     this.viewChanged = true;
     // A running animation draws the latest pose on its next frame anyway.
-    if (this.frame || (this.animating && !this.reducedMotion)) return;
+    if (this.frame || this.animating) return;
     this.frame = requestAnimationFrame(() => {
       this.frame = null;
       this.render();
     });
   }
   render() {
-    this.renderer.render(this.scene, this.camera);
+    if (this.contextUnavailable) return;
+    try {
+      this.renderer.render(this.scene, this.camera);
+    } catch (error) {
+      // As in the valley (TownDiorama.drawFrame): stop, and let the owner fall back.
+      this.contextUnavailable = true;
+      this.renderer.setAnimationLoop(null);
+      this.onUnavailable(error);
+      return;
+    }
     // A named VIP's tag follows them every frame and leaves when they go indoors.
     if (this.namedVillager) projectVillager(this);
     if (!this.viewChanged) return;
@@ -955,11 +1025,15 @@ export class MoonScene {
     this.renderer.setSize(width, height, false);
     this.requestFrame();
   }
-  resetView() {
+  // New Hollow's overview: the shared cameraAction's `reset` frames it.
+  frameTown() {
     const scale = this.overviewScale ?? 1;
     this.camera.position.set(0, 26 * scale, 4 + 62 * scale);
     this.controls.target.set(0, 0, 4);
     this.controls.update();
+  }
+  resetView() {
+    this.cameraAction('reset');
   }
   dispose() {
     this.disposed = true;
@@ -970,6 +1044,8 @@ export class MoonScene {
     this.renderer.setAnimationLoop(null);
     if (this.frame) cancelAnimationFrame(this.frame);
     this.observer.disconnect();
+    this.unwatchContext?.();
+    this.controls.removeEventListener('change', this.cameraChanged);
     this.surface.removeEventListener('pointerdown', this.onPointerDown);
     this.surface.removeEventListener('pointerup', this.onPointerUp);
     this.surface.removeEventListener('pointermove', this.onPointerMove);

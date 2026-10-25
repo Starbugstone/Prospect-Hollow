@@ -1,6 +1,7 @@
 import { expect, it, vi } from 'vitest';
 import { Color, PerspectiveCamera, Scene, Vector3 } from 'three';
 import { TownDiorama } from '../src/game/town/TownDiorama';
+import { MoonScene } from '../src/game/town/moon/MoonScene';
 import { beginEventCamera, restoreEventCamera } from '../src/game/town/TownEventCamera';
 import { TownFrameCache } from '../src/game/town/TownFrameCache';
 
@@ -139,19 +140,45 @@ it('restores renderer state after an interrupted frame so later renders can reco
   cache.dispose();
 });
 
-it('requests a clean rebuild on context loss and stops drawing invalid buffers', () => {
+// Every settlement map handles a lost context the same way (TownRenderer).
+it.each([
+  ['valley', TownDiorama],
+  ['Moon', MoonScene],
+])('requests a clean %s rebuild on context loss and stops drawing', (_, MapScene) => {
   const view = {
     frameCache: { valid: true },
-    renderer: { setAnimationLoop: vi.fn() },
+    renderer: { setAnimationLoop: vi.fn(), render: vi.fn() },
     onUnavailable: vi.fn(),
   };
   const event = { preventDefault: vi.fn() };
-  TownDiorama.prototype.handleContextLoss.call(view, event);
+  MapScene.prototype.handleContextLoss.call(view, event);
   expect(event.preventDefault).toHaveBeenCalledOnce();
   expect(view.contextUnavailable).toBe(true);
   expect(view.frameCache.valid).toBe(false);
   expect(view.renderer.setAnimationLoop).toHaveBeenCalledWith(null);
   expect(view.onUnavailable).toHaveBeenCalledWith(expect.any(Error), true);
+  // Neither its loop nor a requested frame draws into the lost context.
+  Object.setPrototypeOf(view, MapScene.prototype);
+  view.render();
+  view.tick?.(1000);
+  expect(view.renderer.render).not.toHaveBeenCalled();
+});
+
+it('stops the Moon and requests its SVG map when drawing fails', () => {
+  const error = new Error('Moon framebuffer unavailable');
+  const view = Object.assign(Object.create(MoonScene.prototype), {
+    renderer: {
+      render: () => {
+        throw error;
+      },
+      setAnimationLoop: vi.fn(),
+    },
+    onUnavailable: vi.fn(),
+  });
+  view.render();
+  expect(view.contextUnavailable).toBe(true);
+  expect(view.renderer.setAnimationLoop).toHaveBeenCalledWith(null);
+  expect(view.onUnavailable).toHaveBeenCalledWith(error);
 });
 
 it('stops animation and requests the playable fallback when drawing fails', () => {

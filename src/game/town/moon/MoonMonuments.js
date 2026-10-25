@@ -104,9 +104,8 @@ export function moonMonumentPresentation(scene, definition) {
     motionEnabled: false,
     fauna: { companions: null },
     surfaceHeight: () => 0,
-    keepCameraAboveSurface: (eye) => {
-      eye.y = Math.max(1.2, eye.y);
-    },
+    // The shots stay above the Moon's own hills, as the valley's stay above its terrain.
+    terrainHeight: scene.terrainHeight,
     render: () => {
       scene.viewChanged = true;
       scene.render();

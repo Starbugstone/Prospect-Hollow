@@ -52,3 +52,8 @@ export function createTapGesture({ map, onTap, root }) {
     },
   };
 }
+
+// Pointer taps on a map's labels and action buttons settle through the tap gesture on
+// pointerup, so their native click is ignored; keyboard and assistive activation
+// (detail 0) still opens them.
+export const keyboardActivation = (event) => event.detail === 0;

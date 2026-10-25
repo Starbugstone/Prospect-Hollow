@@ -465,8 +465,6 @@ export function addAviationActivity(d, town) {
     });
   plane.userData.animated = true;
   const propellers = ['propellerLeft', 'propellerRight'].map((name) => plane.getObjectByName(name));
-  // Reduced motion keeps the flight but leaves the sparkle wake off.
-  const reducedQuery = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)');
   const livery = rounded ? null : applyLivery(materials, appearance);
   const liveries = appearance.liveries?.length || 1;
   // The Moon route is fixed per visit: it is decided while the saucer is parked, so a
@@ -503,7 +501,8 @@ export function addAviationActivity(d, town) {
         spin,
         phase: cyclePhase(time),
         toMoon,
-        reduced: !!(d.liveVisitorsReducedMotion || reducedQuery?.matches),
+        // Reduced motion keeps the flight (a vehicle) but leaves the sparkle wake off.
+        reduced: !!d.reducedMotion,
       });
     } else {
       plane.visible = pose.visible;

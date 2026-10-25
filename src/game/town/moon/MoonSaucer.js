@@ -51,7 +51,9 @@ export function moonSaucerFlightPoint(phase, _toMoon, out) {
 
 const flightPoint = new Vector3();
 
-export function moonSaucerPose(time, reduced = false) {
+// The saucer is a vehicle: it keeps its visits with reduced motion, as the valley's
+// does; only its effects (the wake and the regolith dust) stop.
+export function moonSaucerPose(time) {
   const phase = cyclePhase(time),
     pad = MOON_SAUCER_PAD;
   const pose = {
@@ -67,7 +69,6 @@ export function moonSaucerPose(time, reduced = false) {
     visible: true,
     phase: 'parked',
   };
-  if (reduced) return pose;
   if (phase < APPROACH.start || phase >= DEPARTURE.end)
     return { ...pose, visible: false, opacity: 0, phase: 'away' };
   if (phase < APPROACH.end || phase >= DEPARTURE.start) {
@@ -168,12 +169,12 @@ export class MoonSaucer {
   step(time, reduced = false) {
     if (!this.craft) return false;
     const phase = cyclePhase(time),
-      pose = moonSaucerPose(time, reduced);
+      pose = moonSaucerPose(time);
     this.spin =
       (this.spin ?? 0) + Math.min(0.1, Math.max(0, time - (this.lastTime ?? time))) * pose.spin * 5;
     this.lastTime = time;
     this.craft.apply(pose, {
-      spin: reduced ? 0 : this.spin,
+      spin: this.spin,
       phase,
       toMoon: true,
       reduced,

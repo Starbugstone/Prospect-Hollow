@@ -24,3 +24,10 @@ export function createTownControls(camera, element) {
   controls.zoomSpeed = TOWN_CONTROL_GESTURES.zoomSpeed;
   return controls;
 }
+
+// The player's camera gestures are live unless the map is paused, a cinematic or an
+// event camera holds it, or another settlement's map covers it (the Moon over the
+// valley). Every owner of `controls.enabled` asks here.
+export function syncTownControls(d) {
+  d.controls.enabled = !d.paused && !d.cinematic && !d.eventCamera && !d.covered;
+}

@@ -633,8 +633,8 @@ describe('Personalisation rendering', () => {
     expect(group.parent).toBeNull();
   });
   it('keeps moving mechanisms out of static batches and honors reduced motion', () => {
-    const preference = { matches: false };
-    vi.stubGlobal('matchMedia', () => preference);
+    // The app's setting, not the system's: one reduced-motion value for every map.
+    vi.stubGlobal('matchMedia', () => ({ matches: true }));
     const town = createTown();
     town.personalisation.areas.meadow = ['windgarden'];
     town.personalisation.areaLevels.meadow = 3;
@@ -655,7 +655,7 @@ describe('Personalisation rendering', () => {
       expect(node.matrixAutoUpdate).toBe(true);
       expect(node.visible).toBe(true);
     }
-    preference.matches = true;
+    d.reducedMotion = true;
     root.userData.sceneryUpdate(8);
     expect(pose()).toBe(initial);
     renderer.dispose();

@@ -161,9 +161,9 @@ export function buildPersonalAreas(d, town) {
   root.name = 'Monument sites';
   root.userData.movingParts = [];
   const motions = [];
-  const reducedMotion = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)');
+  // Monument motion is decorative: the app's reduced-motion setting holds it still.
   root.userData.sceneryUpdate = (time) => {
-    for (const update of motions) update(reducedMotion?.matches ? 0 : time);
+    for (const update of motions) update(d.reducedMotion ? 0 : time);
   };
   root.userData.static = true;
   for (const area of areasForSettlement()) {
@@ -211,7 +211,9 @@ export function buildTownBanner(d, town) {
   const positions = cloth.geometry.attributes.position;
   // A few vertices in the existing animation loop: no textures, materials or
   // static town batches are rebuilt. The top edge stays tied to the crossbar.
-  root.userData.sceneryUpdate = (time) => {
+  // The banner's ripple is decorative: reduced motion holds it at rest.
+  root.userData.sceneryUpdate = (clock) => {
+    const time = d.reducedMotion ? 0 : clock;
     for (let i = 0; i < positions.count; i++) {
       const drop = (1.4 - positions.getY(i)) / 2.8;
       const ripple = positions.getX(i) * 2.4 + drop * 3 - time * 1.8;

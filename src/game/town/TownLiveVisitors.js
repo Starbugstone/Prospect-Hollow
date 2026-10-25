@@ -44,7 +44,7 @@ export class TownLiveVisitors {
     // Heartbeat timestamps and guestbook metadata do not change the scene.
     // Localized labels deliberately participate so a language change does.
     return JSON.stringify([
-      !!this.d.liveVisitorsReducedMotion,
+      !!this.d.reducedMotion,
       this.d.motionEnabled === false,
       [...this.entries].map(([id, entry]) => [
         id,
@@ -122,7 +122,7 @@ export class TownLiveVisitors {
   }
   update() {
     const d = this.d;
-    const reduced = d.liveVisitorsReducedMotion || d.motionEnabled === false;
+    const reduced = d.reducedMotion || d.motionEnabled === false;
     const blocked = !!(d.raid || d.cinematic || d.presentation || d.eventCamera);
     let removed = false;
     for (const actor of [...this.actors]) {

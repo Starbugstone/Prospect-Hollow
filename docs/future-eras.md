@@ -244,10 +244,15 @@ for an accelerated visit with the long parked interval shortened.
 
 #### Moon input check
 
-OrbitControls and Earth taps listen on the Moon canvas only, so the lot buttons,
-**Back to the valley** and the letters sit outside its pointer capture.
+As in the valley, the Moon's camera gestures and taps share one surface, the canvas's
+parent, which also holds the lot labels and action buttons: a drag from a label orbits,
+and a tap on one settles through the shared tap gesture (keyboard activation still
+works). The header with **Back to the valley** sits outside that surface. Moon input
+still reaches the document (Escape closes sheets, a press unlocks audio); the valley's
+camera is covered while the Moon is open and its tap gesture ignores the Moon view.
 `testing/browser/moon-input.cjs` clicks and taps them with a mouse and with touch,
-drags the orbit, taps Earth and checks the valley never reacts. CI does not run
+drags the orbit (from the canvas and from a label), taps Earth and checks the valley
+never reacts. CI does not run
 it. Run it after changing Moon input or its overlays, then stop the server:
 
 ```bash

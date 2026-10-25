@@ -203,6 +203,7 @@
       :reduced-motion="reducedMotion"
       :indicators="indicators"
       :available-ids="availableIds"
+      :upgrade-ids="cinematic ? [] : upgradeIds"
       :read-only="readOnly"
       @select="choose($event)"
       @inspect="emit('inspect', $event)"
@@ -249,9 +250,11 @@ import {
   updateLabels,
 } from '../../game/town/TownLabels';
 import { BUILDING_BY_ID, EARTH_BUILDINGS, MOON_BUILDINGS } from '../../data/town';
-import { AREA_BY_ID, LANDMARK_BY_ID, areaChoice } from '../../data/townLandmarks';
+import { AREA_BY_ID } from '../../data/townLandmarks';
 import { dressSpaceHelmet } from '../../game/town/TownSpaceHelmet';
-import { createTapGesture } from '../../game/town/TownTapGesture';
+import { createTapGesture, keyboardActivation } from '../../game/town/TownTapGesture';
+import { cameraKeyAction } from '../../game/town/TownCameraKeys';
+import { useGraphicsRecovery } from '../../composables/useGraphicsRecovery';
 import {
   constructionVisual,
   constructionReady,
@@ -324,6 +327,8 @@ watch(
     // The other map's named VIP is no longer on screen; the valley names its own again.
     showVillagerLabel(null);
     scene?.setMotion(motionEnabled());
+    // The Moon's drags, wheel and pinches belong to the Moon's camera.
+    scene?.setCovered(open);
     if (!open) scene?.projectVillager();
   },
   { flush: 'sync' },
@@ -392,7 +397,6 @@ const labelElements = new Map(),
   actionElements = new Map();
 let anchorLayout = '';
 const canvas = ref(null),
-  canvasVersion = ref(0),
   anchors = shallowRef([]),
   unavailable = ref(false),
   graphicsReady = ref(false);
@@ -451,19 +455,10 @@ const actionAnchors = computed(() =>
   ),
 );
 const buildingName = (id) => t(BUILDING_BY_ID[id].shortName);
-const ACTION_LABELS = {
-  ready: (id) =>
-    AREA_BY_ID[id]
-      ? t('Unveil the {monument}', {
-          monument: t(LANDMARK_BY_ID[areaChoice(props.town, AREA_BY_ID[id])].label),
-        })
-      : buildingActionLabel(props.town, id, 'ready'),
-};
 const actionLabel = (id) =>
   props.readOnly
     ? t('Collect the saloon takings for the mayor')
-    : (ACTION_LABELS[indicators.value[id]]?.(id) ??
-      buildingActionLabel(props.town, id, indicators.value[id]));
+    : buildingActionLabel(props.town, id, indicators.value[id]);
 const placeName = (id) => (id === 'mine' ? t('Mine') : buildingName(id));
 const plotLabel = (id) => {
   if (props.readOnly) return t(id === 'mine' ? 'Mine' : BUILDING_BY_ID[id].name);
@@ -487,24 +482,27 @@ function collectionOrigin(id) {
 }
 let presentationTime = 0;
 let cinematicProgress = 0;
+// The camera of the map on screen: the Moon's while it is open, else the valley's.
+const camera = () => (moonOpen.value ? moonView.value : scene);
+// Explicit navigation (a Build row, a notice): a Moon lot or site opens the Moon map and
+// turns the Moon's camera to it; a valley place closes the Moon. Taps never come here.
+async function focusPlace(id) {
+  if (AREA_BY_ID[id]?.settlement === 'moon' || MOON_BUILDINGS.some((place) => place.id === id)) {
+    moonOpen.value = true;
+    await nextTick();
+    return moonView.value?.focusPlace(id) ?? false;
+  }
+  closeMoon();
+  return scene?.focusPlace(id);
+}
+// Camera buttons are gone: drag, pinch, wheel and keys move the view; Village resets it.
+const resetView = () => camera()?.cameraAction('reset');
 defineExpose({
-  // Moon buildings have no valley lot: focusing one opens the Moon map instead.
-  focusPlace: (id) => {
-    if (
-      AREA_BY_ID[id]?.settlement === 'moon' ||
-      MOON_BUILDINGS.some((building) => building.id === id)
-    ) {
-      moonOpen.value = true;
-      return true;
-    }
-    closeMoon();
-    return scene?.focusPlace(id);
-  },
+  focusPlace,
   openMoon,
   closeMoon,
   findVisitor: (id) => scene?.findVisitor(id) ?? false,
-  // Camera buttons are gone: drag, pinch, wheel and keys move the view; Village resets it.
-  resetView: () => scene?.cameraAction('reset'),
+  resetView,
   collectionOrigin,
   cinematicFrame: (progress) => {
     cinematicProgress = progress;
@@ -559,16 +557,21 @@ const choose = (id) => {
 };
 const chooseLabel = (id, event) => {
   // Pointer taps are settled on pointerup; keep native keyboard/AT activation.
-  if (event.detail === 0) choose(id);
+  if (keyboardActivation(event)) choose(id);
 };
 // Taps on the map or its labels settle on pointerup through the shared tap gesture.
 const tapGesture = createTapGesture({
   map: () => sceneElement.value,
   onTap: (event, plot) => (plot ? choose(plot) : scene?.pick(event.clientX, event.clientY)),
 });
+// The Moon map sits inside the valley's scene and settles its own input, which still
+// bubbles on to the document (Escape, audio unlock). The valley ignores it.
+const onMoon = (event) => !!event.target.closest?.('.town-moon-view');
 const rememberPointer = (event) =>
+  onMoon(event) ||
   tapGesture.down(event, event.target.closest('[data-town-plot]')?.dataset.townPlot);
 const movePointer = (event) => {
+  if (onMoon(event)) return;
   if (!tapGesture.pressed && event.pointerType === 'mouse')
     scene?.hoverVillager(event.clientX, event.clientY);
   tapGesture.move(event);
@@ -577,22 +580,12 @@ const leavePointer = (event) => {
   if (!tapGesture.pressed && event.pointerType === 'mouse')
     scene?.hoverVillager(-Infinity, -Infinity);
 };
-const pick = (event) => tapGesture.up(event);
-const cancelPointer = (event) => tapGesture.cancel(event);
+const pick = (event) => onMoon(event) || tapGesture.up(event);
+const cancelPointer = (event) => onMoon(event) || tapGesture.cancel(event);
+// Camera keys move the camera of the map on screen.
 const cameraKey = (event) => {
-  const action = {
-    ArrowLeft: 'left',
-    ArrowRight: 'right',
-    ArrowUp: 'up',
-    ArrowDown: 'down',
-    '+': 'in',
-    '=': 'in',
-    '-': 'out',
-    Home: 'reset',
-  }[event.key];
-  if (!action) return;
-  event.preventDefault();
-  scene?.cameraAction(action);
+  const action = cameraKeyAction(event);
+  if (action) camera()?.cameraAction(action);
 };
 let updateGeneration = 0;
 const settings = useSettingsStore();
@@ -685,35 +678,28 @@ async function update() {
 }
 const warmAudio = () => prepareAudio(settings);
 let initializing = false;
-let recovering = false;
-let recoveryAttempts = 0;
-let recoveryPose;
-async function recoverGraphics(error, contextLost = false) {
-  if (disposed || unavailable.value || recovering) return;
-  if (!contextLost || recoveryAttempts++ >= 2) {
-    showUnavailable(error);
-    return;
-  }
-  recovering = true;
+// Forget everything drawn by a scene that is going away.
+function resetSceneState() {
   graphicsReady.value = false;
-  if (scene) {
-    recoveryPose = {
-      position: scene.camera.position.toArray(),
-      target: scene.controls.target.toArray(),
-      overview: scene.overview,
-    };
-    scene.dispose();
-    scene = null;
-  }
   lastVisual = '';
   lastConstruction = undefined;
   anchors.value = [];
   anchorLayout = '';
-  canvasVersion.value++;
-  await nextTick();
-  recovering = false;
-  initialize();
 }
+// A lost context rebuilds the valley on a fresh canvas, as every map does.
+const recovery = useGraphicsRecovery({
+  scene: () => scene,
+  release: () => {
+    scene?.dispose();
+    scene = null;
+    resetSceneState();
+  },
+  restart: () => initialize(),
+  fail: (error) => showUnavailable(error),
+});
+const { canvasVersion } = recovery;
+const recoverGraphics = (error, contextLost = false) =>
+  disposed || unavailable.value || recovery.recover(error, contextLost);
 // Without 3D the village cannot be shown: say so and let the player retry. Cinematics
 // and raids still end, so nothing waits on a scene that is not there.
 function showUnavailable(error) {
@@ -733,20 +719,21 @@ function showUnavailable(error) {
   if (props.raid) emit('raid-phase', 'The raid has passed');
   console.warn('3D town unavailable.', error);
 }
-async function retryGraphics() {
+function retryGraphics() {
   unavailable.value = false;
-  recoveryAttempts = 0;
-  graphicsReady.value = false;
-  lastVisual = '';
-  lastConstruction = undefined;
-  anchors.value = [];
-  anchorLayout = '';
-  canvasVersion.value++;
-  await nextTick();
-  initialize();
+  resetSceneState();
+  return recovery.retry();
 }
 async function initialize() {
-  if (scene || initializing || recovering || disposed || !props.active || unavailable.value) return;
+  if (
+    scene ||
+    initializing ||
+    recovery.recovering ||
+    disposed ||
+    !props.active ||
+    unavailable.value
+  )
+    return;
   initializing = true;
   try {
     const { TownDiorama } = await import('../../game/town/TownDiorama');
@@ -792,18 +779,13 @@ async function initialize() {
       // A shared town is only a view: VIP guests visit the owner's own game.
       vipsHidden: props.readOnly,
     });
-    scene.setLiveVisitors(props.liveVisitors, props.reducedMotion, props.liveVisitorTownId);
+    scene.setReducedMotion(props.reducedMotion);
+    scene.setCovered(moonOpen.value);
+    scene.setLiveVisitors(props.liveVisitors, props.liveVisitorTownId);
     scene.showSkyMoon(moon.value.lights);
     await update();
     scene.vipArrivals?.reset(true);
-    if (recoveryPose) {
-      scene.camera.position.fromArray(recoveryPose.position);
-      scene.controls.target.fromArray(recoveryPose.target);
-      scene.overview = recoveryPose.overview;
-      scene.controls.update();
-      scene.render();
-      recoveryPose = null;
-    }
+    recovery.restorePose(scene);
     startRaid();
     graphicsReady.value = true;
   } catch (error) {
@@ -818,7 +800,9 @@ const visibilityChanged = () => {
 watch(
   () => [props.liveVisitors, props.liveVisitorTownId, props.reducedMotion, locale.value],
   () => {
-    scene?.setLiveVisitors(props.liveVisitors, props.reducedMotion, props.liveVisitorTownId);
+    // The app's reduced-motion setting, the one value both maps read (d.reducedMotion).
+    scene?.setReducedMotion(props.reducedMotion);
+    scene?.setLiveVisitors(props.liveVisitors, props.liveVisitorTownId);
   },
 );
 const sceneElement = ref(null);

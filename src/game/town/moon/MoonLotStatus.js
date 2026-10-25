@@ -2,7 +2,7 @@ import { BUILDING_BY_ID } from '../../../data/town';
 import { moonParcels } from '../../../data/moonSettlement';
 import { AREA_BY_ID, areaChoice, areaUnlocked, monumentWork } from '../../../data/townLandmarks';
 import { collectionCooldownRemaining, plotUnlocked } from '../TownRules';
-import { buildingStatusLabel } from '../TownBuildingFeedback';
+import { buildingStatus, buildingStatusLabel } from '../TownBuildingFeedback';
 import { t } from '../../../i18n';
 
 // One status contract for New Hollow's lots, shared by the Moon map labels and the
@@ -52,16 +52,21 @@ export function moonLotStatusLabel(town, id, { collectable = false } = {}) {
 export const moonLotName = (id) => t(AREA_BY_ID[id]?.label ?? BUILDING_BY_ID[id].shortName);
 
 // The short status under a lot's name: monument sites and collectable moonstones use
-// the Moon's own wording; buildings share the valley's building feedback.
+// the Moon's own wording; buildings share the valley's building feedback. A read-only
+// visitor sees levels only, as on the valley's labels: null where there is none.
 export function moonLotDetail(
   town,
   id,
-  { indicators = {}, availableIds = [], collectable = false } = {},
+  { indicators = {}, availableIds = [], collectable = false, readOnly = false } = {},
 ) {
+  if (readOnly) {
+    if (AREA_BY_ID[id]) return moonMonumentChoice(town, id) ? t('Monument') : null;
+    return buildingStatus(town, id, { readOnly })?.text ?? null;
+  }
   return AREA_BY_ID[id] || (id === 'moonstoneWorkshop' && collectable)
     ? moonLotStatusLabel(town, id, { collectable })
     : buildingStatusLabel(town, id, indicators[id], availableIds.includes(id));
 }
 
 export const moonLotLabel = (town, id, options) =>
-  `${moonLotName(id)} · ${moonLotDetail(town, id, options)}`;
+  [moonLotName(id), moonLotDetail(town, id, options)].filter(Boolean).join(' · ');

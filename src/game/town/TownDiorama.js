@@ -20,6 +20,7 @@ import { TownPresentation } from './TownPresentation';
 import { ERA_CONSTRUCTION } from '../../data/mineEvolution';
 
 import { TownRenderQuality } from './TownRenderQuality';
+import { loseContext, watchContextLoss } from './TownRenderer';
 import { updateTownShadowCoverage } from './TownShadows';
 import { TownUpgradeGlow } from './TownUpgradeGlow';
 import * as THREE from 'three';
@@ -52,7 +53,7 @@ import {
   showVillager,
 } from './TownLabelProjection';
 import { addHorse, addPerson, animatePerson, setVillagerIdentity } from './TownPeople';
-import { createTownControls } from './TownControls';
+import { createTownControls, syncTownControls } from './TownControls';
 
 import { TownFrameCache } from './TownFrameCache';
 import { TownStatics } from './TownStatics';
@@ -192,17 +193,12 @@ export class TownDiorama extends TownPrimitives {
     this.observer.observe(canvas);
     this.resize();
     this.prepareConstructionCue();
-    this.contextLost = this.handleContextLoss.bind(this);
-    canvas.addEventListener('webglcontextlost', this.contextLost);
+    this.unwatchContext = watchContextLoss(this);
   }
+  // The owner disposes this scene while the context is lost, then rebuilds it on a
+  // fresh canvas: the recovery every settlement map shares (TownRenderer).
   handleContextLoss(event) {
-    event.preventDefault();
-    this.contextUnavailable = true;
-    this.frameCache.valid = false;
-    this.renderer.setAnimationLoop(null);
-    // The owner disposes this scene while the context is lost, then rebuilds on
-    // a fresh canvas. No buffers or cached attachments cross graphics contexts.
-    this.onUnavailable?.(new Error('Town graphics context lost'), true);
+    loseContext(this, event);
   }
   // three would otherwise update every world matrix again inside each render call
   // (static cache, foreground, inset). Update once per drawn frame instead.
@@ -701,16 +697,23 @@ export class TownDiorama extends TownPrimitives {
       presentation?.dispose();
       this.render();
     }
-    this.controls.enabled = !enabled && !this.paused && !this.eventCamera;
+    syncTownControls(this);
   }
   eraFrame(progress, still = false) {
     if (!this.cinematic) return;
     this.cinematic.finished = progress >= 1;
     this.cinematic.presentation.frame(progress * ERA_CONSTRUCTION.duration, still);
   }
-  setLiveVisitors(visitors, reducedMotion = false, townKey = null) {
+  /**
+   * The app's reduced-motion setting, one value for every settlement map
+   * (docs/era-architecture.md#reduced-motion): effects, reveals, camera flights and
+   * decorative motion stop; villagers and vehicles keep moving. Live visitors stand still.
+   */
+  setReducedMotion(value) {
+    this.reducedMotion = !!value;
+  }
+  setLiveVisitors(visitors, townKey = null) {
     this.livePresenceEnabled = true;
-    this.liveVisitorsReducedMotion = reducedMotion;
     // Existing saves may still contain the obsolete queued guest. Presence owns
     // only that guest slot; ordinary transport and random VIPs remain intact.
     if (this.vipArrivals?.guest) {
@@ -730,7 +733,13 @@ export class TownDiorama extends TownPrimitives {
       else this.construction?.resume();
     }
     this.paused = paused;
-    this.controls.enabled = !paused && !this.cinematic && !this.eventCamera;
+    syncTownControls(this);
+  }
+  // Another settlement's map (the Moon) drawn over the valley keeps the valley's camera
+  // still: its drags, wheel and pinches belong to that map.
+  setCovered(covered) {
+    this.covered = covered;
+    syncTownControls(this);
   }
   // The village always lives while it is shown; only a hidden or paused view stops.
   setMotion(enabled) {
@@ -754,7 +763,7 @@ export class TownDiorama extends TownPrimitives {
     releaseNavigation(this);
     this.cinematic?.presentation.dispose(false);
     this.presentation?.dispose(false);
-    this.canvas.removeEventListener('webglcontextlost', this.contextLost);
+    this.unwatchContext?.();
     cancelAnimationFrame(this.cameraFrame);
     cancelAnimationFrame(this.hoverFrame);
     this.frameCache.dispose();

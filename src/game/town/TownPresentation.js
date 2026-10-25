@@ -29,7 +29,8 @@ export class TownPresentation {
       const t = Math.min(1, time / 1.4);
       d.camera.position.lerpVectors(d.eventCamera.position, eye, t * t * (3 - 2 * t));
       d.controls.target.lerpVectors(d.eventCamera.target, focus, t * t * (3 - 2 * t));
-      (d.keepCameraAboveSurface ?? keepCameraAboveTerrain)(d.camera.position, d.controls.target);
+      // Each map's own ground: the valley's terrain unless the map supplies its height.
+      keepCameraAboveTerrain(d.camera.position, d.controls.target, undefined, d.terrainHeight);
       d.camera.lookAt(d.controls.target);
     }
     for (const motion of d.motions) motion(d.elapsed);

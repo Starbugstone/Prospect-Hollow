@@ -194,18 +194,21 @@ describe('Moon saucer visits', () => {
     }
   });
 
-  it('keeps reduced motion parked with no wake, dust or rotation at any point in the cycle', () => {
+  it('keeps flying with reduced motion, as the valley saucer does, without its wake or dust', () => {
     const f = fixture();
     try {
       f.saucer.update(townAt(), 10, true);
       for (const time of [0, 10, 33, 74, 81, 140]) {
         f.saucer.step(time, true);
-        expect(moonSaucerPose(time, true)).toEqual(moonSaucerPose(34));
-        expect(f.saucer.craft.root.visible).toBe(true);
+        const pose = moonSaucerPose(time);
+        expect(f.saucer.craft.root.visible, `${time}`).toBe(pose.visible);
+        if (pose.visible)
+          expect(f.saucer.craft.root.position.toArray()).toEqual([pose.x, pose.y, pose.z]);
         expect(f.saucer.dust.visible).toBe(false);
         expect(f.saucer.craft.root.getObjectByName('saucerTrail').visible).toBe(false);
-        expect(f.saucer.craft.root.getObjectByName('propellerLeft').rotation.z).toBe(0);
       }
+      // Its flight differs through the cycle: it is not held parked on the pad.
+      expect(moonSaucerPose(10).phase).not.toBe(moonSaucerPose(34).phase);
     } finally {
       f.dispose();
     }
