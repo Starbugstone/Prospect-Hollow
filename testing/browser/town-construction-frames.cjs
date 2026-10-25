@@ -161,6 +161,23 @@ window.trigger = async () => {
 window.settled = () =>
   !scene.construction && !scene.plotsPending() && scene.lifeReady === true &&
   townTimings().entries.some(({ name, start }) => name === 'settle-shadow-render' && start > measure.start);
+// What a run still waits for, when it never settles.
+window.waiting = () => {
+  const { entries } = townTimings();
+  const steps = {};
+  for (const { name, ms } of entries) {
+    const step = (steps[name] ??= { count: 0, ms: 0 });
+    step.count++;
+    step.ms = Math.round(step.ms + ms);
+  }
+  return {
+    construction: !!scene.construction,
+    plotsPending: scene.plotsPending(),
+    lifeReady: scene.lifeReady,
+    generation: scene.generation,
+    steps,
+  };
+};
 window.collect = () => {
   measure.active = false;
   const end = performance.now();
@@ -283,7 +300,12 @@ async function runOnce(browser, scenario, run) {
     if (profiling) await cdp.send('Profiler.start');
     loadAverage = os.loadavg()[0];
     await page.evaluate(() => window.trigger());
-    await page.waitForFunction(() => window.settled(), null, { polling: 250, timeout: 240000 });
+    await page
+      .waitForFunction(() => window.settled(), null, { polling: 250, timeout: 240000 })
+      .catch(async (error) => {
+        const waiting = await page.evaluate(() => window.waiting()).catch(() => null);
+        throw new Error(`${scenario} never settled: ${JSON.stringify(waiting)}\n${error.message}`);
+      });
     // Animal and route repair continue after the shadow render; keep orbiting through them.
     await page.waitForTimeout(2500);
     raw = await page.evaluate(() => window.collect());
