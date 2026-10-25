@@ -6,16 +6,24 @@ import { createTownControls } from '../TownControls';
 import { createTapGesture } from '../TownTapGesture';
 import { cameraAction, focusCamera } from '../TownCamera';
 import { keepCameraAboveTerrain } from '../TownLandscape';
-import { loseContext, watchContextLoss } from '../TownRenderer';
-import { PARCEL_OUTLINE_COLOR, parcelOutlineGeometry } from '../TownParcelOutline';
+import {
+  adaptRenderQuality,
+  aimAt,
+  createTownRenderer,
+  loseContext,
+  requestTownFrame,
+  watchContextLoss,
+} from '../TownRenderer';
+import { updateEventCamera } from '../TownEventCamera';
+import { parcelOutlineMesh } from '../TownParcelOutline';
 import { TownPrimitives } from '../TownPrimitives';
+import { smoothBetween } from '../TownMath';
 import { MoonSaucer, moonSaucerArrival } from './MoonSaucer';
 import { TownFramePacer } from '../TownFramePacer';
-import { TownRenderQuality } from '../TownRenderQuality';
 import { TownUpgradeGlow } from '../TownUpgradeGlow';
 import { MoonConstruction, finishKey } from './MoonConstruction';
 import { TownConstruction, constructionParts } from '../TownConstruction';
-import { MOON_CLIMBER, renderMoonBuilding } from '../buildings/moon';
+import { MOON_CLIMBER, moonRover, renderMoonBuilding } from '../buildings/moon';
 import { MOON_PALETTE as p } from '../../../data/futureArchitecture';
 import { eraEvolution } from '../../../data/eras';
 import { vipVisitor } from '../../../data/villagers';
@@ -29,7 +37,11 @@ import {
 } from './MoonVips';
 import {
   MOON_LOTS,
+  MOON_PAD_TOP,
+  MOON_PATH_LIFT,
   MOON_RING_ROAD,
+  MOON_ROAD_LIFT,
+  moonApproachHeight,
   moonApproaches,
   MOON_PARCEL_SIDES,
   moonLotPose,
@@ -155,10 +167,6 @@ function noise(x, z) {
     bottom = at(ix, iz + 1) + (at(ix + 1, iz + 1) - at(ix, iz + 1)) * sx;
   return top + (bottom - top) * sz;
 }
-const smooth = (a, b, v) => {
-  const t = Math.min(1, Math.max(0, (v - a) / (b - a)));
-  return t * t * (3 - 2 * t);
-};
 // Soft craters: a shallow bowl with a raised lip. The settlement keeps only small
 // ones, clear of every lot and the ring road.
 const CRATERS = (() => {
@@ -192,8 +200,9 @@ export function moonHeight(x, z) {
   // The settlement floor is level; a soft rim rings it; hills swell beyond.
   const rim = 3.6 * Math.exp(-(((r - 53) / 6.5) ** 2));
   const hills =
-    smooth(62, 130, r) * (noise(x * 0.018, z * 0.018) * 11 + noise(x * 0.05, z * 0.05) * 3.5 - 4);
-  let height = smooth(41, 47, r) * (rim + Math.max(hills, -2));
+    smoothBetween(62, 130, r) *
+    (noise(x * 0.018, z * 0.018) * 11 + noise(x * 0.05, z * 0.05) * 3.5 - 4);
+  let height = smoothBetween(41, 47, r) * (rim + Math.max(hills, -2));
   for (const { x: cx, z: cz, size, depth } of CRATERS) {
     const d = Math.hypot(x - cx, z - cz) / size;
     if (d > 1.6) continue;
@@ -225,7 +234,7 @@ function terrain() {
       positions.push(x, y, z);
       // Darker maria and crater floors, lighter rims and ridges.
       const tone = noise(x * 0.012 + 40, z * 0.012 - 17);
-      color.copy(base).lerp(mare, smooth(0.5, 0.78, tone) * 0.85);
+      color.copy(base).lerp(mare, smoothBetween(0.5, 0.78, tone) * 0.85);
       color.lerp(bright, Math.min(0.6, Math.max(0, y * 0.12)));
       if (y < -0.05) color.lerp(mare, Math.min(0.7, -y * 1.8));
       color.multiplyScalar(0.97 + noise(x * 0.4, z * 0.4) * 0.06);
@@ -270,13 +279,11 @@ export function moonAccessGeometry(approaches = moonApproaches()) {
     colors = [];
   const padColor = new THREE.Color('#aaa99f'),
     groundColor = new THREE.Color('#cdcac1');
-  for (const { points, width, pose, rampStart, rampEnd } of approaches) {
+  for (const route of approaches) {
+    const { points, width, pose, rampStart, rampEnd } = route;
     const offset = positions.length / 3;
-    const surface = (x, z) => {
-      const radius = Math.hypot(x - pose.x, z - pose.z);
-      const t = Math.max(0, Math.min(1, (radius - rampStart) / (rampEnd - rampStart)));
-      return 0.27 * (1 - t) + (moonHeight(x, z) + 0.04) * t;
-    };
+    // The walkers' path surface (moonApproachHeight), down onto the regolith here.
+    const surface = (x, z) => moonApproachHeight(route, x, z, moonHeight(x, z));
     const colorAt = (x, z) => {
       const radius = Math.hypot(x - pose.x, z - pose.z);
       const t = Math.max(0, Math.min(1, (radius - rampStart) / (rampEnd - rampStart)));
@@ -325,10 +332,10 @@ export function moonAccessGeometry(approaches = moonApproaches()) {
           ib = (b + side) * 3;
         positions.push(
           positions[ia],
-          0.04,
+          MOON_ROAD_LIFT,
           positions[ia + 2],
           positions[ib],
-          0.04,
+          MOON_ROAD_LIFT,
           positions[ib + 2],
         );
         uvs.push(0, 0, 1, 0);
@@ -351,7 +358,8 @@ export function moonAccessGeometry(approaches = moonApproaches()) {
       for (const distance of [0, 0.6]) {
         const x = entry[0] + dx * distance - dz * side * 0.525;
         const z = entry[1] + dz * distance + dx * side * 0.525;
-        positions.push(x, 0.276, z);
+        // Just above the path's own pad end, so the two never flicker.
+        positions.push(x, MOON_PAD_TOP + MOON_PATH_LIFT + 0.006, z);
         uvs.push(side < 0 ? 0 : 1, distance);
         colorAt(x, z);
       }
@@ -364,19 +372,6 @@ export function moonAccessGeometry(approaches = moonApproaches()) {
   geometry.setIndex(indices);
   geometry.computeVertexNormals();
   return geometry;
-}
-
-function rover(d, parent) {
-  const g = d.group(parent);
-  d.box(g, 1.2, 0.36, 0.7, 0, 0.5, 0, p.shell, true);
-  d.box(g, 0.5, 0.26, 0.6, 0.18, 0.78, 0, p.glass);
-  for (const dx of [-0.42, 0.42])
-    for (const dz of [-0.4, 0.4]) {
-      const wheel = d.mesh(g, 'cylinder', [0.18, 0.1, 0.18], [dx, 0.2, dz], p.deep);
-      wheel.rotation.x = Math.PI / 2;
-    }
-  d.ball(g, -0.45, 1.05, -0.2, 0.06, p.flower, 'rock');
-  return g;
 }
 
 const labelPoint = new THREE.Vector3();
@@ -394,7 +389,11 @@ export function moonRoofHeight(lot) {
   return top;
 }
 
-export class MoonScene {
+// The Moon's scene is its own drawing kit, as the valley's diorama is: the shared
+// construction reveal and presentations draw through it and read its camera, clock and
+// town directly, with no adapter in between.
+const NO_COMPANIONS = Object.freeze({ companions: null });
+export class MoonScene extends TownPrimitives {
   constructor(
     canvas,
     {
@@ -408,6 +407,9 @@ export class MoonScene {
       vipsHidden = false,
     } = {},
   ) {
+    super();
+    // Moon modules draw through `scene.d`; it is the scene itself.
+    this.d = this;
     this.canvas = canvas;
     this.onLabels = onLabels;
     this.onEarth = onEarth;
@@ -422,29 +424,24 @@ export class MoonScene {
     this.onVillagerLabel = onVillagerLabel;
     this.vipsHidden = vipsHidden;
     this.reducedMotion = reducedMotion;
-    this.d = new TownPrimitives();
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(SKY);
     this.scene.fog = new THREE.Fog(SKY, 150, 250);
     this.camera = new THREE.PerspectiveCamera(48, 1, 0.1, 600);
     this.camera.layers.enable(2);
     this.camera.position.set(0, 26, 66);
-    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
-    // The valley's measured drawing-buffer tier, so the Moon costs no more to fill.
-    this.renderer.setPixelRatio(new TownRenderQuality(window.devicePixelRatio || 1).ratio);
-    this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFShadowMap;
-    this.renderer.outputColorSpace = THREE.SRGBColorSpace;
-    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.05;
+    // The valley's renderer and measured drawing-buffer tier, so the Moon costs no more
+    // to fill and adapts the same way.
+    Object.assign(this, createTownRenderer(canvas, { exposure: 1.05 }));
     this.scene.add(new THREE.HemisphereLight('#d6e0ff', '#5f5b53', 1.25));
     const sun = new THREE.DirectionalLight('#fff4de', 3.1);
     sun.position.set(40, 60, 30);
     sun.castShadow = true;
-    sun.shadow.mapSize.set(1024, 1024);
+    sun.shadow.mapSize.set(this.renderQuality.shadowSize, this.renderQuality.shadowSize);
     Object.assign(sun.shadow.camera, { left: -55, right: 55, top: 55, bottom: -55, far: 200 });
     sun.shadow.normalBias = 0.03;
     this.scene.add(sun);
+    this.sun = sun;
     // Earthshine: a soft blue fill from the valley above the rim.
     const earthshine = new THREE.DirectionalLight('#9fc4ff', 0.6);
     earthshine.position.set(-40, 30, -80);
@@ -470,7 +467,7 @@ export class MoonScene {
     );
     ribbon.castShadow = false;
     ribbon.name = 'Ribbon from the valley';
-    this.saucer = new MoonSaucer(this.d, this.scene, this.camera);
+    this.saucer = new MoonSaucer(this.d, this.scene, { camera: this.camera });
     this.buildings = this.d.group(this.scene);
     this.life = this.d.group(this.scene);
     // VIP visitors live outside the settlers' group, so a rebuild never cuts a tour short.
@@ -651,12 +648,7 @@ export class MoonScene {
     const parts = constructionParts(before);
     this.d.clearGroup(before);
     lot.userData.plot = id;
-    const reveal = new TownConstruction(
-      Object.assign(Object.create(this.d), { activeElapsed: this.elapsed ?? 0, town: this.town }),
-      lot,
-      null,
-      parts,
-    );
+    const reveal = new TownConstruction(this, lot, null, parts);
     reveal.presentFirstStrike();
     (this.lotReveals ??= new Map()).set(id, { reveal, lot });
   }
@@ -696,7 +688,7 @@ export class MoonScene {
       });
     if (town?.buildings?.roverBarn) {
       for (let n = 0; n < town.buildings.roverBarn; n++) {
-        const r = rover(this.d, this.life);
+        const r = moonRover(this.d, this.life);
         this.walkers.push({
           root: r,
           radius: MOON_RING_ROAD,
@@ -782,6 +774,17 @@ export class MoonScene {
     this.streak.rotation.z = 1.05;
     this.streak.material.opacity = 1 - phase / 0.22;
   }
+  // The shared unveiling stands on the level crater floor and casts suited settlers;
+  // the Moon has no companion animals.
+  surfaceHeight() {
+    return 0;
+  }
+  person({ parent, color }) {
+    return moonSuitFigure(this.d, { parent, pack: color });
+  }
+  get fauna() {
+    return NO_COMPANIONS;
+  }
   setPresentation(definition) {
     if (this.presentation?.definition === definition) return;
     this.presentation?.dispose();
@@ -799,6 +802,7 @@ export class MoonScene {
     this.animating = enabled;
     this.motionEnabled = enabled;
     this.pacer.reset();
+    this.renderQuality?.resetWindow();
     this.renderer.setAnimationLoop(enabled && !this.contextUnavailable ? this.tick : null);
     if (!enabled) this.requestFrame();
   }
@@ -873,18 +877,9 @@ export class MoonScene {
     if (target) {
       if (!this.selection) {
         // The shared parcel outline for a unit pad, scaled to each pad below.
-        this.selection = new THREE.Mesh(
-          parcelOutlineGeometry(
-            { radius: 1, sides: MOON_PARCEL_SIDES },
-            { gap: 0.06, width: 0.06 },
-          ),
-          new THREE.MeshBasicMaterial({
-            color: PARCEL_OUTLINE_COLOR,
-            side: THREE.DoubleSide,
-            transparent: true,
-            opacity: 0.9,
-            depthWrite: false,
-          }),
+        this.selection = parcelOutlineMesh(
+          { radius: 1, sides: MOON_PARCEL_SIDES },
+          { gap: 0.06, width: 0.06 },
         );
         this.selection.name = 'Selected Moon lot outline';
         this.selectionRoot = new THREE.Group();
@@ -923,12 +918,17 @@ export class MoonScene {
   // Paced like the valley: a fast display does not draw more than 60 frames a second.
   tick(now) {
     if (this.contextUnavailable || !this.pacer.due(now)) return;
+    // The valley's adaptive drawing-buffer and shadow tier, outside presentations.
+    const frameTime = this.pacer.frameTime;
+    if (frameTime !== null && !this.presentation) adaptRenderQuality(this, frameTime);
     const delta = this.lastNow ? Math.min(0.1, (now - this.lastNow) / 1000) : 0;
     this.lastNow = now;
     this.elapsed += delta;
     this.move(this.elapsed);
     this.vipArrivals?.update();
     this.meteor(this.elapsed);
+    // After an unveiling the camera flies home on the valley's event camera.
+    if (updateEventCamera(this)) this.viewChanged = true;
     // A presentation draws its own frames, so the Moon is drawn once a frame, as in the
     // valley (TownDiorama.tick).
     if (!this.presentation) this.render();
@@ -937,11 +937,7 @@ export class MoonScene {
   requestFrame() {
     this.viewChanged = true;
     // A running animation draws the latest pose on its next frame anyway.
-    if (this.frame || this.animating) return;
-    this.frame = requestAnimationFrame(() => {
-      this.frame = null;
-      this.render();
-    });
+    if (!this.animating) requestTownFrame(this);
   }
   render() {
     if (this.contextUnavailable) return;
@@ -986,16 +982,7 @@ export class MoonScene {
   }
   // Points the raycaster through a pointer event; false when the canvas has no size.
   aim(event) {
-    const box = this.canvas.getBoundingClientRect();
-    if (!box.width || !box.height) return false;
-    this.raycaster.setFromCamera(
-      new THREE.Vector2(
-        ((event.clientX - box.left) / box.width) * 2 - 1,
-        -((event.clientY - box.top) / box.height) * 2 + 1,
-      ),
-      this.camera,
-    );
-    return true;
+    return aimAt(this.raycaster, this.camera, this.canvas, event.clientX, event.clientY);
   }
   hitsEarth(event) {
     if (!this.aim(event)) return false;
@@ -1042,7 +1029,7 @@ export class MoonScene {
     this.saucer.dispose();
     this.vipArrivals?.dispose();
     this.renderer.setAnimationLoop(null);
-    if (this.frame) cancelAnimationFrame(this.frame);
+    cancelAnimationFrame(this.cameraFrame);
     this.observer.disconnect();
     this.unwatchContext?.();
     this.controls.removeEventListener('change', this.cameraChanged);

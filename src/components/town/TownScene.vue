@@ -80,28 +80,20 @@
       >{{ t(plaqueLabel.name) }}</span
     >
     <div class="town-action-icons">
-      <button
+      <TownActionIcon
         v-for="anchor in actionAnchors"
         :key="anchor.id"
-        :ref="(element) => trackElement(actionElements, anchor.id, element)"
-        class="town-action-icon"
-        :class="[
-          TOWN_ACTIONS[indicators[anchor.id]].class,
-          { 'raid-defense-ready': raidDefenseIds.includes(anchor.id) },
-        ]"
+        :ref="(icon) => trackElement(actionElements, anchor.id, icon?.$el)"
+        :indicator="indicators[anchor.id]"
+        :label="actionLabel(anchor.id)"
+        :class="{ 'raid-defense-ready': raidDefenseIds.includes(anchor.id) }"
         :data-town-plot="anchor.id"
-        :style="{
-          translate: labelTranslate(anchor.collection),
-          '--action-scale': TOWN_ACTIONS[indicators[anchor.id]].scale,
-        }"
-        :aria-label="actionLabel(anchor.id)"
+        :style="{ translate: labelTranslate(anchor.collection) }"
         @focus="anchor.id === 'mine' && prefetchBoard()"
         @pointerenter="anchor.id === 'mine' && prefetchBoard()"
         @pointerdown="anchor.id === 'mine' && prefetchBoard()"
         @click="chooseLabel(anchor.id, $event)"
-      >
-        <img :src="TOWN_ACTIONS[indicators[anchor.id]].icon" alt="" />
-      </button>
+      />
     </div>
     <div
       class="town-scene-labels"
@@ -136,18 +128,7 @@
       >
         <span v-if="quietPlot(anchor.id)" class="quiet-plot-plus" aria-hidden="true">+</span>
         <span class="plot-name">{{ placeName(anchor.id) }}</span>
-        <small
-          v-if="labelStatus[anchor.id]?.kind === 'work'"
-          class="construction-count"
-          :title="labelStatus[anchor.id].title"
-        >
-          <GameIcon name="wall" />{{ labelStatus[anchor.id].text }}
-        </small>
-        <small v-else-if="labelStatus[anchor.id]?.kind === 'need'" class="need-hint">{{
-          labelStatus[anchor.id].text
-        }}</small>
-        <span v-else-if="labelStatus[anchor.id]?.kind === 'empty'" aria-hidden="true">+</span>
-        <small v-else-if="labelStatus[anchor.id]">{{ labelStatus[anchor.id].text }}</small>
+        <TownLabelStatus :status="labelStatus[anchor.id]" />
       </button>
     </div>
     <div
@@ -223,10 +204,11 @@ import { performanceMark, afterPaint, scheduleWork } from '../../game/Presentati
 import { prefetchBoard } from '../../game/phaser/loadBoard';
 import { prepareAudio } from '../../composables/useAudio';
 import { useSettingsStore } from '../../stores/settingsStore';
-import GameIcon from '../GameIcon.vue';
 import TownIcon from './TownIcon.vue';
 import TownMoon from './TownMoon.vue';
 import TownMoonView from './TownMoonView.vue';
+import TownActionIcon from './TownActionIcon.vue';
+import TownLabelStatus from './TownLabelStatus.vue';
 import { moonSettlement } from '../../data/moonSettlement';
 import GameViewStatus from '../GameViewStatus.vue';
 import { TOWN_ACTIONS, buildingActionLabel } from '../../data/townIndicators';
@@ -473,12 +455,11 @@ const labelTranslate = (point) => box.translate(point);
 function collectionOrigin(id) {
   if (moonOpen.value && MOON_BUILDINGS.some((building) => building.id === id))
     return moonView.value?.collectionOrigin(id) ?? { x: 50, y: 50 };
+  // The place's collection point (its action icon) or its label anchor; the collection
+  // keeps itself on screen (TownResourceCollection), as on the Moon.
   const anchor = anchors.value.find((anchor) => anchor.id === id);
   const origin = anchor?.collection?.visible ? anchor.collection : anchor;
-  return {
-    x: Math.max(8, Math.min(92, origin?.x ?? 50)),
-    y: Math.max(20, Math.min(90, origin?.y ?? 50)),
-  };
+  return { x: origin?.x ?? 50, y: origin?.y ?? 50 };
 }
 let presentationTime = 0;
 let cinematicProgress = 0;

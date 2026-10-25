@@ -7,7 +7,7 @@ import {
 } from 'three';
 import { MOON_PALETTE as p } from '../../../data/futureArchitecture';
 import { heritageUpgrade } from '../../../data/heritageUpgrades';
-import { MOON_PARCEL_SIDES, moonPadRadius } from '../../../data/moonSettlement';
+import { MOON_PAD_TOP, MOON_PARCEL_SIDES, moonPadRadius } from '../../../data/moonSettlement';
 import { futureShape } from './futureShapes';
 
 // New Hollow on the Moon. Every building shares one small lunar kit: moon-white
@@ -123,7 +123,8 @@ function purposeModule(d, g, kind, x, z, w, dep, h) {
 export function moonParcelPad(d, g, r, { flush = false } = {}) {
   d.geometries['moon-parcel'] ??= new CylinderGeometry(1, 1, 1, MOON_PARCEL_SIDES);
   // Monuments build from the ground, so their parcel is a flush plate of the same shape.
-  const [rim, top] = flush ? [0.03, 0.02] : [0.18, 0.08];
+  // A raised pad's rim and deck reach MOON_PAD_TOP, where its building and walkers stand.
+  const [rim, top] = flush ? [0.03, 0.02] : [MOON_PAD_TOP - 0.08, 0.08];
   const base = d.mesh(g, 'moon-parcel', [r, rim, r], [0, rim / 2, 0], p.deep);
   base.name = 'Moon parcel pad';
   base.userData.parcelPad = { radius: r, sides: MOON_PARCEL_SIDES };
@@ -203,7 +204,8 @@ function gable(d, g, x, z, w, dep, h, roof = p.roof) {
   );
   airlock(d, g, x, 0.65, z + dep / 2 + 0.02);
 }
-function rover(d, g, x, z, turn = 0) {
+/** New Hollow's rover: parked at the barn and the lookout, and driving the ring road. */
+export function moonRover(d, g, x = 0, z = 0, turn = 0) {
   const r = d.group(g, x, 0, z);
   r.rotation.y = turn;
   d.box(r, 1.1, 0.35, 0.65, 0, 0.5, 0, p.shell, true);
@@ -215,6 +217,7 @@ function rover(d, g, x, z, turn = 0) {
     }
   d.rod(r, [-0.4, 0.68, -0.2], [-0.4, 1.2, -0.2], 0.02, p.deep);
   d.ball(r, -0.4, 1.24, -0.2, 0.05, p.flower, 'rock');
+  return r;
 }
 function willowkinTree(d, g, x, y, z, scale = 1) {
   d.rod(g, [x, y, z], [x, y + 1.1 * scale, z], 0.09 * scale, p.timber);
@@ -413,7 +416,7 @@ const FORMS = {
         [1.53, 1.74],
       ])
         d.box(fence, w, 0.06, 0.06, x, 0.65, 2.6, p.timber);
-      rover(d, g, 2.4, 2.4, 0.4);
+      moonRover(d, g, 2.4, 2.4, 0.4);
     }
   },
   moonstoneWorkshop(d, g, level) {
@@ -433,8 +436,8 @@ const FORMS = {
   },
   roverBarn(d, g, level) {
     gable(d, g, -0.8, -1.2, 3, 2.2, 1.6, p.flower);
-    rover(d, g, 1.9, 1.6, -0.5);
-    if (level >= 2) rover(d, g, -1.6, 2, 0.6);
+    moonRover(d, g, 1.9, 1.6, -0.5);
+    if (level >= 2) moonRover(d, g, -1.6, 2, 0.6);
     if (level >= 2) {
       const bay = d.group(g);
       bay.name = `Lunar purpose module ${heritageUpgrade('roverBarn')}`;
@@ -462,7 +465,7 @@ const FORMS = {
     const x = -0.7;
     for (let n = 0; n < 6; n++) {
       const height = (6 - n) * 0.22;
-      d.box(stairs, 0.95, height, 0.32, x, 0.26 + height / 2, 0.94 + n * 0.3, p.timber);
+      d.box(stairs, 0.95, height, 0.32, x, MOON_PAD_TOP + height / 2, 0.94 + n * 0.3, p.timber);
     }
     for (const side of [-1, 1]) {
       const sx = x + side * 0.5;
@@ -510,7 +513,7 @@ export function renderMoonBuilding(d, parent, kind, level) {
       const a = (n * TAU) / 4 + TAU / 8,
         x = Math.sin(a) * (r - 0.7),
         z = Math.cos(a) * (r - 0.7);
-      d.rod(root, [x, 0.26, z], [x, 0.96, z], 0.04, p.deep);
+      d.rod(root, [x, MOON_PAD_TOP, z], [x, 0.96, z], 0.04, p.deep);
       d.ball(root, x, 1.01, z, 0.08, p.light, 'rock');
     }
   }

@@ -15,11 +15,12 @@ import {
   moonLotIds,
   moonLotLabel,
   moonLotName,
+  moonLotInfo,
   moonLotStatus,
-  moonLotStatusLabel,
   moonMonumentChoice,
 } from '../src/game/town/moon/MoonLotStatus';
 import { setLocale } from '../src/i18n';
+import { monumentStatus } from '../src/game/town/TownBuildingFeedback';
 
 const moonTown = () => ({ ...createTown(), era: 'twin-hollows', coins: 1e8 });
 const site = areasForSettlement('moon')[0];
@@ -46,23 +47,31 @@ describe('New Hollow lot status, shared by the Moon map and the Build tab', () =
   it('follows a building from a locked plot through construction to its level', () => {
     const locked = { ...createTown(), era: 'frontier' };
     expect(moonLotStatus(locked, 'settlerDomes')).toBe('later');
-    expect(moonLotStatusLabel(locked, 'settlerDomes')).toBe('Coming soon');
+    expect(moonLotInfo(locked, 'settlerDomes')).toEqual({ kind: 'later', text: 'Coming soon' });
 
     const town = moonTown();
     town.buildings.spaceElevator = 1;
     expect(moonLotStatus(town, 'settlerDomes')).toBe('open');
-    expect(moonLotStatusLabel(town, 'settlerDomes')).toBe('Build');
+    expect(moonLotInfo(town, 'settlerDomes', { availableIds: ['settlerDomes'] })).toEqual({
+      kind: 'available',
+      text: 'Build',
+    });
+    // An open lot the town cannot pay for yet is a quiet empty plot, as in the valley.
+    expect(moonLotInfo(town, 'settlerDomes').kind).toBe('empty');
 
     town.projects.settlerDomes = { id: 'settlerDomes', stage: 1, wins: 0, required: 2 };
     expect(moonLotStatus(town, 'settlerDomes')).toBe('work');
-    expect(moonLotStatusLabel(town, 'settlerDomes')).toBe('Under construction');
-    // Buildings show the valley's shared feedback: construction progress.
+    // Buildings show the valley's shared feedback: construction progress and its title.
     expect(moonLotDetail(town, 'settlerDomes')).toBe('0/2');
+    expect(moonLotInfo(town, 'settlerDomes')).toMatchObject({
+      kind: 'work',
+      title: 'Construction: 0 of 2 mining runs completed',
+    });
 
     delete town.projects.settlerDomes;
     town.buildings.settlerDomes = 2;
     expect(moonLotStatus(town, 'settlerDomes')).toBe('built');
-    expect(moonLotStatusLabel(town, 'settlerDomes')).toBe('Lv. 2');
+    expect(moonLotInfo(town, 'settlerDomes')).toEqual({ kind: 'built', text: 'Lv. 2' });
   });
 
   it('describes affordable buildings as the valley does', () => {
@@ -82,9 +91,10 @@ describe('New Hollow lot status, shared by the Moon map and the Build tab', () =
     town.moonstoneProduction = { ...town.moonstoneProduction, stored: 4 };
     const now = 1_000_000;
     expect(canCollectMoonstones(town, now)).toBe(true);
-    expect(moonLotDetail(town, 'moonstoneWorkshop', { collectable: true })).toBe(
-      'Collect 4 moonstones',
-    );
+    expect(moonLotInfo(town, 'moonstoneWorkshop', { collectable: true })).toEqual({
+      kind: 'coins',
+      text: 'Collect 4 moonstones',
+    });
     town.lastCollections = { ...town.lastCollections, moonstoneWorkshop: now - 1000 };
     expect(canCollectMoonstones(town, now)).toBe(false);
     expect(moonLotDetail(town, 'moonstoneWorkshop')).toBe('Lv. 1');
@@ -108,7 +118,35 @@ describe('New Hollow lot status, shared by the Moon map and the Build tab', () =
   it('uses the player language', () => {
     setLocale('fr');
     const town = moonTown();
-    expect(moonLotStatusLabel(town, site.id)).not.toBe('Choose a design');
+    expect(moonLotDetail(town, site.id)).not.toBe('Choose a design');
     expect(moonMonumentChoice(town, 'settlerDomes')).toBeUndefined();
+  });
+
+  it('describes a monument site through the shared monument status, in every context', () => {
+    let town = moonTown();
+    expect(monumentStatus(town, site.id)).toEqual({ kind: 'available', text: 'Choose a design' });
+    expect(monumentStatus(town, site.id, { context: 'card' }).text).toBe('Open site · optional');
+    expect(monumentStatus(town, site.id, { context: 'list' }).text).toBe(
+      `Open site · ${site.choices.length} designs`,
+    );
+    expect(monumentStatus(town, site.id, { readOnly: true })).toBeNull();
+    town = chooseSite(town);
+    expect(monumentStatus(town, site.id)).toEqual({ kind: 'work', text: 'Under construction' });
+    expect(monumentStatus(town, site.id, { context: 'list' }).text).toMatch(
+      new RegExp(`^${site.label} · Building: `),
+    );
+    expect(monumentStatus(town, site.id, { readOnly: true })).toEqual({
+      kind: 'built',
+      text: 'Monument',
+    });
+    while (!monumentWork(town, site).ready) town = advanceMonumentWorks(town);
+    expect(monumentStatus(town, site.id).kind).toBe('ready');
+    expect(monumentStatus(town, site.id, { context: 'list' }).text).toBe(
+      `${site.label} · Ready to unveil`,
+    );
+    const later = { ...createTown(), era: 'frontier' };
+    expect(monumentStatus(later, site.id, { context: 'card' }).text).toMatch(/^Opens in /);
+    expect(monumentStatus(later, site.id)).toBeNull();
+    expect(monumentStatus(town, 'settlerDomes')).toBeNull();
   });
 });

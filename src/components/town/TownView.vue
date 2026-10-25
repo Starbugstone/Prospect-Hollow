@@ -716,7 +716,7 @@ import {
 } from '../../data/townEvents';
 import { ERA_BY_ID } from '../../data/eras';
 import { eraGate, plotInEra } from '../../game/town/TownEras';
-import { buildingStatus } from '../../game/town/TownBuildingFeedback';
+import { buildingStatus, monumentStatus } from '../../game/town/TownBuildingFeedback';
 import {
   needsReport,
   nextGoal,
@@ -1012,34 +1012,19 @@ const monumentSites = computed(() =>
         name: area.label,
         icon: landmarkPayment(town.value, area, 0).icon,
         colour: '#c9a35a',
-        status: t('Open site · {count} designs', { count: area.choices.length }),
+        status: monumentStatus(town.value, area.id, { context: 'list' }).text,
         price: Math.min(...prices),
         from: new Set(prices).size > 1,
       };
     }
     const upgrade = landmarkOffer(town.value, area, choice);
-    const work = monumentWork(town.value, area);
     return {
       id: area.id,
       name: LANDMARK_BY_ID[choice].label,
       icon: landmarkPayment(town.value, area, 0).icon,
       colour: LANDMARK_BY_ID[choice].colour,
-      status: work?.ready
-        ? t('{site} · Ready to unveil', { site: t(area.label) })
-        : work
-          ? t(
-              work.required === 1
-                ? '{site} · Building: finished by the next puzzle'
-                : '{site} · Building: {wins} of {required} puzzles',
-              { site: t(area.label), wins: work.wins, required: work.required },
-            )
-          : area.timeless
-            ? t(area.label)
-            : t('{site} · Stage {stage} of {maximum}', {
-                site: t(area.label),
-                stage: areaStage(town.value, area),
-                maximum: areaMaximum(town.value, area),
-              }),
+      // The site's shared status, as its card and the Moon's labels read it.
+      status: monumentStatus(town.value, area.id, { context: 'list' }).text,
       price: upgrade?.price ?? 0,
       from: false,
     };

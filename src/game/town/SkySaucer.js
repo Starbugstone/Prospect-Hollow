@@ -2,15 +2,12 @@ import { roundedAircraft } from './RoundedTransports';
 import { createSaucerTrail } from './SaucerTrails';
 import { saucerTrailColors, skySaucer } from '../../data/skyCraft';
 
-/** Shared craft, paint, folding legs and wake for valley and Moon flights.
- * The caller owns its clock/path; disposal releases only this craft's resources. */
-export function createSkySaucer(d, parent, { era, path, scale = 1, departure, approach }) {
-  const palette = skySaucer(era);
-  const root = roundedAircraft(d, parent, palette);
-  root.name = 'Sky saucer';
-  root.rotation.order = 'YXZ';
-  root.scale.setScalar(scale);
-  root.userData.animated = true;
+/**
+ * Gives `root` its own transparent copy of each material, so an aircraft fades in and
+ * out of sight without fading the shared palette. Returns the copies, keyed by the
+ * shared originals; they are the aircraft's to dispose (`transient`).
+ */
+export function fadingMaterials(root) {
   const materials = new Map();
   root.traverse((object) => {
     if (!object.isMesh) return;
@@ -22,6 +19,19 @@ export function createSkySaucer(d, parent, { era, path, scale = 1, departure, ap
     }
     object.material = materials.get(object.material);
   });
+  return materials;
+}
+
+/** Shared craft, paint, folding legs and wake for valley and Moon flights.
+ * The caller owns its clock/path; disposal releases only this craft's resources. */
+export function createSkySaucer(d, parent, { era, path, scale = 1, departure, approach, camera }) {
+  const palette = skySaucer(era);
+  const root = roundedAircraft(d, parent, palette);
+  root.name = 'Sky saucer';
+  root.rotation.order = 'YXZ';
+  root.scale.setScalar(scale);
+  root.userData.animated = true;
+  const materials = fadingMaterials(root);
   const legs = root.getObjectByName('saucerLegs');
   const lights = root.getObjectByName('propellerLeft');
   const trail = createSaucerTrail(d, root, {
@@ -30,6 +40,7 @@ export function createSkySaucer(d, parent, { era, path, scale = 1, departure, ap
     scale,
     departure,
     approach,
+    camera,
   });
   return {
     root,

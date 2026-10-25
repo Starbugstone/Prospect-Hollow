@@ -1,5 +1,10 @@
 import { MOON_PALETTE as p } from '../../../data/futureArchitecture';
-import { MOON_RING_ROAD, moonApproaches } from '../../../data/moonSettlement';
+import {
+  MOON_RING_ROAD,
+  MOON_ROAD_LIFT,
+  moonApproachHeight,
+  moonApproaches,
+} from '../../../data/moonSettlement';
 import { swingLimbs } from '../TownGait';
 import { hash01 as hash } from '../TownMath';
 import { walkPath, walkPose } from '../TownNavigation';
@@ -19,21 +24,13 @@ const HOP = 0.12;
 // Walkers keep to their own side of the ring road.
 const LANE = 0.35;
 const RING_STEP = 0.12;
-const PAD_TOP = 0.27,
-  ROAD = 0.04;
 // The saucer pad is an open landing apron, not a building to step into.
 const OPEN_PADS = new Set(['saucerPad']);
 const HOMES = ['settlerDomes', 'craterHomesteads'];
 
-const heightOn = (route, x, z) => {
-  const radius = Math.hypot(x - route.pose.x, z - route.pose.z);
-  const t = Math.max(
-    0,
-    Math.min(1, (radius - route.rampStart) / (route.rampEnd - route.rampStart)),
-  );
-  return PAD_TOP * (1 - t) + ROAD * t;
-};
-const approachPoints = (route) => route.points.map(([x, z]) => [x, heightOn(route, x, z), z]);
+// Walkers tread the paths' own surface, from the pad's top down to the road.
+const approachPoints = (route) =>
+  route.points.map(([x, z]) => [x, moonApproachHeight(route, x, z), z]);
 /** A lot's hatch, on its pad: where walkers step in and out. */
 export const moonHatch = (route) => approachPoints(route)[0];
 
@@ -48,7 +45,7 @@ function ringArc(from, to) {
   const steps = Math.max(1, Math.ceil(Math.abs(delta) / RING_STEP));
   return Array.from({ length: steps + 1 }, (_, n) => {
     const a = from + (delta * n) / steps;
-    return [Math.cos(a) * radius, ROAD, Math.sin(a) * radius];
+    return [Math.cos(a) * radius, MOON_ROAD_LIFT, Math.sin(a) * radius];
   });
 }
 
@@ -121,7 +118,7 @@ export function moonSettlerPose(plan, time, out = {}) {
     const a = plan.phase + plan.dir * time * plan.speed;
     const radius = MOON_RING_ROAD + (plan.dir > 0 ? -LANE : LANE);
     out.x = Math.cos(a) * radius;
-    out.y = ROAD;
+    out.y = MOON_ROAD_LIFT;
     out.z = Math.sin(a) * radius;
     out.heading = -a - (plan.dir > 0 ? 0 : Math.PI);
     out.visible = true;

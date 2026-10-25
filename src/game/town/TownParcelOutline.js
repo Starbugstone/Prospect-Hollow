@@ -1,4 +1,4 @@
-import { RingGeometry, Shape, ShapeGeometry } from 'three';
+import { DoubleSide, Mesh, MeshBasicMaterial, RingGeometry, Shape, ShapeGeometry } from 'three';
 
 // The selection outline every map draws around its chosen parcel, in the parcel's
 // own shape: a frame for a valley plot (`rect`), a ring for a round monument site
@@ -42,4 +42,20 @@ export function parcelOutlineGeometry(parcel, { gap, width } = PARCEL_OUTLINE) {
     1,
     parcel.sides ? -Math.PI / 2 : 0,
   ).rotateX(-Math.PI / 2);
+}
+
+/** The selection outline mesh every map draws, with one material: callers place it. */
+export function parcelOutlineMesh(parcel, outline = PARCEL_OUTLINE) {
+  const mesh = new Mesh(
+    parcelOutlineGeometry(parcel, outline),
+    new MeshBasicMaterial({
+      color: PARCEL_OUTLINE_COLOR,
+      side: DoubleSide,
+      transparent: true,
+      opacity: 0.85,
+      depthWrite: false,
+    }),
+  );
+  mesh.name = 'Selected parcel outline';
+  return mesh;
 }

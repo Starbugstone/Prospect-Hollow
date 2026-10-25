@@ -111,11 +111,35 @@ describe('A read-only Moon shows levels only, as the valley does', () => {
     const lots = byClass(moonAst, 'town-moon-lots');
     const owner = await moonView(lots, props, ids);
     expect(owner).toMatch(/Tap to finish|Build|Choose a design/);
-    expect(owner).toMatch(/class="town-moon-lot[^"]* open/);
+    // The valley's look for a place to build.
+    expect(owner).toMatch(/class="town-moon-lot[^"]*can-build/);
     const visitor = await moonView(lots, { ...props, readOnly: true }, ids);
     expect(visitor).toContain('Lv. 2');
     expect(visitor).not.toMatch(/Tap to finish|Build|Choose a design|Under construction/);
-    expect(visitor).not.toMatch(/class="town-moon-lot[^"]* open/);
+    expect(visitor).not.toMatch(/class="town-moon-lot[^"]*(can-build|is-ready)/);
+  });
+});
+
+describe('One label renderer for both maps', () => {
+  it('draws valley and Moon labels and action icons with the same components', () => {
+    for (const ast of [moonAst, sceneAst]) {
+      expect(find(ast, (node) => node.tag === 'TownLabelStatus')).toBeTruthy();
+      expect(find(ast, (node) => node.tag === 'TownActionIcon')).toBeTruthy();
+    }
+  });
+  it('shows Moon construction as the valley does, without recomputing it per camera frame', async () => {
+    const town = moonTown();
+    town.buildings = { ...town.buildings, spaceElevator: 1 };
+    town.projects = { settlerDomes: { id: 'settlerDomes', stage: 1, wins: 1, required: 2 } };
+    const lots = byClass(moonAst, 'town-moon-lots');
+    const html = await moonView(lots, { town }, ['settlerDomes']);
+    // Camera frames re-render the labels: they read the statuses computed once per
+    // change of the town or its markers (lotInfo), never the status functions.
+    expect(lots).toContain('lotInfo[lot.id]');
+    expect(lots).not.toMatch(/moonLot(Detail|Info|Label|Status)\(|status\(lot/);
+    expect(html).toContain(
+      '<small class="construction-count" title="Construction: 1 of 2 mining runs completed"><i data-icon="wall"></i>1/2</small>',
+    );
   });
 });
 

@@ -8,6 +8,10 @@ export const cellKey = (x, z) => (x + 32768) * 65536 + (z + 32768);
 export const smooth01 = (value) => MathUtils.smoothstep(value, 0, 1);
 // The same curve across [edge0, edge1], for terrain blends measured in world units.
 export const smoothBetween = (edge0, edge1, value) => MathUtils.smoothstep(value, edge0, edge1);
+// A value eased 0→1 as `value` runs from `from` over `length` (seconds of a cycle, say).
+export const ramp = (value, from, length) => smooth01((value - from) / length);
+// The remainder of n / m in [0, m), negative n included.
+export const mod = (n, m) => ((n % m) + m) % m;
 // Deterministic value in [0, 1) for scenery and animal variety; never gameplay randomness.
 export const hash01 = (n) => {
   const value = Math.sin(n * 127.1 + 311.7) * 43758.5453;

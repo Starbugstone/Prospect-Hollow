@@ -124,7 +124,7 @@ export function restoreEventCamera(d) {
     d.eventCamera = null;
     syncTownControls(d);
     d.camera.lookAt(d.controls.target);
-    d.frameCache.valid = false;
+    if (d.frameCache) d.frameCache.valid = false;
     return;
   }
   Object.assign(d.eventCamera, {
@@ -181,7 +181,7 @@ export function updateEventCamera(d) {
   shot.previous = d.elapsed;
   if (!shot.lastPosition.equals(d.camera.position) || !shot.lastTarget.equals(d.controls.target)) {
     d.camera.lookAt(d.controls.target);
-    d.frameCache.valid = false;
+    if (d.frameCache) d.frameCache.valid = false;
     shot.lastPosition.copy(d.camera.position);
     shot.lastTarget.copy(d.controls.target);
     return true;

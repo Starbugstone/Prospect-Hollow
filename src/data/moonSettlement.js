@@ -81,6 +81,21 @@ export const MOON_PARCEL_SIDES = 8;
 export const MOON_SITE_PAD = 5.2;
 // From a pad's centre to the middle of a side.
 export const moonPadApothem = (radius) => radius * Math.cos(Math.PI / MOON_PARCEL_SIDES);
+// The top of every raised pad (its rim and inset deck): where buildings, the saucer's
+// feet, survey beacons and the walkers on a pad stand.
+export const MOON_PAD_TOP = 0.26;
+// Paths sit a hair above what they cross, so they never flicker against it.
+export const MOON_PATH_LIFT = 0.01;
+export const MOON_ROAD_LIFT = 0.04;
+/**
+ * A public path's surface at (x, z): on its pad's top near the hatch, ramping down past
+ * `rampStart`..`rampEnd` (from the pad's centre) to the regolith at `ground`.
+ */
+export function moonApproachHeight({ pose, rampStart, rampEnd }, x, z, ground = 0) {
+  const radius = Math.hypot(x - pose.x, z - pose.z);
+  const t = Math.max(0, Math.min(1, (radius - rampStart) / (rampEnd - rampStart)));
+  return (MOON_PAD_TOP + MOON_PATH_LIFT) * (1 - t) + (ground + MOON_ROAD_LIFT) * t;
+}
 /** Every parcel on the Moon with its pad: position, turn (a corner on local +z) and radius. */
 export function moonParcels(lots = MOON_LOTS, sites = areasForSettlement('moon')) {
   return [

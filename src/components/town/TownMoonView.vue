@@ -92,25 +92,23 @@
           class="town-moon-lot"
           :data-moon-lot="lot.id"
           :aria-pressed="selected === lot.id"
-          :class="{
-            'is-pin': lot.collapsed,
-            selected: selected === lot.id,
-            'is-collectable': !readOnly && lot.id === 'moonstoneWorkshop' && canCollectMoonstones,
-            built: !!(town.buildings[lot.id] || moonMonumentChoice(town, lot.id)),
-            open:
-              !readOnly &&
-              (AREA_BY_ID[lot.id] ? status(lot.id) === 'open' : availableIds.includes(lot.id)),
-            'is-ready': indicators[lot.id] === 'ready' || status(lot.id) === 'ready',
-            'is-working': !!town.projects?.[lot.id] || status(lot.id) === 'work',
-          }"
+          :class="[
+            lotInfo[lot.id].look,
+            {
+              'is-pin': lot.collapsed,
+              selected: selected === lot.id,
+              'is-collectable': collecting(lot.id),
+              built: !!(town.buildings[lot.id] || moonMonumentChoice(town, lot.id)),
+            },
+          ]"
           :style="{
             left: `${lot.x}%`,
             top: `${lot.y}%`,
             width: `${lot.width ?? 104}px`,
             height: `${lot.height ?? 52}px`,
           }"
-          :aria-label="lotLabel(lot.id)"
-          :title="lotLabel(lot.id)"
+          :aria-label="lotInfo[lot.id].label"
+          :title="lotInfo[lot.id].label"
           @focus="revealOnFocus($event, lot.id)"
           @click="activateLabel(lot.id, $event)"
         >
@@ -121,34 +119,24 @@
             :src="TOWN_ACTIONS[indicators[lot.id]].icon"
             alt=""
           />
-          <strong v-if="!lot.collapsed">{{ moonLotName(lot.id) }}</strong>
-          <small v-if="!lot.collapsed">{{ lotDetail(lot.id) }}</small>
-          <span
-            v-if="!lot.collapsed && indicators[lot.id] === 'upgrade'"
-            class="moon-upgrade-hint"
-            aria-hidden="true"
-            >↑</span
-          >
+          <strong v-if="!lot.collapsed">{{ lotInfo[lot.id].name }}</strong>
+          <TownLabelStatus v-if="!lot.collapsed" :status="lotInfo[lot.id].status" />
         </button>
       </div>
       <div class="town-moon-actions" role="group" :aria-label="t('Village buildings')">
-        <button
+        <TownActionIcon
           v-for="lot in actionLots"
           :key="lot.id"
-          type="button"
-          class="town-action-icon town-moon-action"
-          :class="TOWN_ACTIONS[indicators[lot.id]].class"
+          class="town-moon-action"
+          :indicator="indicators[lot.id]"
+          :label="buildingActionLabel(town, lot.id, indicators[lot.id])"
           :data-moon-action="lot.id"
           :style="{
             left: `${lot.actionPoint?.x ?? lot.anchor?.x ?? lot.x}%`,
             top: `${lot.actionPoint?.y ?? lot.anchor?.y ?? lot.y}%`,
-            '--action-scale': TOWN_ACTIONS[indicators[lot.id]].scale,
           }"
-          :aria-label="buildingActionLabel(town, lot.id, indicators[lot.id])"
           @click="activateLabel(lot.id, $event)"
-        >
-          <img :src="TOWN_ACTIONS[indicators[lot.id]].icon" alt="" />
-        </button>
+        />
       </div>
     </div>
     <header class="town-moon-header">
@@ -183,7 +171,6 @@ import {
 } from '../../data/moonSettlement';
 import { TOWN_ACTIONS, buildingActionLabel } from '../../data/townIndicators';
 import {
-  AREA_BY_ID,
   areaChoice,
   areaShownStage,
   areaUnlocked,
@@ -199,11 +186,14 @@ import {
 } from '../../game/town/moon/MoonLabelDensity';
 import {
   canCollectMoonstones as collectable,
-  moonLotDetail,
+  moonLotInfo,
+  moonLotLabel,
   moonLotName,
   moonLotStatus,
   moonMonumentChoice,
 } from '../../game/town/moon/MoonLotStatus';
+import TownActionIcon from './TownActionIcon.vue';
+import TownLabelStatus from './TownLabelStatus.vue';
 import TownMoon from './TownMoon.vue';
 import TownMoonstoneBalance from './TownMoonstoneBalance.vue';
 import TownMoonBuilding from './TownMoonBuilding.vue';
@@ -286,12 +276,44 @@ const mapApproaches = computed(() =>
   })),
 );
 const allLots = computed(() => [...mapLots.value, ...mapMonuments.value]);
+// Each lot's name, shared status (TownLabelStatus) and look, recomputed when the town or
+// its markers change rather than on every camera frame. The looks are the valley
+// labels': can-build, is-ready and has-income for the same states.
+const lotInfo = computed(() => {
+  const options = {
+    indicators: props.indicators,
+    availableIds: props.availableIds,
+    collectable: canCollectMoonstones.value,
+    readOnly: props.readOnly,
+  };
+  return Object.fromEntries(
+    allLots.value.map(({ id }) => {
+      const status = moonLotInfo(props.town, id, options);
+      return [
+        id,
+        {
+          name: moonLotName(id),
+          status,
+          label: moonLotLabel(props.town, id, options),
+          state: moonLotStatus(props.town, id),
+          look: {
+            'can-build': status?.kind === 'available',
+            'is-ready': status?.kind === 'ready',
+            'has-income': status?.kind === 'coins' || status?.kind === 'tnt',
+          },
+        },
+      ];
+    }),
+  );
+});
+const collecting = (id) =>
+  id === 'moonstoneWorkshop' && lotInfo.value[id]?.status?.kind === 'coins';
 const needsAttention = (id) =>
   !props.readOnly &&
   moonLabelNeedsAttention({
-    status: status(id),
+    status: lotInfo.value[id]?.state,
     action: TOWN_ACTIONS[props.indicators[id]],
-    collectable: id === 'moonstoneWorkshop' && canCollectMoonstones.value,
+    collectable: collecting(id),
   });
 const shownLots = computed(() => {
   const { width, height } = viewport.value;
@@ -308,11 +330,7 @@ const shownLots = computed(() => {
       width,
       height,
       { near: !unavailable.value && cameraDistance.value <= 48, selected: selectedLot.value },
-    ).map((lot) =>
-      lot.id === 'moonstoneWorkshop' && canCollectMoonstones.value
-        ? { ...lot, width: 128, height: 64 }
-        : lot,
-    ),
+    ).map((lot) => (collecting(lot.id) ? { ...lot, width: 128, height: 64 } : lot)),
     width,
     height,
   ).filter((lot) => lot.visible);
@@ -339,15 +357,6 @@ function cameraKey(event) {
 function revealOnFocus(event, id) {
   if (event.target.matches(':focus-visible')) selectedLot.value = id;
 }
-const status = (id) => moonLotStatus(props.town, id);
-const lotDetail = (id) =>
-  moonLotDetail(props.town, id, {
-    indicators: props.indicators,
-    availableIds: props.availableIds,
-    collectable: canCollectMoonstones.value,
-    readOnly: props.readOnly,
-  });
-const lotLabel = (id) => [moonLotName(id), lotDetail(id)].filter(Boolean).join(' · ');
 const updateGlow = () => {
   scene?.setUpgradeable(props.upgradeIds);
   scene?.setLabelActions(
@@ -483,12 +492,10 @@ defineExpose({
     presentationTime = time;
     scene?.presentationFrame(time, props.reducedMotion);
   },
-  // A coin popup rises from the lot's label, or from the lot itself when its label is
-  // tucked away.
+  // A collection rises from the lot itself, as in the valley; TownResourceCollection
+  // keeps it on screen.
   collectionOrigin: (id) => {
-    const lot =
-      shownLots.value.find((lot) => lot.id === id) ??
-      labels.value.find((lot) => lot.id === id && lot.visible);
+    const lot = labels.value.find((lot) => lot.id === id);
     return { x: lot?.x ?? 50, y: lot?.y ?? 50 };
   },
 });
@@ -539,39 +546,17 @@ defineExpose({
   border-radius: 50%;
   background: radial-gradient(circle, #142f48db 35%, #61d6ec55 60%, transparent 72%);
 }
-.town-moon-action img {
+.town-moon-action :deep(img) {
   filter: drop-shadow(0 0 5px #bcecff);
 }
 .town-moon-lot.selected {
   outline: 3px solid #f5df91;
   outline-offset: 2px;
 }
-.town-moon-lot.is-working {
-  border-color: #83c5dc;
-  background: #172d43ed;
-  color: #edf9ff;
-}
 .town-moon-lot.is-collectable small {
   white-space: normal;
   overflow: visible;
   text-overflow: clip;
-}
-.town-moon-lot.is-working small {
-  color: #b5e4ef;
-}
-.town-moon-lot.is-ready {
-  border-color: #f5d885;
-}
-.moon-upgrade-hint {
-  position: absolute;
-  right: -10px;
-  top: -12px;
-  border-radius: 50%;
-  background: #c0ffbc;
-  color: #204e42;
-  font-size: 20px;
-  font-weight: 900;
-  width: 24px;
 }
 </style>
 

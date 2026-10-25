@@ -10,7 +10,6 @@ import {
 } from '../../../data/townLandmarks';
 import { buildLandmark } from '../TownLandmarks';
 import { moonParcelPad } from '../buildings/moon';
-import { moonSuitFigure } from './MoonSettlers';
 import { buildMonumentWorks } from '../TownMonumentWorks';
 import { TownPresentation } from '../TownPresentation';
 
@@ -90,27 +89,8 @@ export function syncMoonMonuments(scene, town) {
   scene.requestFrame();
 }
 
+// The shared unveiling runs on the Moon scene itself: its camera, clock, ground and
+// suited settlers (MoonScene provides what TownPresentation reads).
 export function moonMonumentPresentation(scene, definition) {
-  const d = Object.assign(Object.create(scene.d), {
-    scene: scene.scene,
-    town: scene.town,
-    camera: scene.camera,
-    controls: scene.controls,
-    renderer: scene.renderer,
-    elapsed: scene.elapsed,
-    motions: [],
-    frameCache: {},
-    // Ending a Moon presentation restores its camera immediately, even when paused.
-    motionEnabled: false,
-    fauna: { companions: null },
-    surfaceHeight: () => 0,
-    // The shots stay above the Moon's own hills, as the valley's stay above its terrain.
-    terrainHeight: scene.terrainHeight,
-    render: () => {
-      scene.viewChanged = true;
-      scene.render();
-    },
-    person: ({ parent, color }) => moonSuitFigure(scene.d, { parent, pack: color }),
-  });
-  return new TownPresentation(d, definition);
+  return new TownPresentation(scene, definition);
 }

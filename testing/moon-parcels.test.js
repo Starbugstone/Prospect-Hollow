@@ -116,10 +116,10 @@ it.each(areasForSettlement('moon').map((area) => [area.id, area]))(
   },
 );
 
-// MoonScene needs WebGL; the parcel half of it runs on a bare prototype.
+// MoonScene needs WebGL; the parcel half of it runs on a bare prototype that is its own
+// drawing kit, as the real scene is.
 function parcelScene(town = moonTown()) {
-  const scene = Object.assign(Object.create(MoonScene.prototype), {
-    d: kit(),
+  const scene = Object.assign(Object.create(MoonScene.prototype), kit(), {
     scene: new Scene(),
     town,
     raycaster: new Raycaster(),
@@ -132,6 +132,7 @@ function parcelScene(town = moonTown()) {
       this.picked.push(id);
     },
   });
+  scene.d = scene;
   scene.raycaster.layers.set(3);
   scene.upgradeGlow = new TownUpgradeGlow(scene.scene);
   scene.pickTargets = new Group();

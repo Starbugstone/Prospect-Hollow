@@ -1,12 +1,12 @@
 import { hasRoundedTransport } from '../../data/roundedArchitecture';
-import { createSkySaucer } from './SkySaucer';
+import { createSkySaucer, fadingMaterials } from './SkySaucer';
 import { airportAppearance } from '../../data/airport';
 import { SKY_MOON_DIRECTION, saucerFliesToMoon } from '../../data/skyCraft';
 import { futureModel, cityModel } from './buildings/city';
 import { AIRPORT } from './TownLayout';
 import airportLayout from '../../data/airportLayout.json';
 import { Box3, Vector3 } from 'three';
-import { lerp, smooth01 } from './TownMath';
+import { lerp, mod, ramp, smooth01 } from './TownMath';
 
 // One aircraft owns the whole sequence. Arrivals and departures cannot overlap;
 // town rebuilds sample the same clock instead of starting another flight.
@@ -28,7 +28,6 @@ const standX = AIRPORT.center[0] + (airportLayout.hangar.frontX + airportLayout.
 const taxiZ = AIRPORT.center[1] + airportLayout.hangar.centerZ;
 const startZ = AIRPORT.startZ + 2;
 const touchdownZ = AIRPORT.startZ + 7;
-const mod = (n, m) => ((n % m) + m) % m;
 
 // Each visiting plane flies one of these departures: the rotation point (runway
 // distance at lift-off), climb per unit of runway, and on some visits a gentle banked
@@ -246,7 +245,6 @@ function routePoint({ heading, climb, rise, ease }, s, out) {
 const flightAt = new Vector3();
 const yawOf = ([x, z]) => Math.atan2(x, z);
 const turnTo = (from, to, t) => from + Math.atan2(Math.sin(to - from), Math.cos(to - from)) * t;
-const ramp = (phase, from, length) => smooth01(Math.max(0, Math.min(1, (phase - from) / length)));
 
 /** The saucer's flight on the same four-minute cycle and arrival time as the planes.
  * `toMoon` sends it toward the sky Moon and brings it back from there; otherwise it
@@ -451,18 +449,7 @@ export function addAviationActivity(d, town) {
   plane.scale.multiplyScalar(
     Math.min(1, (bay.backX - bay.frontX - 0.5) / size.z, (bay.roofRadius * 2 - 0.5) / size.x),
   );
-  const materials = new Map();
-  if (!rounded)
-    plane.traverse((o) => {
-      if (!o.isMesh) return;
-      if (!materials.has(o.material)) {
-        const material = o.material.clone();
-        material.transparent = true;
-        material.userData.transient = true;
-        materials.set(o.material, material);
-      }
-      o.material = materials.get(o.material);
-    });
+  const materials = rounded ? new Map() : fadingMaterials(plane);
   plane.userData.animated = true;
   const propellers = ['propellerLeft', 'propellerRight'].map((name) => plane.getObjectByName(name));
   const livery = rounded ? null : applyLivery(materials, appearance);

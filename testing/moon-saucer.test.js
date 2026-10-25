@@ -26,7 +26,7 @@ const townAt = (level = 1, era = 'moonward') => ({
 function fixture() {
   const d = new TownPrimitives(),
     scene = new Group();
-  const saucer = new MoonSaucer(d, scene, new PerspectiveCamera());
+  const saucer = new MoonSaucer(d, scene, { camera: new PerspectiveCamera() });
   return {
     d,
     scene,

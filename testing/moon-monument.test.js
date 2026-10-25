@@ -38,6 +38,7 @@ import {
 import { buildPersonalAreas } from '../src/game/town/TownPersonalisation';
 import { buildLandmark } from '../src/game/town/TownLandmarks';
 import { focusTownPlace } from '../src/game/town/TownCamera';
+import { updateEventCamera } from '../src/game/town/TownEventCamera';
 import { TownPrimitives } from '../src/game/town/TownPrimitives';
 import TownMoonMonument from '../src/components/town/TownMoonMonument.vue';
 import TownMonumentSite from '../src/components/town/TownMonumentSite.vue';
@@ -243,40 +244,57 @@ it('preserves actual Moon building levels when monuments change the label catalo
   scene.access.geometry.dispose();
 });
 
-it('plays the shared unveiling on the lunar camera with suited visitors and restores it', () => {
-  const value = finish(choose(town()), 1),
-    d = fixture(value);
-  const scene = Object.assign(Object.create(MoonScene.prototype), {
-    d,
-    scene: d.scene,
-    town: value,
-    elapsed: 0,
-    renderer: { shadowMap: {} },
-    camera: new PerspectiveCamera(48, 1.5, 0.1, 600),
-    controls: { target: new Vector3(0, 0, 4), enabled: true },
-    render() {},
-    requestFrame() {},
-  });
-  scene.camera.position.set(0, 26, 66);
-  scene.camera.layers.enable(2);
-  const pose = scene.camera.position.clone();
-  const definition = monumentPresentation(area.id, area.choices[0], 1);
-  expect(definition.settlement).toBe('moon');
-  scene.setPresentation(definition);
-  expect(scene.presentation.effect.origin.toArray()).toEqual([
-    area.positions[0][0],
-    0,
-    area.positions[0][1],
-  ]);
-  expect(scene.presentation.effect.crowd).toHaveLength(14);
-  scene.presentationFrame(8);
-  expect(scene.camera.position.equals(pose)).toBe(false);
-  expect(scene.controls.target.z).toBeLessThan(-30);
-  expect(scene.presentation.effect.pieces.every(({ part }) => !part.visible)).toBe(true);
-  scene.setPresentation(null);
-  expect(scene.camera.position.equals(pose)).toBe(true);
-  expect(scene.controls.enabled).toBe(true);
-});
+it.each([
+  ['paused', false],
+  ['moving', true],
+])(
+  'plays the shared unveiling on the lunar camera with suited visitors and restores it (%s)',
+  (_, moving) => {
+    const value = finish(choose(town()), 1),
+      d = fixture(value);
+    // The Moon scene itself is the presentation's view: its own kit, camera, clock and ground.
+    const scene = Object.assign(Object.create(MoonScene.prototype), d, {
+      town: value,
+      elapsed: 0,
+      motionEnabled: moving,
+      renderer: { shadowMap: {} },
+      camera: new PerspectiveCamera(48, 1.5, 0.1, 600),
+      controls: { target: new Vector3(0, 0, 4), enabled: true },
+      terrainHeight: moonHeight,
+      render() {},
+      requestFrame() {},
+    });
+    scene.d = scene;
+    scene.camera.position.set(0, 26, 66);
+    scene.camera.layers.enable(2);
+    const pose = scene.camera.position.clone();
+    const definition = monumentPresentation(area.id, area.choices[0], 1);
+    expect(definition.settlement).toBe('moon');
+    scene.setPresentation(definition);
+    expect(scene.presentation.effect.origin.toArray()).toEqual([
+      area.positions[0][0],
+      0,
+      area.positions[0][1],
+    ]);
+    expect(scene.presentation.effect.crowd).toHaveLength(14);
+    scene.presentationFrame(8);
+    expect(scene.camera.position.equals(pose)).toBe(false);
+    expect(scene.controls.target.z).toBeLessThan(-30);
+    expect(scene.presentation.effect.pieces.every(({ part }) => !part.visible)).toBe(true);
+    // The Moon has no companion animals among its visitors.
+    expect(scene.presentation.effect.crowd.some(({ willowkin }) => willowkin)).toBe(false);
+    scene.setPresentation(null);
+    // A paused Moon restores its camera at once; a moving one flies home on the valley's
+    // event camera, as its tick runs it.
+    if (moving) {
+      expect(scene.controls.enabled).toBe(false);
+      scene.elapsed += 1.3;
+      updateEventCamera(scene);
+    }
+    expect(scene.camera.position.distanceTo(pose)).toBeLessThan(1e-9);
+    expect(scene.controls.enabled).toBe(true);
+  },
+);
 
 it('uses the common details panel and has fallback SVG art for empty, built and working sites', async () => {
   expect(await render(TownMonumentSite, { id: area.id, town: town() })).toContain(
