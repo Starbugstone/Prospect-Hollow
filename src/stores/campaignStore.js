@@ -977,15 +977,6 @@ export const useCampaignStore = defineStore('campaign', {
         : null;
       return hammers;
     },
-    awardReward(reward) {
-      const at = Date.now();
-      const granted = grantReward(this, reward);
-      if (granted) {
-        this.recordAction('reward-grant', { reward, at });
-        this.save();
-      }
-      return granted;
-    },
     resolveBandits() {
       const at = Date.now();
       this.accrueSaloonIncome(at);

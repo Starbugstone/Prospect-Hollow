@@ -291,7 +291,7 @@ describe('Profile and reward integrity', () => {
     campaign.recordVictory(victory(currentId));
     expect(campaign.upgradeBuilding('well', 0)).toBe(true);
     expect(campaign.upgradeBuilding('well', 0)).toBe(false);
-    campaign.awardReward({ id: 'tnt', kind: 'power', label: 'Hammer', quantity: 1 });
+    chestRewards.grantReward(campaign, { id: 'tnt', kind: 'power', label: 'Hammer', quantity: 1 });
     const hammerBefore = campaign.powers.find((power) => power.id === 'tnt').quantity;
     useInventoryStore().consumeItem('tnt');
     setActivePinia(createPinia());
