@@ -261,6 +261,11 @@ docker run --rm --network host --user "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD"
 docker stop hollow-moon-web
 ```
 
+On the host network, Chromium drops in-flight module requests
+(`ERR_NETWORK_CHANGED`) whenever another container starts, which leaves a blank page
+and a timeout. If other containers are busy, replace `--network host` with
+`--network container:hollow-moon-web` to share the server's own network.
+
 `testing/browser/moon-labels.cjs` uses the same Docker browser setup. Substitute
 that filename in the second command to check WebGL and SVG at 1440×900, 900×360
 and 375×740. It checks every lot/site label or pin for overlap, screen bounds,

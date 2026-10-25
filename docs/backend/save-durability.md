@@ -91,11 +91,15 @@ they do not access player accounts. Install Playwright separately or point
 `PLAYWRIGHT_MODULE` at an existing installation, start Vite on port 8192, then run:
 
 ```sh
+node testing/browser/connection-screens.cjs
 node testing/browser/session-expiry.cjs
 node testing/browser/save-durability.cjs
 ```
 
-`PH_TEST_ORIGIN` overrides the dev-server origin. The checks cover live puzzles
+The [Moon input check](../future-eras.md#moon-input-check) shows the Docker commands.
+A town counts as loaded once the Build tab's Next Step panel offers the next level
+(`openNextStep` in `testing/browser/helpers.cjs`). `PH_TEST_ORIGIN` overrides the
+dev-server origin. The checks cover live puzzles
 across expiry/reconnection, independent device stores, successive archived
 conflicts, reload, download, explicit overwrite, history restore, permanent
 upload rejection, and failed archive writes. The village uses the lightweight
