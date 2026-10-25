@@ -11,12 +11,18 @@ $signInIp = [
         '127.' . random_int(1, 254) . '.' . random_int(1, 254) . '.' . random_int(1, 254),
 ];
 
-// Aborts the next statement starting with `$armed` as a deadlock, as both databases
-// report it, so the real entry points must replay their whole transaction.
+// Aborts the next `$times` statements starting with `$armed` as deadlocks, as both
+// databases report them, so the real entry points must replay their whole transaction.
 final class InjectedDeadlocks implements Driver\Middleware
 {
     public ?string $armed = null;
+    public int $times = 0;
     public int $thrown = 0;
+    public function arm(string $sql, int $times = 1): void
+    {
+        $this->armed = $sql;
+        $this->times = $times;
+    }
     public function wrap(Driver $driver): Driver
     {
         return new class ($driver, $this) extends AbstractDriverMiddleware {
@@ -59,7 +65,9 @@ final class InjectedDeadlocks implements Driver\Middleware
         if ($this->armed === null || !str_starts_with($sql, $this->armed)) {
             return;
         }
-        $this->armed = null;
+        if (--$this->times <= 0) {
+            $this->armed = null;
+        }
         $this->thrown++;
         // PostgreSQL reports SQLSTATE 40P01 and MySQL error 1213.
         throw new class ('Injected deadlock') extends Driver\AbstractException {
@@ -74,8 +82,8 @@ final class InjectedDeadlocks implements Driver\Middleware
 // Force the same player -> identity/link -> player cycle as account operations
 // racing a sign-in. Barriers arrange locks, rather than relying on random timing.
 try {
-    // A persistent deadlock still fails after one retry and rolls back every
-    // attempted write. Authentication errors must never be retried.
+    // A persistent deadlock still fails after a bounded number of attempts and rolls back
+    // every attempted write. Authentication errors must never be retried.
     $driverError = new class ('deadlock') extends RuntimeException implements
         Doctrine\DBAL\Driver\Exception
     {
@@ -88,6 +96,7 @@ try {
     foreach ([$deadlock, new ApiError(401, 'Expired link.')] as $failure) {
         $attempts = 0;
         $marker = bin2hex(random_bytes(32));
+        $started = hrtime(true);
         try {
             Database::retryOnDeadlock($db->get(), function ($connection) use (
                 $marker,
@@ -106,8 +115,14 @@ try {
             );
         }
         check(
-            $attempts === ($failure === $deadlock ? 2 : 1),
-            'only deadlocks retry, and only once',
+            $attempts === ($failure === $deadlock ? Database::DEADLOCK_ATTEMPTS : 1),
+            'only deadlocks retry, up to the attempt limit',
+        );
+        // Each replay first waits at least 5 ms, so the winner can commit.
+        check(
+            $failure !== $deadlock ||
+                hrtime(true) - $started >= (Database::DEADLOCK_ATTEMPTS - 1) * 5000000,
+            'replays pause before running again',
         );
         check(
             $db
@@ -117,6 +132,32 @@ try {
             'failed attempts leave no committed writes',
         );
     }
+    // Deadlocks on every attempt but the last still commit the work once.
+    $attempts = 0;
+    $marker = bin2hex(random_bytes(32));
+    $result = Database::retryOnDeadlock($db->get(), function ($connection) use (
+        $marker,
+        $deadlock,
+        &$attempts,
+    ) {
+        $attempts++;
+        $connection->insert('identities', ['email_hash' => $marker]);
+        if ($attempts < Database::DEADLOCK_ATTEMPTS) {
+            throw $deadlock;
+        }
+        return 'committed';
+    });
+    check(
+        $result === 'committed' && $attempts === Database::DEADLOCK_ATTEMPTS,
+        'repeated deadlocks are replayed until the work commits',
+    );
+    check(
+        (int) $db
+            ->get()
+            ->fetchOne('SELECT COUNT(*) FROM identities WHERE email_hash=?', [$marker]) === 1,
+        'the replayed work commits its writes once',
+    );
+    $db->get()->delete('identities', ['email_hash' => $marker]);
     $db->get()->beginTransaction();
     $attempts = 0;
     try {
@@ -288,24 +329,48 @@ try {
         $sessions = fn(string $id): int => (int) $db
             ->get()
             ->fetchOne('SELECT COUNT(*) FROM sessions WHERE player_id=?', [$id]);
-        $faults->armed = 'DELETE FROM login_intents';
+        $faults->arm('DELETE FROM login_intents');
         $owner = account($signInIp);
         check($faults->thrown === 1, 'sign-in met a deadlock');
         check($sessions($owner['id']) === 1, 'the replayed sign-in issues one session');
 
-        $faults->armed = 'INSERT INTO towns';
+        $towns = fn(): int => (int) $db
+            ->get()
+            ->fetchOne('SELECT COUNT(*) FROM towns WHERE player_id=?', [$owner['id']]);
+        $faults->arm('INSERT INTO towns');
         status(
             200,
             callApi('POST', 'towns', townBody('Deadlock Retry'), $owner),
             'save after a deadlock',
         );
         check($faults->thrown === 2, 'the save met a deadlock');
-        check(
-            (int) $db
-                ->get()
-                ->fetchOne('SELECT COUNT(*) FROM towns WHERE player_id=?', [$owner['id']]) === 1,
-            'the replayed save stores one town',
+        check($towns() === 1, 'the replayed save stores one town');
+
+        // Deadlocks in a row are replayed while attempts remain; then the request fails
+        // without storing anything, and the player's local progress waits for a retry.
+        $faults->arm('INSERT INTO towns', Database::DEADLOCK_ATTEMPTS - 1);
+        status(
+            200,
+            callApi('POST', 'towns', townBody('Deadlock Again'), $owner),
+            'save after repeated deadlocks',
         );
+        check(
+            $faults->thrown === 1 + Database::DEADLOCK_ATTEMPTS,
+            'the save met a deadlock on every attempt but the last',
+        );
+        check($towns() === 2, 'the repeatedly replayed save stores one town');
+        $faults->arm('INSERT INTO towns', Database::DEADLOCK_ATTEMPTS);
+        status(
+            500,
+            callApi('POST', 'towns', townBody('Deadlock Exhausted'), $owner),
+            'save after a deadlock on every attempt',
+        );
+        check(
+            $faults->thrown === 1 + 2 * Database::DEADLOCK_ATTEMPTS && $faults->armed === null,
+            'the save stops after the attempt limit',
+        );
+        check($towns() === 2, 'the exhausted save stores nothing');
+        $thrown = $faults->thrown;
 
         $token = bin2hex(random_bytes(32));
         $changed = 'retried-' . bin2hex(random_bytes(6)) . '@example.test';
@@ -315,22 +380,25 @@ try {
             'email' => $changed,
             'expires_at' => time() + 900,
         ]);
-        $faults->armed = 'UPDATE players SET email';
+        $faults->arm('UPDATE players SET email');
         status(
             200,
             callApi('POST', 'account/email/confirm', ['token' => $token], [], $signInIp),
             'email change after a deadlock',
         );
-        check($faults->thrown === 3, 'the email change met a deadlock');
+        check($faults->thrown === $thrown + 1, 'the email change met a deadlock');
         check(
             $db->get()->fetchOne('SELECT email FROM players WHERE id=?', [$owner['id']]) ===
                 $changed,
             'the replayed email change commits',
         );
 
-        $faults->armed = 'DELETE FROM sessions';
+        $faults->arm('DELETE FROM sessions');
         $signedOut = callApi('POST', 'auth/logout', new stdClass(), $owner, $signInIp);
-        check($signedOut['status'] === 200 && $faults->thrown === 4, 'sign-out after a deadlock');
+        check(
+            $signedOut['status'] === 200 && $faults->thrown === $thrown + 2,
+            'sign-out after a deadlock',
+        );
         check($sessions($owner['id']) === 0, 'the replayed sign-out removes its session');
     } finally {
         $api = $realApi;
