@@ -2,7 +2,7 @@ import { vi as testTiming } from 'vitest';
 // Full town rebuilds may exceed the default 5s on CI.
 testTiming.setConfig({ testTimeout: 20000 });
 import { afterEach, expect, it, vi } from 'vitest';
-import { BufferGeometry, Group, MeshBasicMaterial, Scene } from 'three';
+import { Box3, BufferGeometry, Group, MeshBasicMaterial, Raycaster, Scene } from 'three';
 import { createTownGeometries } from '../src/game/town/TownGeometries';
 import { TownDiorama } from '../src/game/town/TownDiorama';
 import { TownActors } from '../src/game/town/TownActors';
@@ -540,4 +540,50 @@ it('releases scenery prepared for a superseded layout change', async () => {
   view.update(town, labels);
   expect(pending.prepared.scenery.size).toBe(0);
   for (const group of groups) expect(group.parent).toBeNull();
+});
+
+// Plays one layout-changing completion under overhead wires, optionally without the
+// service drops prepared ahead.
+async function wiredCompletion({ unprepared = false } = {}) {
+  browserFrames();
+  const { view, town, labels } = fixture();
+  town.era = 'industrial';
+  Object.assign(town.buildings, { powerHouse: 1, saloon: 1, home: 1 });
+  view.update(town, labels);
+  vi.spyOn(view, 'plotVacant').mockReturnValue(true);
+  // Home II unlocks more plots: a layout change with a full rebuild.
+  view.changeTown(built(town, { home: 2 }), labels, 0, 'home');
+  const pending = view.plotWork.active;
+  expect(pending.kind).toBe('rebuild');
+  await vi.waitFor(() => expect(pending.preparing).toBe(false));
+  const prepared = pending.prepared.drops;
+  // A grid the rebuild does not show makes it probe every drop, as before.
+  if (unprepared) prepared.grid = new Group();
+  return { view, pending, prepared };
+}
+const dropBounds = (drops) =>
+  drops.children.map((drop) => {
+    const box = new Box3().setFromObject(drop, true);
+    return [drop.name, [...box.min.toArray(), ...box.max.toArray()]];
+  });
+it('keeps service drops prepared ahead for the same grid and plots, and probes the rest', async () => {
+  const expected = await wiredCompletion({ unprepared: true });
+  expect(expected.view.tryActivatePlot()).toBe(true);
+  expected.view.finishConstruction();
+  vi.restoreAllMocks();
+  const { view, pending, prepared } = await wiredCompletion();
+  expect(prepared.groups.has('home')).toBe(false);
+  const drops = new Map(prepared.root.children.map((drop) => [drop.name, drop]));
+  expect(drops.size).toBeGreaterThan(1);
+  const rays = vi.spyOn(Raycaster.prototype, 'intersectObject');
+  expect(view.tryActivatePlot()).toBe(true);
+  const home = view.plotCache.get('home').group;
+  // Kept plots keep their prepared drops; only the revealed building is probed again.
+  for (const [name, drop] of drops) expect(view.serviceDrops.getObjectByName(name)).toBe(drop);
+  expect(view.serviceDrops.getObjectByName('Service drop home')).toBeTruthy();
+  expect(rays.mock.calls.every(([target]) => target === home)).toBe(true);
+  expect(pending.prepared.drops).toBeNull();
+  // The same drops, in the same order, as a rebuild that probes them all.
+  expect(dropBounds(view.serviceDrops)).toEqual(dropBounds(expected.view.serviceDrops));
+  view.finishConstruction();
 });

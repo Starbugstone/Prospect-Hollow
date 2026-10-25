@@ -52,7 +52,7 @@ import { addScaffolding, addImprovements } from './TownImprovements';
 
 import { constructionVisual, nextGoal, roadLevel } from './TownRules';
 
-import { addServiceDrops } from './TownEvolution';
+import { addServiceDrops, serviceDropsWork } from './TownEvolution';
 import { TownScenery, sceneryAffectsNavigation } from './TownScenery';
 
 import { PLOTS, visiblePlots } from './TownLayout';
@@ -449,10 +449,7 @@ export function changeTown(
     // while the hammer cue shows; the rebuild then adopts them. An instant change
     // rebuilds at once instead.
     if (!instant && d.staticScenery) {
-      const scenery = timedSteps(
-        'prepare-scenery',
-        d.staticScenery.prepare(d, town, pending.prepared.scenery),
-      );
+      const scenery = timedSteps('prepare-scenery', prepareRebuild(d, pending));
       if (typeof requestAnimationFrame === 'undefined') finishWork(scenery);
       else {
         pending.preparing = true;
@@ -484,12 +481,35 @@ export function plotFootprints(d, id, town, group, provisionalMine = true) {
 export function discardPlotWork(d) {
   const { active } = plotWork(d);
   d.clearGroup(active?.kind === 'rebuild' ? active.prepared?.group : active?.group);
-  if (active?.kind === 'rebuild') discardScenery(d, active.prepared);
+  if (active?.kind === 'rebuild') {
+    discardScenery(d, active.prepared);
+    discardDrops(d, active.prepared);
+  }
   plotWork(d).active = null;
 }
 function discardScenery(d, prepared) {
   for (const { group } of prepared?.scenery?.values() ?? []) d.clearGroup(group);
   prepared?.scenery?.clear();
+}
+function discardDrops(d, prepared) {
+  d.clearGroup(prepared?.drops?.root);
+  if (prepared) prepared.drops = null;
+}
+// Off-screen work a layout-changing rebuild adopts: the new roads, wires and lamps,
+// then the service drops of the plots it keeps, probed against the grid it will show.
+// The revealed building's own drop is probed in the rebuild, as before.
+function* prepareRebuild(d, { town, labels, prepared }) {
+  yield* d.staticScenery.prepare(d, town, prepared.scenery);
+  const power = prepared.scenery.get('power');
+  const grid = power ? power.group : d.staticScenery.entries.get('power')?.group;
+  const groups = new Map();
+  for (const [id, signature] of d.plotSignatures(town, labels)) {
+    const cached = d.plotCache?.get(id);
+    if (id !== prepared.id && cached?.signature === signature) groups.set(id, cached.group);
+  }
+  const root = yield* serviceDropsWork(d, grid, groups, null, new THREE.Group());
+  root?.removeFromParent();
+  prepared.drops = { grid, groups, root };
 }
 
 function swapPlot(d, id, town, labels, { construction = false, immediate = false } = {}) {
@@ -786,18 +806,22 @@ function refreshScenery(d) {
   return changed;
 }
 
-export function refreshServiceDrops(d, changedId) {
+// `prepared` holds drops built ahead for the same grid (see prepareRebuild): a plot
+// whose group is the one they were probed against keeps its prepared drop.
+export function refreshServiceDrops(d, changedId, prepared) {
   const previous = d.serviceDrops;
-  d.serviceDrops = addServiceDrops(
-    d,
-    d.staticScenery?.entries.get('power')?.group,
-    new Map(
-      [...d.plotCache]
-        .filter(([id]) => changedId === undefined || id === changedId)
-        .map(([id, { group }]) => [id, group]),
-    ),
-    changedId === undefined ? null : previous,
+  const grid = d.staticScenery?.entries.get('power')?.group;
+  let plots = new Map(
+    [...d.plotCache]
+      .filter(([id]) => changedId === undefined || id === changedId)
+      .map(([id, { group }]) => [id, group]),
   );
+  let retained = changedId === undefined ? null : previous;
+  if (prepared?.root && prepared.grid === grid) {
+    plots = new Map([...plots].filter(([id, group]) => prepared.groups.get(id) !== group));
+    retained = prepared.root;
+  }
+  d.serviceDrops = addServiceDrops(d, grid, plots, retained);
   if (previous?.parent) d.clearGroup(previous);
 }
 
@@ -1022,7 +1046,8 @@ export function rebuildTown(
     d.lastFrame = 0;
     d.pacer?.reset();
   }
-  timeTown('update-service-drops', () => d.refreshServiceDrops());
+  timeTown('update-service-drops', () => d.refreshServiceDrops(undefined, prepared?.drops));
+  discardDrops(d, prepared);
   d.navigation = timeTown('update-navigation', () => townNavigation(d.world));
   // A new renderer/catalog may restore a completed wing around an accepted
   // runtime position. Revalidate retained residents once against the rebuilt
