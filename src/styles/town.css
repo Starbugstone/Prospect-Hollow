@@ -65,7 +65,7 @@
 .town-view {
   max-width: 1368px;
   margin: auto;
-  padding: 38px 24px 22px;
+  padding: 24px;
   font-family: 'Segoe UI', sans-serif;
 }
 .town-view button:focus-visible,
@@ -86,6 +86,7 @@
   min-width: 0;
 }
 .town-map-frame {
+  scroll-margin-top: 112px;
   background: #eadab5;
   border: 1px solid #ded5bd;
   border-radius: 17px;
@@ -269,15 +270,9 @@
   }
 }
 @media (max-width: 850px) {
-  .town-view {
-    padding-bottom: 102px;
-  }
-  .town-view {
-    padding-top: 27px;
-  }
   .town-building-preview {
     grid-column: 1;
-    grid-row: 2 / 7;
+    grid-row: 2 / 5;
     align-self: center;
   }
   .town-restored-note {
@@ -325,9 +320,6 @@
   }
   .world-nav {
     gap: 2px;
-  }
-  .town-view {
-    padding: 24px 14px 105px;
   }
   .town-map-frame {
     border-radius: 11px;
@@ -449,9 +441,6 @@
   border-radius: inherit;
 }
 @media (max-width: 550px) {
-  .town-scene {
-    aspect-ratio: 1;
-  }
   .town-scene-labels button {
     min-height: 32px;
     padding: 7px;
@@ -921,9 +910,6 @@
 }
 
 @media (max-width: 850px) {
-  .town-building-preview {
-    grid-row: 2 / 5;
-  }
   .town-project-progress,
   .town-service {
     grid-column: 1 / -1;
@@ -1040,9 +1026,6 @@
     padding: 0.4rem 0.7rem;
   }
 }
-.town-map-frame {
-  scroll-margin-top: 90px;
-}
 .town-has-raid .town-raid-banner {
   position: absolute;
   top: 0;
@@ -1094,13 +1077,6 @@
   position: sticky;
   top: 0;
   z-index: 50;
-}
-.town-view {
-  padding-top: 24px;
-  padding-bottom: 24px;
-}
-.town-map-frame {
-  scroll-margin-top: 112px;
 }
 .town-journal-content {
   background: #eeedde;
