@@ -1705,6 +1705,29 @@ foreach ([1, 2, 3] as $economyVersion) {
             ' entitlement without a second charge',
     );
 }
+// A chest is claimed once. A second receipt for it, paid or not, is a mismatch: the
+// client must never record one (testing/campaign.test.js keeps receipt refreshes away
+// from a chest that is still being opened).
+foreach ([0, 1] as $paidTwice) {
+    $twice = $claimed;
+    $twice['town']['coins'] += $paidTwice * $cash;
+    $twice['integrity']['actions'][] = integrityAction(2, 'chest-claim', [
+        'chestId' => $claimAction['data']['chestId'],
+        'selection' => 'coins-big',
+    ]);
+    $label = $paidTwice ? 'a chest claimed and paid twice' : 'a second receipt for a claimed chest';
+    try {
+        $validator->accept(integrityObject($twice), $cacheAnchor, $moneyClock + 3600000);
+        throw new RuntimeException($label . ' was accepted');
+    } catch (ApiError $error) {
+        assertIntegrity(
+            $error->status === 422 &&
+                ($error->details['code'] ?? null) === 'save_integrity_mismatch' &&
+                ($error->details['field'] ?? null) === 'chest-claim',
+            $label . ' is rejected at its second claim',
+        );
+    }
+}
 
 $_ENV['SAVE_MONEY_GUARD_MODE'] = 'hold';
 $active = integrityData($moneyFixture->before);

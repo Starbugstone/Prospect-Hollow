@@ -150,7 +150,9 @@ const honourState = (state) => ({
   powers: toRaw(state.powers),
   honours: state.honours,
 });
-const load = (loaded = localProfile.load(), persistRecovered = true) => {
+const chestId = (chest) => chest.id ?? `${chest.runId}-${chest.source}`;
+// `opening` names the chests the live game still shows unopened: the player claims those.
+const load = (loaded = localProfile.load(), persistRecovered = true, opening = []) => {
   const state = defaults();
   try {
     const saved = loaded.data;
@@ -252,12 +254,16 @@ const load = (loaded = localProfile.load(), persistRecovered = true) => {
       }
     });
     // An interrupted reveal automatically claims its saved fallback once. Inventory and
-    // pending receipts are written together before another run can start.
-    const recovered = (Array.isArray(saved?.pendingChests) ? saved.pendingChests : []).filter(
+    // pending receipts are written together before another run can start. A reveal still
+    // on screen is not interrupted: its chests stay pending for the player to open.
+    const pending = Array.isArray(saved?.pendingChests) ? saved.pendingChests : [];
+    const unopened = pending.filter((chest) => chest && opening.includes(chestId(chest)));
+    const recovered = pending.filter(
       (chest) =>
         chest?.runId > 0 &&
         chest.runId === state.settledRun &&
-        ['completion', 'score', 'speed'].includes(chest.source),
+        ['completion', 'score', 'speed'].includes(chest.source) &&
+        !unopened.includes(chest),
     );
     const recoveredSources = new Set();
     for (const chest of recovered) {
@@ -269,7 +275,7 @@ const load = (loaded = localProfile.load(), persistRecovered = true) => {
         grantReward(state, drop);
         state.integrity = plainIntegrity(
           appendIntegrityAction(state.integrity, 'chest-claim', {
-            chestId: chest.id ?? `${chest.runId}-${chest.source}`,
+            chestId: chestId(chest),
             runId: chest.runId,
             source: chest.source,
             levelId: chest.levelId,
@@ -303,7 +309,7 @@ const load = (loaded = localProfile.load(), persistRecovered = true) => {
           town: state.town,
           townProjectFocus: state.townProjectFocus,
           builderHammers: state.builderHammers,
-          pendingChests: [],
+          pendingChests: unopened,
           integrity: state.integrity,
         })
       )
@@ -532,7 +538,10 @@ export const useCampaignStore = defineStore('campaign', {
       return createSaveFile(this.profile());
     },
     reloadLocal({ preserveUnchanged = false, integrityOnly = false } = {}) {
-      const next = load();
+      // A receipt refresh keeps this game's gameplay, so a chest still on screen is the
+      // player's to open: claiming it here would add a second receipt when they do.
+      const opening = integrityOnly ? this.pendingChests.map((chest) => chest.id) : [];
+      const next = load(localProfile.load(), true, opening);
       if (integrityOnly) {
         this.integrity = next.integrity;
         return;

@@ -41,26 +41,35 @@ final class Database
         // Expiring approvals bound to a reviewed rejected upload; retire boolean overrides.
         23 => '/schema-sync-approval',
     ];
+    /** Tries of one outermost transaction, the first included, before a deadlock surfaces. */
+    public const DEADLOCK_ATTEMPTS = 4;
     private ?Connection $connection = null;
     /** Tests may wrap the driver, for example to inject a deadlock. */
     public function __construct(private readonly ?Configuration $configuration = null) {}
     /**
-     * Retry once only when the database rolled back this entire transaction.
+     * Replays work only when the database rolled back this entire transaction, a few times
+     * with a short random pause, then lets the last deadlock reach the caller.
      * @template T
      * @param \Closure(Connection): T $work
      * @return T
      */
     public static function retryOnDeadlock(Connection $db, \Closure $work): mixed
     {
-        $outermost = $db->getTransactionNestingLevel() === 0;
-        try {
+        // A nested caller cannot replay work whose outer transaction was aborted.
+        if ($db->getTransactionNestingLevel() > 0) {
             return $db->transactional($work);
-        } catch (DeadlockException $error) {
-            // A nested caller cannot replay work whose outer transaction was aborted.
-            if (!$outermost) {
-                throw $error;
+        }
+        for ($attempt = 1; ; $attempt++) {
+            try {
+                return $db->transactional($work);
+            } catch (DeadlockException $error) {
+                if ($attempt >= self::DEADLOCK_ATTEMPTS) {
+                    throw $error;
+                }
+                // The winner commits during the pause: 5 to 20 ms, then up to 40 and 80 ms.
+                // A random length keeps the aborted requests from meeting again in step.
+                usleep(random_int(5000, 20000 << ($attempt - 1)));
             }
-            return $db->transactional($work);
         }
     }
     public static function latestVersion(): int
