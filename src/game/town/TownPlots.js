@@ -434,7 +434,7 @@ export function changeTown(
       provisional: footprint.provisional,
     });
     d.discardPlotWork();
-    work.active = {
+    const pending = (work.active = {
       kind: 'rebuild',
       id: constructionId,
       entries,
@@ -442,9 +442,28 @@ export function changeTown(
       labels,
       mineProgress,
       constructionId: reveal ? constructionId : null,
-      prepared: { id: constructionId, group: probe, movingPart, footprint },
+      prepared: { id: constructionId, group: probe, movingPart, footprint, scenery: new Map() },
       immediate: instant,
-    };
+    });
+    // The new layout's roads, wires and lamps are built ahead, one root per idle slice,
+    // while the hammer cue shows; the rebuild then adopts them. An instant change
+    // rebuilds at once instead.
+    if (!instant && d.staticScenery) {
+      const scenery = timedSteps(
+        'prepare-scenery',
+        d.staticScenery.prepare(d, town, pending.prepared.scenery),
+      );
+      if (typeof requestAnimationFrame === 'undefined') finishWork(scenery);
+      else {
+        pending.preparing = true;
+        scheduleWork(scenery, {
+          isCurrent: () => plotWork(d).active === pending,
+          complete: () => {
+            pending.preparing = false;
+          },
+        });
+      }
+    }
     record('prepared-update');
     if (!d.tryActivatePlot()) return;
   } else {
@@ -465,7 +484,12 @@ export function plotFootprints(d, id, town, group, provisionalMine = true) {
 export function discardPlotWork(d) {
   const { active } = plotWork(d);
   d.clearGroup(active?.kind === 'rebuild' ? active.prepared?.group : active?.group);
+  if (active?.kind === 'rebuild') discardScenery(d, active.prepared);
   plotWork(d).active = null;
+}
+function discardScenery(d, prepared) {
+  for (const { group } of prepared?.scenery?.values() ?? []) d.clearGroup(group);
+  prepared?.scenery?.clear();
 }
 
 function swapPlot(d, id, town, labels, { construction = false, immediate = false } = {}) {
@@ -601,7 +625,7 @@ export function tryActivatePlot(d) {
   const work = plotWork(d);
   if (work.active?.kind === 'rebuild') {
     const pending = work.active;
-    if (!d.plotVacant(pending)) return false;
+    if (pending.preparing || !d.plotVacant(pending)) return false;
     work.active = null;
     timeTown('full-update', () =>
       d.update(
@@ -653,7 +677,11 @@ export function tryActivatePlot(d) {
   if (id !== 'mine') d.upgradeGlow?.add(id, parcelBounds(parcel));
   d.refreshSelection?.(id);
   timeTown('activate-navigation', () =>
-    d.navigation.replaceOwner(`plot:${id}`, entries, construction ? 'temporary-reveal' : 'completed'),
+    d.navigation.replaceOwner(
+      `plot:${id}`,
+      entries,
+      construction ? 'temporary-reveal' : 'completed',
+    ),
   );
   // A first opening can extend frontage paving or overhead service wires. Refresh
   // only those scenery roots here instead of leaving them stale until a full rebuild.
@@ -918,7 +946,8 @@ export function rebuildTown(
   d.anchors = [];
   d.town = town;
   d.guidedPlot = nextGoal(town)?.id;
-  timeTown('update-scenery', () => d.staticScenery.update(d, town));
+  timeTown('update-scenery', () => d.staticScenery.update(d, town, prepared?.scenery));
+  discardScenery(d, prepared);
   const mineWorks = d.staticScenery.entries.get('mine-works')?.group;
   if (mineWorks) updateMineGrowth(mineWorks, mineGrowth(mineProgress));
   // City-scale eras (and Motor Age, built on a city shell) need the wider orbit.
