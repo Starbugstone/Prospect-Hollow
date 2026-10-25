@@ -173,7 +173,7 @@ final class TownPersonalisation
                 return null;
             }
             foreach ($prices as $amount) {
-                if (!is_int($amount) || $amount < 0 || $amount > 9007199254740991) {
+                if (!is_int($amount) || $amount < 0 || $amount > JsonNumber::MAX_SAFE_INTEGER) {
                     return null;
                 }
             }

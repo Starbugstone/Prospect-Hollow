@@ -4,6 +4,8 @@ import { bonusCapacity, chestReward, grantReward } from './rewards';
 
 const GIFTS = ['tnt', 'color-wand', 'clear-row', 'tile-breaker'];
 export const chapterGift = (chapter) => chestReward(GIFTS[(chapter - 1) % GIFTS.length]);
+// The coins a chapter gift becomes when its bonus slot is already full.
+export const chapterOverflowCoins = (chapter) => chapter * 100;
 
 export function journeyProgress(records) {
   const chapterIndex = CHAPTERS.findIndex((_, index) =>
@@ -31,7 +33,7 @@ export function grantChapterGift(state, chapter) {
           id: 'coins',
           kind: 'coins',
           label: 'Coins',
-          quantity: chapter * 100,
+          quantity: chapterOverflowCoins(chapter),
           convertedFrom: gift.label,
         }
       : gift,

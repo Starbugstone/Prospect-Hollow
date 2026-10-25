@@ -1,11 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { needProviders } from '../src/game/town/TownNeeds';
-import { ERA_BY_ID } from '../src/data/eras';
+import { ERA_BY_ID, eraEvolution } from '../src/data/eras';
 import { createPinia, setActivePinia } from 'pinia';
 import { BUILDINGS, BANDIT_EVENT, createTown } from '../src/data/town';
 import { bonusCapacity } from '../src/data/rewards';
 import { hasElectricity } from '../src/data/industrial';
-import { MOTOR_AGE_LEVEL_PRICES } from '../src/data/motorAge';
 import {
   advanceEra,
   eraBuildingLevel,
@@ -131,7 +130,7 @@ describe('Motor Age follows the complete Post-war Rebuilding era', () => {
         expect(offer.available).toBe(true);
         expect(offer.runs).toBeLessThanOrEqual(2);
         expect(offer.cost).toBe(
-          base ? MOTOR_AGE_LEVEL_PRICES[level - 1] : [6480, 9000, 11880][level - 1],
+          base ? eraEvolution('motor-age').prices[level - 1] : [6480, 9000, 11880][level - 1],
         );
         const preview = buildingBenefit(
           town,

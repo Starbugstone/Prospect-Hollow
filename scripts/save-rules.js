@@ -7,7 +7,7 @@ import { LEVELS_PER_CHAPTER } from '../src/data/chapters.js';
 import { ERAS, FORGE_PRODUCTION_RUNS } from '../src/data/eras.js';
 import { defineEra } from '../src/data/eraDefinitions.js';
 import { STAR_CASCADE_TARGET, STAR_SCORE_MULTIPLIER } from '../src/data/starRating.js';
-import { BUILDINGS, BANDIT_EVENT, INTRO_ORDER, createTown } from '../src/data/town.js';
+import { BUILDINGS, BANDIT_EVENT, createTown } from '../src/data/town.js';
 import { PROJECT_MILESTONES, TOWN_PROJECTS } from '../src/data/townProjects.js';
 import {
   LEGACY_MAX_LEVEL,
@@ -22,7 +22,7 @@ import {
   chestLevelCoins,
   depthBonusPercent,
 } from '../src/data/economy.js';
-import { chapterGift } from '../src/data/journey.js';
+import { chapterGift, chapterOverflowCoins } from '../src/data/journey.js';
 import {
   BONUS_CAPACITIES,
   CHEST_DROPS,
@@ -34,14 +34,17 @@ import {
 } from '../src/data/rewards.js';
 import { SHOP_ITEMS, shopSlots } from '../src/data/shop.js';
 import { VIP_SPEND_BASES, VIP_SPEND_VERSION, vipVisitBuildings } from '../src/data/vipVisits.js';
-import { INCIDENT_TARGETS, fireProtection } from '../src/data/townEvents.js';
+import { INCIDENT_TARGETS, RAID_RULES, fireProtection } from '../src/data/townEvents.js';
 import { generateLevelConfigs } from '../src/game/engine/LevelGenerator.js';
 import { SPACE_HELMET } from '../src/data/townAnimals.js';
 import { COMBO_COIN_STEP, MULTI_MATCH_COIN_STEP } from '../src/game/engine/MatchRewards.js';
 import {
   BONUS_GEM_COINS,
   HOUR_MS,
+  MAX_CONSTRUCTION_RUNS,
+  SALOON_INCOME,
   collectionCooldownRemaining,
+  projectRuns,
   raidBounty,
   raidIntervalRange,
   saloonIncomeRate,
@@ -55,6 +58,7 @@ import { levelElements } from '../src/data/honours.js';
 import { GEM_TYPES } from '../src/game/engine/GemFactory.js';
 import { FUSION_STYLES } from '../src/game/engine/BonusFusion.js';
 import { freshProfile } from '../src/stores/campaignStore.js';
+import { SUPPORTED_SAVE_SCHEMAS } from '../src/data/saveFormat.js';
 
 // Object keys are canonicalized so the digest survives formatting and irrelevant
 // authoring key-order changes. Content and array order still affect the digest.
@@ -235,10 +239,15 @@ export function buildSaveRules(history = readSaveRuleHistory()) {
   const payload = {
     version: 1,
     profileSchemaVersion: defaultProfile.schemaVersion,
+    // Every save format the game reads; the server accepts the same list.
+    supportedSchemaVersions: SUPPORTED_SAVE_SCHEMAS,
     maxSafeInteger: Number.MAX_SAFE_INTEGER,
     levelCount: LEVEL_COUNT,
     levelsPerChapter: LEVELS_PER_CHAPTER,
     eraBuildingLevels: ERA_BUILDING_LEVELS,
+    // No construction waits for more completed puzzles than this.
+    maxConstructionRuns: MAX_CONSTRUCTION_RUNS,
+    // The first era is the frontier: its plots have no era levels.
     eraOrder: ERAS.map((era) => era.id),
     eras: Object.fromEntries(
       ERAS.map((era) => [
@@ -249,6 +258,8 @@ export function buildSaveRules(history = readSaveRuleHistory()) {
           requiresPower: era.evolution.requiresPower,
           electricity: era.evolution.electricity,
           incident: era.evolution.incident,
+          // Plots one of which must be built before the era's incidents start.
+          incidentGate: era.evolution.incidentGate,
           waterworks: era.evolution.waterworks,
           farmCapacity: era.evolution.farmCapacity,
           chestCoinCap: chestCoinCap(era.id),
@@ -278,7 +289,7 @@ export function buildSaveRules(history = readSaveRuleHistory()) {
           ),
           upgrades: building.upgrades.map((upgrade, stage) => ({
             cost: upgrade.cost,
-            runs: Math.min(2, upgrade.runs ?? 1),
+            runs: projectRuns(building.id, stage + 1),
             requiresPower: upgrade.requiresPower === true,
             stage,
           })),
@@ -340,7 +351,7 @@ export function buildSaveRules(history = readSaveRuleHistory()) {
         index,
         id: chapter.id ?? null,
         gift: { id, kind, quantity },
-        overflowCoins: (index + 1) * 100,
+        overflowCoins: chapterOverflowCoins(index + 1),
       };
     }),
     economy: {
@@ -378,8 +389,10 @@ export function buildSaveRules(history = readSaveRuleHistory()) {
         gangSize: 1,
         sheriffLevel: 1,
       }),
+      // The saved town event every era's incident uses.
       banditEvent: BANDIT_EVENT,
-      introOrder: INTRO_ORDER,
+      saloonIncome: SALOON_INCOME,
+      raid: RAID_RULES,
       // The first era with a space-helmet wearer to find, and the hours of saloon takings
       // a find pays the owner and a visitor.
       spaceHelmetDebut: SPACE_HELMET.debut,

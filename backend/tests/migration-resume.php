@@ -1,6 +1,7 @@
 <?php
 // Exercise an interrupted initial install in isolated, randomly named tables.
 // Never drop or alter the application's own tables, even on a shared test database.
+require __DIR__ . '/support.php';
 $prefix = 'resume_' . bin2hex(random_bytes(5)) . '_';
 $directory = sys_get_temp_dir() . '/' . $prefix;
 mkdir($directory . '/src', 0700, true);
@@ -61,75 +62,30 @@ $migration = new MigrationResumeTest\Database();
 $connection = $migration->get();
 $mysql =
     $connection->getDatabasePlatform() instanceof Doctrine\DBAL\Platforms\AbstractMySQLPlatform;
-$file = $mysql ? 'schema.sql' : 'schema-postgresql.sql';
-$schema = $rewrite(file_get_contents(dirname(__DIR__) . '/' . $file));
-$visits = $mysql ? 'schema-visits.sql' : 'schema-visits-postgresql.sql';
-file_put_contents(
-    $directory . '/' . $visits,
-    $rewrite(file_get_contents(dirname(__DIR__) . '/' . $visits)),
-);
-$split = $mysql ? 'schema-saloon-guests.sql' : 'schema-saloon-guests-postgresql.sql';
-file_put_contents(
-    $directory . '/' . $split,
-    $rewrite(file_get_contents(dirname(__DIR__) . '/' . $split)),
-);
-$admin = $mysql ? 'schema-admin.sql' : 'schema-admin-postgresql.sql';
-file_put_contents(
-    $directory . '/' . $admin,
-    $rewrite(file_get_contents(dirname(__DIR__) . '/' . $admin)),
-);
-$live = $mysql ? 'schema-live-visitors.sql' : 'schema-live-visitors-postgresql.sql';
-file_put_contents(
-    $directory . '/' . $live,
-    $rewrite(file_get_contents(dirname(__DIR__) . '/' . $live)),
-);
-$favourites = $mysql ? 'schema-town-favourites.sql' : 'schema-town-favourites-postgresql.sql';
-file_put_contents(
-    $directory . '/' . $favourites,
-    $rewrite(file_get_contents(dirname(__DIR__) . '/' . $favourites)),
-);
-$distinctions = $mysql
-    ? 'schema-player-distinctions.sql'
-    : 'schema-player-distinctions-postgresql.sql';
-file_put_contents(
-    $directory . '/' . $distinctions,
-    $rewrite(file_get_contents(dirname(__DIR__) . '/' . $distinctions)),
-);
-$settings = $mysql ? 'schema-admin-settings.sql' : 'schema-admin-settings-postgresql.sql';
-file_put_contents(
-    $directory . '/' . $settings,
-    $rewrite(file_get_contents(dirname(__DIR__) . '/' . $settings)),
-);
-$revocations = $mysql
-    ? 'schema-distinction-revocations.sql'
-    : 'schema-distinction-revocations-postgresql.sql';
-file_put_contents(
-    $directory . '/' . $revocations,
-    $rewrite(file_get_contents(dirname(__DIR__) . '/' . $revocations)),
-);
-$playerData = $mysql ? 'schema-player-data.sql' : 'schema-player-data-postgresql.sql';
-file_put_contents(
-    $directory . '/' . $playerData,
-    $rewrite(file_get_contents(dirname(__DIR__) . '/' . $playerData)),
-);
-$helmets = $mysql ? 'schema-helmet-finds.sql' : 'schema-helmet-finds-postgresql.sql';
-file_put_contents(
-    $directory . '/' . $helmets,
-    $rewrite(file_get_contents(dirname(__DIR__) . '/' . $helmets)),
-);
-$forceSync = $mysql ? 'schema-force-sync.sql' : 'schema-force-sync-postgresql.sql';
-file_put_contents(
-    $directory . '/' . $forceSync,
-    $rewrite(file_get_contents(dirname(__DIR__) . '/' . $forceSync)),
-);
-$helmetHost = $mysql ? 'schema-helmet-host.sql' : 'schema-helmet-host-postgresql.sql';
-file_put_contents(
-    $directory . '/' . $helmetHost,
-    $rewrite(file_get_contents(dirname(__DIR__) . '/' . $helmetHost)),
-);
+// Every migration file Database.php applies, renamed into the isolated tables.
+$files = App\Database::migrationFiles($mysql);
+foreach ($files as $name) {
+    $sql = file_get_contents(dirname(__DIR__) . '/' . $name);
+    // A table or index left out of $names would be created or changed for real.
+    preg_match_all(
+        '/CREATE (?:UNIQUE )?(?:TABLE|INDEX)(?: IF NOT EXISTS)? (\w+)/i',
+        $sql,
+        $created,
+    );
+    foreach ($created[1] as $table) {
+        if (!in_array(strtolower($table), $names, true)) {
+            throw new RuntimeException("Add $table from $name to the isolated names.");
+        }
+    }
+    file_put_contents($directory . '/' . $name, $rewrite($sql));
+}
+$file = $files[0];
+$schema = file_get_contents($directory . '/' . $file);
 $syncApproval = $mysql ? 'schema-sync-approval.sql' : 'schema-sync-approval-postgresql.sql';
-$approvalSchema = $rewrite(file_get_contents(dirname(__DIR__) . '/' . $syncApproval));
-file_put_contents($directory . '/' . $syncApproval, $approvalSchema);
+if (!in_array($syncApproval, $files, true)) {
+    throw new RuntimeException('The approval migration this test interrupts is not listed.');
+}
+$approvalSchema = file_get_contents($directory . '/' . $syncApproval);
 try {
     $statements = explode(';', $schema);
     file_put_contents(
@@ -328,21 +284,11 @@ try {
     ) {
         $connection->executeStatement('DROP TABLE IF EXISTS ' . $prefix . $name);
     }
-    @unlink($directory . '/' . $file);
-    @unlink($directory . '/' . $visits);
-    @unlink($directory . '/' . $split);
-    @unlink($directory . '/' . $admin);
-    @unlink($directory . '/' . $live);
-    @unlink($directory . '/' . $favourites);
-    @unlink($directory . '/' . $distinctions);
-    @unlink($directory . '/' . $revocations);
-    @unlink($directory . '/' . $settings);
-    @unlink($directory . '/' . $playerData);
-    @unlink($directory . '/' . $helmets);
-    @unlink($directory . '/' . $forceSync);
-    @unlink($directory . '/' . $helmetHost);
-    @unlink($directory . '/' . $syncApproval);
+    foreach ($files as $name) {
+        @unlink($directory . '/' . $name);
+    }
     unlink($directory . '/src/Database.php');
     rmdir($directory . '/src');
     rmdir($directory);
 }
+echo "Migration resume checks passed ($count assertions).\n";

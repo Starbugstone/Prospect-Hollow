@@ -50,7 +50,7 @@ final class AdminService
         return SaveService::summary($save) + [
             'levels' => $levels,
             'stars' => $stars,
-            'score' => (int) min($score, 9007199254740991),
+            'score' => (int) min($score, JsonNumber::MAX_SAFE_INTEGER),
             'highestLevel' => $highest,
         ];
     }
@@ -693,7 +693,7 @@ final class AdminService
     /** Builder hammers support may hand out, past the cap that limits what play earns. */
     public const MAX_GRANTED_HAMMERS = 99;
     /** The most coins a save holds (JavaScript's largest safe integer). */
-    private const MAX_COINS = 9007199254740991;
+    private const MAX_COINS = JsonNumber::MAX_SAFE_INTEGER;
     /**
      * Support's correction after a bug: sets the coins, stored bonuses and builder hammers of
      * the cloud save the admin is looking at. Saved like a reset, so the owner's game loads it

@@ -55,6 +55,7 @@ import { CHAPTERS, LEVEL_COUNT, POWERS, powerRecord, runChests, getStars } from 
 import { chapterLevelIds } from '../data/chapters';
 import { TIP_IDS } from '../data/guidance';
 import { grantChapterGift } from '../data/journey';
+import { SAVE_SCHEMA_VERSION } from '../data/saveFormat';
 import { TOWN_PROJECTS } from '../data/townProjects';
 import { finishedRewardProjects } from '../game/town/TownProjects';
 
@@ -308,7 +309,7 @@ const load = (loaded = localProfile.load(), persistRecovered = true) => {
 };
 
 const profileData = (state) => ({
-  schemaVersion: 4,
+  schemaVersion: SAVE_SCHEMA_VERSION,
   integrity: state.integrity,
   records: state.records,
   continuousRecords: state.continuousRecords,

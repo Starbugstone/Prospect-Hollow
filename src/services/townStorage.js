@@ -4,6 +4,7 @@ import { acknowledgeIntegrity, compactGuestIntegrity, mergeIntegrity } from './s
 import { jsonCopy } from './jsonCopy';
 import { backgroundJson, yieldToBrowser } from './backgroundJson';
 import { waitForSyncIdle } from './syncIdle';
+import { SAVE_SCHEMA_VERSION } from '../data/saveFormat';
 export const SAVE_KEY = 'crystal-cascade-profile-v3';
 export const TOWN_CHANGED = 'prospect-town-save-changed';
 const profileOf = ({ _cloud, ...profile }) => profile;
@@ -165,7 +166,8 @@ export function createTownStorage({
     // leaves it recoverable. Retrying never overwrites an already migrated town.
     initialize() {
       const root = read(SAVE_KEY);
-      if (root?.schemaVersion > 4) throw new Error('This save needs a newer version of the game.');
+      if (root?.schemaVersion > SAVE_SCHEMA_VERSION)
+        throw new Error('This save needs a newer version of the game.');
       if (!root || root._cloud?.version === 2) return;
       const legacy = root._cloud;
       if (!legacy) return;
