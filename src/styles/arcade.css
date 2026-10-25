@@ -14,19 +14,6 @@
 .brand img {
   filter: drop-shadow(0 0 10px #c966ff66);
 }
-.score-card {
-  background: linear-gradient(125deg, #6f328833, #29183288);
-  border-color: #ba76da66;
-}
-.score-value {
-  font-family: Impact, 'Arial Black', sans-serif;
-  font-style: italic;
-  color: #ffe29c;
-  text-shadow: 2px 3px #7f338e;
-}
-.score-track i {
-  background: linear-gradient(90deg, #e86ddc, #ffe575);
-}
 .board-frame {
   border-color: #bf83db;
   background: linear-gradient(135deg, #9751b0, #34234f 20%, #241e3d 75%, #368193);
@@ -158,14 +145,6 @@
   to {
     translate: 90% 0;
     opacity: 0;
-  }
-}
-@media (max-width: 640px) {
-  .score-card {
-    background: none;
-  }
-  .score-value {
-    font-size: 29px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
