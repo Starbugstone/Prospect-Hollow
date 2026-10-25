@@ -3,17 +3,24 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { generateLevelConfigs } from '../src/game/engine/LevelGenerator';
 import { useGameStore } from '../src/stores/gameStore';
-import { useCampaignStore, SAVE_KEY } from '../src/stores/campaignStore';
+import { useCampaignStore, freshProfile, SAVE_KEY } from '../src/stores/campaignStore';
 import { useInventoryStore } from '../src/stores/inventoryStore';
 import { LEVEL_COUNT, scoreChestEarned } from '../src/data/campaign';
 import { localProfile } from '../src/services/localProfile';
+import { townStorage } from '../src/services/townStorage';
+import { createSyncService } from '../src/services/syncService';
 
 let saved;
 beforeEach(() => {
   saved = new Map();
   vi.stubGlobal('localStorage', {
+    get length() {
+      return saved.size;
+    },
+    key: (index) => [...saved.keys()][index] ?? null,
     getItem: (key) => saved.get(key) ?? null,
     setItem: (key, value) => saved.set(key, value),
+    removeItem: (key) => saved.delete(key),
   });
   setActivePinia(createPinia());
   vi.spyOn(chestRewards, 'rollChestReward').mockReturnValue({
@@ -84,6 +91,165 @@ it('claims an unopened chest once during a paused reload and saves it when write
   campaign.reloadLocal();
   expect(campaign.town.coins).toBe(coins + 500);
   expect(claims(JSON.parse(saved.get(SAVE_KEY)))).toHaveLength(1);
+});
+
+const chestClaims = (integrity, id) =>
+  integrity.actions.filter((action) => action.kind === 'chest-claim' && action.data.chestId === id);
+
+it('keeps a receipt refresh from claiming a chest the player is still opening', () => {
+  const campaign = useCampaignStore();
+  const runId = campaign.beginRun('normal', 1);
+  const [chest] = campaign.recordVictory({
+    id: 1,
+    runId,
+    score: 100,
+    target: 6000,
+    combo: 1,
+    jewels: 10,
+    chooseRewards: true,
+  });
+  const coins = campaign.town.coins;
+  const stored = saved.get(SAVE_KEY);
+  // A sync stored a copy with this game's progress and the chest unopened.
+  campaign.reloadLocal({ integrityOnly: true });
+  expect(saved.get(SAVE_KEY)).toBe(stored);
+  expect(campaign.pendingChests.map((entry) => entry.id)).toEqual([chest.id]);
+  expect(chestClaims(campaign.integrity, chest.id)).toEqual([]);
+  // Opening it claims the rolled prize once, with one receipt.
+  expect(campaign.claimChest(chest.id, chest.items[0].id)).toMatchObject({ quantity: 500 });
+  const profile = JSON.parse(saved.get(SAVE_KEY));
+  expect(profile.pendingChests).toEqual([]);
+  expect(profile.town.coins).toBe(coins + 500);
+  expect(chestClaims(profile.integrity, chest.id)).toHaveLength(1);
+  campaign.reloadLocal();
+  expect(campaign.town.coins).toBe(coins + 500);
+  expect(chestClaims(campaign.integrity, chest.id)).toHaveLength(1);
+});
+
+it('still records the claim when a receipt refresh meets a chest a paused reload already paid', () => {
+  const campaign = useCampaignStore();
+  const runId = campaign.beginRun('normal', 1);
+  const [chest] = campaign.recordVictory({
+    id: 1,
+    runId,
+    score: 100,
+    target: 6000,
+    combo: 1,
+    jewels: 10,
+    chooseRewards: true,
+  });
+  const coins = campaign.town.coins;
+  const release = localProfile.suspendWrites();
+  try {
+    // The reload pays the chest in memory; storage keeps it unopened until writes resume.
+    campaign.reloadLocal();
+    campaign.reloadLocal({ integrityOnly: true });
+    expect(campaign.town.coins).toBe(coins + 500);
+    expect(chestClaims(campaign.integrity, chest.id)).toHaveLength(1);
+  } finally {
+    release();
+  }
+  const profile = JSON.parse(saved.get(SAVE_KEY));
+  expect(profile.pendingChests).toEqual([]);
+  expect(profile.town.coins).toBe(coins + 500);
+  expect(chestClaims(profile.integrity, chest.id)).toHaveLength(1);
+});
+
+it('never refreshes receipts during a victory reveal, so a synced chest is claimed and uploaded once', async () => {
+  townStorage.save(freshProfile());
+  const owner = { id: 'chest-owner' };
+  townStorage.account(owner);
+  let remote = {
+    townId: townStorage.active().meta.id,
+    name: 'Chest Creek',
+    revision: 1,
+    updatedAt: 100,
+    profile: townStorage.active().profile,
+    isPublic: false,
+    publicId: 'chest-creek',
+  };
+  townStorage.attach(remote, owner.id, townStorage.active().meta.sequence);
+  const game = useGameStore();
+  const campaign = useCampaignStore();
+  const outbox = new Map();
+  const uploaded = [];
+  const request = vi.fn(async (_path, body) => {
+    if (body) {
+      uploaded.push(structuredClone(body.profile));
+      const { integrity } = body.profile;
+      const ackSequence = integrity.actions.at(-1)?.sequence ?? integrity.baseSequence;
+      remote = {
+        ...remote,
+        revision: remote.revision + 1,
+        profile: {
+          ...body.profile,
+          integrity: { ...integrity, baseSequence: ackSequence, actions: [] },
+        },
+        integrity: { version: 1, epoch: integrity.epoch, ackSequence, status: 'tracked' },
+      };
+    }
+    return structuredClone(remote);
+  });
+  // Wired as CloudRoot.vue wires the cloud sync to this town's live game.
+  const refresh = vi.fn((id) => {
+    if (townStorage.activeMeta()?.id === id) campaign.reloadLocal({ integrityOnly: true });
+  });
+  const applied = vi.fn((id) => {
+    if (townStorage.activeMeta().id !== id) return;
+    const resume = localProfile.suspendWrites();
+    try {
+      game.exitLevel();
+      campaign.reloadLocal();
+    } finally {
+      resume();
+    }
+  });
+  const sync = createSyncService({
+    storage: townStorage,
+    request,
+    account: () => owner,
+    recoveries: {
+      put: async () => {},
+      putUpload: async (value) => outbox.set(value.id, structuredClone(value)),
+      getUpload: async (id) => structuredClone(outbox.get(id)),
+      removeUpload: async (id) => outbox.delete(id),
+    },
+    canApply: (id) => townStorage.activeMeta().id !== id || !game.sessionActive,
+    integrityApplied: refresh,
+    applied,
+  });
+  game.bootstrap();
+  game.startLevel(1);
+  game.remainingLayers = 0;
+  game.completeLevel();
+  const [chest] = campaign.pendingChests;
+  const coins = campaign.town.coins;
+  expect(townStorage.active().profile.pendingChests.map((entry) => entry.id)).toEqual([chest.id]);
+  // The victory uploads, then the cloud copy moves on with this device's progress and the
+  // chest still unopened (renamed elsewhere). The reveal is part of the running mine, so
+  // the sync waits instead of replacing the save or refreshing its receipts.
+  await sync.sync();
+  remote = { ...remote, revision: remote.revision + 1, name: 'Renamed elsewhere' };
+  delete remote.integrity;
+  await sync.sync();
+  expect(refresh).not.toHaveBeenCalled();
+  expect(applied).not.toHaveBeenCalled();
+  expect(townStorage.active().meta.baseRevision).toBe(remote.revision - 1);
+  expect(campaign.claimChest(chest.id, chest.items[0].id)).toMatchObject({ quantity: 500 });
+  expect(chestClaims(campaign.integrity, chest.id)).toHaveLength(1);
+  expect(chestClaims(townStorage.active().profile.integrity, chest.id)).toHaveLength(1);
+  // Back in the village the newer cloud copy loads, and the chest it holds is claimed once.
+  game.exitLevel();
+  await sync.sync();
+  await sync.sync();
+  expect(refresh).not.toHaveBeenCalled();
+  expect(applied).toHaveBeenCalledOnce();
+  const last = uploaded.at(-1);
+  expect(last.pendingChests).toEqual([]);
+  expect(last.town.coins).toBe(coins + 500);
+  expect(chestClaims(last.integrity, chest.id)).toHaveLength(1);
+  expect(uploaded.flatMap((profile) => chestClaims(profile.integrity, chest.id))).toHaveLength(1);
+  expect(townStorage.active().meta.dirty).toBe(false);
 });
 
 it('stages obstacles while leaving a lighter fifth puzzle in every chapter', () => {
