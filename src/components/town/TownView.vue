@@ -154,6 +154,7 @@
           :raid-defense-ids="readyRaidDefenses"
           :construction="construction"
           :need-chips="needs.demand && !playingRaid ? needChips : []"
+          :guidance="sceneGuidance"
           @select="selectBuilding($event, KEEP_CAMERA)"
           @inspect="inspectBuilding($event, KEEP_CAMERA)"
           @locate="inspectBuilding"
@@ -373,31 +374,13 @@
           }}
         </p>
         <section class="town-building-list" :aria-label="t('Available buildings')">
-          <button v-for="place in buildList" :key="place.id" @click="selectParcel(place.id)">
-            <span class="building-list-dot" :style="{ background: place.color }"></span>
-            <span
-              >{{ t(place.shortName) }}<small>{{ plotStatus(place) }}</small></span
-            >
-            <span v-if="place.ready" class="town-plot-price town-plot-ready">
-              ✦ {{ t('Ready to finish') }}
-            </span>
-            <span v-else class="town-plot-price">
-              <span class="town-sr-only">{{
-                t(town.buildings[place.id] ? 'Upgrade: {coins} coins' : 'Build: {coins} coins', {
-                  coins: number(place.offer.cost),
-                })
-              }}</span>
-              <TownIcon v-if="place.offer.cost" name="coin" />
-              <span aria-hidden="true">{{
-                place.offer.cost ? number(place.offer.cost) : t('Free')
-              }}</span>
-              <span v-if="town.coins < place.offer.cost" class="town-plot-hammer">
-                <img src="/art/rewards/builder-hammer.svg" alt="" />
-                <span aria-hidden="true">1</span>
-                <span class="town-sr-only">{{ t('1 builder hammer') }}</span>
-              </span>
-            </span>
-          </button>
+          <TownBuildRow
+            v-for="place in buildList"
+            :key="place.id"
+            :place="place"
+            :town="town"
+            @select="selectParcel"
+          />
         </section>
         <button
           v-if="buildList.length < directoryPlots.length"
@@ -509,7 +492,7 @@
                     ? 'Ready to finish'
                     : town.projects[place.id]
                       ? 'Under construction'
-                      : !upgradeOffer(town, place.id)
+                      : !offers.get(place.id)
                         ? 'Current era complete'
                         : plotStatus(place),
                 )
@@ -721,10 +704,8 @@ import { ERA_BY_ID } from '../../data/eras';
 import { eraGate, plotInEra } from '../../game/town/TownEras';
 import { buildingStatus, monumentStatus } from '../../game/town/TownBuildingFeedback';
 import {
-  needsReport,
-  nextGoal,
-  upgradeOffer,
   availableParcels,
+  parcelAction,
   constructionReady,
   saloonIncomeRate,
   saloonHappinessBonus,
@@ -757,6 +738,7 @@ import TownResourceCollection from './TownResourceCollection.vue';
 import TownMoonstoneBalance from './TownMoonstoneBalance.vue';
 import { moonLetters } from '../../data/moonSettlement';
 import TownNextStep from './TownNextStep.vue';
+import TownBuildRow from './TownBuildRow.vue';
 import TownTabBar from './TownTabBar.vue';
 import TownMoreMenu from './TownMoreMenu.vue';
 import TownDefenseStatus from './TownDefenseStatus.vue';
@@ -872,7 +854,10 @@ function leaveForHome() {
   emit('home');
 }
 
-const needs = computed(() => needsReport(town.value));
+// The town's offers, needs and next goal, computed once in the campaign store and shared
+// with the map, the Build tab and its next step.
+const offers = computed(() => campaign.townOffers);
+const needs = computed(() => campaign.townNeeds);
 // Happy visitors still stay away while the town has no spare water or food.
 const supplyLimitsVisitors = computed(
   () =>
@@ -891,27 +876,15 @@ const supplyNote = (supply) =>
         missing: needs.value.demand - supply,
       })
     : t('{supply}/{demand} people', { supply, demand: needs.value.demand });
-const needChips = computed(() => {
-  const n = needs.value;
-  return [
-    ['water', 'water', 'Water: {capacity}/{demand}', `${n.water}/${n.demand}`, n.water],
-    ['food', 'food', 'Food: {capacity}/{demand}', `${n.food}/${n.demand}`, n.food],
-    ['comfort', 'happiness', 'Happiness: {value}%', `${n.happiness}%`, n.happiness],
-  ].map(([stat, icon, label, value, capacity]) => ({
-    stat,
-    icon,
-    value,
-    short: n.short[stat],
-    fixable: !!n.fixes[stat],
-    id: n.fixes[stat] ?? { water: 'well', food: 'farm', comfort: 'square' }[stat],
-    label: t(label, { capacity, demand: n.demand, value: capacity }),
-  }));
-});
+// Water, food and happiness, always on the map.
+const needChips = computed(() => campaign.needChips.filter((chip) => chip.map));
 const incomeRate = computed(() => saloonIncomeRate(town.value));
 const activeProjects = computed(() => Object.values(town.value.projects));
-const goal = computed(() => nextGoal(town.value));
+const goal = computed(() => campaign.townGoal);
 const gate = computed(() => eraGate(town.value));
-const directoryPlots = computed(() => availableParcels(town.value, campaign.builderHammers));
+const directoryPlots = computed(() =>
+  availableParcels(town.value, campaign.builderHammers, campaign.openOffers),
+);
 // During the tutorial Build lists only the next building and finished constructions, so a
 // new player meets one clear choice instead of a column of free plots.
 const showAllPlots = ref(false);
@@ -1068,6 +1041,13 @@ const sceneTown = computed(() => {
       : {}),
   };
 });
+// The scene reads the town's shared offers and next goal. Until an era's reveal it still
+// shows the previous era, so it derives its own for that town.
+const sceneGuidance = computed(() =>
+  sceneTown.value.era === town.value.era
+    ? { offers: campaign.openOffers, goal: campaign.townGoal }
+    : null,
+);
 watch(
   () => town.value.transition?.id,
   () => {
@@ -1352,8 +1332,7 @@ const { playRaidCue } = useTownAudio(() => ({
   raid: playingRaid.value ? `${playingRaid.value.id}-${raidPhase.value}` : null,
   raidKind: playingRaid.value ? eventKind(playingRaid.value) : null,
   // Village panels pause the diorama, but its music and ambience keep playing.
-  paused:
-    !props.active || paused.value || eraPlaying.value || settlement.value !== HOME_SETTLEMENT,
+  paused: !props.active || paused.value || eraPlaying.value || settlement.value !== HOME_SETTLEMENT,
 }));
 const event = computed(() => town.value.events[BANDIT_EVENT]);
 const readyRaidDefenses = computed(() =>
@@ -1514,18 +1493,20 @@ function ringBell() {
   return true;
 }
 function buildFree(id) {
-  const offer = upgradeOffer(town.value, id);
+  const offer = offers.value.get(id);
   if (!offer?.available || offer.cost !== 0) return;
   selected.value = id;
   startWork(offer.stage);
 }
+// A Build row's tap (TownBuildRow), in every settlement: finish a ready construction, buy
+// with coins or build with a builder hammer, as the row shows (parcelAction).
 function selectParcel(id) {
-  if (constructionReady(town.value.projects[id])) finishBuilding(id, true);
-  else {
-    const offer = upgradeOffer(town.value, id);
-    if (!offer?.available) return;
+  const offer = offers.value.get(id);
+  const action = parcelAction(town.value, id, offer);
+  if (action === 'finish') finishBuilding(id, true);
+  else if (action) {
     selected.value = id;
-    if (town.value.coins >= offer.cost) startWork(offer.stage, true);
+    if (action === 'buy') startWork(offer.stage, true);
     else useHammer(offer.stage, true);
   }
 }

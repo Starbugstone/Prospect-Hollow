@@ -277,6 +277,9 @@ const props = defineProps({
   construction: Object,
   // Water, food and happiness against the town's size, always visible on the map.
   needChips: { type: Array, default: () => [] },
+  // The town's open offers and next goal, `{ offers, goal }`, when the owner's village
+  // already has them (the campaign store); a visit or the admin viewer derives its own.
+  guidance: Object,
 });
 // The map that draws each settlement over the valley, by its registry `map` key
 // (settlements.js). Each takes the props and events TownMoonView takes.
@@ -415,7 +418,9 @@ const canvas = ref(null),
   anchors = shallowRef([]),
   unavailable = ref(false),
   graphicsReady = ref(false);
-const suggestedId = computed(() => nextGoal(props.town)?.id);
+const suggestedId = computed(
+  () => (props.guidance ? props.guidance.goal : nextGoal(props.town))?.id,
+);
 const quietPlot = (id) =>
   id !== 'mine' &&
   id !== suggestedId.value &&
@@ -424,7 +429,7 @@ const quietPlot = (id) =>
 // Purchases depend on the town only; the village's one-second clock (provided by
 // TownView) just re-checks cooldowns. Unchanged indicators keep the same object, so
 // the labels re-render only when an action actually appears or disappears.
-const offers = computed(() => openOffers(props.town));
+const offers = computed(() => props.guidance?.offers ?? openOffers(props.town));
 const townPurchases = computed(() => availablePurchases(props.town, 0, offers.value));
 const townClock = inject('townClock', null);
 const indicators = computed((previous) => {

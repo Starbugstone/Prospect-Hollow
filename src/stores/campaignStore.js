@@ -100,6 +100,11 @@ import {
   constructionReady,
   finishConstruction,
   buildWithHammer,
+  needChips,
+  needsReport,
+  nextGoal,
+  openOffers,
+  townOffers,
 } from '../game/town/TownRules';
 export { SAVE_KEY };
 export const freshProfile = () => profileData(defaults());
@@ -368,6 +373,21 @@ export const useCampaignStore = defineStore('campaign', {
     completion: (state) => campaignCompletion(state.records),
     totalStars: (state) =>
       Object.values(state.records).reduce((sum, record) => sum + record.stars, 0),
+    // What the village derives from the town's offers, computed once per town state and
+    // read by every view: the map, the Build tab, its next step and the victory screen.
+    townOffers: (state) => townOffers(state.town),
+    openOffers() {
+      return openOffers(this.town, this.townOffers);
+    },
+    townNeeds() {
+      return needsReport(this.town, this.townOffers);
+    },
+    townGoal() {
+      return nextGoal(this.town, this.townOffers);
+    },
+    needChips() {
+      return needChips(this.townNeeds);
+    },
   },
   actions: {
     // Persist a change atomically: apply it, save, and restore every listed field if the

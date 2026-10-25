@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import TownScene from '../src/components/town/TownScene.vue';
 import TownView from '../src/components/town/TownView.vue';
+import TownBuildRow from '../src/components/town/TownBuildRow.vue';
 import { BUILDING_BY_ID, createTown } from '../src/data/town';
 import {
   availableParcels,
@@ -41,7 +42,13 @@ const listStatus = (label) => {
     (node) => node.tag === 'small',
   ).loc.source;
 };
-const buildListStatus = listStatus('Available buildings');
+// Each Build row is the shared row component (TownBuildRow); the list holds only rows.
+const ROW = 'src/components/town/TownBuildRow.vue';
+const buildList = find(
+  viewAst,
+  (node) => node.tag === 'section' && bound(node, 'aria-label') === "t('Available buildings')",
+);
+const buildListStatus = find(sfc(ROW).template.ast, (node) => node.tag === 'small').loc.source;
 const currentEraStatus = listStatus('All current-era plots');
 
 const render = (component, path, template, props, globals) =>
@@ -389,13 +396,7 @@ async function statusText(id, town, props) {
   useCampaignStore().town = town;
   const parcel = availableParcels(town, 0).find((place) => place.id === id);
   if (parcel)
-    shown.build = await render(
-      TownView,
-      VIEW,
-      `<template v-for="place in [$place]" :key="place.id">${buildListStatus}</template>`,
-      {},
-      { $place: parcel },
-    );
+    shown.build = await render(TownBuildRow, ROW, buildListStatus, { place: parcel, town });
   if (plotInEra(town, id))
     shown.plots = await render(
       TownView,
@@ -408,6 +409,10 @@ async function statusText(id, town, props) {
 }
 
 describe('Building status text reads the same on every map and in the Build tab', () => {
+  it('draws every Build row with the shared row component', () => {
+    expect(find(buildList, (node) => node.tag === 'TownBuildRow')).not.toBeNull();
+    expect(find(buildList, (node) => node.tag === 'small')).toBeNull();
+  });
   it.each(CASES)('%s', async (_state, id, town, props, expected) => {
     for (const [language, text] of Object.entries(expected)) {
       setLocale(language);

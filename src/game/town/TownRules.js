@@ -480,10 +480,16 @@ export function buildingIndicators(
   return indicators;
 }
 
-// Every building whose next offer could start now, cheapest first.
-export function openOffers(town) {
+// Every building's next offer by id, computed once per town state: the open offers, the
+// needs report and the next goal all read this one map (the campaign store's getters).
+export function townOffers(town) {
   const firstProject = isFirstProject(town);
-  return BUILDINGS.map((place) => ({ ...place, offer: upgradeOffer(town, place.id, firstProject) }))
+  return new Map(BUILDINGS.map(({ id }) => [id, upgradeOffer(town, id, firstProject)]));
+}
+
+// Every building whose next offer could start now, cheapest first.
+export function openOffers(town, offers = townOffers(town)) {
+  return BUILDINGS.map((place) => ({ ...place, offer: offers.get(place.id) }))
     .filter(({ offer }) => offer?.available)
     .sort((a, b) => a.offer.cost - b.offer.cost);
 }
@@ -493,12 +499,21 @@ export function openOffers(town) {
 export const availablePurchases = (town, builderHammers = 0, offers = openOffers(town)) =>
   offers.filter(({ offer }) => town.coins >= offer.cost || builderHammers > 0);
 
-export const availableParcels = (town, builderHammers = 0) => [
+export const availableParcels = (town, builderHammers = 0, offers = openOffers(town)) => [
   ...BUILDINGS.filter(({ id }) => plotInEra(town, id) && constructionReady(town.projects[id])).map(
     (place) => ({ ...place, ready: true }),
   ),
-  ...availablePurchases(town, builderHammers),
+  ...availablePurchases(town, builderHammers, offers),
 ];
+
+// What a Build row's tap does, as the row shows it: finish a ready construction, buy
+// with coins, or build with a builder hammer when coins run short. Null when the place
+// has nothing to start.
+export function parcelAction(town, id, offer = upgradeOffer(town, id)) {
+  if (constructionReady(town.projects[id])) return 'finish';
+  if (!offer?.available) return null;
+  return town.coins >= offer.cost ? 'buy' : 'hammer';
+}
 
 // Available offers that raise a need (water, food, housing, visitors or comfort),
 // fewest coins per person supplied first, so small tweaks do not crowd out real
@@ -522,9 +537,8 @@ export const CONTENT_HAPPINESS = 70;
 
 // What the village shows for its needs: supplies against demand, whether each runs
 // short, and the cheapest available building that would raise it.
-export function needsReport(town) {
+export function needsReport(town, offers = townOffers(town)) {
   const needs = townNeeds(town);
-  const offers = new Map(BUILDINGS.map(({ id }) => [id, upgradeOffer(town, id)]));
   const fix = (stat) => needFixes(town, stat, offers)[0]?.id ?? null;
   return {
     ...needs,
@@ -542,8 +556,53 @@ export function needsReport(town) {
   };
 }
 
-export function nextGoal(town) {
-  const offers = new Map(BUILDINGS.map(({ id }) => [id, upgradeOffer(town, id)]));
+// The town's supplies as chips: water, food, people and happiness against everyone the
+// town can hold, each naming the building that would raise it (its fix, or a default).
+// The map shows the `map` chips while the town has people; the Build tab shows each
+// relevant one.
+export function needChips(report) {
+  const { demand } = report;
+  const supply = (stat, icon, name, fallback, label) => ({
+    stat,
+    icon,
+    name,
+    map: true,
+    id: report.fixes[stat] ?? fallback,
+    relevant: report[stat] > 0 || demand > 0,
+    value: demand ? `${report[stat]}/${demand}` : report[stat],
+    short: report.short[stat],
+    fixable: report.short[stat] && !!report.fixes[stat],
+    label: t(label, { capacity: report[stat], demand }),
+  });
+  return [
+    supply('water', 'water', 'Water', 'well', 'Water: {capacity}/{demand}'),
+    supply('food', 'food', 'Food', 'farm', 'Food: {capacity}/{demand}'),
+    {
+      stat: 'housing',
+      icon: 'people',
+      name: 'People',
+      map: false,
+      id: report.fixes.housing ?? 'home',
+      relevant: demand > 0,
+      value: report.population,
+      label: t('{count} people', { count: report.population }),
+    },
+    {
+      stat: 'comfort',
+      icon: 'happiness',
+      name: 'Happiness',
+      map: true,
+      id: report.fixes.comfort ?? 'square',
+      relevant: demand > 0,
+      value: `${report.happiness}%`,
+      short: report.short.comfort,
+      fixable: report.short.comfort && !!report.fixes.comfort,
+      label: t('Happiness: {value}%', { value: report.happiness }),
+    },
+  ];
+}
+
+export function nextGoal(town, offers = townOffers(town)) {
   const available = BUILDINGS.filter((b) => offers.get(b.id)?.available);
   const cheapest = (choices) =>
     choices.toSorted((a, b) => offers.get(a.id).cost - offers.get(b.id).cost)[0]?.id;
