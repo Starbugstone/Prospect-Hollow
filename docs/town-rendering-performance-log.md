@@ -356,3 +356,134 @@ remain candidates for further slicing/material preparation. These captures use
 software WebGL and do not establish a hardware shader/texture-upload diagnosis;
 label projection and audio decoding were not independently established as leading
 causes. Physical Capacitor devices still need a device-level profiling pass.
+
+## October 25: construction frame check and sliced route planning (issue #54)
+
+### Construction frame check
+
+`testing/browser/town-construction-frames.cjs` measures how long the main thread stalls while a
+construction starts or finishes and the player keeps orbiting the camera. It mounts the valley's
+`TownDiorama` in a fixture page, builds an Industrial-era town from the era-demo progression
+(every earlier era finished), focuses the camera on the building, holds a real mouse drag that
+orbits the camera, and applies the change the way `TownScene.update()` does: hammer cue, a painted
+frame, then `changeTown(..., constructionId, { keepCamera: true })`. The window runs until the
+reveal has settled (its shadow render), plot work is done and life is ready, plus 2.5 seconds.
+
+| Scenario          | Building    | Path                                                                               |
+| ----------------- | ----------- | ---------------------------------------------------------------------------------- |
+| `start`           | Rail Depot  | Buying the modernization raises its scaffolding: one-plot swap with a reveal.      |
+| `finish-swap`     | Rail Depot  | Finishing it leaves the layout alone: one-plot swap with a reveal.                 |
+| `finish-topology` | Power House | Finishing it changes plots, tracks and electricity: prepared update, full rebuild. |
+
+Each run reports frame intervals (worst, over 50 and 100 ms, jank beyond 16.7 ms), browser long
+tasks with the town phases that overlapped them, the worst pointer input delay and the
+`townTimings()` stages, then medians over the runs. It is a measurement, not a pass/fail test.
+
+The setup is Chromium with software WebGL (SwiftShader), a 4× CPU slowdown on the page's main
+thread, a 412×732 viewport at pixel ratio 1 and the render tier pinned to `low` (adaptive quality
+is off so runs stay comparable). The GPU work runs unthrottled on the CPU, so frame rates are not
+a phone's. Read the numbers as relative between two builds measured under the same load; they are
+not physical-device evidence.
+
+Run it against the Docker dev server as for the
+[board motion check](deep-mine-levels.md#board-motion-check), sharing the server's network so
+other containers starting cannot drop requests:
+
+```bash
+docker run -d --rm --name hollow-frames-web --user "$(id -u):$(id -g)" -e HOME=/tmp -p 127.0.0.1:8192:8192 -v "$PWD":/app -w /app node:24-bookworm-slim npm run dev -- --host 0.0.0.0 --port 8192 --strictPort
+docker run --rm --network container:hollow-frames-web --user "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD":/app -w /app -e PH_TOWN_OUTPUT=/app/output/town-frames.json mcr.microsoft.com/playwright:v1.55.0-noble sh -c 'npm i --no-save --silent --prefix /tmp/pw playwright@1.55.0 && PLAYWRIGHT_MODULE=/tmp/pw/node_modules/playwright node testing/browser/town-construction-frames.cjs'
+docker stop hollow-frames-web
+```
+
+Options: `PH_TOWN_RUNS` (3), `PH_TOWN_SCENARIOS`, `PH_TOWN_ERA` (`industrial`), `PH_TOWN_BUILDING`
+(a building id instead of the automatic pick), `PH_TOWN_THROTTLE` (4), `PH_TOWN_TIER` (`low`),
+`PH_TOWN_OUTPUT` (JSON report), `PH_TOWN_PROFILE_DIR` (a `.cpuprofile` per run) and
+`PH_TOWN_LIST=1` (list the open era's constructions and the layout parts each finish changes).
+
+To compare two builds fairly on a shared machine, serve each from its own dev server (for example
+a `git archive` of the base commit with its own `node_modules`) and alternate one run of each.
+
+### Changes
+
+New timings: `activate-*` stages inside `tryActivatePlot()`, `update-*` stages inside
+`rebuildTown()`, `slow-tick` and `slow-render` for frames over 50 ms, and `<name>-step` entries for
+any scheduled step over 50 ms (`route-repair`, `life`, `animals`, `prepare-scenery`), so
+`townTimings().longTasks` names what blocked input. Scheduled work's aggregate entries no longer
+claim long tasks they only spanned.
+
+| Commit     | Change                                 | Where                                                                                                   | Effect / revert note                                                                                                                                                                                                                        |
+| ---------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `809d0ef1` | Resumable itinerary legs               | `TownItineraries.legSteps()`, `directLegSteps()`, `planWalk()`                                          | Route repair and life population yield inside each street leg's detour searches. A leg paused while footprints changed is planned again. `leg()` and `directLeg()` keep their results. Revert: call `this.leg()` in `plans()` and `beat()`. |
+| `2c81cec9` | Early-exit edge test                   | `detourSteps()` `search` in `TownNavigation.js`                                                         | `!this.segment()` replaces collecting every nearby footprint with `nearbySegment().some(...)`; same answer.                                                                                                                                 |
+| `e83ba67e` | Clearance kept away from a change      | `TownNavigation.replaceOwner()`, `renewCertificates()`, `track()`                                       | Prepared paths whose own points miss the changed footprints keep their certificate, so walkers re-check only nearby routes. Certificates carry their own points' bounds. Revert: drop the `renewCertificates()` call.                       |
+| `f4ef6d1e` | Bounds pre-check in `clear()`          | `TownNavigation.clear()`                                                                                | Footprints whose bounds lie farther than the margin are skipped before the exact polygon distance. A seeded test compares it with measuring every footprint.                                                                                |
+| `2c9e5e20` | One copy per batched geometry          | `placedCopy()` in `TownGeometries.js`; `TownPrimitives.batchWork()`, `TownStatics.prepare()`            | Copies each array once instead of `clone()`'s two copies and bounds recomputation; merged buffers equal `clone().applyMatrix4()`. Revert: use `geometry.clone().applyMatrix4(matrix)` again.                                                |
+| `f9fda3b3` | Layout scenery built ahead             | `TownScenery.definitions()`, `prepare()`, `update(view, town, prepared)`; rebuild job in `changeTown()` | Roads, power and lamps of a layout-changing completion are built off screen, one root per idle slice, while the hammer cue shows; the rebuild adopts them. Instant changes and frameless environments prepare at once.                      |
+| `74b55fd9` | Kept plots' service drops probed ahead | `serviceDropsWork()` in `TownEvolution.js`; `prepareRebuild()`, `refreshServiceDrops(…, prepared)`      | Drops of plots the rebuild keeps are probed against the grid it will show. The rebuild keeps those whose plot group and grid match and probes the rest, including the revealed building's own drop, as before.                              |
+
+Tests: `testing/town-itineraries.test.js`, `testing/town-navigation.test.js`,
+`testing/town-statics.test.js`, `testing/town-render-hotspots.test.js` and
+`testing/town-construction-stutter.test.js`.
+
+### Measurements
+
+Four alternating pairs on October 25: one baseline run (`dc99e615`, the timings without the fixes)
+then one run of `74b55fd9`, each covering all three scenarios. One-minute load average at each
+trigger: 3.2–9.0 for the baseline and 5.1–8.3 after; most of it is the check's own Chromium and dev
+server. Medians of four runs:
+
+| Scenario          | Metric                       | Before        | After       |
+| ----------------- | ---------------------------- | ------------- | ----------- |
+| `start`           | Worst frame                  | 1,333 ms      | 233 ms      |
+|                   | Long tasks (worst)           | 12 (1,384 ms) | 3 (225 ms)  |
+|                   | Blocking time (Σ over 50 ms) | 1,851 ms      | 206 ms      |
+|                   | Worst input delay            | 1,440 ms      | 172 ms      |
+|                   | Frames over 50 / 100 ms      | 64 / 20       | 57 / 16     |
+| `finish-swap`     | Worst frame                  | 1,267 ms      | 383 ms      |
+|                   | Long tasks (worst)           | 8 (1,245 ms)  | 2 (208 ms)  |
+|                   | Blocking time                | 1,668 ms      | 172 ms      |
+|                   | Worst input delay            | 1,240 ms      | 350 ms      |
+|                   | Frames over 50 / 100 ms      | 42 / 12       | 57 / 9      |
+| `finish-topology` | Worst frame                  | 2,583 ms      | 467 ms      |
+|                   | Long tasks (worst)           | 33 (2,579 ms) | 22 (457 ms) |
+|                   | Blocking time                | 12,102 ms     | 1,425 ms    |
+|                   | Worst input delay            | 1,224 ms      | 513 ms      |
+|                   | Frames over 50 / 100 ms      | 67 / 29       | 745 / 134   |
+|                   | Window until life is ready   | 25 s          | 84 s        |
+
+Per stage (median of each run's longest call, 4× slowdown):
+
+| Stage                                    | Before               | After                                        |
+| ---------------------------------------- | -------------------- | -------------------------------------------- |
+| Longest route-repair step (start / swap) | 1,384 / 1,246 ms     | 76 / 56 ms                                   |
+| Longest life step (layout change)        | 2,576 ms             | 399 ms                                       |
+| Life population CPU (layout change)      | 13.1 s               | 6.9 s                                        |
+| Full rebuild (`full-update`)             | 1,150 ms             | 430 ms                                       |
+| … roads and wires (`update-scenery`)     | 561 ms               | 3 ms (prepared in 35 slices, longest 218 ms) |
+| … service drops                          | 237 ms               | 5 ms                                         |
+| … navigation / statics / plots / render  | 70 / 66 / 44 / 42 ms | 111 / 94 / 76 / 79 ms                        |
+| Settlement statics, longest step (start) | 16 ms                | 23 ms                                        |
+
+The frame rate averaged over each window is about the same before and after (13–16 frames per
+second in this software-rendered setup). Before, it alternated between 33 ms frames and stalls of
+one to three seconds; after, frames run at a steadier 67–83 ms while the sliced work proceeds. The
+layout change's window is longer because its life population (now about 7 s of CPU at 4×) runs in
+8 ms idle slices: with the main thread this busy, they mostly run on the 100 ms idle-callback
+timeout, so villagers take about a minute to finish planning their outings instead of about 20
+seconds. That also counts more frames over 50 ms. Single-pair runs between the fixes showed most of
+the swap gains after the itinerary and navigation fixes alone (blocking 1.9–2.1 s down to about
+0.25 s); preparing the scenery and drops then took the layout change's worst task from about 1.8 s
+to about 0.5 s.
+
+Remaining hotspots in these measurements:
+
+- The full rebuild is still one task of about 430 ms at 4× (navigation, static batching, plots,
+  render), and the prepared road root is one slice of about 220 ms.
+- A layout change re-plans every villager's outings on a new navigation index: about 7 s of CPU at
+  4×. Keeping the legs and detours the change cannot affect across the rebuild would cut it.
+- Life steps of up to 400 ms remain where `addPerson()` and VIP arrivals plan walks synchronously
+  (`prepareActorWalk()`).
+- A swap's activation (about 100–150 ms) and its first render are unchanged.
+
+These are headless numbers. Physical phones still need a pass with `prospectDebug.townTimings()`
+and `townFrameStats()`.
