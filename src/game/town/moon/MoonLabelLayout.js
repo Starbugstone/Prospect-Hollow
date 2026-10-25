@@ -17,7 +17,7 @@ export function moonMapLabel({ id, x, y }, { width, height }) {
 
 // Preserve the projected anchor. Only collisions and screen edges move a label;
 // candidates touch occupied rectangles, never an unrelated grid. Like the valley,
-// overflow labels may hide; the building directory remains available.
+// overflow labels may hide; the Build tab still lists every lot.
 export function layoutMoonLabels(labels, width, height) {
   if (!width || !height) return labels;
   const gap = 6,

@@ -1986,7 +1986,6 @@ html:has(.town-museum[open]) {
 .town-in-cinematic .town-resource-bar,
 .town-in-cinematic .town-settlement-notice,
 .town-in-cinematic .town-moon-header,
-.town-in-cinematic .town-moon-actions,
 .town-in-cinematic .mine-label {
   visibility: hidden;
 }

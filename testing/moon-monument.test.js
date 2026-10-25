@@ -33,7 +33,7 @@ import { MoonScene, moonHeight } from '../src/game/town/moon/MoonScene';
 import {
   buildMoonMonuments,
   moonMonumentSignature,
-  moonMonumentLabels,
+  moonLabelAnchors,
 } from '../src/game/town/moon/MoonMonuments';
 import { buildPersonalAreas } from '../src/game/town/TownPersonalisation';
 import { buildLandmark } from '../src/game/town/TownLandmarks';
@@ -88,8 +88,12 @@ it('uses one settlement contract, with historical defaults and no speculative re
     future = { settlement: 'unregistered' };
   expect(areaSettlement(old)).toBe('valley');
   expect(areasForSettlement('valley', [old, future])).toEqual([old]);
-  expect(moonMonumentLabels({ era: 'moonward' })).toEqual([]);
-  expect(moonMonumentLabels(town()).map((a) => a.id)).toContain(area.id);
+  const sites = (value) =>
+    moonLabelAnchors(value)
+      .map(({ id }) => id)
+      .filter((id) => !MOON_LOTS[id]);
+  expect(sites({ era: 'moonward' })).toEqual([]);
+  expect(sites(town())).toContain(area.id);
 });
 
 it('reserves a flat lunar site clear of pads, ring, approaches, rovers and the saucer corridor', () => {

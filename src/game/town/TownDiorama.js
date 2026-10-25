@@ -345,8 +345,6 @@ export class TownDiorama extends TownPrimitives {
     this.availablePlots = new Set(ids);
     this.render();
   }
-  /** Where a far sky direction sits on screen, in percent, and how much the camera faces it.
-   * Runs on every camera frame, so it reuses scratch vectors. */
   // The valley's Moon, fixed in the world; the scene above it keeps only its tap target.
   showSkyMoon(lights) {
     if (this.skyMoon?.show(lights)) this.render();

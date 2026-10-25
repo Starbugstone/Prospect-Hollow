@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { reactive } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
 import TownMoonView from '../src/components/town/TownMoonView.vue';
 import TownScene from '../src/components/town/TownScene.vue';
@@ -71,7 +72,7 @@ describe('Moon monuments ready to unveil', () => {
       const unveil = `Unveil the ${LANDMARK_BY_ID[choice].label}`;
       expect(buildingActionLabel(town, id, 'ready')).toBe(unveil);
       const html = await moonView(
-        byClass(moonAst, 'town-moon-actions'),
+        byClass(moonAst, 'town-action-icons'),
         { town, indicators: { [id]: 'ready' } },
         [id],
       );
@@ -141,6 +142,21 @@ describe('One label renderer for both maps', () => {
       '<small class="construction-count" title="Construction: 1 of 2 mining runs completed"><i data-icon="wall"></i>1/2</small>',
     );
   });
+});
+
+it('rebuilds the Moon scene for what it draws, not for coins', async () => {
+  const town = reactive(moonTown());
+  const seen = [];
+  await moonView('<div />', { town }, [], (state) => {
+    seen.push(state.visual.value);
+    town.coins += 500;
+    town.honours = { ...town.honours, seen: 1 };
+    seen.push(state.visual.value);
+    town.buildings.settlerDomes = 1;
+    seen.push(state.visual.value);
+  });
+  expect(seen[1]).toBe(seen[0]);
+  expect(seen[2]).not.toBe(seen[0]);
 });
 
 describe('The Moon’s upgrade glow follows the valley’s rule', () => {

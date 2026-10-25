@@ -12,7 +12,6 @@ import {
 import {
   canCollectMoonstones,
   moonLotDetail,
-  moonLotIds,
   moonLotLabel,
   moonLotName,
   moonLotInfo,
@@ -20,6 +19,7 @@ import {
   moonMonumentChoice,
 } from '../src/game/town/moon/MoonLotStatus';
 import { setLocale } from '../src/i18n';
+import { moonLabelAnchors } from '../src/game/town/moon/MoonMonuments';
 import { monumentStatus } from '../src/game/town/TownBuildingFeedback';
 
 const moonTown = () => ({ ...createTown(), era: 'twin-hollows', coins: 1e8 });
@@ -35,13 +35,16 @@ const chooseSite = (town) => {
 };
 
 afterEach(() => setLocale('en'));
-describe('New Hollow lot status, shared by the Moon map and the Build tab', () => {
-  it('lists every Moon lot, then only the monument sites the town has opened', () => {
-    expect(moonLotIds({ ...createTown(), era: 'frontier' })).toEqual(Object.keys(MOON_LOTS));
-    const ids = moonLotIds(moonTown());
-    expect(ids.slice(0, Object.keys(MOON_LOTS).length)).toEqual(Object.keys(MOON_LOTS));
-    expect(ids).toContain(site.id);
-    expect(ids.every((id) => MOON_LOTS[id] || AREA_BY_ID[id]?.settlement === 'moon')).toBe(true);
+describe('New Hollow lot status, read through the valley’s shared status contracts', () => {
+  it('labels every Moon lot, then only the monument sites the town has opened', () => {
+    const ids = (town) => moonLabelAnchors(town).map(({ id }) => id);
+    expect(ids({ ...createTown(), era: 'frontier' })).toEqual(Object.keys(MOON_LOTS));
+    expect(ids()).toEqual(Object.keys(MOON_LOTS));
+    expect(moonLabelAnchors(moonTown()).find(({ id }) => id === site.id).position.y).toBe(2);
+    const opened = ids(moonTown());
+    expect(opened.slice(0, Object.keys(MOON_LOTS).length)).toEqual(Object.keys(MOON_LOTS));
+    expect(opened).toContain(site.id);
+    expect(opened.every((id) => MOON_LOTS[id] || AREA_BY_ID[id]?.settlement === 'moon')).toBe(true);
   });
 
   it('follows a building from a locked plot through construction to its level', () => {

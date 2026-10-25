@@ -23,11 +23,17 @@ export const moonMonumentSignature = (town) =>
       monumentWork(town, area),
     ]),
   );
-export const moonMonumentLabels = (town) =>
-  MOON_MONUMENT_AREAS.filter((area) => areaUnlocked(town, area)).map((area) => ({
+/**
+ * Where each lot's and open monument site's label hangs: over its building, or lower
+ * over a site. Every Moon lot, then each site the town has opened.
+ */
+export const moonLabelAnchors = (town) => [
+  ...Object.entries(MOON_LOTS).map(([id, [x, z]]) => ({ id, position: new Vector3(x, 3.4, z) })),
+  ...MOON_MONUMENT_AREAS.filter((area) => town && areaUnlocked(town, area)).map((area) => ({
     id: area.id,
-    position: area.positions[0],
-  }));
+    position: new Vector3(area.positions[0][0], 2, area.positions[0][1]),
+  })),
+];
 
 // The shared unveiling stages suited settlers from the Moon's one figure builder.
 // Purchases, saved work, scaffolds, ribbon, shots and cleanup remain shared.
@@ -79,13 +85,7 @@ export function syncMoonMonuments(scene, town) {
   scene.monumentSignature = signature;
   scene.d.clearGroup(scene.monuments);
   scene.monuments = buildMoonMonuments(scene.d, scene.scene, town);
-  scene.lots = [
-    ...Object.entries(MOON_LOTS).map(([id, [x, z]]) => ({ id, position: new Vector3(x, 3.4, z) })),
-    ...moonMonumentLabels(town).map(({ id, position: [x, z] }) => ({
-      id,
-      position: new Vector3(x, 2, z),
-    })),
-  ];
+  scene.lots = moonLabelAnchors(town);
   scene.requestFrame();
 }
 

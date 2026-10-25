@@ -188,7 +188,6 @@
       :read-only="readOnly"
       @select="choose($event)"
       @inspect="emit('inspect', $event)"
-      @collect="emit('select', $event)"
       @close="closeMoon"
       @vip-spend="emit('vip-spend', $event)"
       @villager-label="showMoonVillagerLabel"

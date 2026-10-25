@@ -1,19 +1,12 @@
 import { BUILDING_BY_ID } from '../../../data/town';
-import { moonParcels } from '../../../data/moonSettlement';
-import { AREA_BY_ID, areaChoice, areaUnlocked, monumentWork } from '../../../data/townLandmarks';
+import { AREA_BY_ID, areaChoice, monumentWork } from '../../../data/townLandmarks';
 import { collectionCooldownRemaining, plotUnlocked } from '../TownRules';
 import { buildingStatus, monumentStatus } from '../TownBuildingFeedback';
 import { t } from '../../../i18n';
 
-// One status contract for New Hollow's lots, shared by the Moon map labels and the
-// Build tab's Moon list, so both always describe a lot the same way.
-
-// Every Moon building lot, then each monument site the town has opened on the Moon,
-// from the one parcel contract that the scene draws, glows and taps.
-export const moonLotIds = (town) =>
-  moonParcels()
-    .filter(({ id, kind }) => kind === 'lot' || areaUnlocked(town, AREA_BY_ID[id]))
-    .map(({ id }) => id);
+// New Hollow's lots and sites on the Moon map: their names and statuses, read through the
+// valley's shared status contracts (TownBuildingFeedback). The Build tab lists Moon
+// buildings with the valley's rows.
 
 export const canCollectMoonstones = (town, now = Date.now()) =>
   !!town.moonstoneProduction?.stored &&

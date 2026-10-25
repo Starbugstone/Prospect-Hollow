@@ -98,7 +98,6 @@
               'is-pin': lot.collapsed,
               selected: selected === lot.id,
               'is-collectable': collecting(lot.id),
-              built: !!(town.buildings[lot.id] || moonMonumentChoice(town, lot.id)),
             },
           ]"
           :style="{
@@ -123,7 +122,7 @@
           <TownLabelStatus v-if="!lot.collapsed" :status="lotInfo[lot.id].status" />
         </button>
       </div>
-      <div class="town-moon-actions" role="group" :aria-label="t('Village buildings')">
+      <div class="town-action-icons" role="group" :aria-label="t('Village buildings')">
         <TownActionIcon
           v-for="lot in actionLots"
           :key="lot.id"
@@ -190,7 +189,6 @@ import {
   moonLotLabel,
   moonLotName,
   moonLotStatus,
-  moonMonumentChoice,
 } from '../../game/town/moon/MoonLotStatus';
 import TownActionIcon from './TownActionIcon.vue';
 import TownLabelStatus from './TownLabelStatus.vue';
@@ -223,7 +221,6 @@ const emit = defineEmits([
   'select',
   'inspect',
   'close',
-  'collect',
   'presentation-ready',
   'presentation-unavailable',
   // The valley's VIP flow: a purchase receipt, and the named VIP's tag for the shared label.
@@ -343,12 +340,10 @@ const choose = (id) => {
   emit(props.readOnly ? 'inspect' : 'select', id);
 };
 // Pointer taps on labels and action buttons settle through the scene's shared tap
-// gesture; their click opens a lot only from the keyboard, or on the SVG map.
+// gesture; their click opens a lot only from the keyboard, or on the SVG map. Opening
+// the workshop collects its moonstones, as the valley's saloon pays out (TownView).
 function activateLabel(id, event) {
-  if (scene && !keyboardActivation(event)) return;
-  if (!props.readOnly && canCollectMoonstones.value && id === 'moonstoneWorkshop')
-    emit('collect', id);
-  else choose(id);
+  if (!scene || keyboardActivation(event)) choose(id);
 }
 function cameraKey(event) {
   const action = cameraKeyAction(event);
@@ -440,21 +435,19 @@ async function start() {
     if (!disposed) recovery.recover(error);
   }
 }
-// Watch only visual lifecycle fields; honours and the rest of the town stay out.
-watch(
-  () => [
+// Only what the Moon draws rebuilds it, as in the valley (TownScene): coins, honours and
+// the rest of the town stay out. The visiting saucer follows the airport's era.
+const visual = computed(() =>
+  JSON.stringify([
     props.town.buildings,
     props.town.projects,
     props.town.buildingEras,
     props.town.buildingEraLevels,
-    // The visiting saucer follows the valley airport's finish.
-    props.town.buildingEras?.airport,
     props.town.era,
     props.town.personalisation,
-  ],
-  () => scene?.update(props.town),
-  { deep: true },
+  ]),
 );
+watch(visual, () => scene?.update(props.town));
 watch(() => [props.indicators, props.upgradeIds], updateGlow);
 watch(selectedLot, (id) => scene?.setSelected(id ?? null));
 watch(() => [props.active, props.paused], updateMotion);
@@ -537,11 +530,6 @@ defineExpose({
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.town-moon-actions {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
 .town-moon-action {
   border-radius: 50%;
   background: radial-gradient(circle, #142f48db 35%, #61d6ec55 60%, transparent 72%);
@@ -558,9 +546,6 @@ defineExpose({
   overflow: visible;
   text-overflow: clip;
 }
-</style>
-
-<style scoped>
 .town-moon-lot.is-pin {
   min-height: 0;
   padding: 0;

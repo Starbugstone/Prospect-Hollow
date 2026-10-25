@@ -1,4 +1,9 @@
-import { MOON_MONUMENT_AREAS, syncMoonMonuments, moonMonumentPresentation } from './MoonMonuments';
+import {
+  MOON_MONUMENT_AREAS,
+  moonLabelAnchors,
+  moonMonumentPresentation,
+  syncMoonMonuments,
+} from './MoonMonuments';
 import { animateMoonSettler, moonSettlerPlan, moonSuitFigure } from './MoonSettlers';
 import { areaUnlocked } from '../../../data/townLandmarks';
 import * as THREE from 'three';
@@ -375,7 +380,8 @@ export function moonAccessGeometry(approaches = moonApproaches()) {
 }
 
 const labelPoint = new THREE.Vector3();
-// Tap targets cover a lot's whole pad, up to its building's roof (this until drawn).
+// Tap targets cover a lot's whole pad, up to its building's roof (this tall until the
+// building is drawn).
 const PICK_HEIGHT = 3;
 const PICK_LAYER = 3;
 const lotBounds = new THREE.Box3();
@@ -475,10 +481,7 @@ export class MoonScene extends TownPrimitives {
     this.world.name = 'New Hollow VIP visitors';
     this.visitorTransports = new Map();
     this.vipArrivals = new MoonVipArrivals(this);
-    this.lots = Object.entries(MOON_LOTS).map(([id, [x, z]]) => ({
-      id,
-      position: new THREE.Vector3(x, 3.4, z),
-    }));
+    this.lots = moonLabelAnchors();
     // The valley's gestures on the valley's surface: the canvas's parent, which holds the
     // lot labels and action buttons too, so a drag that starts on a label still orbits.
     const surface = canvas.parentElement;
@@ -695,7 +698,6 @@ export class MoonScene extends TownPrimitives {
           speed: 0.11,
           phase: n * 2.1,
           dir: 1,
-          vehicle: true,
         });
       }
     }
@@ -812,8 +814,10 @@ export class MoonScene extends TownPrimitives {
   }
   /** Every parcel's glow and tap target follow its pad, from the one parcel contract. */
   addParcels() {
+    this.parcels = new Map();
     for (const parcel of moonParcels()) {
-      this.upgradeGlow.addPolygon(parcel.id, { ...parcel, height: 4 });
+      this.parcels.set(parcel.id, parcel);
+      this.upgradeGlow.addPolygon(parcel.id, { ...parcel, height: 0 });
       this.addPickTarget(parcel);
     }
   }
@@ -839,6 +843,8 @@ export class MoonScene extends TownPrimitives {
       this.fitPickTarget(id, Math.max(this.roofs?.[id] ?? 0, site ? moonRoofHeight(site) : 0));
     }
   }
+  // A parcel's tap target reaches its roof; its upgrade glow hugs the base of what stands
+  // there, a faint low band (GLOW_WALL) as on every map.
   fitPickTarget(id, height) {
     const target = this.pickTargets?.children.find((mesh) => mesh.userData.lot === id);
     if (!target || !Number.isFinite(height)) return;
@@ -846,6 +852,11 @@ export class MoonScene extends TownPrimitives {
     target.scale.y = top;
     target.position.y = top / 2;
     target.updateMatrixWorld();
+    const parcel = this.parcels?.get(id);
+    if (parcel && (this.glowHeights ??= new Map()).get(id) !== height) {
+      this.glowHeights.set(id, height);
+      this.upgradeGlow.addPolygon(id, { ...parcel, height });
+    }
   }
   /**
    * A tap names the VIP under it, opens the parcel under it, or the valley from Earth.
@@ -1051,6 +1062,8 @@ export class MoonScene extends TownPrimitives {
       geometries = new Set(),
       materials = new Set();
     this.scene.traverse((object) => {
+      // three shares one sprite geometry across every renderer, the valley's sky Moon too.
+      if (object.isSprite) shared.add(object.geometry);
       if (object.geometry && !shared.has(object.geometry)) geometries.add(object.geometry);
       if (object.material) materials.add(object.material);
     });
