@@ -350,10 +350,6 @@
 .town-mine-entrance {
   cursor: pointer;
 }
-.town-mine-entrance:hover .mine-label rect {
-  fill: #345644;
-  stroke-width: 4;
-}
 .mine-cart {
   animation: mine-cart-roll 7s ease-in-out infinite;
 }

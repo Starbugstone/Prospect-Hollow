@@ -200,25 +200,6 @@
           r="5"
           fill="#394543"
       /></g>
-      <g v-if="!decorative" class="mine-label" transform="translate(0 103)"
-        ><rect
-          x="-93"
-          y="-17"
-          width="186"
-          height="35"
-          rx="17"
-          fill="#e1f0c0"
-          stroke="#e7d1a0"
-          stroke-width="2"
-        /><text
-          y="6"
-          text-anchor="middle"
-          fill="#405b35"
-          font-family="Georgia, serif"
-          font-size="18"
-          >{{ t('Mine · Level') }} {{ level }} →</text
-        ></g
-      >
     </g>
   </g>
 </template>
