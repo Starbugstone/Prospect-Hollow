@@ -334,12 +334,9 @@ export class TownNavigation {
           if (distances[at] + length >= distances[next]) continue;
           // Dense scenery gives each node many edges; pause between batches of checks.
           if (++checks % 24 === 0) yield;
-          if (
-            this.nearbySegment(nodes[at], nodes[next], margin).some(
-              (o) => !sweptClear(o, nodes[at], nodes[next], margin),
-            )
-          )
-            continue;
+          // Stops at the first blocking footprint instead of collecting every nearby one:
+          // most candidate edges cross the town and are blocked early.
+          if (!this.segment(nodes[at], nodes[next], margin)) continue;
           distances[next] = distances[at] + length;
           previous[next] = at;
         }
