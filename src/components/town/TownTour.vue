@@ -10,7 +10,7 @@
       </p>
       <div class="town-tour-art">
         <svg viewBox="-165 -210 330 270" aria-hidden="true">
-          <TownMine v-if="step.id === 'mine'" decorative :level="level" :era="era" />
+          <TownMine v-if="step.id === 'mine'" :level="level" :era="era" />
           <TownBuilding v-else :id="step.id" :stage="step.stage || 1" />
         </svg>
       </div>

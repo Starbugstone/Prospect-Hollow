@@ -3,12 +3,7 @@
     class="town-mine-entrance"
     :data-era="era"
     :data-profile="profile.key"
-    :role="decorative ? undefined : 'button'"
-    :tabindex="decorative ? undefined : 0"
     :aria-label="t('Enter the mine: play level {value0}', { value0: level })"
-    @click="$emit('enter')"
-    @keydown.enter.prevent="$emit('enter')"
-    @keydown.space.prevent="$emit('enter')"
   >
     <rect
       class="mine-hit-area"
@@ -235,7 +230,6 @@ import { mineGrowth } from '../../data/mineGrowth';
 import { t } from '../../i18n';
 const props = defineProps({
   level: { type: Number, default: 1 },
-  decorative: Boolean,
   era: { type: String, default: 'frontier' },
 });
 const appearance = computed(() => mineAppearance(props.era));
@@ -255,5 +249,4 @@ const hillsideBuildings = computed(() =>
     { feature: 'lantern-sorting', x: 32, y: -80 },
   ].filter(({ feature }) => features.value.has(feature)),
 );
-defineEmits(['enter']);
 </script>

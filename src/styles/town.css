@@ -349,15 +349,8 @@
 /* The SVG mine illustration on the landing page and in the tour. */
 .town-mine-entrance {
   cursor: pointer;
-  outline: none;
 }
-.town-mine-entrance:focus-visible .mine-hit-area {
-  stroke: #385c48;
-  stroke-width: 5;
-  fill: #f9edcd22;
-}
-.town-mine-entrance:hover .mine-label rect,
-.town-mine-entrance:focus-visible .mine-label rect {
+.town-mine-entrance:hover .mine-label rect {
   fill: #345644;
   stroke-width: 4;
 }

@@ -119,7 +119,7 @@ it.each([
   'draws the same %s sorting hall and palette in the accessible mine illustration',
   async (era, sorting) => {
     const svg = await renderToString(
-      createSSRApp({ render: () => h(TownMine, { era, decorative: true }) }),
+      createSSRApp({ render: () => h(TownMine, { era }) }),
     );
     expect(svg).toContain(`data-feature="${sorting}"`);
     expect(svg).not.toContain('data-feature="sorting-dome"');
