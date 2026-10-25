@@ -11,7 +11,8 @@ import { NPC_BODY_MARGIN } from '../../data/townClearances';
 export const NPC_MARGIN = NPC_BODY_MARGIN;
 const CELL = 4,
   SIDES = 12,
-  EPS = 1e-6;
+  EPS = 1e-6,
+  BOUNDS_SLACK = 1e-9;
 function obstacleBounds(o) {
   return o.polygon
     ? {
@@ -275,9 +276,18 @@ export class TownNavigation {
     return true;
   }
   clear(p, margin = NPC_MARGIN) {
-    return this.near(p[0], p[2]).every(
-      (o) => !sameHeight(o, p) || footprintDistance(o, p[0], p[2]) >= margin - EPS,
-    );
+    const limit = margin - EPS;
+    for (const o of this.near(p[0], p[2])) {
+      if (!sameHeight(o, p)) continue;
+      // A footprint lies inside its bounds: a point that far from the box is clear of
+      // it without measuring every edge (the small slack covers rounding).
+      const b = this.bounds.get(o);
+      const dx = Math.max(b.minX - p[0], 0, p[0] - b.maxX),
+        dz = Math.max(b.minZ - p[2], 0, p[2] - b.maxZ);
+      if (Math.hypot(dx, dz) >= limit + BOUNDS_SLACK) continue;
+      if (footprintDistance(o, p[0], p[2]) < limit) return false;
+    }
+    return true;
   }
   safePoint(p, margin = NPC_MARGIN, accept) {
     // Existing animal callers pass numeric/boolean trailing arguments, which
