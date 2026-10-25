@@ -87,18 +87,8 @@ export const useGameStore = defineStore('game', {
         0
       );
     },
-    activeBoard(state) {
-      return state.pendingBoardState ?? state.board;
-    },
     remainingRelics: (state) => state.board.filter((gem) => gem?.type === 'relic').length,
     remainingOre: (state) => remainingOre(state.oreOrders),
-    goalTotal: (state) =>
-      state.totalLayers +
-      state.totalRelics +
-      state.oreOrders.reduce((sum, order) => sum + order.target, 0),
-    goalProgress() {
-      return this.goalTotal - this.remainingLayers - this.remainingRelics - this.remainingOre;
-    },
     layerLabel(state) {
       const tiles = this.currentLevel?.config.tiles ?? [];
       const fallback =

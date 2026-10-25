@@ -363,8 +363,6 @@ export const useCampaignStore = defineStore('campaign', {
     },
     completedCount: (state) => Object.keys(state.records).length,
     completion: (state) => campaignCompletion(state.records),
-    totalStars: (state) =>
-      Object.values(state.records).reduce((sum, record) => sum + record.stars, 0),
   },
   actions: {
     // Persist a change atomically: apply it, save, and restore every listed field if the
