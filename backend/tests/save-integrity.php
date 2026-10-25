@@ -1083,6 +1083,63 @@ foreach ($fixtures->fixtures as $fixture) {
     }
 }
 
+// A Shuffle whose resolution finishes the puzzle is spent before its victory, as every
+// other power is. Saves queued by earlier builds spent it after the victory: both replay,
+// and neither can spend a Shuffle the town does not have.
+$shuffleWin = null;
+foreach ($fixtures->fixtures as $fixture) {
+    if ($fixture->name === 'victory after 175 moves and an expired speed target') {
+        $shuffleWin = $fixture;
+    }
+}
+if ($shuffleWin === null) {
+    throw new RuntimeException('The frontend parity fixtures need a normal victory.');
+}
+foreach (['before', 'after'] as $order) {
+    foreach ([1, 0] as $owned) {
+        $before = integrityData($shuffleWin->before);
+        foreach ($before['powers'] as &$power) {
+            if ($power['id'] === 'shuffle') {
+                $power['quantity'] = $owned;
+            }
+        }
+        unset($power);
+        $after = integrityData($shuffleWin->after);
+        $actions = $after['integrity']['actions'];
+        $victory = array_search('victory', array_column($actions, 'kind'), true);
+        $spend = integrityAction(0, 'power-spend', [
+            'itemId' => 'shuffle',
+            'at' => $actions[$victory]['data']['at'],
+        ]);
+        array_splice($actions, $order === 'before' ? $victory : $victory + 1, 0, [$spend]);
+        foreach ($actions as $index => &$action) {
+            $action['sequence'] = $after['integrity']['baseSequence'] + $index + 1;
+        }
+        unset($action);
+        $after['integrity']['actions'] = $actions;
+        $clock = $shuffleWin->serverNow;
+        $baseline = $validator->accept(
+            integrityObject($before),
+            null,
+            $shuffleWin->baselineServerNow ?? $clock,
+        );
+        if (!$owned) {
+            integrityDenied(
+                fn() => $validator->accept(integrityObject($after), $baseline, $clock),
+                'save_integrity_mismatch',
+                'a winning shuffle spent ' . $order . ' its victory without one stored',
+            );
+            continue;
+        }
+        $played = integrityData($validator->accept(integrityObject($after), $baseline, $clock));
+        $shuffles = array_column($played['powers'], 'quantity', 'id')['shuffle'];
+        assertIntegrity(
+            $shuffles === 0 && $played['settledRun'] === $after['settledRun'],
+            'a winning shuffle spent ' . $order . ' its victory replays once',
+        );
+    }
+}
+
 // The space helmet pays an hour of saloon takings once per completed puzzle. A find while
 // visiting another town needs the server's receipt for exactly this town and time.
 $helmet = null;

@@ -1,13 +1,14 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
-import { createSSRApp, h } from 'vue';
+import { createApp, createSSRApp, h } from 'vue';
 import { renderToString } from 'vue/server-renderer';
 import { loadFrench, setLocale } from '../src/i18n';
 import TownMoonstoneWorkshop from '../src/components/town/TownMoonstoneWorkshop.vue';
 import { buildingBenefit } from '../src/game/town/TownBenefits';
 import { createTown } from '../src/data/town';
 import { normalizeTown, buildWithHammer, finishConstruction } from '../src/game/town/TownRules';
-import { useCampaignStore } from '../src/stores/campaignStore';
+import { freshProfile, SAVE_KEY, useCampaignStore } from '../src/stores/campaignStore';
+import { createLocalIntegrityPlugin } from '../src/services/localIntegrity';
 import { advanceMoonstoneProduction, MOONSTONE_ECONOMY } from '../src/data/moonstones';
 import { priceCurrency, currencyBalance, canAffordPrice, payPrice } from '../src/data/townCurrency';
 import { AREA_BY_ID, landmarkOffer } from '../src/data/townLandmarks';
@@ -85,6 +86,37 @@ it.each([1, 2, 3])(
     expect(campaign.town).toMatchObject({ moonstones: 10 * level, moonstonesEarned: 10 * level });
   },
 );
+// The shipped game installs the integrity guard before any store exists; every
+// moonstone action must open its mutation scope, or nothing it changes can be saved.
+it('collects, sells and spends moonstones through the shipped integrity guard', () => {
+  const profile = freshProfile();
+  profile.town = normalizeTown(legacy());
+  profile.town.moonstoneProduction = { ...profile.town.moonstoneProduction, stored: 3 };
+  values.set(SAVE_KEY, JSON.stringify(profile));
+  const pinia = createPinia();
+  pinia.use(createLocalIntegrityPlugin());
+  createApp({}).use(pinia);
+  setActivePinia(pinia);
+  const campaign = useCampaignStore(pinia);
+  campaign.town.moonstones = 999;
+  expect(campaign.town.moonstones).toBe(5);
+  expect(campaign.collectMoonstones()).toBe(3);
+  expect(campaign.town).toMatchObject({ moonstones: 8, moonstonesEarned: 8 });
+  expect(campaign.town.moonstoneProduction.stored).toBe(0);
+  expect(campaign.sellMoonstones(2)).toBe(true);
+  expect(campaign.town).toMatchObject({ moonstones: 6, coins: 2 * MOONSTONE_ECONOMY.saleCoins });
+  expect(campaign.spendMoonstones(1, 'future-monument')).toBe(true);
+  expect(campaign.integrity.actions.map(({ kind }) => kind)).toEqual([
+    'moonstone-collect',
+    'moonstone-sell',
+    'moonstone-spend',
+  ]);
+  expect(JSON.parse(values.get(SAVE_KEY)).town).toMatchObject({
+    moonstones: 5,
+    moonstonesEarned: 8,
+    coins: 2 * MOONSTONE_ECONOMY.saleCoins,
+  });
+});
 it('normal victories and continuous gems advance production; opening a run does not', () => {
   const campaign = useCampaignStore();
   campaign.town.buildings.moonstoneWorkshop = 3;

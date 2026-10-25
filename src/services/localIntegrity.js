@@ -19,6 +19,9 @@ const NORMAL_ACTIONS = new Set([
   'recordContinuous',
   'resetProgress',
   'accrueSaloonIncome',
+  'collectMoonstones',
+  'spendMoonstones',
+  'sellMoonstones',
   'collectVipSpending',
   'collectSaloonIncome',
   'collectSaloonForVisitor',
@@ -56,6 +59,13 @@ const INTERNAL_ACTIONS = new Set([
   'awardReward',
   'updateEarnedHonours',
 ]);
+// Every other campaign action must be read-only: the plugin leaves it unwrapped, so a
+// state-changing action missing from both lists would fail to save in the shipped game.
+// testing/local-integrity.test.js checks that every campaign action is classified.
+export const guardedActionNames = () => ({
+  normal: [...NORMAL_ACTIONS],
+  internal: [...INTERNAL_ACTIONS],
+});
 const PROTECTED_FIELDS = [
   'town',
   'records',

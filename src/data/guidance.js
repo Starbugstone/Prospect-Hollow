@@ -1,4 +1,5 @@
 import { constructionReady, upgradeOffer } from '../game/town/TownRules';
+import { BOARD_BONUSES } from '../game/engine/TileRules';
 
 // Contextual tips share one persistence contract. Full guides remain available in Help.
 export const TIP_IDS = [
@@ -116,7 +117,7 @@ export function townTip(campaign) {
     campaign.seenTips,
   );
 }
-const bonusTypes = new Set(['bomb', 'rainbow', 'cross']);
+const bonusTypes = new Set(BOARD_BONUSES);
 export function mineTip(game, campaign) {
   if (!game.sessionActive || game.levelCleared) return null;
   const bonus = (index) => bonusTypes.has(game.board[index]?.type);

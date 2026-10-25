@@ -21,10 +21,9 @@ final class HealthController
         try {
             $this->auth->guardHost($request);
             $db = $this->database->get();
-            if (
-                (int) $db->fetchOne('SELECT MAX(version) FROM schema_versions') !==
-                Database::latestVersion()
-            ) {
+            // A database a later release already migrated stays ready for this one, so a
+            // rollback to an earlier successful release passes its health check.
+            if (!Database::schemaReady($db)) {
                 throw new \RuntimeException('Schema not ready.');
             }
             $db->fetchOne('SELECT id FROM towns LIMIT 1');
