@@ -377,3 +377,55 @@ it('uses the same connected tour contract for an added era', () => {
     delete ERA_BY_ID[era.id];
   }
 });
+
+// Issue #54: scheduled population and route repair plan street legs in resumable
+// steps, so one long detour search no longer blocks input for a whole plan.
+function blockedLeg() {
+  const { d } = fixture('motor-age');
+  const from = d.itineraries.endpoint('home'),
+    to = d.itineraries.endpoint('bank');
+  const open = d.itineraries.leg(from, to);
+  // Footprints standing midway along the open leg's streets force detour searches.
+  const poles = open.points
+    .slice(1, -2)
+    .map((p, i) => [(p[0] + open.points[i + 2][0]) / 2, (p[2] + open.points[i + 2][2]) / 2])
+    .filter(([x, z]) => Math.hypot(x - from[0], z - from[2]) > 2)
+    .map(([x, z]) => ({ x, z, y: 0, height: 3, radius: 0.35 }));
+  const itineraries = () => {
+    d.navigation = new TownNavigation(poles.map((o) => ({ ...o })));
+    return new TownItineraries(d);
+  };
+  return { d, from, to, open, poles, itineraries };
+}
+it('plans a long street leg in resumable steps with the same result as at once', () => {
+  const { from, to, poles, itineraries } = blockedLeg();
+  expect(poles.length).toBeGreaterThan(0);
+  const expected = itineraries().leg(from, to);
+  const work = itineraries().legSteps(from, to);
+  let steps = 0,
+    step = work.next();
+  while (!step.done) {
+    steps++;
+    step = work.next();
+  }
+  // Previously the whole leg was one uninterruptible step.
+  expect(steps).toBeGreaterThan(poles.length);
+  expect(step.value.points).toEqual(expected.points);
+});
+it('plans a paused leg again when footprints change before it finishes', () => {
+  const { d, from, to, open, itineraries } = blockedLeg();
+  const legs = itineraries();
+  const work = legs.legSteps(from, to);
+  work.next();
+  const [x, , z] = open.points[Math.floor(open.points.length / 2)];
+  const late = { x, z, y: 0, height: 3, radius: 0.2 };
+  d.navigation.replaceOwner('late-building', [late]);
+  let step = work.next();
+  while (!step.done) step = work.next();
+  const leg = step.value;
+  expect(leg.total).toBeGreaterThan(0);
+  leg.points.forEach((point, i) => {
+    if (i) expect(d.navigation.segment(leg.points[i - 1], point, 0.29)).toBe(true);
+  });
+  expect(leg.clearance.revision).toBe(d.navigation.revision);
+});
