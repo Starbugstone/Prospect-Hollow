@@ -1,8 +1,7 @@
 // Run against the Docker Vite server; see docs/future-eras.md#moon-input-check.
-const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const assert = require('node:assert/strict');
-const base = process.env.PH_TEST_ORIGIN || 'http://127.0.0.1:8192';
-const fixture = `<!doctype html><html><head><link rel="stylesheet" href="/src/styles/base.css"><link rel="stylesheet" href="/src/styles/town.css"><style>body{margin:0}#fixture{position:relative;width:100vw;height:100vh}</style></head><body><div id="fixture"></div><script type="module">
+const { chromium, moonPage, openFixture, pageErrors } = require('./helpers.cjs');
+const fixture = moonPage(`
 import {createApp,h} from '/node_modules/.vite/deps/vue.js';
 import Moon from '/src/components/town/TownMoonView.vue';
 import {MOON_LOTS} from '/src/data/moonSettlement.js';
@@ -13,7 +12,7 @@ window.events={inspect:[],close:0,valley:0};
 window.app=createApp({render(){return h('div',{style:'position:relative;width:100%;height:100%',onPointerdown(){window.events.valley++}},[h(Moon,{reducedMotion:true,town,onSelect(id){window.events.inspect.push(id)},onClose(){window.events.close++}})])}});
 app.mount('#fixture');
 window.getScene=()=>app._instance.subTree.children[0].component.setupState.scene;
-</script></body></html>`;
+`);
 (async () => {
   const browser = await chromium.launch({ headless: true, args: ['--enable-unsafe-swiftshader'] });
   try {
@@ -29,16 +28,9 @@ window.getScene=()=>app._instance.subTree.children[0].component.setupState.scene
         });
         const page = await context.newPage();
         page.setDefaultTimeout(30000);
-        const errors = [];
+        const errors = pageErrors(page);
         console.log(touch ? 'Starting touch fixture' : 'Starting mouse fixture');
-        page.on('pageerror', (e) => errors.push(e.message));
-        page.on('console', (message) => {
-          if (message.type() === 'error') errors.push(message.text());
-        });
-        await page.route('**/moon-input-test', (route) =>
-          route.fulfill({ contentType: 'text/html', body: fixture }),
-        );
-        await page.goto(base + '/moon-input-test');
+        await openFixture(page, 'moon-input-test', fixture);
         await page
           .getByRole('button', { name: /Ribbon landing/ })
           .waitFor()
@@ -85,10 +77,11 @@ window.getScene=()=>app._instance.subTree.children[0].component.setupState.scene
             ['touchCancel', []],
           ])
             await cdp.send('Input.dispatchTouchEvent', { type, touchPoints });
+          // A cancelled touch leaves neither the camera nor the shared tap gesture pressed.
           await page.waitForFunction(
             () =>
               window.getScene().controls._pointers.length === 0 &&
-              window.getScene().pointer === null,
+              !window.getScene().tapGesture.pressed,
           );
         } else {
           await page.mouse.move(dragStart.x, dragStart.y);

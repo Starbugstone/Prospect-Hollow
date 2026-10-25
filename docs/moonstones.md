@@ -275,10 +275,9 @@ device migration and whole-profile sync. Frontend-generated backend fixtures and
 clients, forged minting, sale accounting, payouts and overspending. The database
 save and concurrency suites exercise the same server acceptance pipeline.
 
-The focused browser check can be run against the assigned Docker Vite server with
-`PH_TEST_ORIGIN=http://127.0.0.1:5196 node testing/browser/moonstone-resource.cjs`
-after sourcing the repository media-tooling environment (the shared brief permits
-host Playwright for screenshots). It exercises confirmation/cancel, 10/all sales,
+The focused browser check `testing/browser/moonstone-resource.cjs` runs with the
+Docker browser setup of the [Moon input check](future-eras.md#moon-input-check)
+(substitute its filename). It exercises confirmation/cancel, 10/all sales,
 lifetime preservation and a real Moon workshop tap using the shared store actions.
 
 ## Phase 2: optional moonstone monuments
