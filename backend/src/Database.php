@@ -60,6 +60,22 @@ final class Database
     {
         return array_key_last(self::MIGRATIONS);
     }
+    /**
+     * Every migration's schema file for MySQL or PostgreSQL, in order, relative to the
+     * backend directory.
+     * @return list<string>
+     */
+    public static function migrationFiles(bool $mysql): array
+    {
+        return array_map(
+            fn(string $name) => self::schemaFile($name, $mysql),
+            array_values(self::MIGRATIONS),
+        );
+    }
+    private static function schemaFile(string $name, bool $mysql): string
+    {
+        return ltrim($name, '/') . ($mysql ? '' : '-postgresql') . '.sql';
+    }
     public function isMySql(): bool
     {
         return $this->get()->getDatabasePlatform() instanceof
@@ -95,7 +111,6 @@ final class Database
             'CREATE TABLE IF NOT EXISTS schema_versions (version INTEGER PRIMARY KEY)',
         );
         $mysql = $this->isMySql();
-        $suffix = $mysql ? '' : '-postgresql';
         if ($db->fetchOne('SELECT version FROM schema_versions WHERE version<10')) {
             throw new \RuntimeException(
                 'This undeployed prototype schema must be replaced with a fresh database.',
@@ -105,7 +120,7 @@ final class Database
             if ($db->fetchOne('SELECT version FROM schema_versions WHERE version=?', [$version])) {
                 continue;
             }
-            $schema = file_get_contents(dirname(__DIR__) . $file . $suffix . '.sql');
+            $schema = file_get_contents(dirname(__DIR__) . '/' . self::schemaFile($file, $mysql));
             $apply = function () use ($db, $schema): void {
                 foreach (explode(';', $schema) as $statement) {
                     $statement = trim($statement);

@@ -1,7 +1,6 @@
 <?php
 require __DIR__ . '/support.php';
 try {
-    require __DIR__ . '/migration-resume.php';
     status(401, callApi('GET', 'account'), 'anonymous read');
     status(404, callApi('POST', 'guests', (object) []), 'no guests');
     status(404, callApi('POST', 'actions', (object) []), 'no gameplay API');

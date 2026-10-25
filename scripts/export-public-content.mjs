@@ -1,5 +1,5 @@
 import { build } from 'esbuild';
-import { writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 const result = await build({
   stdin: {
     contents:
@@ -93,4 +93,22 @@ const schema = {
     ),
   },
 };
-writeFileSync('backend/content/public-schema.json', JSON.stringify(schema));
+const target = 'backend/content/public-schema.json';
+const expected = JSON.stringify(schema);
+if (process.argv.includes('--check')) {
+  let actual = '';
+  try {
+    actual = readFileSync(target, 'utf8');
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+  }
+  if (actual !== expected)
+    throw new Error(
+      'Public content is stale. Run node scripts/export-public-content.mjs in the required Node 24 Docker container.',
+    );
+  console.log(
+    `Public content matches ${schema.buildings.length} buildings and ${schema.eras.length} eras.`,
+  );
+} else {
+  writeFileSync(target, expected);
+}

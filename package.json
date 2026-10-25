@@ -18,6 +18,8 @@
     "format:check": "prettier --check .",
     "export:save-rules": "node scripts/export-save-rules.mjs",
     "check:save-rules": "node scripts/export-save-rules.mjs --check",
+    "export:public-content": "node scripts/export-public-content.mjs",
+    "check:public-content": "node scripts/export-public-content.mjs --check",
     "export:integrity-fixtures": "node scripts/create-integrity-fixtures.mjs",
     "check:integrity-fixtures": "node scripts/create-integrity-fixtures.mjs --check",
     "assets": "node scripts/generate-gems.mjs && node scripts/generate-bonus-art.mjs",
