@@ -1,8 +1,7 @@
 // Run against Docker Vite, with the same Playwright setup as moon-input.cjs.
-const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const assert = require('node:assert/strict');
-const base = process.env.PH_TEST_ORIGIN || 'http://127.0.0.1:8192';
-const fixture = `<!doctype html><html><head><link rel="stylesheet" href="/src/styles/base.css"><link rel="stylesheet" href="/src/styles/town.css"><style>body{margin:0}#fixture{position:relative;width:100vw;height:100vh}</style></head><body><div id="fixture"></div><script type="module">
+const { chromium, SOFTWARE_WEBGL, moonPage, openFixture, pageErrors } = require('./helpers.cjs');
+const fixture = moonPage(`
 import {createApp,h,reactive} from '/node_modules/.vite/deps/vue.js';
 import Moon from '/src/components/town/TownMoonView.vue';
 import {MOON_LOTS} from '/src/data/moonSettlement.js';
@@ -16,33 +15,18 @@ town.projects.settlerDomes={id:'settlerDomes',stage:3,wins:2,required:2};
 window.selected=[];
 window.app=createApp({render:()=>h(Moon,{active:false,town,indicators:window.indicators,reducedMotion:true,onSelect:id=>selected.push(id)})});app.mount('#fixture');
 window.getMoon=()=>app._instance.subTree.component.setupState;
-</script></body></html>`;
+`);
 (async () => {
-  const browser = await chromium.launch({
-    args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'],
-  });
+  const browser = await chromium.launch({ args: SOFTWARE_WEBGL });
   try {
     for (const fallback of [false, true]) {
       const page = await browser.newPage({ hasTouch: true });
       page.setDefaultTimeout(120000);
-      const errors = [];
-      page.on('pageerror', (error) => {
-        errors.push(error.message);
-        console.error(error.message);
-      });
-      page.on('console', (message) => {
-        if (message.type() === 'error') {
-          errors.push(message.text());
-          console.error(message.text());
-        }
-      });
+      const errors = pageErrors(page, { echo: true });
       page.on('requestfailed', (request) =>
         console.error(request.url(), request.failure()?.errorText),
       );
-      await page.route('**/moon-label-test', (route) =>
-        route.fulfill({ contentType: 'text/html', body: fixture }),
-      );
-      await page.goto(base + '/moon-label-test');
+      await openFixture(page, 'moon-label-test', fixture);
       await page
         .waitForFunction(() => !!window.getMoon?.().scene)
         .catch(async (error) => {

@@ -1,8 +1,9 @@
 <template>
-  <span class="mine-visual-goals" :aria-label="t('Clear these to finish')">
+  <span class="mine-visual-goals" role="group" :aria-label="t('Clear these to finish')">
     <span
       v-for="goal in goals"
       :key="goal.id"
+      role="img"
       :class="{ complete: goal.count === 0, 'last-goal': ordersLeft && goal.count > 0 }"
       :aria-label="`${t(goal.label)}: ${goal.total - goal.count} / ${goal.total}`"
       :title="`${t(goal.label)}: ${goal.total - goal.count} / ${goal.total}`"

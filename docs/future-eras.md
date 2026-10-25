@@ -196,7 +196,9 @@ settlers walking and rovers driving the ring, and an occasional meteor (still
 under reduced motion). Earth is a painted, round image on a sprite (not a 3D
 globe), half risen over the far hills; tapping it returns to the valley. The
 valley pauses while the Moon is open, and the Moon view keeps its input from the
-valley's camera. Lot buttons open the shared building details. Without WebGL
+valley's camera. A lot button answers like a valley tap (`TownView.selectBuilding`):
+it finishes ready construction, collects the moonstone workshop's stock or unveils a
+finished monument level first, and otherwise opens the shared building details. Without WebGL
 the map falls back to an SVG crater with the same buttons. `buildings/moon.js`
 draws the Moon buildings (glass domes on ceramic drums, airlocks, gold foil,
 solar fins), and `TownMoonBuilding.vue` draws them for cards and the fallback.
@@ -236,23 +238,25 @@ shipped requirements.
 feet within the octagonal pad, flight clearance against finished buildings,
 road/path clearance, reduced motion and resource disposal.
 `testing/browser/moon-saucer.cjs` captures the unbuilt pad, approach, touchdown,
-take-off and close-ups with the render loop stopped. Use the media-tooling
-Playwright environment, set `PH_TEST_ORIGIN` to your Docker Vite server and
-`PH_SCREENSHOT_DIR` to an output directory. `PH_CAPTURE_VIDEO=1` additionally
+take-off and close-ups with the render loop stopped. Run it with the Docker
+browser setup of the [Moon input check](#moon-input-check) (substitute its
+filename), with `PH_SCREENSHOT_DIR` set to an output directory (default
+`/tmp/moon-shots/saucer`). `PH_CAPTURE_VIDEO=1` additionally
 writes numbered PNG frames under `frames/`; encode them at 10 fps with ffmpeg
 for an accelerated visit with the long parked interval shortened.
 
 #### Moon input check
 
-As in the valley, the Moon's camera gestures and taps share one surface, the canvas's
-parent, which also holds the lot labels and action buttons: a drag from a label orbits,
-and a tap on one settles through the shared tap gesture (keyboard activation still
-works). The header with **Back to the valley** sits outside that surface. Moon input
-still reaches the document (Escape closes sheets, a press unlocks audio); the valley's
-camera is covered while the Moon is open and its tap gesture ignores the Moon view.
-`testing/browser/moon-input.cjs` clicks and taps them with a mouse and with touch,
-drags the orbit (from the canvas and from a label), taps Earth and checks the valley
-never reacts. CI does not run
+As in the valley, the Moon's camera gestures (`createTownControls`) and taps share one
+surface, the canvas's parent, which also holds the lot labels and action buttons: a
+drag from a label orbits, and a tap on one settles through the shared tap gesture
+(keyboard activation still works). The header with **Back to the valley** sits outside
+that surface. Moon input still reaches the document (Escape closes sheets, a press
+unlocks audio); the valley's camera is covered while the Moon is open and its tap
+gesture ignores the Moon view. The letters from New Hollow are in the Story tab, not
+on the map. `testing/browser/moon-input.cjs` clicks and taps them with a mouse and
+with touch, checks that no letters overlay is drawn, drags the orbit (from the canvas
+and from a label), taps Earth and checks the valley never reacts. CI does not run
 it. Run it after changing Moon input or its overlays, then stop the server:
 
 ```bash
@@ -261,11 +265,16 @@ docker run --rm --network host --user "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD"
 docker stop hollow-moon-web
 ```
 
+On the host network, Chromium drops in-flight module requests
+(`ERR_NETWORK_CHANGED`) whenever another container starts, which leaves a blank page
+and a timeout. If other containers are busy, replace `--network host` with
+`--network container:hollow-moon-web` to share the server's own network.
+
 `testing/browser/moon-labels.cjs` uses the same Docker browser setup. Substitute
 that filename in the second command to check WebGL and SVG at 1440×900, 900×360
 and 375×740. It checks every lot/site label or pin for overlap, screen bounds,
-leader anchors, touch/keyboard selection, the accessible directory and compact
-coverage. Set `PH_SCREENSHOT_DIR` to save the corresponding captures. Run it after changing lunar labels or camera framing.
+leader anchors, touch/keyboard selection, compact coverage, and that no lot
+directory sits over the map (the Build tab lists the Moon lots). Set `PH_SCREENSHOT_DIR` to save the corresponding captures. Run it after changing lunar labels or camera framing.
 
 Moon labels retain their projected building anchors and move only to clear other
 labels or screen controls. Displaced labels and pins connect to their own anchor.
@@ -276,7 +285,7 @@ narrower than 600px or shorter than 450px, completed lots use 10px pins inside
 and unfinished monument sites keep full names and statuses. Compact action icons
 sit inside those cards rather than consuming a second large overlay. At a relative
 camera distance of 48 or less, nearby names return within the same budget; keyboard
-focus reveals one name, and activating any pin opens the usual building details.
+focus reveals one name, and activating any pin answers like a tap on its lot.
 Tapping a lot's pad or building in the scene opens it like its label, with labels
 on or off. The **Build** tab lists every Moon lot while the player is on the Moon,
 and the **Story** tab keeps the letters from New Hollow; neither sits on the map.

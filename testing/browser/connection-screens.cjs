@@ -1,10 +1,16 @@
-const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
+const {
+  chromium,
+  closeTownPanel,
+  openNextStep,
+  preparePage,
+  testOrigin,
+} = require('./helpers.cjs');
 (async () => {
   const browser = await chromium.launch({ headless: true });
   try {
-    const origin = process.env.PH_TEST_ORIGIN || 'http://127.0.0.1:8192';
+    const origin = testOrigin();
     const owner = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
     const ids = ['aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'];
     const towns = ids.map((townId, i) => ({
@@ -33,29 +39,10 @@ const fs = require('node:fs');
       });
       context.setDefaultTimeout(20000);
       await context.addInitScript(
-        ({ owner, signedIn, profile }) => {
-          if (!signedIn)
-            localStorage.setItem('crystal-cascade-profile-v3', JSON.stringify(profile));
-          const get = HTMLCanvasElement.prototype.getContext;
-          HTMLCanvasElement.prototype.getContext = function (kind, ...args) {
-            return /webgl/i.test(kind) ? null : get.call(this, kind, ...args);
-          };
-          if (signedIn && !localStorage.getItem('prospect-account-v2'))
-            localStorage.setItem(
-              'prospect-account-v2',
-              JSON.stringify({
-                account: { id: owner, email: 'test@example.test' },
-                generation: 'test',
-              }),
-            );
-          window.stores = () => {
-            const provides = document.querySelector('#app').__vue_app__._context.provides;
-            return Object.getOwnPropertySymbols(provides)
-              .map((k) => provides[k])
-              .find((v) => v?._s?.get)?._s;
-          };
-        },
-        { owner, signedIn, profile: towns[0].profile },
+        preparePage,
+        signedIn
+          ? { webgl: false, account: { id: owner, email: 'test@example.test', generation: 'test' } }
+          : { webgl: false, profile: towns[0].profile },
       );
       await context.route('**/api/v1/**', async (route) => {
         const req = route.request(),
@@ -87,7 +74,8 @@ const fs = require('node:fs');
       const page = await context.newPage();
       page.on('pageerror', (e) => errors.push(e.message));
       await page.goto(origin + (signedIn ? '/?play=' + ids[0] : '/play'));
-      await page.getByRole('button', { name: 'Play level 1', exact: true }).waitFor();
+      await openNextStep(page, 1);
+      await closeTownPanel(page);
       return { page, context };
     }
     const { page } = await device(true);

@@ -1,35 +1,29 @@
-// Deterministic screenshot capture; run with the media-tooling Playwright environment.
+// Deterministic screenshot capture with the Docker browser setup of the Moon input
+// check (docs/future-eras.md#moon-input-check).
 // PH_CAPTURE_VIDEO=1 also writes frames for ffmpeg (10 fps gives an accelerated visit).
-const { chromium } = require(process.env.CLAUDE_MEDIA_TOOLS + '/node_modules/playwright');
 const fs = require('node:fs');
+const { chromium, SOFTWARE_WEBGL, fixturePage, openFixture, pageErrors } = require('./helpers.cjs');
 const out = process.env.PH_SCREENSHOT_DIR || '/tmp/moon-shots/saucer';
 fs.mkdirSync(out, { recursive: true });
-const base = process.env.PH_TEST_ORIGIN || 'http://127.0.0.1:5194';
-const fixture = `<!doctype html><html><head><style>body{margin:0;background:#10162b}canvas{display:block;width:100vw;height:100vh}</style></head><body><canvas></canvas><script type="module">
+const fixture = fixturePage({
+  style: 'body{margin:0;background:#10162b}canvas{display:block;width:100vw;height:100vh}',
+  body: '<canvas></canvas>',
+  script: `
 import {MoonScene} from '/src/game/town/moon/MoonScene.js';
 import {MOON_LOTS} from '/src/data/moonSettlement.js';
 window.town={era:'twin-hollows',buildings:{airport:3,spaceElevator:3,...Object.fromEntries(Object.keys(MOON_LOTS).map(id=>[id,3]))},buildingEras:{airport:'moonward'}};
 window.moon=new MoonScene(document.querySelector('canvas'));
 moon.update(town); moon.renderer.setAnimationLoop(null);moon.render();window.ready=true;
-</script></body></html>`;
+`,
+});
 (async () => {
-  const browser = await chromium.launch({
-    headless: true,
-    args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'],
-  });
+  const browser = await chromium.launch({ headless: true, args: SOFTWARE_WEBGL });
   const page = await browser.newPage({
     viewport: { width: 1440, height: 1000 },
     deviceScaleFactor: 1,
   });
-  const errors = [];
-  page.on('pageerror', (e) => errors.push(e.message));
-  page.on('console', (m) => {
-    if (m.type() === 'error') errors.push(m.text());
-  });
-  await page.route('**/moon-saucer-capture', (route) =>
-    route.fulfill({ contentType: 'text/html', body: fixture }),
-  );
-  await page.goto(base + '/moon-saucer-capture');
+  const errors = pageErrors(page);
+  await openFixture(page, 'moon-saucer-capture', fixture);
   await page.waitForFunction(() => window.ready);
   const shot = async (name, time, unbuilt = false, close = false) => {
     const data = await page.evaluate(

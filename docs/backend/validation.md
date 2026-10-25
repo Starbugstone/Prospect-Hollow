@@ -3,7 +3,7 @@
 The September 2026 replacement removes the PHP puzzle engine and tests the account-save contract directly. Save integrity now adds resource-action accounting without puzzle-engine replay. Historical review screenshots and benchmarks describe the retired prototype.
 
 - `npm run verify`: formatting, frontend regression suite (including unlimited puzzle moves) and production build.
-- `node scripts/export-public-content.mjs`: generates only the era/building appearance allowlist from the shared frontend definitions.
+- `node scripts/export-public-content.mjs`: generates `backend/content/public-schema.json` from the shared frontend definitions: the era, building and personalisation allowlist for public towns, plus the Town Honours and player distinctions catalog that `Honours.php` verifies. It fails when an honour uses a measure kind the server does not evaluate.
 - `node scripts/export-save-rules.mjs --check`: checks the generated accounting catalog against shared eras, buildings, levels and reward definitions.
 - `php backend/tests/save-integrity.php`: resource-action replay, legitimate frontend accounting fixtures, malformed values, snapshot injection, migration baselines and recovery.
 - `php backend/tests/money-budget.php`: server-time allowance boundaries, carried credit/debt, clock changes and durable review evidence.

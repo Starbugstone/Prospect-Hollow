@@ -1,18 +1,14 @@
-import { isAnchored } from './TileRules.js';
+import { BOARD_BONUSES, isAnchored } from './TileRules.js';
 import { GEM_TYPES } from './GemFactory.js';
 import { dominantGemType, getBonusFusion } from './BonusFusion.js';
 import { isBlastTarget, isPlayableCell } from './BoardTopology.js';
 import { bentBeams, hasLenses, recordLensBeams, sweepLines } from './LensBeams.js';
+import { POWERS } from '../../data/campaign.js';
 
 // Board bonuses plus the toolbar powers that share their reaction rules.
 const ACTIVATABLE = new Set([
-  'bomb',
-  'rainbow',
-  'cross',
-  'clear-row',
-  'tnt',
-  'color-wand',
-  'tile-breaker',
+  ...BOARD_BONUSES,
+  ...POWERS.filter((power) => power.blast).map(({ id }) => id),
 ]);
 
 export class BonusActivator {

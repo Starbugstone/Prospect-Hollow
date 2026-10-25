@@ -15,7 +15,7 @@
           <div class="town-map-corner">
             <SaveStatusPill v-if="cloudAccount" />
           </div>
-          <div class="town-map-status" :aria-label="t('Town savings')">
+          <div class="town-map-status" role="group" :aria-label="t('Town savings')">
             <TownIcon name="coin" /><strong>{{ number(town.coins) }}</strong>
             <TownMoonstoneBalance v-if="town.buildings.spaceElevator > 0" :town="town" />
             <template v-if="campaign.builderHammers > 0">
@@ -96,7 +96,12 @@
             </button>
           </div>
           <div class="town-raid-actions">
-            <div v-if="fullscreen" class="town-map-wallet" :aria-label="t('Town savings')">
+            <div
+              v-if="fullscreen"
+              class="town-map-wallet"
+              role="group"
+              :aria-label="t('Town savings')"
+            >
               <TownIcon name="coin" /><strong>{{ number(town.coins) }}</strong>
             </div>
             <button class="town-secondary" @click="finishRaid">
@@ -220,7 +225,7 @@
       :key="tabSheet ? 'sheet' : 'dialog'"
       :sheet="tabSheet"
       :title="dialogTitle"
-      close-label="Close building details"
+      :close-label="dialogCloseLabel"
       @close="closeDialog"
     >
       <TownProjects v-if="dialogMode === 'projects'" :town="town" @inspect="inspectBuilding" />
@@ -376,23 +381,20 @@
             <span v-if="place.ready" class="town-plot-price town-plot-ready">
               ✦ {{ t('Ready to finish') }}
             </span>
-            <span
-              v-else
-              class="town-plot-price"
-              :aria-label="
+            <span v-else class="town-plot-price">
+              <span class="town-sr-only">{{
                 t(town.buildings[place.id] ? 'Upgrade: {coins} coins' : 'Build: {coins} coins', {
-                  coins: place.offer.cost,
+                  coins: number(place.offer.cost),
                 })
-              "
-            >
+              }}</span>
               <TownIcon v-if="place.offer.cost" name="coin" />
-              {{ place.offer.cost ? number(place.offer.cost) : t('Free') }}
-              <span
-                v-if="town.coins < place.offer.cost"
-                class="town-plot-hammer"
-                :aria-label="t('1 builder hammer')"
-              >
-                <img src="/art/rewards/builder-hammer.svg" alt="" /> 1
+              <span aria-hidden="true">{{
+                place.offer.cost ? number(place.offer.cost) : t('Free')
+              }}</span>
+              <span v-if="town.coins < place.offer.cost" class="town-plot-hammer">
+                <img src="/art/rewards/builder-hammer.svg" alt="" />
+                <span aria-hidden="true">1</span>
+                <span class="town-sr-only">{{ t('1 builder hammer') }}</span>
               </span>
             </span>
           </button>
@@ -1109,6 +1111,18 @@ const DIALOG_TITLES = {
   monument: 'Monument site',
   more: 'More',
 };
+// Each panel's close button names the panel it closes.
+const DIALOG_CLOSE_LABELS = {
+  build: 'Close available plots',
+  projects: 'Close town projects',
+  story: 'Close village story',
+  personalise: 'Close personalisation',
+  monument: 'Close monument site',
+  more: 'Close more options',
+};
+const dialogCloseLabel = computed(
+  () => DIALOG_CLOSE_LABELS[dialogMode.value] ?? 'Close building details',
+);
 const dialogTitle = computed(() =>
   dialogMode.value === 'build'
     ? t('Available plots · {built}/{total} built', {
@@ -1180,7 +1194,7 @@ const villageStats = computed(() => {
       id: 'buildings',
       icon: 'home',
       label: t('Buildings'),
-      value: `${built.value}/${BUILDINGS.length}`,
+      value: `${built.value}/${currentEraPlots.value.length}`,
       detail: t('Active construction: {count}', { count: activeProjects.value.length }),
     },
     {

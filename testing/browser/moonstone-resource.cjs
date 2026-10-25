@@ -1,8 +1,11 @@
-// Serve this checkout in Docker; use the repository media-tooling Playwright setup.
+// Run against the Docker Vite server, with the same Playwright setup as moon-input.cjs.
 const assert = require('node:assert/strict');
-const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
-const base = process.env.PH_TEST_ORIGIN || 'http://127.0.0.1:5196';
-const fixture = `<!doctype html><html><head><link rel="stylesheet" href="/src/styles/town.css"><style>body{margin:24px;background:#fbf8ea}#fixture{max-width:540px;margin:auto}</style></head><body><div id="fixture"></div><script type="module">
+const { chromium, SOFTWARE_WEBGL, fixturePage, openFixture, pageErrors } = require('./helpers.cjs');
+const fixture = fixturePage({
+  stylesheets: ['/src/styles/town.css'],
+  style: 'body{margin:24px;background:#fbf8ea}#fixture{max-width:540px;margin:auto}',
+  body: '<div id="fixture"></div>',
+  script: `
 import {createApp,h} from '/node_modules/.vite/deps/vue.js';
 import {createPinia} from '/node_modules/.vite/deps/pinia.js';
 import Workshop from '/src/components/town/TownMoonstoneWorkshop.vue';
@@ -16,25 +19,17 @@ campaign.save();
 window.campaign=campaign;
 window.app=createApp({render(){return h(Workshop,{town:campaign.town,sellMoonstones:campaign.sellMoonstones,cooldownSeconds:30})}});
 app.mount('#fixture');
-window.showMoon=()=>{app.unmount();document.querySelector('#fixture').style.cssText='position:relative;width:100vw;height:100vh;max-width:none';document.body.style.margin='0';window.app=createApp({render(){return h(Moon,{town:campaign.town,reducedMotion:true,active:false,onCollect:()=>campaign.collectMoonstones()})}});app.mount('#fixture')};
+window.showMoon=()=>{app.unmount();document.querySelector('#fixture').style.cssText='position:relative;width:100vw;height:100vh;max-width:none';document.body.style.margin='0';window.app=createApp({render(){return h(Moon,{town:campaign.town,reducedMotion:true,active:false,onSelect:(id)=>id==='moonstoneWorkshop'&&campaign.collectMoonstones()})}});app.mount('#fixture')};
 window.getScene=()=>app._instance.subTree.component.setupState.scene;
-</script></body></html>`;
+`,
+});
 (async () => {
-  const browser = await chromium.launch({
-    args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'],
-  });
+  const browser = await chromium.launch({ args: SOFTWARE_WEBGL });
   try {
     const page = await browser.newPage({ viewport: { width: 1280, height: 900 }, locale: 'en-US' });
     page.setDefaultTimeout(60000);
-    const errors = [];
-    page.on('pageerror', (e) => {
-      errors.push(e.message);
-      console.error(e.message);
-    });
-    await page.route('**/moonstone-resource-test', (route) =>
-      route.fulfill({ contentType: 'text/html', body: fixture }),
-    );
-    await page.goto(base + '/moonstone-resource-test');
+    const errors = pageErrors(page, { consoleErrors: false, echo: true });
+    await openFixture(page, 'moonstone-resource-test', fixture);
     const balance = () =>
       page.evaluate(() => ({
         coins: window.campaign.town.coins,

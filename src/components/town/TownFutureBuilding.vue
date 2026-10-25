@@ -165,11 +165,22 @@
     </g>
     <g v-for="(tw, n) in parts.towers" :key="`t${n}`">
       <Tower :style-id="style" :p="p" v-bind="tw" />
+      <TownTowerGallery
+        :kind="kind"
+        :style-id="style"
+        :palette="p"
+        :stages="stages"
+        :x="tw.x"
+        :radius="tw.r"
+        :height="tw.h"
+        :base-y="tw.base ?? 0"
+      />
       <Cap
+        v-if="tw.cap !== false"
         :style-id="style"
         :p="p"
         :x="tw.x"
-        :y="-tw.h"
+        :y="-tw.h - (tw.base ?? 0)"
         :r="tw.r"
         :accent="tw.accent"
         :tone="tone"
@@ -294,6 +305,8 @@ import TownCityBuilding from './TownCityBuilding.vue';
 import TownLeisureBuilding from './TownLeisureBuilding.vue';
 import TownSquare from './TownSquare.vue';
 import Roof from './TownFutureRoof.vue';
+import TownTowerGallery from './TownTowerGallery.vue';
+import { TOWER_GALLERIES } from '../../data/towerRefinements';
 
 const props = defineProps({
   kind: String,
@@ -401,7 +414,9 @@ const parts = computed(() => {
           block(0, 54, 86, { accent: true }),
           block(62, 52, 70),
         );
-      else if (['twin', 'pods', 'balconies', 'hotel'].includes(identity))
+      else if (['balconies', 'hotel'].includes(identity))
+        result.towers.push(tower(0, 43, height * 29, { door: true }));
+      else if (['twin', 'pods'].includes(identity))
         result.towers.push(
           tower(-36, 32, height * 29, { door: true }),
           tower(40, 30, height * 29 - 36),
@@ -453,7 +468,11 @@ const parts = computed(() => {
       );
       break;
     case 'tower':
-      result.towers.push(tower(0, 50, 250, { door: true }));
+      result.towers.push(
+        tower(0, 50, 105, { base: 0, door: true, cap: false }),
+        tower(0, 39, 87, { base: 97, cap: false }),
+        tower(0, 28, 70, { base: 177 }),
+      );
       break;
     case 'skyHarbour':
       result.towers.push(tower(-78, 20, 150, { accent: true }));
@@ -505,9 +524,13 @@ const parts = computed(() => {
       );
 
     if (level >= 3) {
-      const main = result.blocks.at(-1) ?? result.towers[0];
-      const top = main ? (main.h ?? 0) + (main.w ? main.w * 0.32 : main.r) : 90;
-      result.crown = { x: main?.x ?? 0, y: -top, baseY: -(main?.h ?? 70) };
+      const main = Object.hasOwn(TOWER_GALLERIES, props.kind)
+        ? form.value === 'tower'
+          ? result.towers.at(-1)
+          : result.towers[0]
+        : (result.blocks.at(-1) ?? result.towers[0]);
+      const top = main ? (main.base ?? 0) + (main.h ?? 0) + (main.w ? main.w * 0.32 : main.r) : 90;
+      result.crown = { x: main?.x ?? 0, y: -top, baseY: -(main?.h ?? 70) - (main?.base ?? 0) };
       result.props = [-92, 92];
     }
   } else if (landmark.value && level >= 3) result.props = [-118, 118];
@@ -597,13 +620,13 @@ const Block = (b) => {
       : null,
   ]);
 };
-const Tower = ({ styleId: s, p, x, r, h: height }) => {
+const Tower = ({ styleId: s, p, x, r, h: height, base = 0 }) => {
   const body = s === 'observatory' ? p.roof : p.shell;
   const band = s === 'sail' ? p.timber : s === 'observatory' ? p.timber : p.light;
   return h('g', [
     h('rect', {
       x: x - r,
-      y: -height,
+      y: -height - base,
       width: r * 2,
       height,
       fill: body,
@@ -612,7 +635,7 @@ const Tower = ({ styleId: s, p, x, r, h: height }) => {
     }),
     ...Array.from({ length: Math.max(0, Math.floor(height / 36)) }, (_, n) =>
       h('path', {
-        d: `M${x - r - 2} ${-(n + 1) * 34}h${r * 2 + 4}`,
+        d: `M${x - r - 2} ${-(n + 1) * 34 - base}h${r * 2 + 4}`,
         stroke: band,
         'stroke-width': 3,
       }),

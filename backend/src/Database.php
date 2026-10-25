@@ -8,7 +8,14 @@ use Doctrine\DBAL\Exception\DeadlockException;
 use Doctrine\DBAL\Tools\DsnParser;
 final class Database
 {
-    /** Schema files by version; a ready release has applied the last one. */
+    /**
+     * Schema files by version; a ready release has applied every one of them.
+     *
+     * Migrations are additive: they add tables, indexes and nullable or defaulted columns,
+     * and never drop, rename or retype anything an earlier release reads. An earlier
+     * release therefore still runs on a database a later one migrated, which keeps
+     * `rollback RELEASE_ID` working. backend/tests/release-health.php checks the rule.
+     */
     private const MIGRATIONS = [
         10 => '/schema',
         11 => '/schema-visits',
@@ -59,6 +66,25 @@ final class Database
     public static function latestVersion(): int
     {
         return array_key_last(self::MIGRATIONS);
+    }
+    /** @return array<int, string> schema file stems by version, oldest first */
+    public static function migrations(): array
+    {
+        return self::MIGRATIONS;
+    }
+    /**
+     * Ready once every migration this release knows is applied. Newer versions from a
+     * later release are accepted because migrations are additive.
+     */
+    public static function schemaReady(Connection $db): bool
+    {
+        $applied = array_map(
+            'intval',
+            $db->fetchFirstColumn('SELECT version FROM schema_versions WHERE version >= ?', [
+                array_key_first(self::MIGRATIONS),
+            ]),
+        );
+        return !array_diff(array_keys(self::MIGRATIONS), $applied);
     }
     public function isMySql(): bool
     {

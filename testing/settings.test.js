@@ -95,3 +95,33 @@ it('keeps the volume sliders usable when preference storage is unavailable', () 
   expect(() => settings.setMusicVolume('0.3')).not.toThrow();
   expect(settings.musicVolume).toBe(0.3);
 });
+it('remembers high contrast on this device across reloads and survives storage failures', () => {
+  const saved = new Map();
+  vi.stubGlobal('localStorage', {
+    getItem: (key) => saved.get(key) ?? null,
+    setItem: (key, value) => saved.set(key, value),
+  });
+  expect(freshSettings().highContrastMode).toBe(false);
+  freshSettings().setHighContrast(true);
+  expect(saved.get('crystal-cascade-high-contrast')).toBe('true');
+  expect(freshSettings().highContrastMode).toBe(true);
+  freshSettings().setHighContrast(false);
+  expect(freshSettings().highContrastMode).toBe(false);
+  // Only this device-local key is written; the synced profile is untouched.
+  expect([...saved.keys()]).toEqual(['crystal-cascade-high-contrast']);
+  saved.set('crystal-cascade-high-contrast', 'garbage');
+  expect(freshSettings().highContrastMode).toBe(false);
+
+  vi.stubGlobal('localStorage', {
+    getItem: () => {
+      throw new Error('Storage unavailable');
+    },
+    setItem: () => {
+      throw new Error('Storage unavailable');
+    },
+  });
+  const offline = freshSettings();
+  expect(offline.highContrastMode).toBe(false);
+  expect(() => offline.setHighContrast(true)).not.toThrow();
+  expect(offline.highContrastMode).toBe(true);
+});

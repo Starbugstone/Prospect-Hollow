@@ -1,31 +1,15 @@
 import sharp from 'sharp';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { DEEP_MINE_SPRITES } from '../src/data/mineThemes.js';
+import { BONUS_ATLAS_ROWS, OBSTACLE_SPRITES, POWER_SPRITES } from '../src/data/boardSprites.js';
 import { BASE_GEM_TYPES, GEM_TYPES } from '../src/game/engine/GemFactory.js';
 
 const output = new URL('../src/assets/board/', import.meta.url);
 await mkdir(output, { recursive: true });
 const groups = {
   'board-core': [
-    ['gem-relic', 'relic.svg', 160],
-    ...[
-      'chain',
-      'seal',
-      'exit',
-      'seal-ruby',
-      'seal-sapphire',
-      'seal-emerald',
-      'lantern',
-      'survey',
-      'core',
-    ].map((t) => [`tile-${t}`, `obstacles/${t}.svg`, 160]),
-    ...['tnt', 'color-wand', 'clear-row', 'shuffle', 'tile-breaker'].map((t) => [
-      `power-${t}`,
-      `powers/${t}.svg`,
-      192,
-    ]),
-    ...['stone', 'reinforced', 'cracked'].map((t) => [`block-${t}`, `blocks/${t}.svg`, 160]),
-    ...['frost', 'cracked'].map((t) => [`ice-${t}`, `ice/${t}.svg`, 160]),
+    ...OBSTACLE_SPRITES.map(([id, file]) => [id, file, 160]),
+    ...POWER_SPRITES.map(([id, file]) => [id, file, 192]),
     ...DEEP_MINE_SPRITES.map(([id, file]) => [id, file, 160]),
   ],
 };
@@ -77,7 +61,7 @@ const bonus = await sharp(
   .toBuffer();
 await writeFile(new URL('board-bonus.png', output), bonus);
 manifest['board-bonus'] = { frames: {}, meta: { size: { w: 1536, h: 576 } } };
-for (const [row, t] of ['bomb', 'rainbow', 'cross'].entries())
+for (const [row, t] of BONUS_ATLAS_ROWS.entries())
   for (let i = 0; i < 8; i++)
     manifest['board-bonus'].frames[`${t}-${i}`] = {
       frame: { x: i * 192, y: row * 192, w: 192, h: 192 },

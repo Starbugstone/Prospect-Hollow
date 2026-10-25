@@ -23,6 +23,15 @@
             stroke-width="5"
           />
         </g>
+        <TownTowerGallery
+          :kind="kind"
+          :style-id="appearance.style"
+          :palette="p"
+          :stages="stages"
+          :x="x"
+          :radius="r"
+          :height="h"
+        />
         <TownCozyRoof :x="x" :y="-h" :radius="r * 1.25" v-bind="roof" />
       </g>
     </template>
@@ -135,6 +144,15 @@
         >
           <path :d="drum(0, -y, r, h)" :fill="p.glass" :stroke="p.shell" stroke-width="2" />
           <ellipse :cy="-y - h" :rx="r + 8" ry="8" :fill="p.green" />
+          <TownTowerGallery
+            :kind="kind"
+            :style-id="appearance.style"
+            :palette="p"
+            :stages="stages"
+            :radius="r"
+            :height="h"
+            :base-y="y"
+          />
         </g>
       </template>
       <TownCozyRoof v-if="form === 'skyterraces'" :y="-255" :radius="38" v-bind="roof" />
@@ -416,6 +434,7 @@ import TownCozyRoof from './TownCozyRoof.vue';
 import TownCityBuilding from './TownCityBuilding.vue';
 import TownLeisureBuilding from './TownLeisureBuilding.vue';
 import TownSquare from './TownSquare.vue';
+import TownTowerGallery from './TownTowerGallery.vue';
 import { t } from '../../i18n';
 const props = defineProps({
   kind: String,

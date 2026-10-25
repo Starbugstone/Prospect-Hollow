@@ -177,13 +177,18 @@ export const getLevelGemTypes = (id) => {
   return extra ? [...set, extra] : set;
 };
 
+// Toolbar powers. `blast`: fires through the board bonus rules (BonusActivator), like a
+// board bonus. `targeted`: waits for a board tap and is spent on that tap. Each draws
+// /art/powers/<id>.svg (src/data/boardSprites.js). Saves and chest drops copy only
+// `powerRecord`, so these behaviour fields never enter a profile.
 export const POWERS = [
-  { id: 'clear-row', label: 'Clear Row', dropWeight: 30 },
-  { id: 'tnt', label: 'TNT', dropWeight: 25 },
-  { id: 'color-wand', label: 'Color Wand', dropWeight: 20 },
+  { id: 'clear-row', label: 'Clear Row', dropWeight: 30, blast: true },
+  { id: 'tnt', label: 'TNT', dropWeight: 25, blast: true, targeted: true },
+  { id: 'color-wand', label: 'Color Wand', dropWeight: 20, blast: true, targeted: true },
   { id: 'shuffle', label: 'Shuffle', dropWeight: 10 },
-  { id: 'tile-breaker', label: 'Tile Breaker', dropWeight: 15 },
+  { id: 'tile-breaker', label: 'Tile Breaker', dropWeight: 15, blast: true, targeted: true },
 ];
+export const powerRecord = ({ id, label, dropWeight }) => ({ id, label, dropWeight });
 // One chest per goal met. Chests have no tiers for now; see issue #57 for tier ideas.
 export const CHEST_LABELS = Object.freeze({
   completion: 'Completion chest',

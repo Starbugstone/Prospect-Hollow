@@ -14,7 +14,7 @@ import { streetHeight, updateItinerary } from './TownItineraries';
 import { prepareActorWalk, walkPose, placeSafely } from './TownNavigation';
 import { SIDEWALK_OFFSET } from './TownTraffic';
 import { updateWorkRoutine } from './TownWorkRoutine';
-import { swingLimbs } from './TownGait';
+import { swingLimbs, VILLAGER_WALK_SPEED } from './TownGait';
 
 // Villagers, visitors and the stable's horses: articulated models built from the
 // diorama's primitives, their era wardrobe and identity, and their walking pose.
@@ -241,7 +241,7 @@ export function addPerson(
   if (linear)
     for (let i = 0; i < journey.length; i++)
       curve.add(new THREE.LineCurve3(journey[i], journey[(i + 1) % journey.length]));
-  const duration = curve.getLength() / (sheriff ? 0.8 : 0.55);
+  const duration = curve.getLength() / (sheriff ? 0.8 : VILLAGER_WALK_SPEED);
   const actor = {
     root,
     body,

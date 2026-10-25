@@ -1,8 +1,9 @@
 # Construction feedback in New Hollow
 
 Moon buildings use the campaign's existing offers, puzzle-driven construction,
-builder hammers, completion action, benefits, rewards and saved presentation
-receipts. They have no separate construction clock or progression rules.
+builder hammers, completion action, benefits and rewards. They have no separate
+construction clock or progression rules, and like valley buildings they finish
+with the construction reveal, not a cinematic.
 
 The original Moon renderer watched building levels alone. A funded project did
 not change those levels, so it drew an empty pad throughout construction. Its
@@ -40,11 +41,11 @@ The valley affordances that were missing on the Moon were:
 - A projected collection origin, so shared reward feedback can originate at a
   Moon building rather than falling back to the centre of the valley view.
 
-The build directory, next-step guidance, project milestones, resource reward
+The Build tab's list, next-step guidance, project milestones, resource reward
 overlay and campaign builder logic already use settlement-independent data and
 remain shared. Mine-era construction ceremonies and town-square fireworks are
-their own presentations, not per-building worksite indicators. Moon event and
-spacecraft presentations are separate from this change.
+their own presentations, not per-building worksite indicators. Moon monument
+unveilings and the spacecraft are separate presentations.
 
 Sites are cached independently from the merged settlement mesh. Advancing a
 project therefore does not rebuild buildings, settlers or access paths. Replacing

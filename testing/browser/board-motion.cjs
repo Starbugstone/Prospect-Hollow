@@ -1,11 +1,17 @@
-const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
+const {
+  chromium,
+  SOFTWARE_WEBGL,
+  playedProfile,
+  preparePage,
+  testOrigin,
+} = require('./helpers.cjs');
 
 // Board motion check: plays seeded hinted moves on shaped and rectangular boards and
 // follows every gem frame by frame on an exact 60 fps clock. It fails when a falling
 // gem slows down and speeds up again before it lands (a stutter at a bend or entry
 // cell) or when two settled-looking gems overlap (refills stacked on one spot).
 // Local only, not CI: see docs/deep-mine-levels.md.
-const origin = process.env.PH_TEST_ORIGIN || 'http://127.0.0.1:8192';
+const origin = testOrigin();
 const MOVES = Number(process.env.PH_MOTION_MOVES || 5);
 // The reported level 376, every shaped-board family, and a rectangular control.
 const LEVELS = (process.env.PH_MOTION_LEVELS || '13,373,376,385,397').split(',').map(Number);
@@ -61,9 +67,7 @@ function installClock(seed) {
 
 // Runs inside the page: plays hinted moves and samples every visible gem each frame.
 async function playMoves({ moves, frame }) {
-  const game = document
-    .querySelector('#app')
-    .__vue_app__.config.globalProperties.$pinia._s.get('game');
+  const game = window.stores().get('game');
   const animator = game.renderer.animator;
   const yieldTask = () => new Promise((resolve) => setTimeout(resolve, 0));
   window.__motionClock.start();
@@ -201,10 +205,7 @@ function stutters({ frames }) {
 }
 
 (async () => {
-  const browser = await chromium.launch({
-    headless: true,
-    args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'],
-  });
+  const browser = await chromium.launch({ headless: true, args: SOFTWARE_WEBGL });
   const failures = [];
   try {
     for (const level of LEVELS) {
@@ -216,22 +217,12 @@ function stutters({ frames }) {
       await context.addInitScript(installClock, level);
       // A disposable profile with every earlier level played, so this level is the next
       // one the mine opens. It lives only in this throwaway browser context.
-      await context.addInitScript(
-        ({ key, level }) => {
-          const records = {};
-          for (let id = 1; id < level; id++) records[id] = { score: 0, stars: 1 };
-          localStorage.setItem(
-            key,
-            JSON.stringify({ schemaVersion: 2, records, seenTips: ['town'], town: {} }),
-          );
-        },
-        { key: 'crystal-cascade-profile-v3', level },
-      );
+      await context.addInitScript(preparePage, { profile: playedProfile(level) });
       const page = await context.newPage();
       const errors = [];
       page.on('pageerror', (error) => errors.push(error.message));
       await page.goto(origin, { timeout: 180000 });
-      const store = `document.querySelector('#app')?.__vue_app__?.config.globalProperties.$pinia._s.get('game')`;
+      const store = `window.stores?.()?.get('game')`;
       // A cold Vite dev server optimises dependencies on the first visit.
       await page.waitForFunction(`!!${store}`, null, { timeout: 180000 });
       if (!(await page.evaluate(`${store}.startLevel(${level}, 'normal')`)))

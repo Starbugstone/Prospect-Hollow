@@ -1,6 +1,7 @@
 <template>
   <span
     class="moonstone-balance"
+    role="img"
     :aria-label="t('Moonstones: {count}', { count: number(town.moonstones ?? 0) })"
     :title="t('Moonstones')"
   >

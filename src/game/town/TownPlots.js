@@ -38,6 +38,7 @@ import { modelLevel } from '../../data/buildingProgression';
 import { buildingStages } from '../../data/buildingStages';
 
 import { walkers } from './TownWalkers';
+import { VILLAGER_WALK_SPEED } from './TownGait';
 import { TownConstruction, constructionParts } from './TownConstruction';
 import { buildTownSquare } from './TownSquare';
 import {
@@ -549,7 +550,7 @@ export function plotVacant(d, pending) {
           vz: 0,
           routeDistance: 0,
           radius: actor.radius ?? 0.45,
-          maxSpeed: actor.walkSpeed ?? 0.55,
+          maxSpeed: actor.walkSpeed ?? VILLAGER_WALK_SPEED,
         };
         actor.motion.exitTarget = exit;
       } else pending.deferredReason = 'No swept-clear exit from pending structure';

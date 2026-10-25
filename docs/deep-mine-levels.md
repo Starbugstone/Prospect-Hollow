@@ -236,6 +236,16 @@ comma-separated list) and `PH_MOTION_MOVES` change the scenarios. On 1.1.0-beta 
 check reports thousands of problems on all four shaped levels; level 13 passes on
 both versions.
 
+### Mine feedback check
+
+`testing/browser/mine-feedback.cjs` checks that tips, celebration banners and power
+targeting never move the board, cover it, or scroll the page. It opens levels 1, 289,
+294, 312, 319 and 324 (chapter openings and eight-objective finales) on the same
+seeded profiles, in English and French, normal and continuous play, at five desktop,
+phone and landscape sizes. Run it like the board motion check (substitute its
+filename) after changing the mine layout, tips or banners. Captures and the measured
+report go to `output/playwright/mine-feedback/`.
+
 ## Individual mechanic demos
 
 [Open the mechanic video gallery](images/deep-mines/mechanics/index.html).

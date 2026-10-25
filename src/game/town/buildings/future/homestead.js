@@ -1,4 +1,6 @@
 import { futureShape } from '../futureShapes';
+import { addTowerGallery } from './towerRefinements';
+import { galleryOverlaps, towerGallery, towerStoreys } from '../../../../data/towerRefinements';
 
 // Moonward: frontier gables return in moon-white ceramic with gold trim, navy solar
 // shingles, barn-red porches and round airlock doors.
@@ -70,14 +72,18 @@ export const homesteadKit = {
     return y + rise;
   },
   round(d, g, s, { x = 0, z = 0, r, h }) {
-    const p = s.palette;
+    const p = s.palette,
+      gallery = towerGallery(s, { r, h }),
+      storeys = towerStoreys(s.style, { first: 1.1, storey: 1.1 });
     d.mesh(g, 'cylinder', [r + 0.14, 0.22, r + 0.14], [x, 0.11, z], p.deep);
     d.mesh(g, 'cylinder', [r, h - 0.22, r], [x, 0.22 + (h - 0.22) / 2, z], p.shell);
-    for (let y = 1.1; y < h - 0.2; y += 1.1) {
+    for (let y = storeys.first; y < h - 0.2; y += storeys.storey) {
       d.mesh(g, 'cylinder', [r + 0.04, 0.07, r + 0.04], [x, y - 0.32, z], p.light);
-      for (const side of [-1, 1])
-        windowPane(d, g, x + side * r * 0.42, y + 0.15, z + r * 0.92, p, 0.3, 0.42);
+      if (!galleryOverlaps(gallery, y - 0.15, y + 0.45))
+        for (const side of [-1, 1])
+          windowPane(d, g, x + side * r * 0.42, y + 0.15, z + r * 0.92, p, 0.3, 0.42);
     }
+    addTowerGallery(d, g, s, { x, z, r, h });
     return h;
   },
   cap(d, g, s, { x = 0, z = 0, r, y }) {
