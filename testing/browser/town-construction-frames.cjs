@@ -25,7 +25,8 @@ const TIER = env.PH_TOWN_TIER ?? 'low';
 const VIEWPORT = { width: 412, height: 732 };
 
 const fixture = fixturePage({
-  style: 'body{margin:0;overflow:hidden}#frame{position:fixed;inset:0}canvas{display:block;width:100%;height:100%}',
+  style:
+    'body{margin:0;overflow:hidden}#frame{position:fixed;inset:0}canvas{display:block;width:100%;height:100%}',
   body: '<div id="frame"><canvas id="town"></canvas></div>',
   script: `
 import { BANDIT_EVENT, BUILDINGS, createTown } from '/src/data/town.js';
@@ -184,7 +185,8 @@ function summarize(raw) {
     stage.count++;
     stage.max = round(Math.max(stage.max, ms));
     stage.total = round(stage.total + ms);
-    if (detail?.longest !== undefined) stage.longestStep = round(Math.max(stage.longestStep ?? 0, detail.longest));
+    if (detail?.longest !== undefined)
+      stage.longestStep = round(Math.max(stage.longestStep ?? 0, detail.longest));
     if (detail?.steps !== undefined) stage.steps = (stage.steps ?? 0) + detail.steps;
   }
   const change = timings.entries.find(({ name }) => name === 'town-change');
@@ -264,26 +266,27 @@ async function runOnce(browser, scenario, run) {
     await cdp.send('Profiler.setSamplingInterval', { interval: 250 });
   }
   const stop = orbit(page, await page.locator('#town').boundingBox());
+  let steady, raw, loadAverage;
   try {
-  // A second of plain orbiting first: the camera-frame cost without construction work.
-  await page.waitForTimeout(1500);
-  const steady = summarize(
-    await page.evaluate(async () => {
-      window.measure.active = true;
-      window.measure.start = performance.now();
-      window.measure.frames = [];
-      window.measure.inputs = [];
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      return window.collect();
-    }),
-  );
-  if (profiling) await cdp.send('Profiler.start');
-  const loadAverage = os.loadavg()[0];
-  await page.evaluate(() => window.trigger());
-  await page.waitForFunction(() => window.settled(), null, { polling: 250, timeout: 240000 });
-  // Animal and route repair continue after the shadow render; keep orbiting through them.
-  await page.waitForTimeout(2500);
-  var raw = await page.evaluate(() => window.collect());
+    // Plain orbiting first: the camera-frame cost without construction work.
+    await page.waitForTimeout(1500);
+    steady = summarize(
+      await page.evaluate(async () => {
+        window.measure.active = true;
+        window.measure.start = performance.now();
+        window.measure.frames = [];
+        window.measure.inputs = [];
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        return window.collect();
+      }),
+    );
+    if (profiling) await cdp.send('Profiler.start');
+    loadAverage = os.loadavg()[0];
+    await page.evaluate(() => window.trigger());
+    await page.waitForFunction(() => window.settled(), null, { polling: 250, timeout: 240000 });
+    // Animal and route repair continue after the shadow render; keep orbiting through them.
+    await page.waitForTimeout(2500);
+    raw = await page.evaluate(() => window.collect());
   } finally {
     await stop().catch(() => {});
   }
@@ -296,7 +299,15 @@ async function runOnce(browser, scenario, run) {
   await context.close();
   if (raw.errors.length || errors.length)
     throw new Error(`${scenario}: ${[...raw.errors, ...errors].join('\n')}`);
-  return { scenario, run, ...pick, loadAverage: round(loadAverage * 100) / 100, settings, steady: steady.frames, ...summarize(raw) };
+  return {
+    scenario,
+    run,
+    ...pick,
+    loadAverage: round(loadAverage * 100) / 100,
+    settings,
+    steady: steady.frames,
+    ...summarize(raw),
+  };
 }
 
 (async () => {
@@ -307,7 +318,9 @@ async function runOnce(browser, scenario, run) {
       page.setDefaultTimeout(240000);
       await openFixture(page, 'town-construction-frames', fixture);
       await page.waitForFunction(() => typeof window.listConstructions === 'function');
-      console.log(JSON.stringify(await page.evaluate((era) => window.listConstructions(era), ERA), null, 1));
+      console.log(
+        JSON.stringify(await page.evaluate((era) => window.listConstructions(era), ERA), null, 1),
+      );
       return;
     }
     const results = [];
@@ -358,7 +371,15 @@ async function runOnce(browser, scenario, run) {
         ),
       };
     }
-    const report = { era: ERA, throttle: THROTTLE, tier: TIER, viewport: VIEWPORT, cpus: os.cpus().length, summary, results };
+    const report = {
+      era: ERA,
+      throttle: THROTTLE,
+      tier: TIER,
+      viewport: VIEWPORT,
+      cpus: os.cpus().length,
+      summary,
+      results,
+    };
     if (env.PH_TOWN_OUTPUT) fs.writeFileSync(env.PH_TOWN_OUTPUT, JSON.stringify(report, null, 1));
     console.log(JSON.stringify(summary, null, 1));
   } finally {
