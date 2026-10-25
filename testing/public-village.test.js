@@ -35,12 +35,10 @@ it('builds an isolated visit model without importing private balances or actions
   expect(visited.coins).toBe(0);
   expect(visited.forge.charge).toBe(0);
   expect(visited.events).toEqual({});
-  expect(visited.projects.well).toMatchObject({ wins: 2, required: 3 });
-  expect(visited.projects.well.cost).toBeUndefined();
+  // The server publishes no projects, so a visit never shows a worksite.
+  expect(visited.projects).toEqual({});
   visited.buildings.well = 5;
-  visited.projects.well.wins = 0;
   expect(appearance.buildings.well).toBe(2);
-  expect(appearance.projects.well.wins).toBe(100);
   expect(own.coins).toBe(700);
   expect(own.buildings.well).toBe(0);
 });
