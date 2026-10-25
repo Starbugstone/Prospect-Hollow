@@ -104,3 +104,11 @@ across expiry/reconnection, independent device stores, successive archived
 conflicts, reload, download, explicit overwrite, history restore, permanent
 upload rejection, and failed archive writes. The village uses the lightweight
 fallback renderer in these save tests; they do not benchmark WebGL rendering.
+
+The durability check earns coins through normal victories and opens each victory
+chest on a supply, so balances move only by the mining payout. An unopened chest
+is claimed later with its random prize, sometimes 500 coins: when the next run
+starts, or when another device loads the synced save. The check also asks for a
+sync again when the scheduler's own sync was already running. Archive writes run
+in the background worker, so its storage-failure case breaks IndexedDB in that
+worker too.

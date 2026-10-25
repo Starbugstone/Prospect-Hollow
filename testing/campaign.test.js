@@ -47,6 +47,45 @@ it('keeps view replacement income hooks from writing or reporting a storage fail
   expect(saved.get(SAVE_KEY)).not.toBe(before);
 });
 
+it('claims an unopened chest once during a paused reload and saves it when writes resume', () => {
+  const campaign = useCampaignStore();
+  const runId = campaign.beginRun('normal', 1);
+  campaign.recordVictory({
+    id: 1,
+    runId,
+    score: 100,
+    target: 6000,
+    combo: 1,
+    jewels: 10,
+    chooseRewards: true,
+  });
+  expect(campaign.pendingChests).toHaveLength(1);
+  const coins = campaign.town.coins;
+  const stored = saved.get(SAVE_KEY);
+  const claims = (profile) =>
+    profile.integrity.actions.filter((action) => action.kind === 'chest-claim');
+  // A view reload applying a synced save that holds the chest still unopened.
+  const release = localProfile.suspendWrites();
+  try {
+    campaign.reloadLocal();
+    expect(campaign.saveWarning).toBe('');
+    expect(campaign.pendingChests).toEqual([]);
+    expect(campaign.town.coins).toBe(coins + 500);
+    expect(saved.get(SAVE_KEY)).toBe(stored);
+  } finally {
+    release();
+  }
+  const profile = JSON.parse(saved.get(SAVE_KEY));
+  expect(profile.pendingChests).toEqual([]);
+  expect(profile.town.coins).toBe(coins + 500);
+  expect(claims(profile)).toHaveLength(1);
+  expect(campaign.saveWarning).toBe('');
+  // The stored claim is final: loading it again pays nothing more.
+  campaign.reloadLocal();
+  expect(campaign.town.coins).toBe(coins + 500);
+  expect(claims(JSON.parse(saved.get(SAVE_KEY)))).toHaveLength(1);
+});
+
 it('stages obstacles while leaving a lighter fifth puzzle in every chapter', () => {
   const levels = generateLevelConfigs();
   expect(levels).toHaveLength(LEVEL_COUNT);
