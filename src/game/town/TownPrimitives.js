@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { horizonMaterial } from './TownAtmosphere';
-import { createTownGeometries } from './TownGeometries';
+import { createTownGeometries, placedCopy } from './TownGeometries';
 import { TownSignAtlas } from './TownSignAtlas';
 import { finishWork } from '../PresentationWork';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
@@ -163,6 +163,7 @@ export class TownPrimitives {
   *batchWork(group) {
     group.updateMatrixWorld(true);
     const inverse = group.matrixWorld.clone().invert(),
+      placement = new THREE.Matrix4(),
       buckets = new Map(),
       meshes = [],
       merged = [];
@@ -175,9 +176,10 @@ export class TownPrimitives {
     let committed = false;
     try {
       for (const object of meshes) {
-        const geometry = object.geometry
-          .clone()
-          .applyMatrix4(inverse.clone().multiply(object.matrixWorld));
+        const geometry = placedCopy(
+          object.geometry,
+          placement.multiplyMatrices(inverse, object.matrixWorld),
+        );
         const key = `${object.material.uuid}:${object.castShadow}:${object.renderOrder}`;
         if (!buckets.has(key))
           buckets.set(key, {

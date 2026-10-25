@@ -1,4 +1,5 @@
 import { scheduleWork } from '../PresentationWork';
+import { timedSteps } from './TownProfiler';
 import { AnimalSpaceBuilder } from './TownAnimalSpace';
 import { Group, Vector3 } from 'three';
 import {
@@ -705,7 +706,7 @@ export function addTownAnimals(d, town, preparedSpace) {
       d.rebuildActors();
       d.render();
     }
-    d.cancelAnimalWork = scheduleWork(prepare(), {
+    d.cancelAnimalWork = scheduleWork(timedSteps('animals', prepare()), {
       budget: 8,
       isCurrent: () => generation === d.generation,
     });

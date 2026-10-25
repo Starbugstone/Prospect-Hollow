@@ -4,6 +4,7 @@ testTiming.setConfig({ testTimeout: 20000 });
 import { afterEach, expect, it, vi } from 'vitest';
 import {
   BoxGeometry,
+  BufferGeometry,
   Group,
   Matrix4,
   Mesh,
@@ -174,9 +175,10 @@ it('re-merges a replaced drop container without preparing retained drops again',
     added = drop(4);
   second.add(kept, added);
   first.removeFromParent();
-  const clone = vi.spyOn(BoxGeometry.prototype, 'clone');
+  // Each prepared source is copied and placed once (TownGeometries.placedCopy).
+  const placed = vi.spyOn(BufferGeometry.prototype, 'applyMatrix4');
   statics.sync([second]);
-  expect(clone).toHaveBeenCalledOnce();
+  expect(placed).toHaveBeenCalledOnce();
   expect(statics.pieces.get(kept)).toBe(keptPiece);
   expect(statics.pieces.has(replaced)).toBe(false);
   expect(released).toHaveBeenCalledOnce();

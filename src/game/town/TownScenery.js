@@ -20,6 +20,10 @@ import { addElectricLighting } from './buildings/industrial';
 import { addEraStreetscape, addPowerGrid, pavedTown } from './TownEvolution';
 import { addRailroad } from './TownEraActivity';
 import { TownActors } from './TownActors';
+import { Group } from 'three';
+
+// Plain geometry roots a layout change can build ahead (see `TownScenery.prepare`).
+const PREPARED_ROOTS = new Set(['roads', 'power', 'lights']);
 
 // Elevated decorations never change walkable space or animal habitats.
 export const sceneryAffectsNavigation = (id) => id !== 'town-banner' && id !== 'mine-plaque';
@@ -35,8 +39,8 @@ export class TownScenery {
   detach() {
     for (const { group } of this.entries.values()) group?.removeFromParent();
   }
-  // Returns the ids whose infrastructure was rebuilt, so callers can refresh navigation.
-  update(view, town) {
+  // [id, signature, build] for each infrastructure root of `town`.
+  definitions(view, town) {
     const tracks = JSON.stringify(townTracks(town));
     const built = Object.keys(PLOTS).filter((id) => town.buildings[id] > 0);
     const level = roadLevel(town);
@@ -101,14 +105,22 @@ export class TownScenery {
       ],
       ['railroad', !!railEdges(town).length, () => addRailroad(view, town)],
     ];
+    return definitions;
+  }
+  // Returns the ids whose infrastructure was rebuilt, so callers can refresh navigation.
+  // `prepared` holds roots built ahead by `prepare` for this town; matching ones are adopted.
+  update(view, town, prepared) {
     const changed = [];
-    for (const [id, signature, build] of definitions) {
+    for (const [id, signature, build] of this.definitions(view, town)) {
       let cached = this.entries.get(id);
       if (!cached || cached.signature !== signature) {
         const previousMotion = motionFor(cached?.group);
         if (previousMotion) view.motions = view.motions.filter((m) => m !== previousMotion);
         view.clearGroup(cached?.group);
-        cached = { signature, group: build() };
+        const ready = prepared?.get(id);
+        if (ready) prepared.delete(id);
+        if (ready && ready.signature !== signature) view.clearGroup(ready.group);
+        cached = { signature, group: ready?.signature === signature ? ready.group : build() };
         if (cached.group) cached.group.userData.navigationOwner = `scenery:${id}`;
         this.entries.set(id, cached);
         changed.push(id);
@@ -121,6 +133,30 @@ export class TownScenery {
     }
     if (changed.length) this.syncMovingParts(view);
     return changed;
+  }
+  // Builds, off screen and one root per step, the plain geometry roots (roads, wires and
+  // lamps) that `town` changes, into `prepared`. A layout-changing completion prepares
+  // them while its reveal waits, so the full rebuild adopts them instead of building
+  // them all in one frame. Roots with moving parts or other state are built by `update`.
+  *prepare(view, town, prepared) {
+    const staging = new Group();
+    for (const [id, signature, build] of this.definitions(view, town)) {
+      if (!PREPARED_ROOTS.has(id) || this.entries.get(id)?.signature === signature) continue;
+      const world = view.world,
+        current = view.town;
+      let group;
+      try {
+        view.world = staging;
+        view.town = town;
+        group = build();
+      } finally {
+        view.world = world;
+        view.town = current;
+      }
+      group?.removeFromParent();
+      prepared.set(id, { signature, group });
+      yield;
+    }
   }
   // Roots may list moving parts (`userData.movingParts`, e.g. monument centerpieces).
   // They share instanced draws, drawn each frame by `drawFrame`, instead of one draw

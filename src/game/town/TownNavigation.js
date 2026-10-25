@@ -11,7 +11,8 @@ import { NPC_BODY_MARGIN } from '../../data/townClearances';
 export const NPC_MARGIN = NPC_BODY_MARGIN;
 const CELL = 4,
   SIDES = 12,
-  EPS = 1e-6;
+  EPS = 1e-6,
+  BOUNDS_SLACK = 1e-9;
 function obstacleBounds(o) {
   return o.polygon
     ? {
@@ -184,19 +185,36 @@ export class TownNavigation {
     this.obstacles.push(...kept);
     for (const o of old) this.unindex(o);
     for (const o of kept) this.index(o);
-    this.revision++;
+    const previous = this.revision++;
     const changed = [...old, ...next];
     this.forgetDetours(changed.map(obstacleBounds));
-    return this.invalidateRegion(
-      changed.length
-        ? {
-            minX: Math.min(...changed.map((o) => o.x - o.radius)),
-            maxX: Math.max(...changed.map((o) => o.x + o.radius)),
-            minZ: Math.min(...changed.map((o) => o.z - o.radius)),
-            maxZ: Math.max(...changed.map((o) => o.z + o.radius)),
-          }
-        : null,
-    );
+    const region = changed.length
+      ? {
+          minX: Math.min(...changed.map((o) => o.x - o.radius)),
+          maxX: Math.max(...changed.map((o) => o.x + o.radius)),
+          minZ: Math.min(...changed.map((o) => o.z - o.radius)),
+          maxZ: Math.max(...changed.map((o) => o.z + o.radius)),
+        }
+      : null;
+    const invalidated = this.invalidateRegion(region);
+    this.renewCertificates(previous, region);
+    return invalidated;
+  }
+  // A prepared path whose own points stay clear of the changed footprints is still
+  // clear: its certificate moves to the new revision. Walkers then re-check only the
+  // routes near a new building, instead of every route in the same frame.
+  renewCertificates(previous, region) {
+    for (const { path } of this.prepared.values()) {
+      const certificate = path.clearance;
+      if (
+        certificate?.navigation !== this ||
+        certificate.revision !== previous ||
+        !certificate.bounds ||
+        (region && overlaps(certificate.bounds, region))
+      )
+        continue;
+      certificate.revision = this.revision;
+    }
   }
   forgetDetours(changed) {
     for (const [key, bounds] of this.detourBounds)
@@ -258,9 +276,18 @@ export class TownNavigation {
     return true;
   }
   clear(p, margin = NPC_MARGIN) {
-    return this.near(p[0], p[2]).every(
-      (o) => !sameHeight(o, p) || footprintDistance(o, p[0], p[2]) >= margin - EPS,
-    );
+    const limit = margin - EPS;
+    for (const o of this.near(p[0], p[2])) {
+      if (!sameHeight(o, p)) continue;
+      // A footprint lies inside its bounds: a point that far from the box is clear of
+      // it without measuring every edge (the small slack covers rounding).
+      const b = this.bounds.get(o);
+      const dx = Math.max(b.minX - p[0], 0, p[0] - b.maxX),
+        dz = Math.max(b.minZ - p[2], 0, p[2] - b.maxZ);
+      if (Math.hypot(dx, dz) >= limit + BOUNDS_SLACK) continue;
+      if (footprintDistance(o, p[0], p[2]) < limit) return false;
+    }
+    return true;
   }
   safePoint(p, margin = NPC_MARGIN, accept) {
     // Existing animal callers pass numeric/boolean trailing arguments, which
@@ -334,12 +361,9 @@ export class TownNavigation {
           if (distances[at] + length >= distances[next]) continue;
           // Dense scenery gives each node many edges; pause between batches of checks.
           if (++checks % 24 === 0) yield;
-          if (
-            this.nearbySegment(nodes[at], nodes[next], margin).some(
-              (o) => !sweptClear(o, nodes[at], nodes[next], margin),
-            )
-          )
-            continue;
+          // Stops at the first blocking footprint instead of collecting every nearby one:
+          // most candidate edges cross the town and are blocked early.
+          if (!this.segment(nodes[at], nodes[next], margin)) continue;
           distances[next] = distances[at] + length;
           previous[next] = at;
         }
@@ -378,18 +402,18 @@ export class TownNavigation {
   }
   track(path, margin) {
     if (!path.points.length) return path;
-    path.clearance = { navigation: this, revision: this.revision, margin };
     const xs = path.points.map((p) => p[0]),
       zs = path.points.map((p) => p[2]);
-    this.prepared.set(path, {
-      path,
-      bounds: {
-        minX: Math.min(...xs) - margin,
-        maxX: Math.max(...xs) + margin,
-        minZ: Math.min(...zs) - margin,
-        maxZ: Math.max(...zs) + margin,
-      },
-    });
+    // The certificate keeps the area its own points were checked in (a route's
+    // prepared record may describe the route it was sampled from instead).
+    const bounds = {
+      minX: Math.min(...xs) - margin,
+      maxX: Math.max(...xs) + margin,
+      minZ: Math.min(...zs) - margin,
+      maxZ: Math.max(...zs) + margin,
+    };
+    path.clearance = { navigation: this, revision: this.revision, margin, bounds };
+    this.prepared.set(path, { path, bounds });
     return path;
   }
   plan(points, margin = NPC_MARGIN) {

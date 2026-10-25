@@ -1,6 +1,7 @@
 import { ERA_BY_ID, FRONTIER_ERA } from '../../data/eras';
 import { PLOTS, plotStreet, routeGraph, routeOnGraph } from './TownLayout';
 import { walkPath } from './TownNavigation';
+import { finishWork } from '../PresentationWork';
 import { BRIDGE, crossesRiver, overWater, streetHeight } from './TownRiver';
 import { villagerRandom, villagerIdentity } from '../../data/villagers';
 import { hasVisitorTransport } from '../../data/visitorArrivals';
@@ -46,6 +47,19 @@ function nearestJoin(joins, heading, usable = () => true) {
   return close.reduce((best, join) =>
     Math.cos(join.heading - heading) > Math.cos(best.heading - heading) ? join : best,
   );
+}
+
+// A street walk planned around the footprints, in resumable steps. A plan paused while
+// footprints changed is planned again, so a leg is never certified against stale ones.
+function* planWalk(navigation, points) {
+  if (!navigation) return walkPath(points);
+  if (navigation.planSteps)
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const revision = navigation.revision;
+      const path = yield* navigation.planSteps(points, 0.29);
+      if (navigation.revision === revision) return path;
+    }
+  return navigation.plan(points, 0.29) ?? walkPath(points);
 }
 
 // One graph and memoized legs per town snapshot. Compilation is driven by the
@@ -109,8 +123,13 @@ export class TownItineraries {
   }
 
   leg(from, to) {
+    return finishWork(this.legSteps(from, to));
+  }
+  // The same leg in resumable steps: its detour searches yield, so scheduled
+  // population and route repair can spread one long street plan over several frames.
+  *legSteps(from, to) {
     const key = `${from.join(',')}:${to.join(',')}`;
-    const direct = this.directLeg(from, to);
+    const direct = yield* this.directLegSteps(from, to);
     if (direct) return direct;
     if (this.detours.has(key)) return this.detours.get(key);
     // A dense junction can leave opposite sidewalks connected through a nearby
@@ -122,9 +141,9 @@ export class TownItineraries {
       .filter((p) => gap(p, from) > 1 && gap(p, to) > 1)
       .sort((a, b) => gap(from, a) + gap(a, to) - gap(from, b) - gap(b, to));
     for (const hub of hubs.slice(0, 6)) {
-      const a = this.directLeg(from, hub);
+      const a = yield* this.directLegSteps(from, hub);
       if (!a) continue;
-      const b = this.directLeg(hub, to);
+      const b = yield* this.directLegSteps(hub, to);
       if (!b) continue;
       const path = walkPath([...a.points, ...b.points.slice(1)]);
       this.d.navigation?.track?.(path, 0.29);
@@ -135,6 +154,9 @@ export class TownItineraries {
     return null;
   }
   directLeg(from, to) {
+    return finishWork(this.directLegSteps(from, to));
+  }
+  *directLegSteps(from, to) {
     const key = `${from.join(',')}:${to.join(',')}`;
     if (this.legs.has(key)) return this.legs.get(key);
     const start = this.nearest(from),
@@ -175,7 +197,7 @@ export class TownItineraries {
         points.at(-1)[1] = Math.max(points.at(-1)[1], to[1]);
       }
       points.push(to);
-      const path = this.d.navigation?.plan(points, 0.29) ?? walkPath(points);
+      const path = yield* planWalk(this.d.navigation, points);
       // Planning may return a prefix. Never call its endpoint a doorway.
       if (
         path.total > 0 &&
@@ -252,7 +274,8 @@ export class TownItineraries {
     const round = actor.routePath;
     if (!round?.closed || !this.d.navigation?.planSteps) return [];
     const start = round.points[0];
-    const out = gap(anchor, start) < 0.05 ? walkPath([anchor]) : this.leg(anchor, start);
+    const out =
+      gap(anchor, start) < 0.05 ? walkPath([anchor]) : yield* this.legSteps(anchor, start);
     if (!out?.points.length) return [];
     const loop = yield* this.d.navigation.planSteps(round.points, 0.29);
     if (
@@ -357,7 +380,7 @@ export class TownItineraries {
     );
     for (const id of overlooks.slice(0, 3)) {
       const destination = this.endpoint(id);
-      const leg = destination && this.leg(anchor, destination);
+      const leg = destination && (yield* this.legSteps(anchor, destination));
       if (leg?.total) {
         const path = walkPath([...leg.points, ...leg.points.slice(0, -1).reverse()]);
         this.d.navigation?.track?.(path, 0.29);
@@ -376,7 +399,7 @@ export class TownItineraries {
       for (const id of ids) {
         const enter = id && this.shops.has(id);
         const to = id ? this.endpoint(id, enter) : anchor;
-        const leg = to && this.leg(points.at(-1), to);
+        const leg = to && (yield* this.legSteps(points.at(-1), to));
         if (!leg) continue;
         points.push(...leg.points.slice(1));
         total += leg.total;
