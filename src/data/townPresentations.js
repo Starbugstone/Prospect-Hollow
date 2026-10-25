@@ -1,5 +1,6 @@
 import { campaignCompletion } from './campaignCompletion';
 import { AREA_BY_ID, LANDMARK_BY_ID, landmarkLevel } from './townLandmarks';
+import { settlementId, settlementOf } from './settlements';
 
 // Completion receipts are saved with the completion transaction. Presentation never
 // owns construction, rewards or progression; interrupted scenes can be resumed.
@@ -86,16 +87,12 @@ export function monumentPresentation(id, choice, level) {
   return {
     id: 'monument-unveiling',
     area: id,
-    settlement: area.settlement ?? 'valley',
+    settlement: settlementId(area),
     choice,
     level: area.timeless ? 1 : level,
     grand,
     duration: grand ? 16 : 7,
-    title: grand
-      ? area.settlement === 'moon'
-        ? 'A monument for New Hollow'
-        : 'A monument for Prospect Hollow'
-      : 'Monument upgraded',
+    title: grand ? settlementOf(area).labels.monument : 'Monument upgraded',
     chapters: grand
       ? [
           { at: 0, text: 'The whole town gathers at {site}.', params },

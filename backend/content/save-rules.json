@@ -51410,16 +51410,16 @@
       "saleCoins": 250,
       "buildings": [
         "ribbonLanding",
-        "newHollowCommons",
         "settlerDomes",
         "craterIceWell",
-        "craterHomesteads",
         "earthlightGreenhouse",
         "willowkinDome",
+        "newHollowCommons",
+        "craterHomesteads",
         "moonstoneWorkshop",
-        "earthriseLookout",
         "roverBarn",
-        "saucerPad"
+        "saucerPad",
+        "earthriseLookout"
       ]
     },
     "hourMs": 3600000,
@@ -52247,5 +52247,5 @@
       "seenGeneration": 5
     }
   },
-  "contentDigest": "a734e1f0b745fb20d663e32c91a74191ba97d9e1664eb372b3d4e84d73be038c"
+  "contentDigest": "daa704520bdfb304ce3bea9adaf3abf89b8ec5a5ef048665ab27a1c25799da03"
 }

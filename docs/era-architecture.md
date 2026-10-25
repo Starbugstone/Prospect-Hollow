@@ -284,6 +284,37 @@ it so that, on Earth, only a few homecoming landmarks change while the Moon
 settlement is built. A building may also declare `settlement: 'moon'`: it shares
 every lifecycle but stands on the Moon map instead of a valley lot.
 
+### Settlements: one registry
+
+`src/data/settlements.js` is the one definition of each settlement. Buildings, monument
+sites and presentations name theirs by id (`MOON_SETTLEMENT`); anything undeclared stands
+in the home settlement, the valley. Each entry gives its `map` (the valley's diorama, or a
+map drawn over it: TownScene's `SETTLEMENT_MAPS`), its building `art` (TownBuilding's
+`SETTLEMENT_ART`), whether its finished levels earn `moonstones` (`MOONSTONE_BUILDINGS` in
+`town.js`, which the save rules export), its `labels` (the waiting-event notice, its
+reminder and the grand unveiling title), its `monumentStone` and its `vipBuildings`.
+Shared code reads these facts instead of comparing ids: the Build list puts the
+settlement on screen first, `townEventStage` invites the player to whichever other
+settlement has an event waiting, `placeSettlement` routes navigation and new work to the
+right map, and `EARTH_BUILDINGS`/`MOON_BUILDINGS` are derived with `settlementPlaces`.
+
+`createSettlementRegistry()` validates and freezes the entries. An incomplete entry gets
+safe defaults: without a map its events play in the valley, with no art, moonstones or VIP
+spending of its own. One with a map must name its own labels. A place naming a settlement
+this build does not know reads as the valley for its facts and events, and no map draws
+it. Moon-specific valley features (the sky Moon and its chip) stay with the Moon.
+`testing/settlements.test.js` pins the shipped facts; `testing/settlement-extension.test.js`
+adds a hypothetical third settlement by registry entry only and checks event routing,
+notices, the Build list order, the map on screen, moonstones and VIP spending.
+
+The village's offers, needs report, next goal and need chips are campaign store getters
+(`townOffers`, `openOffers`, `townNeeds`, `townGoal`, `needChips`), computed once per
+town state and read by TownView, the Build tab's next step, the victory screen and the
+map (TownScene's `guidance`; a visit derives its own). Every Build row is
+`TownBuildRow.vue`, whose tap and look follow one rule, `parcelAction`: finish, buy with
+coins or build with a hammer. `testing/town-guidance.test.js` and
+`testing/build-list.test.js` cover both.
+
 ## Regression evidence
 
 `testing/era-definitions.test.js` covers invalid definitions, immutable shared

@@ -111,6 +111,7 @@ it.each([
   VIEW,
   'src/components/town/TownMoonstoneBalance.vue',
   'src/components/town/TownNextStep.vue',
+  'src/components/town/TownBuildRow.vue',
   'src/components/MineGoals.vue',
   'src/components/town/TownPersonalise.vue',
 ])('gives every labelled generic element in %s a role', (path) => {

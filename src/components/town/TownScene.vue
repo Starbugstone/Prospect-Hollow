@@ -160,7 +160,7 @@
       </button>
     </div>
     <button
-      v-if="skyMoon && !moonOpen"
+      v-if="skyMoon && shown === HOME_SETTLEMENT"
       ref="skyMoonElement"
       type="button"
       class="town-sky-moon"
@@ -171,12 +171,15 @@
       @pointerup.stop
       @click="openMoon"
     ></button>
-    <TownMoonView
-      v-if="moonOpen"
-      ref="moonView"
+    <!-- Another settlement's map, drawn over the valley while it is on screen. -->
+    <component
+      :is="settlementMap"
+      v-if="settlementMap"
+      ref="settlementView"
+      class="town-settlement-map"
       :town="town"
       :selected="selected"
-      :presentation="moonPresentation"
+      :presentation="shownPresentation"
       @presentation-ready="emit('presentation-ready')"
       @presentation-unavailable="emit('presentation-unavailable')"
       :active="active"
@@ -188,14 +191,14 @@
       :read-only="readOnly"
       @select="choose($event)"
       @inspect="emit('inspect', $event)"
-      @close="closeMoon"
+      @close="closeSettlement"
       @vip-spend="emit('vip-spend', $event)"
-      @villager-label="showMoonVillagerLabel"
+      @villager-label="showSettlementVillagerLabel"
     />
   </div>
 </template>
 <script setup>
-import { eventSettlement } from '../../game/town/TownEventSettlement';
+import { eventSettlement, placeSettlement } from '../../game/town/TownEventSettlement';
 import { ERAS } from '../../data/eras';
 import { loadFootprints } from '../../game/town/FootprintCatalog';
 import { loadFamilies, requiredFamilies } from '../../game/town/assets/MeshCatalog';
@@ -230,8 +233,13 @@ import {
   trackElement,
   updateLabels,
 } from '../../game/town/TownLabels';
-import { BUILDING_BY_ID, EARTH_BUILDINGS, MOON_BUILDINGS } from '../../data/town';
-import { AREA_BY_ID } from '../../data/townLandmarks';
+import { BUILDINGS, BUILDING_BY_ID, EARTH_BUILDINGS } from '../../data/town';
+import {
+  HOME_SETTLEMENT,
+  MOON_SETTLEMENT,
+  settlementById,
+  settlementPlaces,
+} from '../../data/settlements';
 import { dressSpaceHelmet } from '../../game/town/TownSpaceHelmet';
 import { createTapGesture, keyboardActivation } from '../../game/town/TownTapGesture';
 import { cameraKeyAction } from '../../game/town/TownCameraKeys';
@@ -269,54 +277,82 @@ const props = defineProps({
   construction: Object,
   // Water, food and happiness against the town's size, always visible on the map.
   needChips: { type: Array, default: () => [] },
+  // The town's open offers and next goal, `{ offers, goal }`, when the owner's village
+  // already has them (the campaign store); a visit or the admin viewer derives its own.
+  guidance: Object,
 });
+// The map that draws each settlement over the valley, by its registry `map` key
+// (settlements.js). Each takes the props and events TownMoonView takes.
+const SETTLEMENT_MAPS = { moon: TownMoonView };
+const mapOf = (id) =>
+  id === HOME_SETTLEMENT ? null : (SETTLEMENT_MAPS[settlementById(id)?.map] ?? null);
+// A settlement opens once the town can build there: one of its plots is in this era.
+const reachable = (id) =>
+  id === HOME_SETTLEMENT ||
+  settlementPlaces(id, BUILDINGS).some((building) => plotInEra(props.town, building.id));
 // New Hollow's homesteads on the Moon, supplied by the space elevator.
 const moon = computed(() => moonSettlement(props.town));
-const moonReachable = computed(() =>
-  MOON_BUILDINGS.some((building) => plotInEra(props.town, building.id)),
-);
 const moonLabel = computed(() =>
   t(
-    moonReachable.value
+    reachable(MOON_SETTLEMENT)
       ? 'Visit New Hollow on the Moon: {count} homesteads'
       : 'New Hollow on the Moon: {count} homesteads',
     { count: moon.value.homesteads },
   ),
 );
-// The Moon map opens over the valley once the town can build there; before that
-// the chip shows the space elevator. The valley rests while the Moon is open.
-const moonOpen = ref(false);
-const moonView = ref(null);
-const moonPresentation = computed(() =>
-  eventSettlement(props.presentation) === 'moon' ? props.presentation : null,
-);
+// The settlement on screen. Another settlement's map opens over the valley, which
+// rests while it is open.
+const shown = ref(HOME_SETTLEMENT);
+const settlementView = ref(null);
+const settlementMap = computed(() => mapOf(shown.value));
+const presentationSettlement = computed(() => eventSettlement(props.presentation));
 const valleyPresentation = computed(() =>
-  eventSettlement(props.presentation) === 'valley' ? props.presentation : null,
+  props.presentation && presentationSettlement.value === HOME_SETTLEMENT
+    ? props.presentation
+    : null,
 );
-function openMoon() {
-  if (props.raid || props.cinematic || valleyPresentation.value) return;
-  if (!moonReachable.value) return emit('locate', 'spaceElevator');
-  moonOpen.value = true;
+// A presentation that another settlement's map plays.
+const awayPresentation = computed(() =>
+  props.presentation && !valleyPresentation.value ? props.presentation : null,
+);
+const shownPresentation = computed(() =>
+  presentationSettlement.value === shown.value ? awayPresentation.value : null,
+);
+const canLeaveValley = () => !props.raid && !props.cinematic && !valleyPresentation.value;
+// Opens a settlement's map (the Watch notice, work started on another map); the valley,
+// or a settlement without a map, closes any.
+function showSettlement(id) {
+  if (!mapOf(id)) closeSettlement();
+  else if (canLeaveValley() && reachable(id)) shown.value = id;
 }
-function closeMoon() {
-  moonOpen.value = false;
+function closeSettlement() {
+  shown.value = HOME_SETTLEMENT;
+}
+// The Moon in the valley's sky and its chip open New Hollow once the town can build
+// there; before that they show the space elevator.
+function openMoon() {
+  if (canLeaveValley() && !reachable(MOON_SETTLEMENT)) return emit('locate', 'spaceElevator');
+  showSettlement(MOON_SETTLEMENT);
 }
 watch(
-  moonOpen,
-  (open) => {
-    emit('settlement-change', open ? 'moon' : 'valley');
+  shown,
+  (id) => {
+    emit('settlement-change', id);
     // The other map's named VIP is no longer on screen; the valley names its own again.
     showVillagerLabel(null);
     scene?.setMotion(motionEnabled());
-    // The Moon's drags, wheel and pinches belong to the Moon's camera.
-    scene?.setCovered(open);
-    if (!open) scene?.projectVillager();
+    // The other map's drags, wheel and pinches belong to its own camera.
+    scene?.setCovered(id !== HOME_SETTLEMENT);
+    if (id === HOME_SETTLEMENT) scene?.projectVillager();
   },
   { flush: 'sync' },
 );
-watch(moonReachable, (reachable) => {
-  if (!reachable) moonOpen.value = false;
-});
+watch(
+  () => reachable(shown.value),
+  (open) => {
+    if (!open) closeSettlement();
+  },
+);
 // The Moon hangs in the valley sky to the north-west, above the mine and the
 // elevator. It drifts across the sky as the camera turns and opens New Hollow.
 const skyMoon = shallowRef(null),
@@ -339,7 +375,8 @@ watch(
     placeSkyMoon();
   },
 );
-const motionEnabled = () => props.active && !document.hidden && !props.paused && !moonOpen.value;
+const motionEnabled = () =>
+  props.active && !document.hidden && !props.paused && shown.value === HOME_SETTLEMENT;
 // The building that would fix a shortage says so on its label.
 const needHints = computed(() =>
   Object.fromEntries(
@@ -381,7 +418,9 @@ const canvas = ref(null),
   anchors = shallowRef([]),
   unavailable = ref(false),
   graphicsReady = ref(false);
-const suggestedId = computed(() => nextGoal(props.town)?.id);
+const suggestedId = computed(
+  () => (props.guidance ? props.guidance.goal : nextGoal(props.town))?.id,
+);
 const quietPlot = (id) =>
   id !== 'mine' &&
   id !== suggestedId.value &&
@@ -390,7 +429,7 @@ const quietPlot = (id) =>
 // Purchases depend on the town only; the village's one-second clock (provided by
 // TownView) just re-checks cooldowns. Unchanged indicators keep the same object, so
 // the labels re-render only when an action actually appears or disappears.
-const offers = computed(() => openOffers(props.town));
+const offers = computed(() => props.guidance?.offers ?? openOffers(props.town));
 const townPurchases = computed(() => availablePurchases(props.town, 0, offers.value));
 const townClock = inject('townClock', null);
 const indicators = computed((previous) => {
@@ -452,8 +491,8 @@ const plotLabel = (id) => {
 const box = labelBox();
 const labelTranslate = (point) => box.translate(point);
 function collectionOrigin(id) {
-  if (moonOpen.value && MOON_BUILDINGS.some((building) => building.id === id))
-    return moonView.value?.collectionOrigin(id) ?? { x: 50, y: 50 };
+  if (shown.value !== HOME_SETTLEMENT && placeSettlement(id) === shown.value)
+    return settlementView.value?.collectionOrigin(id) ?? { x: 50, y: 50 };
   // The place's collection point (its action icon) or its label anchor; the collection
   // keeps itself on screen (TownResourceCollection), as on the Moon.
   const anchor = anchors.value.find((anchor) => anchor.id === id);
@@ -462,25 +501,25 @@ function collectionOrigin(id) {
 }
 let presentationTime = 0;
 let cinematicProgress = 0;
-// The camera of the map on screen: the Moon's while it is open, else the valley's.
-const camera = () => (moonOpen.value ? moonView.value : scene);
-// Explicit navigation (a Build row, a notice): a Moon lot or site opens the Moon map and
-// turns the Moon's camera to it; a valley place closes the Moon. Taps never come here.
+// The camera of the map on screen: another settlement's while open, else the valley's.
+const camera = () => (shown.value !== HOME_SETTLEMENT ? settlementView.value : scene);
+// Explicit navigation (a Build row, a notice): a place in another settlement opens its
+// map and turns that map's camera to it; a valley place closes it. Taps never come here.
 async function focusPlace(id) {
-  if (AREA_BY_ID[id]?.settlement === 'moon' || MOON_BUILDINGS.some((place) => place.id === id)) {
-    moonOpen.value = true;
+  const where = placeSettlement(id);
+  if (mapOf(where)) {
+    shown.value = where;
     await nextTick();
-    return moonView.value?.focusPlace(id) ?? false;
+    return settlementView.value?.focusPlace(id) ?? false;
   }
-  closeMoon();
+  closeSettlement();
   return scene?.focusPlace(id);
 }
 // Camera buttons are gone: drag, pinch, wheel and keys move the view; Village resets it.
 const resetView = () => camera()?.cameraAction('reset');
 defineExpose({
   focusPlace,
-  openMoon,
-  closeMoon,
+  showSettlement,
   findVisitor: (id) => scene?.findVisitor(id) ?? false,
   resetView,
   collectionOrigin,
@@ -490,7 +529,7 @@ defineExpose({
   },
   presentationFrame: (time) => {
     presentationTime = time;
-    if (moonPresentation.value) moonView.value?.presentationFrame(time);
+    if (awayPresentation.value) settlementView.value?.presentationFrame(time);
     else scene?.presentationFrame(time, props.reducedMotion);
   },
 });
@@ -526,8 +565,10 @@ const showVillagerLabel = (label) =>
     (next, current) => next.name === current.name && next.live === current.live,
   );
 // One label names a VIP on whichever map is on screen.
-const showValleyVillagerLabel = (label) => moonOpen.value || showVillagerLabel(label);
-const showMoonVillagerLabel = (label) => moonOpen.value && showVillagerLabel(label);
+const showValleyVillagerLabel = (label) =>
+  shown.value !== HOME_SETTLEMENT || showVillagerLabel(label);
+const showSettlementVillagerLabel = (label) =>
+  shown.value !== HOME_SETTLEMENT && showVillagerLabel(label);
 const showPlaqueLabel = (label) =>
   followLabel(plaqueLabel, plaqueElement, label, (next, current) => next.name === current.name);
 const choose = (id) => {
@@ -544,14 +585,14 @@ const tapGesture = createTapGesture({
   map: () => sceneElement.value,
   onTap: (event, plot) => (plot ? choose(plot) : scene?.pick(event.clientX, event.clientY)),
 });
-// The Moon map sits inside the valley's scene and settles its own input, which still
-// bubbles on to the document (Escape, audio unlock). The valley ignores it.
-const onMoon = (event) => !!event.target.closest?.('.town-moon-view');
+// Another settlement's map sits inside the valley's scene and settles its own input,
+// which still bubbles on to the document (Escape, audio unlock). The valley ignores it.
+const onSettlementMap = (event) => !!event.target.closest?.('.town-settlement-map');
 const rememberPointer = (event) =>
-  onMoon(event) ||
+  onSettlementMap(event) ||
   tapGesture.down(event, event.target.closest('[data-town-plot]')?.dataset.townPlot);
 const movePointer = (event) => {
-  if (onMoon(event)) return;
+  if (onSettlementMap(event)) return;
   if (!tapGesture.pressed && event.pointerType === 'mouse')
     scene?.hoverVillager(event.clientX, event.clientY);
   tapGesture.move(event);
@@ -560,8 +601,8 @@ const leavePointer = (event) => {
   if (!tapGesture.pressed && event.pointerType === 'mouse')
     scene?.hoverVillager(-Infinity, -Infinity);
 };
-const pick = (event) => onMoon(event) || tapGesture.up(event);
-const cancelPointer = (event) => onMoon(event) || tapGesture.cancel(event);
+const pick = (event) => onSettlementMap(event) || tapGesture.up(event);
+const cancelPointer = (event) => onSettlementMap(event) || tapGesture.cancel(event);
 // Camera keys move the camera of the map on screen.
 const cameraKey = (event) => {
   const action = cameraKeyAction(event);
@@ -574,7 +615,7 @@ async function update() {
   if (unavailable.value) {
     emit('cinematic-unavailable');
     emit('cinematic-ready');
-    if (!moonPresentation.value) {
+    if (!awayPresentation.value) {
       emit('presentation-unavailable');
       emit('presentation-ready');
     }
@@ -687,7 +728,7 @@ function showUnavailable(error) {
   unavailable.value = true;
   emit('cinematic-unavailable');
   emit('cinematic-ready');
-  if (!moonPresentation.value) {
+  if (!awayPresentation.value) {
     emit('presentation-unavailable');
     emit('presentation-ready');
   }
@@ -760,7 +801,7 @@ async function initialize() {
       vipsHidden: props.readOnly,
     });
     scene.setReducedMotion(props.reducedMotion);
-    scene.setCovered(moonOpen.value);
+    scene.setCovered(shown.value !== HOME_SETTLEMENT);
     scene.setLiveVisitors(props.liveVisitors, props.liveVisitorTownId);
     scene.showSkyMoon(moon.value.lights);
     await update();
@@ -838,7 +879,9 @@ watch(
   () => props.presentation?.id,
   () => {
     presentationTime = 0;
-    if (props.presentation?.settlement === 'moon') moonOpen.value = true;
+    // Another settlement's presentation plays on its own map.
+    if (awayPresentation.value && mapOf(presentationSettlement.value))
+      shown.value = presentationSettlement.value;
     update();
   },
 );

@@ -1,8 +1,9 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import TownView from '../src/components/town/TownView.vue';
+import TownBuildRow from '../src/components/town/TownBuildRow.vue';
 import { BUILDINGS, BUILDING_BY_ID, MOON_BUILDINGS, createTown } from '../src/data/town';
-import { availableParcels, upgradeOffer } from '../src/game/town/TownRules';
+import { availableParcels, parcelAction, upgradeOffer } from '../src/game/town/TownRules';
 import { useCampaignStore } from '../src/stores/campaignStore';
 import { find, renderFragment, sfc } from './helpers/componentFragments';
 
@@ -10,6 +11,7 @@ import { find, renderFragment, sfc } from './helpers/componentFragments';
 // finishes a ready construction, buys with coins or builds with a builder hammer. The list
 // shows the settlement on screen first; there is no separate Moon lot list.
 const VIEW = 'src/components/town/TownView.vue';
+const ROW = 'src/components/town/TownBuildRow.vue';
 const template = sfc(VIEW).template;
 
 let pinia;
@@ -62,10 +64,44 @@ it('has one Build list: no separate Moon lot list, and every row buys or finishe
       node.tag === 'section' &&
       node.props?.some((prop) => prop.exp?.content === "t('Available buildings')"),
   );
-  const row = find(list, (node) => node.tag === 'button');
-  const click = row.props.find((prop) => prop.name === 'on' && prop.arg?.content === 'click');
-  expect(click.exp.content).toBe('selectParcel(place.id)');
+  // Every row is the one shared row component; its tap reaches selectParcel.
+  const row = find(list, (node) => node.tag === 'TownBuildRow');
+  expect(list.children.filter((node) => node.type === 1).map(({ tag }) => tag)).toEqual([
+    'TownBuildRow',
+  ]);
+  const select = row.props.find((prop) => prop.name === 'on' && prop.arg?.content === 'select');
+  expect(select.exp.content).toBe('selectParcel');
+  const button = find(sfc(ROW).template.ast, (node) => node.tag === 'button');
+  const click = button.props.find((prop) => prop.name === 'on' && prop.arg?.content === 'click');
+  expect(click.exp.content).toBe("emit('select', place.id)");
 });
+
+// The row shows what its tap does, through the rule selectParcel reads (parcelAction):
+// ready to finish, a price in coins, or a price with the builder hammer when coins run short.
+it.each([
+  ['finish', (town, id) => (town.projects[id] = { id, stage: 1, wins: 2, required: 2 }), 1e9],
+  ['buy', () => {}, 1e9],
+  ['hammer', () => {}, 0],
+])(
+  'shows and taps %s the same way for a Moon lot and a valley plot',
+  async (action, edit, coins) => {
+    for (const id of [MOON_BUILDINGS[0].id, 'saloon']) {
+      const town = moonEraTown(coins);
+      edit(town, id);
+      const place = availableParcels(town, 1).find((parcel) => parcel.id === id);
+      expect(parcelAction(town, id, place.offer)).toBe(action);
+      const html = await renderFragment({
+        component: TownBuildRow,
+        path: ROW,
+        template: sfc(ROW).template.content,
+        props: { place, town },
+        pinia,
+      });
+      expect(html.includes('Ready to finish')).toBe(action === 'finish');
+      expect(html.includes('1 builder hammer')).toBe(action === 'hammer');
+    }
+  },
+);
 
 it.each(['moon', 'valley'])('lists the %s first, in the shared order', async (settlement) => {
   const town = moonEraTown();

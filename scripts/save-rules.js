@@ -1,5 +1,4 @@
 import { MOONSTONE_ECONOMY } from '../src/data/moonstones.js';
-import { MOON_LOTS } from '../src/data/moonSettlement.js';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { CHAPTERS, LEVEL_COUNT, POWERS } from '../src/data/campaign.js';
@@ -7,7 +6,7 @@ import { LEVELS_PER_CHAPTER } from '../src/data/chapters.js';
 import { ERAS, FORGE_PRODUCTION_RUNS } from '../src/data/eras.js';
 import { defineEra } from '../src/data/eraDefinitions.js';
 import { STAR_CASCADE_TARGET, STAR_SCORE_MULTIPLIER } from '../src/data/starRating.js';
-import { BUILDINGS, BANDIT_EVENT, createTown } from '../src/data/town.js';
+import { BUILDINGS, BANDIT_EVENT, MOONSTONE_BUILDINGS, createTown } from '../src/data/town.js';
 import { PROJECT_MILESTONES, TOWN_PROJECTS } from '../src/data/townProjects.js';
 import {
   LEGACY_MAX_LEVEL,
@@ -367,7 +366,7 @@ export function buildSaveRules(history = readSaveRuleHistory()) {
       },
       vipBuildings: vipVisitBuildings(town),
       forgeRuns: FORGE_PRODUCTION_RUNS,
-      moonstones: { ...MOONSTONE_ECONOMY, buildings: Object.keys(MOON_LOTS) },
+      moonstones: { ...MOONSTONE_ECONOMY, buildings: MOONSTONE_BUILDINGS },
       hourMs: HOUR_MS,
       collectionCooldownMs: collectionCooldownRemaining(
         { lastCollections: { saloon: 0 } },

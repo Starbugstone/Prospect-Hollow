@@ -1,6 +1,7 @@
 import { villagerRandom } from './villagers';
 import { LEVEL_COUNT } from './campaign';
 import { miningDepthBonus } from './economy';
+import { SETTLEMENTS, settlementById } from './settlements';
 
 // Receipt terms are permanent: change the base only by adding a new version.
 export const VIP_SPEND_BASES = Object.freeze({ 0: 5, 1: 5, 2: 10 });
@@ -23,33 +24,12 @@ export const VIP_RECEIPT_LIMIT = 64;
 // A name alone also identifies visiting players and legacy share-link guests.
 export const canVipSpend = (identity) =>
   identity?.vip === true && !identity.guest && !identity.live;
-// Where a VIP may spend, per settlement. The server accepts every listed building
-// (`economy.vipBuildings`), so add new places at the end of a settlement's list.
-const VIP_VISIT_BUILDINGS = Object.freeze({
-  valley: Object.freeze([
-    'saloon',
-    'shop',
-    'bank',
-    'museum',
-    'hotel',
-    'market',
-    'diner',
-    'library',
-    'concertHall',
-    'supermarket',
-    'doctor',
-    'post',
-    'cityHall',
-  ]),
-  // New Hollow's hall (as the valley's city hall), its keepsake workshop (a shop) and
-  // the lookout's paid view (as the museum). Homes, utilities, farms and pads are not.
-  moon: Object.freeze(['newHollowCommons', 'moonstoneWorkshop', 'earthriseLookout']),
-});
+// Where a VIP may spend is each settlement's `vipBuildings` (settlements.js).
 /** Finished places a VIP may spend in: one settlement's, or every settlement's. */
 export const vipVisitBuildings = (town, settlement) =>
   (settlement
-    ? (VIP_VISIT_BUILDINGS[settlement] ?? [])
-    : Object.values(VIP_VISIT_BUILDINGS).flat()
+    ? (settlementById(settlement)?.vipBuildings ?? [])
+    : SETTLEMENTS.flatMap((place) => place.vipBuildings)
   ).filter((id) => town.buildings[id] > 0 && !town.projects?.[id]);
 
 // Stable per arrival: ordinary sightseeing is common and two purchases are rare.

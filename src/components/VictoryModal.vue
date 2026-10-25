@@ -203,7 +203,7 @@ import GameIcon from './GameIcon.vue';
 import TownBuilding from './town/TownBuilding.vue';
 import TownIcon from './town/TownIcon.vue';
 import JourneyProgress from './JourneyProgress.vue';
-import { constructionReady, nextGoal } from '../game/town/TownRules';
+import { constructionReady } from '../game/town/TownRules';
 import { villageTutorial } from '../data/guidance';
 import RewardChest from './RewardChest.vue';
 import CoinReward from './CoinReward.vue';
@@ -236,7 +236,7 @@ const readyBuildings = computed(() =>
   Object.values(campaign.town.projects).filter(constructionReady),
 );
 const canDevelop = computed(() => {
-  const goal = nextGoal(campaign.town);
+  const goal = campaign.townGoal;
   return goal?.available && (campaign.town.coins >= goal.cost || campaign.builderHammers > 0);
 });
 const villageHasNextStep = computed(() => readyBuildings.value.length > 0 || canDevelop.value);

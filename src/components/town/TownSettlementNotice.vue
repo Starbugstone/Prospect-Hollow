@@ -1,23 +1,18 @@
 <template>
   <aside class="town-settlement-notice" role="status" aria-live="polite" @pointerdown.stop>
-    <span v-if="!later">{{
-      t(
-        destination === 'moon'
-          ? 'Something is happening on the Moon'
-          : 'Something is happening in the valley',
-      )
-    }}</span>
-    <span v-else>{{
-      t(destination === 'moon' ? 'Moon event waiting' : 'Valley event waiting')
-    }}</span>
+    <span v-if="!later">{{ t(labels.happening) }}</span>
+    <span v-else>{{ t(labels.waiting) }}</span>
     <button type="button" @click="emit('watch')">{{ t('Watch') }}</button>
     <button v-if="!later" type="button" @click="later = true">{{ t('Later') }}</button>
   </aside>
 </template>
 <script setup>
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import { t } from '../../i18n';
-defineProps({ destination: String });
+import { SETTLEMENTS, settlementById } from '../../data/settlements';
+const props = defineProps({ destination: String });
+// The destination settlement's words (settlements.js); an unknown one reads as the valley.
+const labels = computed(() => (settlementById(props.destination) ?? SETTLEMENTS[0]).labels);
 const emit = defineEmits(['watch']);
 const later = ref(false);
 </script>

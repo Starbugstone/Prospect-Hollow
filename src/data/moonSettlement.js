@@ -1,5 +1,8 @@
 import { eraEvolution } from './eras';
 import { areasForSettlement, siteYaw } from './townLandmarks';
+import { MOON_SETTLEMENT } from './settlements';
+// Read inside moonstoneKeepsakes only, after town.js (which needs moonstones.js) loads.
+import { MOONSTONE_BUILDINGS } from './town';
 
 // New Hollow, the homesteads on the Moon, grows with the supplies the town sends up
 // the space elevator. It is presentation only: no coins, timers or failure.
@@ -97,7 +100,7 @@ export function moonApproachHeight({ pose, rampStart, rampEnd }, x, z, ground = 
   return (MOON_PAD_TOP + MOON_PATH_LIFT) * (1 - t) + (ground + MOON_ROAD_LIFT) * t;
 }
 /** Every parcel on the Moon with its pad: position, turn (a corner on local +z) and radius. */
-export function moonParcels(lots = MOON_LOTS, sites = areasForSettlement('moon')) {
+export function moonParcels(lots = MOON_LOTS, sites = areasForSettlement(MOON_SETTLEMENT)) {
   return [
     ...Object.keys(lots).map((id) => ({
       id,
@@ -336,4 +339,4 @@ export const moonLetters = (town) =>
 // Historical keepsake entitlement: one per finished Moon building level.
 // Retained for deterministic migration into the saved moonstone resource.
 export const moonstoneKeepsakes = (town) =>
-  Object.keys(MOON_LOTS).reduce((sum, id) => sum + (town?.buildings?.[id] ?? 0), 0);
+  MOONSTONE_BUILDINGS.reduce((sum, id) => sum + (town?.buildings?.[id] ?? 0), 0);

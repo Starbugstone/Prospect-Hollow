@@ -11,11 +11,7 @@
       :era="era"
       :level="eraLevel"
     />
-    <TownMoonBuilding
-      v-else-if="BUILDING_BY_ID[id]?.settlement === 'moon'"
-      :kind="kind"
-      :level="stage"
-    />
+    <component :is="settlementArt" v-else-if="settlementArt" :kind="kind" :level="stage" />
     <TownFutureBuilding
       v-else-if="
         built && isFutureEra(era) && (futureForm(kind) || ['bridge', 'airport'].includes(kind))
@@ -565,6 +561,7 @@ import TownFutureBuilding from './TownFutureBuilding.vue';
 import TownMoonBuilding from './TownMoonBuilding.vue';
 import { isRoundedEra, roundedForm } from '../../data/roundedArchitecture';
 import { BUILDING_BY_ID } from '../../data/town';
+import { settlementOf } from '../../data/settlements';
 import TownSquare from './TownSquare.vue';
 import TownIndustrialBuilding from './TownIndustrialBuilding.vue';
 import TownMotorBuilding from './TownMotorBuilding.vue';
@@ -572,6 +569,8 @@ import TownLeisureBuilding from './TownLeisureBuilding.vue';
 import { t } from '../../i18n';
 import { computed } from 'vue';
 import { buildingServiceLevel } from '../../data/buildingProgression';
+// The drawings of each settlement's own kinds, by its registry `art` (settlements.js).
+const SETTLEMENT_ART = { moon: TownMoonBuilding };
 const props = defineProps({
   id: { type: String, required: true },
   era: { type: String, default: 'frontier' },
@@ -581,6 +580,7 @@ const props = defineProps({
 const stage = computed(() => buildingServiceLevel(props.id, props.stage));
 const kind = computed(() => BUILDING_BY_ID[props.id]?.kind ?? props.id);
 const built = computed(() => props.stage > 0);
+const settlementArt = computed(() => SETTLEMENT_ART[settlementOf(BUILDING_BY_ID[props.id]).art]);
 const frontColor = computed(() =>
   eraEvolution(props.era).style === 'river-rail'
     ? '#ad725c'

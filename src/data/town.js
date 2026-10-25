@@ -1,4 +1,5 @@
 import { createMoonstones } from './moonstones';
+import { HOME_SETTLEMENT, MOON_SETTLEMENT, settlementOf, settlementPlaces } from './settlements';
 import { createPersonalisation } from './townPersonalisation';
 import { PROGRESSION_VERSION, hasShortProgression } from './buildingProgression';
 import { purchasePrice } from './economy';
@@ -618,8 +619,13 @@ export const BUILDINGS = [
 });
 
 // Buildings on valley lots; Moon settlement buildings stand on the Moon map.
-export const EARTH_BUILDINGS = BUILDINGS.filter((building) => !building.settlement);
-export const MOON_BUILDINGS = BUILDINGS.filter((building) => building.settlement === 'moon');
+export const EARTH_BUILDINGS = settlementPlaces(HOME_SETTLEMENT, BUILDINGS);
+export const MOON_BUILDINGS = settlementPlaces(MOON_SETTLEMENT, BUILDINGS);
+// Each finished level of these earns one moonstone: the buildings of every settlement
+// whose registry entry says so (settlements.js).
+export const MOONSTONE_BUILDINGS = Object.freeze(
+  BUILDINGS.filter((building) => settlementOf(building).moonstones).map(({ id }) => id),
+);
 export const BUILDING_BY_ID = Object.fromEntries(
   BUILDINGS.map((building) => [building.id, building]),
 );

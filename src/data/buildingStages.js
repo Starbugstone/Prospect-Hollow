@@ -1,6 +1,7 @@
 import { BUILDINGS } from './town';
 import { ERAS, eraEvolution } from './eras';
 import { CITY_ARCHITECTURES } from './eraDefinitions';
+import { HOME_SETTLEMENT, settlementId } from './settlements';
 
 // Construction and a new era's finish are separate. A modernization keeps the
 // completed structure and its one mature purpose module. New finish tiers
@@ -19,7 +20,8 @@ export function buildingStages(kind, era, level, serviceLevel = 3) {
   const profile = eraEvolution(era);
   if (
     !building ||
-    building.settlement ||
+    // Only valley plots take the eras' tiers; other settlements' kinds are native.
+    settlementId(building) !== HOME_SETTLEMENT ||
     !['city', 'motor-age'].includes(profile?.style) ||
     !CITY_ARCHITECTURES.includes(profile.architecture)
   )

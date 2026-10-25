@@ -1,4 +1,5 @@
 import { moonApproaches } from '../../../data/moonSettlement';
+import { MOON_SETTLEMENT } from '../../../data/settlements';
 import { vipVisitBuildings } from '../../../data/vipVisits';
 import { villagerIdentity } from '../../../data/villagers';
 import { MOON_VISITOR_TRANSPORTS, arrivalSeed } from '../../../data/visitorArrivals';
@@ -46,7 +47,7 @@ export function moonVipTours(town, source, seed) {
   if (!from) return [];
   const places = moonSettlerBuildings(levels).filter(({ id }) => id !== source);
   const byId = new Map(places.map((route) => [route.id, route]));
-  const shops = new Set(vipVisitBuildings(town, 'moon'));
+  const shops = new Set(vipVisitBuildings(town, MOON_SETTLEMENT));
   const ordered = visitOrder([...byId.keys()], seed, shops, true);
   const tours = [{ path: moonSettlerRoute(from, from).path, stops: [] }],
     seen = new Set();

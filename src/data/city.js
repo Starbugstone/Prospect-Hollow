@@ -1,5 +1,6 @@
 import buildingStyles from './cityBuildingStyles.json';
 import { ERAS, ERA_BY_ID, eraEvolution } from './eras';
+import { MOON_SETTLEMENT } from './settlements';
 // City growth adds bounded capacity. Modernizing an existing service does not multiply it.
 export const CITY_ERAS = ERAS.filter((era) => era.evolution.style === 'city').map((era) => era.id);
 export const isCityEra = (era) => eraEvolution(era).style === 'city';
@@ -421,7 +422,10 @@ const twinBuildings = [
   ...building,
   ...(id === 'homecomingHall'
     ? { unlock: [{ id: 'bridge', level: 1 }] }
-    : { settlement: 'moon', unlock: building.unlock ?? [{ id: 'spaceElevator', level: 1 }] }),
+    : {
+        settlement: MOON_SETTLEMENT,
+        unlock: building.unlock ?? [{ id: 'spaceElevator', level: 1 }],
+      }),
 }));
 for (const building of twinBuildings) CITY_FAMILIES[building.kind] = building.family;
 

@@ -4,6 +4,7 @@ import { walkPath } from './TownNavigation';
 import { BRIDGE, crossesRiver, overWater, streetHeight } from './TownRiver';
 import { villagerRandom, villagerIdentity } from '../../data/villagers';
 import { hasVisitorTransport } from '../../data/visitorArrivals';
+import { HOME_SETTLEMENT } from '../../data/settlements';
 import { canVipSpend, vipVisitBuildings, vipVisitCount } from '../../data/vipVisits';
 
 export { streetHeight } from './TownRiver';
@@ -60,7 +61,7 @@ export class TownItineraries {
         !d.town.projects?.[id] &&
         this.graph.nodes.has(plotStreet(id).join(',')),
     );
-    this.shops = new Set(vipVisitBuildings(d.town, 'valley'));
+    this.shops = new Set(vipVisitBuildings(d.town, HOME_SETTLEMENT));
     this.legs = new Map();
     this.detours = new Map();
     this.bridgeLane =
