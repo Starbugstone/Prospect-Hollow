@@ -52,7 +52,7 @@ The probe builds a full Twin Hollows town with 13 eligible finished shopping bui
 and all four visitor sources. It samples **16 seeds × six hours = 96 active town hours**.
 It calls the production transport schedules, `vipVisitor`, `TownVipArrivals`, itinerary
 preparation/selection and purchase lifecycle, walking the authored routes at the game's
-0.55 units/second. It preserves the shared one-active-arriving-VIP rule and indoor pauses.
+0.55 units/second (`VILLAGER_WALK_SPEED`). It preserves the shared one-active-arriving-VIP rule and indoor pauses.
 It excludes building collision geometry, crowd delays, modals, cinematics, mine visits,
 loading midway through arrivals and time away. This is an uninterrupted active-town
 estimate, not a measured idle/offline income promise. VIPs earn nothing offline.

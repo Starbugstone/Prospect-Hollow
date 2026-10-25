@@ -5,6 +5,7 @@ import { sweptClear } from './BuildingFootprints';
 import { routeStepPose, routeDistanceAt } from './TownNavigation';
 import { cellKey } from './TownMath';
 import { forEachWalker } from './TownWalkers';
+import { VILLAGER_WALK_SPEED } from './TownGait';
 
 const LOCOMOTION_STEP = 1 / 60;
 const GAP = 0.04;
@@ -357,7 +358,7 @@ export function updateTownLocomotion(d, h = LOCOMOTION_STEP) {
       vz: 0,
       routeDistance: a.progress ?? 0,
       radius: a.radius ?? 0.29,
-      maxSpeed: a.speed ?? a.walkSpeed ?? 0.55,
+      maxSpeed: a.speed ?? a.walkSpeed ?? VILLAGER_WALK_SPEED,
       animationTime: path?.total && !a.workRoutine ? a.lastPoseTime : undefined,
     });
     if (a.species) m.maxSpeed = a.movementSpeed ?? a.speed ?? m.maxSpeed;

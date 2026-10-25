@@ -24,7 +24,8 @@ probes against the new runtime VIP terms. The
 those samples and calls the same runtime progression, production, price and
 honours helpers used by the existing Moonstone/honours probes. VIP hours call
 `TownVipArrivals`, production transport schedules and authored itineraries through
-the harness used by `measure-vip-income.mjs`, using each evolving town's actual
+the valley harness it shares with `measure-vip-income.mjs`
+([`vip-tour-harness.mjs`](../scripts/vip-tour-harness.mjs)), using each evolving town's actual
 buildings. The standalone 96-hour VIP probe reproduced **2.5104 purchases/hour**:
 **25.10 / 753.13 / 1,506.25 / 2,284.48 coins/hour** at chapters **1 / 30 / 60 / 91**.
 At chapter 91 that is **17.36%** of full-town saloon income; see the per-version
