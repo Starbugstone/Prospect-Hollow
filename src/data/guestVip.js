@@ -1,9 +1,9 @@
 import { t } from '../i18n';
 
-// Guest VIP: its own register, separate from random VIPs. The latest signed-in viewer of
-// the owner's shared town, named after one of their towns (sanitised by the server), is
-// guaranteed to walk in on the owner's next connection, without VIP coin rewards.
-// `seen` records that they walked in, so they arrive once per visit.
+// Guest VIP: the obsolete queued guest, kept for saves made before live presence
+// (docs/backend/visitors.md) replaced it. No new guest is queued. A saved guest, named
+// after one of the viewer's towns, walks in once without VIP coin rewards, unless live
+// presence is on; `seen` records that they walked in.
 const GUEST_NAME = /^[\p{L}\p{M}\p{N}]+(?: [\p{L}\p{M}\p{N}]+)*$/u;
 
 export function normalizeGuestVip(saved) {
@@ -16,12 +16,6 @@ export function normalizeGuestVip(saved) {
     at > 0
     ? { name, at, seen: seen === true }
     : null;
-}
-
-// Only a guest newer than the one this save already welcomed.
-export function newerGuest(current, remote) {
-  const next = normalizeGuestVip(remote);
-  return next && next.at > (current?.at ?? 0) ? { ...next, seen: false } : null;
 }
 
 // `guest` dresses them in their era's guest suit instead of an ordinary VIP palette.

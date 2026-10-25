@@ -76,7 +76,7 @@ export function advanceMoonstoneProduction(town) {
       }
     : town;
 }
-export function spendMoonstoneBalance(town, amount) {
+function spendMoonstoneBalance(town, amount) {
   return validMoonstoneAmount(amount) && town.moonstones >= amount
     ? { ...town, moonstones: town.moonstones - amount }
     : null;

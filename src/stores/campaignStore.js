@@ -4,7 +4,6 @@ import {
   advanceContinuousMoonstones,
   MOONSTONE_ECONOMY,
   earnMoonstones,
-  spendMoonstoneBalance,
   sellMoonstoneBalance,
 } from '../data/moonstones';
 import {
@@ -77,7 +76,6 @@ import {
   COIN_TIERS,
 } from '../data/rewards';
 import { createTown, BANDIT_EVENT } from '../data/town';
-import { newerGuest } from '../data/guestVip';
 import { advanceEra } from '../game/town/TownEras';
 import {
   normalizeTown,
@@ -755,11 +753,6 @@ export const useCampaignStore = defineStore('campaign', {
         ? amount
         : 0;
     },
-    spendMoonstones(amount, reason) {
-      if (typeof reason !== 'string' || !reason.trim() || reason.length > 120) return false;
-      const town = spendMoonstoneBalance(this.town, amount);
-      return !!town && this.commit({ town }, { kind: 'moonstone-spend', data: { amount, reason } });
-    },
     sellMoonstones(amount) {
       if (!this.town.buildings.moonstoneWorkshop) return false;
       const town = sellMoonstoneBalance(this.town, amount);
@@ -880,12 +873,6 @@ export const useCampaignStore = defineStore('campaign', {
       )
         ? coins
         : null;
-    },
-    // A signed-in visitor viewed the shared town: only the latest becomes the guest VIP.
-    welcomeGuest(remote) {
-      const guest = newerGuest(this.town.guestVip, remote);
-      if (!guest) return null;
-      return this.commit({ town: { ...this.town, guestVip: guest } }) ? guest.name : null;
     },
     // The guest walked into the village: they arrive once per visit.
     markGuestSeen(at) {

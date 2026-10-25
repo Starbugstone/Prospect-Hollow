@@ -152,14 +152,24 @@ integrityDenied(
     'save_integrity_mismatch',
     'inflated moonstone sale payout',
 );
-$badSpend = integrityData($moonSold);
-$badSpend['integrity']['actions'] = [
-    integrityAction(2, 'moonstone-spend', ['amount' => 4, 'reason' => 'monument']),
+$oversell = integrityData($moonSold);
+$oversell['town']['coins'] += 1000;
+$oversell['integrity']['actions'] = [integrityAction(2, 'moonstone-sell', ['amount' => 4])];
+integrityDenied(
+    fn() => $validator->accept(integrityObject($oversell), $moonSold, $now),
+    'save_integrity_mismatch',
+    'moonstone oversell',
+);
+// The game never wrote a standalone spend; monuments pay inside landmark-buy.
+$spend = integrityData($moonSold);
+$spend['town']['moonstones'] = 2;
+$spend['integrity']['actions'] = [
+    integrityAction(2, 'moonstone-spend', ['amount' => 1, 'reason' => 'monument']),
 ];
 integrityDenied(
-    fn() => $validator->accept(integrityObject($badSpend), $moonSold, $now),
-    'save_integrity_mismatch',
-    'moonstone overspend',
+    fn() => $validator->accept(integrityObject($spend), $moonSold, $now),
+    'save_rules_unsupported',
+    'standalone moonstone spend is not a receipt kind',
 );
 $moonRemigrate = integrityData($moonSold);
 unset($moonRemigrate['town']['moonstoneVersion']);

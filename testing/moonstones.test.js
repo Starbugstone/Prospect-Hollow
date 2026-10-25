@@ -37,13 +37,13 @@ const legacy = () => {
   town.buildings.moonstoneWorkshop = 3;
   return town;
 };
-it('credits old keepsakes exactly once, including after spending and export/import', () => {
+it('credits old keepsakes exactly once, including after selling and export/import', () => {
   const town = normalizeTown(legacy());
   expect(town).toMatchObject({ moonstones: 5, moonstonesEarned: 5, moonstoneVersion: 2 });
   expect(normalizeTown(town)).toEqual(town);
   const campaign = useCampaignStore();
   campaign.town = town;
-  expect(campaign.spendMoonstones(4, 'future-monument')).toBe(true);
+  expect(campaign.sellMoonstones(4)).toBe(true);
   campaign.importSave(createSaveFile(campaign.profile()));
   campaign.reloadLocal();
   expect(campaign.town).toMatchObject({ moonstones: 1, moonstonesEarned: 5 });
@@ -88,7 +88,7 @@ it.each([1, 2, 3])(
 );
 // The shipped game installs the integrity guard before any store exists; every
 // moonstone action must open its mutation scope, or nothing it changes can be saved.
-it('collects, sells and spends moonstones through the shipped integrity guard', () => {
+it('collects and sells moonstones through the shipped integrity guard', () => {
   const profile = freshProfile();
   profile.town = normalizeTown(legacy());
   profile.town.moonstoneProduction = { ...profile.town.moonstoneProduction, stored: 3 };
@@ -105,14 +105,12 @@ it('collects, sells and spends moonstones through the shipped integrity guard', 
   expect(campaign.town.moonstoneProduction.stored).toBe(0);
   expect(campaign.sellMoonstones(2)).toBe(true);
   expect(campaign.town).toMatchObject({ moonstones: 6, coins: 2 * MOONSTONE_ECONOMY.saleCoins });
-  expect(campaign.spendMoonstones(1, 'future-monument')).toBe(true);
   expect(campaign.integrity.actions.map(({ kind }) => kind)).toEqual([
     'moonstone-collect',
     'moonstone-sell',
-    'moonstone-spend',
   ]);
   expect(JSON.parse(values.get(SAVE_KEY)).town).toMatchObject({
-    moonstones: 5,
+    moonstones: 6,
     moonstonesEarned: 8,
     coins: 2 * MOONSTONE_ECONOMY.saleCoins,
   });
@@ -159,12 +157,12 @@ it('sells exact amounts at the shared rate, retains lifetime credit and rejects 
   expect(campaign.town.moonstones).toBe(1);
 });
 it.each([0, -1, NaN, Infinity, 1.5, 6, Number.MAX_SAFE_INTEGER])(
-  'never overspends an invalid or unaffordable amount %s',
+  'never sells an invalid or unaffordable amount %s',
   (amount) => {
     const campaign = useCampaignStore();
     campaign.town = normalizeTown(legacy());
-    expect(campaign.spendMoonstones(amount, 'monument')).toBe(false);
-    expect(campaign.town.moonstones).toBe(5);
+    expect(campaign.sellMoonstones(amount)).toBe(false);
+    expect(campaign.town).toMatchObject({ moonstones: 5, coins: 0 });
   },
 );
 it('rolls back both currencies and the receipt when persistence fails', () => {
@@ -174,7 +172,6 @@ it('rolls back both currencies and the receipt when persistence fails', () => {
     throw new Error('disk full');
   });
   expect(campaign.sellMoonstones(5)).toBe(false);
-  expect(campaign.spendMoonstones(5, 'monument')).toBe(false);
   expect(campaign.town).toMatchObject({ moonstones: 5, coins: 0 });
   expect(campaign.integrity.actions).toEqual([]);
 });

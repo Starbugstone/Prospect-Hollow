@@ -291,7 +291,7 @@ export function createIntegrityFixtures() {
       (campaign) => expectSuccess(campaign.collectForgeTNT(), 'forge'),
     );
     fixture(
-      'moonstones production, collection, sale and spend',
+      'moonstones production, collection and sale',
       (profile) => {
         develop(profile, 'twin-hollows');
         profile.town.completedRuns = 30;
@@ -302,7 +302,6 @@ export function createIntegrityFixtures() {
         for (let n = 0; n < 35; n++) victory(campaign);
         expectSuccess(campaign.collectMoonstones(), 'moonstone collection');
         expectSuccess(campaign.sellMoonstones(10), 'moonstone sale');
-        expectSuccess(campaign.spendMoonstones(3, 'future-monument'), 'moonstone spend');
       },
     );
     const legacyMoon = (profile) => {

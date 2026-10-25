@@ -238,10 +238,6 @@ unchanged; delayed collectors retain production until storage fills.
 
 - `campaign.collectMoonstones(now?) -> amount` collects the entire stored stock and
   persists it before returning its positive amount; zero means nothing changed.
-- `campaign.spendMoonstones(amount, reason) -> boolean` deducts a positive safe
-  integer only when affordable and durably saved. `reason` is a nonblank string
-  of at most 120 characters. It writes a `moonstone-spend` receipt and never
-  changes lifetime earnings. Use this for a standalone resource expenditure.
 - `campaign.sellMoonstones(amount) -> boolean` atomically exchanges the stated
   quantity at the shared fixed rate, recording `moonstone-sell`.
 - `src/data/townCurrency.js` exposes `priceCurrency(price)`,
@@ -253,8 +249,8 @@ unchanged; delayed collectors retain production until storage fills.
 Monument purchases apply `payPrice` inside the **same** existing
 personalisation transaction that creates the paid site. Server `landmark-buy`
 replay consumes the site's exported currency and price in that same command. Do not make two separately persisted calls (spend, then create
-site): a failed second save could leave a paid but absent monument. The standalone
-spend action is not a shortcut around server validation of a monument purchase.
+site): a failed second save could leave a paid but absent monument. There is no
+standalone spend: the server refuses a `moonstone-spend` receipt as unsupported.
 Keep currency in the shared site/offer contract and export its terms in save rules.
 
 ## Honours decision and regression coverage

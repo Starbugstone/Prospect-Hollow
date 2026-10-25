@@ -2095,28 +2095,19 @@ final class SaveIntegrity
                 }
                 $town['lastCollections']['moonstoneWorkshop'] = $at;
                 return;
-            case 'moonstone-spend':
             case 'moonstone-sell':
                 $amount = $d['amount'] ?? null;
                 if (!self::integer($amount, 1) || $s['town']['moonstones'] < $amount) {
                     self::mismatch($kind);
                 }
-                if ($kind === 'moonstone-sell') {
-                    $coins = $amount * $this->rules['economy']['moonstones']['saleCoins'];
-                    if (
-                        !$s['town']['buildings']['moonstoneWorkshop'] ||
-                        $coins > JsonNumber::MAX_SAFE_INTEGER - $s['town']['coins']
-                    ) {
-                        self::mismatch($kind);
-                    }
-                    $this->addCoins($s, $coins);
-                } elseif (
-                    !is_string($d['reason'] ?? null) ||
-                    !trim($d['reason']) ||
-                    mb_strlen($d['reason']) > 120
+                $coins = $amount * $this->rules['economy']['moonstones']['saleCoins'];
+                if (
+                    !$s['town']['buildings']['moonstoneWorkshop'] ||
+                    $coins > JsonNumber::MAX_SAFE_INTEGER - $s['town']['coins']
                 ) {
                     self::mismatch($kind);
                 }
+                $this->addCoins($s, $coins);
                 $s['town']['moonstones'] -= $amount;
                 return;
             case 'forge-collect':
