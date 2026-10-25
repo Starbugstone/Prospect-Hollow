@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
-import { MeshStandardMaterial, Scene, Vector3 } from 'three';
+import { MeshStandardMaterial, PerspectiveCamera, Scene, Vector3 } from 'three';
+import { MoonScene, moonHeight } from '../src/game/town/moon/MoonScene';
+import { moonParcels } from '../src/data/moonSettlement';
 import { TOWN_EDGE, horizonMaterial, setTownAtmosphere } from '../src/game/town/TownAtmosphere';
 import { landscapeGeometry } from '../src/game/town/TownMillrace';
 import { RAIL_EDGE } from '../src/game/town/TownLayout';
@@ -193,4 +195,102 @@ describe('Panel requests to focus a town place', () => {
       expect(d.render).not.toHaveBeenCalled();
     },
   );
+});
+
+// The Moon's camera keeps the valley's contract (AGENTS.md, settlement maps): above its
+// own ground on every change, the same keyboard moves and reset, and explicit
+// navigation to a lot, through the shared TownCamera helpers.
+describe('The Moon camera', () => {
+  const element = () => {
+    const listeners = () => ({ addEventListener() {}, removeEventListener() {} });
+    return {
+      ...listeners(),
+      style: {},
+      ownerDocument: listeners(),
+      getRootNode: listeners,
+      setPointerCapture() {},
+      releasePointerCapture() {},
+    };
+  };
+  function moon() {
+    const camera = new PerspectiveCamera(48, 1.5, 0.1, 600);
+    camera.position.set(0, 26, 66);
+    const scene = Object.assign(Object.create(MoonScene.prototype), {
+      camera,
+      terrainHeight: moonHeight,
+      requestFrame: vi.fn(),
+      render: vi.fn(),
+    });
+    scene.attachCamera(element());
+    return scene;
+  }
+  // A crater-rim hill and a camera buried in it, looking back at the settlement.
+  const hill = () => {
+    let best = [0, 0];
+    for (let a = 0; a < Math.PI * 2; a += 0.05)
+      for (const r of [52, 60, 70, 85]) {
+        const point = [Math.cos(a) * r, Math.sin(a) * r];
+        if (moonHeight(...point) > moonHeight(...best)) best = point;
+      }
+    return best;
+  };
+
+  it('stays above the Moon’s hills, not the valley’s, on every change', () => {
+    const [x, z] = hill();
+    expect(moonHeight(x, z)).toBeGreaterThan(3);
+    const target = new Vector3(x * 0.8, 0, z * 0.8);
+    const buried = new Vector3(x, moonHeight(x, z) - 0.5, z);
+    const position = buried.clone();
+    expect(keepCameraAboveTerrain(position, target, 0.55, moonHeight)).toBe(true);
+    expect(position.y).toBeGreaterThanOrEqual(moonHeight(position.x, position.z) + 1.2);
+    // The scene runs the same guard on every camera change.
+    const scene = moon();
+    scene.controls.target.copy(target);
+    scene.camera.position.copy(buried);
+    scene.cameraChanged();
+    expect(scene.camera.position.y).toBeGreaterThanOrEqual(
+      moonHeight(scene.camera.position.x, scene.camera.position.z) + 1.2 - 1e-6,
+    );
+    expect(scene.requestFrame).toHaveBeenCalled();
+    scene.controls.dispose();
+  });
+
+  it('turns to a Build row’s lot or site, keeping its heading, unless a scene holds it', () => {
+    for (const parcel of moonParcels()) {
+      const scene = moon();
+      const heading = scene.camera.position.clone().sub(scene.controls.target).normalize();
+      expect(scene.focusPlace(parcel.id), parcel.id).toBe(true);
+      expect(scene.controls.target.distanceTo(new Vector3(parcel.x, 2, parcel.z))).toBeLessThan(
+        1e-9,
+      );
+      const after = scene.camera.position.clone().sub(scene.controls.target).normalize();
+      expect(after.angleTo(heading), parcel.id).toBeLessThan(0.6);
+      expect(scene.camera.position.y).toBeGreaterThanOrEqual(
+        moonHeight(scene.camera.position.x, scene.camera.position.z) + 1.2 - 1e-6,
+      );
+      expect(scene.render).toHaveBeenCalled();
+      scene.controls.dispose();
+    }
+    const scene = moon();
+    scene.presentation = {};
+    expect(scene.focusPlace('settlerDomes')).toBe(false);
+    expect(scene.focusPlace('nowhere')).toBe(false);
+    scene.controls.dispose();
+  });
+
+  it('answers the valley’s camera keys and frames New Hollow on reset', () => {
+    const scene = moon();
+    const overview = scene.camera.position.clone();
+    scene.cameraAction('left');
+    expect(scene.camera.position.distanceTo(overview)).toBeGreaterThan(1);
+    scene.cameraAction('in');
+    scene.cameraAction('reset');
+    expect(scene.camera.position.distanceTo(overview)).toBeLessThan(1e-6);
+    expect(scene.overview).toBe(true);
+    // A presentation's event camera turns player controls off: keys wait.
+    scene.controls.enabled = false;
+    scene.cameraAction('left');
+    expect(scene.camera.position.distanceTo(overview)).toBeLessThan(1e-6);
+    scene.controls.dispose();
+  });
 });

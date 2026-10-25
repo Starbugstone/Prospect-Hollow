@@ -1414,13 +1414,17 @@ html:has(.town-museum[open]) {
   object-fit: contain;
 }
 
-.town-scene-labels button.can-build {
+/* The same state looks the same on every map's labels, the valley's and the Moon's. */
+.town-scene-labels button.can-build,
+.town-moon-lot.can-build {
   background: #d9f1fa;
   border-color: #83b7c6;
   color: #345663;
 }
 .town-scene-labels button.is-ready,
 .town-scene-labels button.has-income,
+.town-moon-lot.is-ready,
+.town-moon-lot.has-income,
 .town-scene-labels .scene-mine-button {
   background: #e1f0c0;
   border-color: #8baa65;
@@ -1982,7 +1986,6 @@ html:has(.town-museum[open]) {
 .town-in-cinematic .town-resource-bar,
 .town-in-cinematic .town-settlement-notice,
 .town-in-cinematic .town-moon-header,
-.town-in-cinematic .town-moon-actions,
 .town-in-cinematic .mine-label {
   visibility: hidden;
 }
@@ -2194,10 +2197,6 @@ html:has(.town-museum[open]) {
 .town-moon-lot small {
   color: #6c6a5d;
   font-weight: 600;
-}
-.town-moon-lot.open {
-  border-color: #d39a45;
-  background: #fbe6bf;
 }
 .town-moon-header {
   position: absolute;

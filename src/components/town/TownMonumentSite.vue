@@ -248,6 +248,7 @@ import {
   landmarkLevel,
   monumentWork,
 } from '../../data/townLandmarks';
+import { monumentStatus } from '../../game/town/TownBuildingFeedback';
 import TownIcon from './TownIcon.vue';
 import TownLandmarkPreview from './TownLandmarkPreview.vue';
 
@@ -287,20 +288,8 @@ const payment = (price) => landmarkPayment(props.town, area.value, price);
 const upgrade = computed(() =>
   built.value ? landmarkOffer(props.town, area.value, built.value) : null,
 );
-const badge = computed(() =>
-  !unlocked.value
-    ? t('Opens in {era}', { era: t(era.value.label) })
-    : !built.value
-      ? t('Open site · optional')
-      : work.value
-        ? t(work.value.ready ? 'Ready to unveil' : 'Under construction')
-        : area.value.timeless
-          ? t('Monument')
-          : t('Stage {stage} of {maximum}', {
-              stage: stage.value,
-              maximum: maximum.value,
-            }),
-);
+// The site's shared status, as the Build tab's rows and the Moon's labels read it.
+const badge = computed(() => monumentStatus(props.town, props.id, { context: 'card' })?.text);
 
 const picked = ref(null),
   confirming = ref(false),

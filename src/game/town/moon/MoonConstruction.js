@@ -19,7 +19,7 @@ export class MoonConstruction {
     this.synced = false;
   }
   sync(town) {
-    const { d, scene, elapsed } = this.view;
+    const { d, scene } = this.view;
     for (const id of Object.keys(MOON_LOTS)) {
       const project = town.projects?.[id];
       const level = town.buildings?.[id] ?? 0;
@@ -78,12 +78,8 @@ export class MoonConstruction {
       // A project the player just started (not one restored on load) is built in view;
       // its pieces merge into one batch once the reveal settles.
       if (!previous && this.synced && !this.view.reducedMotion) {
-        const reveal = new TownConstruction(
-          Object.assign(Object.create(d), { activeElapsed: elapsed, town }),
-          root,
-          null,
-          new Map(),
-        );
+        // The view (MoonScene) is the reveal's drawing kit, clock and town.
+        const reveal = new TownConstruction(this.view, root, null, new Map());
         reveal.presentFirstStrike();
         this.reveals.set(id, reveal);
       } else d.batch(root);

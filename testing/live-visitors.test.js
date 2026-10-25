@@ -108,14 +108,14 @@ it('keeps heartbeat-only snapshots off the render path while updating labels and
 
 it('clears the previous town immediately, including while the next scene is rebuilding', () => {
   const d = fixture();
-  d.setLiveVisitors([visitor('old')], false, 'town-a');
+  d.setLiveVisitors([visitor('old')], 'town-a');
   const previous = d.liveVisitors.actors[0];
   d.elapsed = 1;
   d.lifeReady = false;
-  d.setLiveVisitors([], false, 'town-b');
+  d.setLiveVisitors([], 'town-b');
   expect(d.liveVisitors.actors).toHaveLength(0);
   expect(previous.root.parent).toBe(null);
-  d.setLiveVisitors([visitor('new')], false, 'town-b');
+  d.setLiveVisitors([visitor('new')], 'town-b');
   expect(d.liveVisitors.actors).toHaveLength(0);
   d.lifeReady = true;
   d.liveVisitors.attach();
@@ -169,7 +169,8 @@ it('keeps every era visually distinct from ordinary VIPs through a common visito
 
 it('retains actors through rebuilds and shows reduced-motion arrivals without an animation loop', () => {
   const d = fixture();
-  d.setLiveVisitors([visitor('a')], true);
+  d.setReducedMotion(true);
+  d.setLiveVisitors([visitor('a')]);
   const actor = d.liveVisitors.actors[0];
   expect(actor.root.visible).toBe(true);
   expect(actor.root.scale.x).toBe(1);
@@ -181,7 +182,7 @@ it('retains actors through rebuilds and shows reduced-motion arrivals without an
   expect(d.liveVisitors.actors).toEqual([actor]);
   expect(actor.root.parent).toBe(d.world);
   expect(actor.root.position.equals(position)).toBe(true);
-  d.setLiveVisitors([], true);
+  d.setLiveVisitors([]);
   expect(d.liveVisitors.actors).toHaveLength(0);
 });
 
@@ -216,9 +217,10 @@ it('walks without a VIP shopping itinerary or random name replacement, and resum
 it('shows the complete live crowd without dropping visitors beyond the first 24', () => {
   const d = fixture();
   const visits = Array.from({ length: 29 }, (_, id) => visitor(id));
-  d.setLiveVisitors(visits, true);
+  d.setReducedMotion(true);
+  d.setLiveVisitors(visits);
   expect(d.liveVisitors.actors).toHaveLength(visits.length);
-  d.setLiveVisitors(visits.slice(1), true);
+  d.setLiveVisitors(visits.slice(1));
   expect(d.liveVisitors.actors).toHaveLength(visits.length - 1);
 });
 
@@ -236,7 +238,8 @@ it('finds and pins a named live guest independently of ordinary town actors', ()
   };
   d.onVillagerLabel = vi.fn();
   const saved = JSON.stringify(d.town);
-  d.setLiveVisitors([visitor('self', { self: true }), visitor('matt', { name: 'Matt' })], true);
+  d.setReducedMotion(true);
+  d.setLiveVisitors([visitor('self', { self: true }), visitor('matt', { name: 'Matt' })]);
   expect(d.findVisitor('matt')).toBe(true);
   expect(d.namedVillager.liveId).toBe('matt');
   expect(d.villagerLabelPinned).toBe(true);
@@ -249,7 +252,7 @@ it('finds and pins a named live guest independently of ordinary town actors', ()
   d.raid = {};
   expect(d.findVisitor('matt')).toBe(false);
   d.raid = null;
-  d.setLiveVisitors([], true);
+  d.setLiveVisitors([]);
   expect(d.findVisitor('matt')).toBe(false);
   expect(JSON.stringify(d.town)).toBe(saved);
 });

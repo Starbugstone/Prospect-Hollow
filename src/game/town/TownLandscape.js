@@ -180,7 +180,7 @@ function trackDistance(x, z) {
 export function cameraTerrainHeight(x, z) {
   return mineHillsideHeight(x, z, PLOTS.mine[1], groundHeight(x, z));
 }
-function cameraFloor(position) {
+function cameraFloor(position, height) {
   return (
     Math.max(
       ...[
@@ -189,31 +189,39 @@ function cameraFloor(position) {
         [0.35, 0],
         [0, -0.35],
         [0, 0.35],
-      ].map(([dx, dz]) => cameraTerrainHeight(position.x + dx, position.z + dz)),
+      ].map(([dx, dz]) => height(position.x + dx, position.z + dz)),
     ) + 1.2
   );
 }
-export function keepCameraAboveTerrain(position, target, minPolarAngle = 0.25) {
-  if (position.y >= cameraFloor(position)) return false;
+// Every settlement map keeps its camera above its own ground: `height` is the map's
+// terrain (the valley's by default, moonHeight on the Moon).
+export function keepCameraAboveTerrain(
+  position,
+  target,
+  minPolarAngle = 0.25,
+  height = cameraTerrainHeight,
+) {
+  const floor = () => cameraFloor(position, height);
+  if (position.y >= floor()) return false;
   const orbit = new THREE.Spherical().setFromVector3(position.clone().sub(target));
   let blocked = orbit.phi;
   while (orbit.phi > minPolarAngle) {
     blocked = orbit.phi;
     orbit.phi = Math.max(minPolarAngle, orbit.phi - 0.025);
     position.setFromSpherical(orbit).add(target);
-    if (position.y >= cameraFloor(position)) break;
+    if (position.y >= floor()) break;
   }
-  if (position.y < cameraFloor(position)) {
+  if (position.y < floor()) {
     // A panned focus can be beneath a tall ridge at minimum zoom. In that case
     // lift the camera out instead of leaving it buried at the rotation limit.
-    position.y = cameraFloor(position) + 0.001;
+    position.y = floor() + 0.001;
     return true;
   }
   let clear = orbit.phi;
   for (let i = 0; i < 12; i++) {
     orbit.phi = (clear + blocked) / 2;
     position.setFromSpherical(orbit).add(target);
-    if (position.y >= cameraFloor(position) + 0.001) clear = orbit.phi;
+    if (position.y >= floor() + 0.001) clear = orbit.phi;
     else blocked = orbit.phi;
   }
   orbit.phi = clear;

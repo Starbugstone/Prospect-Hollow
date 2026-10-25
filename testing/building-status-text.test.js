@@ -323,7 +323,7 @@ const CASES = [
     'well',
     played((town) => (town.buildings.well = 2)),
     { readOnly: true },
-    { en: { label: '<span class="plot-name">Well</span><small>Lv. 2</small>' } },
+    { en: { label: '<span class="plot-name">Well</span><small>Lv. 2</small>', moon: 'Lv. 2' } },
   ],
   [
     'visitor sees an empty plot',
@@ -334,8 +334,20 @@ const CASES = [
       en: {
         label:
           '<span class="quiet-plot-plus" aria-hidden="true">+</span><span class="plot-name">Stables</span>',
+        moon: null,
       },
     },
+  ],
+  [
+    'visitor sees a level, never the owner’s finish',
+    'saloon',
+    played((town) => {
+      town.buildings.saloon = 1;
+      work('saloon', 2)(town);
+      rich(town);
+    }),
+    { readOnly: true },
+    { en: { label: '<span class="plot-name">Saloon</span><small>Lv. 1</small>', moon: 'Lv. 1' } },
   ],
   [
     'visitor sees the mine',
@@ -365,12 +377,15 @@ async function statusText(id, town, props) {
       { $plot: id },
     ).then((html) => html.replace(/^<div>|<\/div>$/g, '')),
   };
-  if (props.readOnly || !BUILDING_BY_ID[id]) return shown;
-  // The Moon lot labels, fed as TownMoonView feeds them.
+  if (!BUILDING_BY_ID[id]) return shown;
+  // The Moon lot labels, fed as TownMoonView feeds them. A read-only visitor sees levels
+  // only there too.
   shown.moon = moonLotDetail(town, id, {
     indicators: buildingIndicators(town, scene.forgeCollectible, NOW, availablePurchases(town, 0)),
     availableIds: availablePurchases(town, 0).map((place) => place.id),
+    readOnly: !!props.readOnly,
   });
+  if (props.readOnly) return shown;
   useCampaignStore().town = town;
   const parcel = availableParcels(town, 0).find((place) => place.id === id);
   if (parcel)

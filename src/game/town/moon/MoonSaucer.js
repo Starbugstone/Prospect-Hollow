@@ -1,7 +1,7 @@
 import { BufferGeometry, Float32BufferAttribute, Points, PointsMaterial, Vector3 } from 'three';
-import { MOON_LOTS, moonPadRadius } from '../../../data/moonSettlement';
+import { MOON_LOTS, MOON_PAD_TOP, moonPadRadius } from '../../../data/moonSettlement';
 import { createSkySaucer } from '../SkySaucer';
-import { lerp, smooth01 } from '../TownMath';
+import { lerp, mod, ramp } from '../TownMath';
 
 // The dedicated pad keeps the landing column clear of buildings, beacon masts,
 // the public arrival and rover road. The visiting craft matches the valley shuttle.
@@ -9,7 +9,7 @@ export const MOON_SAUCER_PAD = Object.freeze({
   id: 'saucerPad',
   x: MOON_LOTS.saucerPad[0],
   z: MOON_LOTS.saucerPad[1],
-  y: 0.26,
+  y: MOON_PAD_TOP,
   scale: 1,
   radius: moonPadRadius('saucerPad'),
 });
@@ -18,8 +18,7 @@ const APPROACH = Object.freeze({ start: 6, end: 18 });
 const DEPARTURE = Object.freeze({ start: 80, end: 92 });
 // Settled on the pad until lift-off: the stop where its guests step off.
 const PARKED = Object.freeze({ start: 34, end: 70 });
-const cyclePhase = (time) => ((time % MOON_SAUCER_CYCLE) + MOON_SAUCER_CYCLE) % MOON_SAUCER_CYCLE;
-const ramp = (phase, from, length) => smooth01(Math.max(0, Math.min(1, (phase - from) / length)));
+const cyclePhase = (time) => mod(time, MOON_SAUCER_CYCLE);
 
 export const moonSaucerBuilt = (town) => (town?.buildings?.[MOON_SAUCER_PAD.id] ?? 0) >= 1;
 
@@ -51,7 +50,9 @@ export function moonSaucerFlightPoint(phase, _toMoon, out) {
 
 const flightPoint = new Vector3();
 
-export function moonSaucerPose(time, reduced = false) {
+// The saucer is a vehicle: it keeps its visits with reduced motion, as the valley's
+// does; only its effects (the wake and the regolith dust) stop.
+export function moonSaucerPose(time) {
   const phase = cyclePhase(time),
     pad = MOON_SAUCER_PAD;
   const pose = {
@@ -67,7 +68,6 @@ export function moonSaucerPose(time, reduced = false) {
     visible: true,
     phase: 'parked',
   };
-  if (reduced) return pose;
   if (phase < APPROACH.start || phase >= DEPARTURE.end)
     return { ...pose, visible: false, opacity: 0, phase: 'away' };
   if (phase < APPROACH.end || phase >= DEPARTURE.start) {
@@ -123,10 +123,11 @@ export function moonSaucerPose(time, reduced = false) {
 
 /** One reusable visitor, no saved state or additional animation loop. */
 export class MoonSaucer {
-  constructor(d, scene, camera) {
+  // `camera` turns the wake's twinkles to face the Moon's view.
+  constructor(d, scene, { camera = null } = {}) {
     this.d = d;
     this.scene = scene;
-    this.d.camera = camera;
+    this.camera = camera;
   }
   update(town, time, reduced) {
     const era = town?.buildingEras?.airport;
@@ -143,6 +144,7 @@ export class MoonSaucer {
         scale: MOON_SAUCER_PAD.scale,
         departure: DEPARTURE,
         approach: APPROACH,
+        camera: this.camera,
       });
       this.craft.root.name = 'Moon visiting saucer';
       this.effects = this.d.group(this.scene);
@@ -168,12 +170,12 @@ export class MoonSaucer {
   step(time, reduced = false) {
     if (!this.craft) return false;
     const phase = cyclePhase(time),
-      pose = moonSaucerPose(time, reduced);
+      pose = moonSaucerPose(time);
     this.spin =
       (this.spin ?? 0) + Math.min(0.1, Math.max(0, time - (this.lastTime ?? time))) * pose.spin * 5;
     this.lastTime = time;
     this.craft.apply(pose, {
-      spin: reduced ? 0 : this.spin,
+      spin: this.spin,
       phase,
       toMoon: true,
       reduced,

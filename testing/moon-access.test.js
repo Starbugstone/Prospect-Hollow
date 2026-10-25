@@ -1,10 +1,14 @@
 import { expect, it } from 'vitest';
-import { DoubleSide, Group, Raycaster, Vector3 } from 'three';
+import { Box3, DoubleSide, Group, Raycaster, Vector3 } from 'three';
 import {
   MOON_LOTS,
   MOON_LOT_RADIUS,
+  MOON_PAD_TOP,
+  MOON_PATH_LIFT,
   MOON_RING_ROAD,
+  MOON_ROAD_LIFT,
   moonApproach,
+  moonApproachHeight,
   moonApproaches,
   moonEntrance,
   moonLotPose,
@@ -13,7 +17,9 @@ import {
 } from '../src/data/moonSettlement';
 import { moonAccessGeometry, moonHeight } from '../src/game/town/moon/MoonScene';
 import { TownPrimitives } from '../src/game/town/TownPrimitives';
-import { renderMoonBuilding } from '../src/game/town/buildings/moon';
+import { moonParcelPad, renderMoonBuilding } from '../src/game/town/buildings/moon';
+import { MOON_SAUCER_PAD } from '../src/game/town/moon/MoonSaucer';
+import { moonHatch } from '../src/game/town/moon/MoonSettlers';
 
 it('connects all authored arrivals to the ring without crossing another parcel or a crater', () => {
   const routes = moonApproaches();
@@ -139,4 +145,35 @@ it('preserves existing lot poses, filters unbuilt lots and extends safely to a n
   expect(route.clear).toBe(true);
   expect(route.points.flat().every(Number.isFinite)).toBe(true);
   expect(Math.hypot(...route.points.at(-1))).toBeCloseTo(MOON_RING_ROAD, 8);
+});
+
+// One pad top for every raised Moon pad: buildings, the saucer's feet, path ends and
+// the walkers on them all stand on MOON_PAD_TOP, and paths ramp from it to the road.
+it('stands pads, the saucer, paths and walkers on one pad top', () => {
+  const d = new TownPrimitives();
+  const pad = new Group();
+  moonParcelPad(d, pad, moonPadRadius('settlerDomes'));
+  expect(new Box3().setFromObject(pad).max.y).toBeCloseTo(MOON_PAD_TOP, 9);
+  expect(MOON_SAUCER_PAD.y).toBe(MOON_PAD_TOP);
+  const routes = moonApproaches();
+  for (const route of routes) {
+    expect(moonApproachHeight(route, ...route.points[0]), route.id).toBeCloseTo(
+      MOON_PAD_TOP + MOON_PATH_LIFT,
+      9,
+    );
+    expect(moonApproachHeight(route, ...route.points.at(-1)), route.id).toBeCloseTo(
+      MOON_ROAD_LIFT,
+      9,
+    );
+    // The settlers step out of the hatch onto the same surface.
+    expect(moonHatch(route)[1], route.id).toBeCloseTo(MOON_PAD_TOP + MOON_PATH_LIFT, 9);
+  }
+  // The drawn strip reads it too: its first vertex is beside the first route's hatch.
+  const geometry = moonAccessGeometry([routes[0]]);
+  const surface = geometry.attributes.position;
+  const [x, z] = [surface.getX(0), surface.getZ(0)];
+  expect(surface.getY(0)).toBeCloseTo(moonApproachHeight(routes[0], x, z, moonHeight(x, z)), 6);
+  geometry.dispose();
+  d.clearGroup(pad);
+  d.disposePrimitives();
 });

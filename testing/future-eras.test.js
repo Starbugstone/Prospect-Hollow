@@ -642,14 +642,24 @@ describe('New Hollow on the Moon', () => {
     expect(frames).toHaveLength(0);
     run(2000, 0.05);
     expect(moon.onLabels).toHaveBeenCalledOnce();
-    // Nothing moves with reduced motion: only requested frames draw.
-    moon.reducedMotion = true;
+    // Reduced motion follows the valley's policy: settlers and vehicles keep moving at
+    // the same pace, while effects such as the meteor stay out.
+    moon.setReducedMotion(true);
     moon.renderer.render.mockClear();
+    const elapsed = moon.elapsed;
     run(3000, 1);
-    expect(moon.renderer.render).not.toHaveBeenCalled();
+    expect(moon.renderer.render.mock.calls.length).toBeGreaterThanOrEqual(59);
+    expect(moon.elapsed - elapsed).toBeGreaterThan(0.9);
+    expect(moon.streak?.visible ?? false).toBe(false);
     moon.requestFrame();
-    frames.splice(0).forEach((draw) => draw());
-    expect(moon.renderer.render).toHaveBeenCalledOnce();
+    expect(frames).toHaveLength(0);
+    // A monument unveiling draws its own frames: the Moon is drawn once a frame, as the
+    // valley is, never twice.
+    moon.presentation = { dispose() {} };
+    moon.renderer.render.mockClear();
+    run(4000, 1);
+    expect(moon.renderer.render).not.toHaveBeenCalled();
+    moon.presentation = null;
     moon.streak?.material.dispose();
     moon.construction.dispose();
     moon.d.disposePrimitives();

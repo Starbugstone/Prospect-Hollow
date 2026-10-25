@@ -1,19 +1,12 @@
 import { BUILDING_BY_ID } from '../../../data/town';
-import { moonParcels } from '../../../data/moonSettlement';
-import { AREA_BY_ID, areaChoice, areaUnlocked, monumentWork } from '../../../data/townLandmarks';
+import { AREA_BY_ID, areaChoice, monumentWork } from '../../../data/townLandmarks';
 import { collectionCooldownRemaining, plotUnlocked } from '../TownRules';
-import { buildingStatusLabel } from '../TownBuildingFeedback';
+import { buildingStatus, monumentStatus } from '../TownBuildingFeedback';
 import { t } from '../../../i18n';
 
-// One status contract for New Hollow's lots, shared by the Moon map labels and the
-// Build tab's Moon list, so both always describe a lot the same way.
-
-// Every Moon building lot, then each monument site the town has opened on the Moon,
-// from the one parcel contract that the scene draws, glows and taps.
-export const moonLotIds = (town) =>
-  moonParcels()
-    .filter(({ id, kind }) => kind === 'lot' || areaUnlocked(town, AREA_BY_ID[id]))
-    .map(({ id }) => id);
+// New Hollow's lots and sites on the Moon map: their names and statuses, read through the
+// valley's shared status contracts (TownBuildingFeedback). The Build tab lists Moon
+// buildings with the valley's rows.
 
 export const canCollectMoonstones = (town, now = Date.now()) =>
   !!town.moonstoneProduction?.stored &&
@@ -36,32 +29,35 @@ export function moonLotStatus(town, id) {
   return plotUnlocked(town, id) ? 'open' : 'later';
 }
 
-export function moonLotStatusLabel(town, id, { collectable = false } = {}) {
-  if (id === 'moonstoneWorkshop' && collectable)
-    return t('Collect {count} moonstones', { count: town.moonstoneProduction.stored });
-  return {
-    work: t('Under construction'),
-    ready: t('Ready to unveil'),
-    monument: t('Monument'),
-    built: t('Lv. {level}', { level: town.buildings?.[id] }),
-    open: t(AREA_BY_ID[id] ? 'Choose a design' : 'Build'),
-    later: t('Coming soon'),
-  }[moonLotStatus(town, id)];
-}
-
 export const moonLotName = (id) => t(AREA_BY_ID[id]?.label ?? BUILDING_BY_ID[id].shortName);
 
-// The short status under a lot's name: monument sites and collectable moonstones use
-// the Moon's own wording; buildings share the valley's building feedback.
-export function moonLotDetail(
+/**
+ * A lot's or site's status, `{ kind, text, title }` as the valley's labels read it, or
+ * null for nothing to show. Buildings and monument sites use the shared contracts
+ * (buildingStatus, monumentStatus); only collectable moonstones and a lot the town
+ * has not opened yet have the Moon's own wording. A read-only visitor sees levels only.
+ */
+export function moonLotInfo(
   town,
   id,
-  { indicators = {}, availableIds = [], collectable = false } = {},
+  { indicators = {}, availableIds = [], collectable = false, readOnly = false } = {},
 ) {
-  return AREA_BY_ID[id] || (id === 'moonstoneWorkshop' && collectable)
-    ? moonLotStatusLabel(town, id, { collectable })
-    : buildingStatusLabel(town, id, indicators[id], availableIds.includes(id));
+  if (AREA_BY_ID[id]) return monumentStatus(town, id, { readOnly });
+  if (readOnly) return buildingStatus(town, id, { readOnly });
+  if (id === 'moonstoneWorkshop' && collectable)
+    return {
+      kind: 'coins',
+      text: t('Collect {count} moonstones', { count: town.moonstoneProduction.stored }),
+    };
+  if (moonLotStatus(town, id) === 'later') return { kind: 'later', text: t('Coming soon') };
+  return buildingStatus(town, id, {
+    indicator: indicators[id],
+    available: availableIds.includes(id),
+  });
 }
 
+// The short status under a lot's name, as text.
+export const moonLotDetail = (town, id, options) => moonLotInfo(town, id, options)?.text ?? null;
+
 export const moonLotLabel = (town, id, options) =>
-  `${moonLotName(id)} · ${moonLotDetail(town, id, options)}`;
+  [moonLotName(id), moonLotDetail(town, id, options)].filter(Boolean).join(' · ');

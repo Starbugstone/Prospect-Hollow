@@ -268,8 +268,13 @@ describe('Moon VIP definitions', () => {
     scene.moveTransports(MOON_CLIMBER_CYCLE);
     expect(scene.climber.position.y).toBe(0);
     expect(scene.visitorTransports.get('ribbonLanding').arrived).toBe(true);
-    // Reduced motion keeps the climber docked and brings nobody.
+    // The climber is a vehicle: with reduced motion it rides on, as valley vehicles do,
+    // and still brings its VIP. Only a landing settling under its reveal docks it.
     scene.reducedMotion = true;
+    scene.moveTransports(MOON_CLIMBER_CYCLE / 2);
+    expect(scene.climber.position.y).toBeGreaterThan(100);
+    expect(scene.visitorTransports.get('ribbonLanding').root).toBe(scene.climber);
+    scene.lotReveals = new Map([['ribbonLanding', {}]]);
     scene.moveTransports(MOON_CLIMBER_CYCLE / 2);
     expect(scene.climber.position.y).toBe(0);
     expect(scene.visitorTransports.has('ribbonLanding')).toBe(false);

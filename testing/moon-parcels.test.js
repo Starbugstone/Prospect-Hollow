@@ -1,5 +1,16 @@
-import { afterEach, expect, it } from 'vitest';
-import { Group, PerspectiveCamera, Raycaster, Scene, Vector3 } from 'three';
+import { afterEach, expect, it, vi } from 'vitest';
+import {
+  BoxGeometry,
+  Group,
+  Mesh,
+  MeshBasicMaterial,
+  PerspectiveCamera,
+  Raycaster,
+  Scene,
+  Sprite,
+  SpriteMaterial,
+  Vector3,
+} from 'three';
 import { createTown } from '../src/data/town';
 import {
   MOON_LOTS,
@@ -22,7 +33,7 @@ import { buildMoonMonuments } from '../src/game/town/moon/MoonMonuments';
 import { MoonScene, moonRoofHeight } from '../src/game/town/moon/MoonScene';
 import { MoonConstruction } from '../src/game/town/moon/MoonConstruction';
 import { TownPrimitives } from '../src/game/town/TownPrimitives';
-import { TownUpgradeGlow } from '../src/game/town/TownUpgradeGlow';
+import { GLOW_WALL, TownUpgradeGlow } from '../src/game/town/TownUpgradeGlow';
 
 // Permanent rule (AGENTS.md): every Moon parcel, built, empty, under construction or
 // added in a future update, stands on the one octagonal pad, and its glow, tap
@@ -116,10 +127,10 @@ it.each(areasForSettlement('moon').map((area) => [area.id, area]))(
   },
 );
 
-// MoonScene needs WebGL; the parcel half of it runs on a bare prototype.
+// MoonScene needs WebGL; the parcel half of it runs on a bare prototype that is its own
+// drawing kit, as the real scene is.
 function parcelScene(town = moonTown()) {
-  const scene = Object.assign(Object.create(MoonScene.prototype), {
-    d: kit(),
+  const scene = Object.assign(Object.create(MoonScene.prototype), kit(), {
     scene: new Scene(),
     town,
     raycaster: new Raycaster(),
@@ -132,6 +143,7 @@ function parcelScene(town = moonTown()) {
       this.picked.push(id);
     },
   });
+  scene.d = scene;
   scene.raycaster.layers.set(3);
   scene.upgradeGlow = new TownUpgradeGlow(scene.scene);
   scene.pickTargets = new Group();
@@ -255,6 +267,45 @@ it('fits every tap target to its roof and leaves the ribbon above the landing to
   expect(tapAt(scene, [0, 12, 40], [0, 20, -8])).toBeNull();
   expect(tapAt(scene, [0, 30, -40], [0, 1, 11])).toBe('newHollowCommons');
   scene.upgradeGlow.dispose();
+});
+
+it('keeps each upgrade glow a faint band at the base of what stands on its pad', () => {
+  const town = moonTown();
+  town.buildings = { ...town.buildings, ribbonLanding: 3 };
+  const scene = builtScene(town);
+  const wall = (id) => scene.upgradeGlow.plots.get(id).children[1].scale.y;
+  // An empty lot glows as low as an empty valley plot; a tall one never higher than the
+  // valley's band.
+  expect(wall('roverBarn')).toBeCloseTo(GLOW_WALL.min);
+  expect(wall('ribbonLanding')).toBeGreaterThan(GLOW_WALL.min);
+  expect(wall('ribbonLanding')).toBeLessThanOrEqual(GLOW_WALL.max);
+  scene.upgradeGlow.dispose();
+});
+
+it('releases its own resources but not three’s sprite geometry, which the valley shares', () => {
+  const scene = Object.assign(Object.create(MoonScene.prototype), kit(), {
+    scene: new Scene(),
+    saucer: { dispose() {} },
+    renderer: { setAnimationLoop() {}, dispose() {} },
+    observer: { disconnect() {} },
+    controls: { removeEventListener() {}, dispose() {} },
+    surface: { removeEventListener() {} },
+    construction: { dispose() {} },
+    upgradeGlow: { dispose() {} },
+  });
+  scene.d = scene;
+  vi.stubGlobal('cancelAnimationFrame', () => {});
+  const sprite = new Sprite(new SpriteMaterial());
+  const owned = new Mesh(new BoxGeometry(), new MeshBasicMaterial());
+  scene.scene.add(sprite, owned);
+  const shared = vi.spyOn(sprite.geometry, 'dispose'),
+    own = vi.spyOn(owned.geometry, 'dispose'),
+    material = vi.spyOn(sprite.material, 'dispose');
+  scene.dispose();
+  expect(shared).not.toHaveBeenCalled();
+  expect(own).toHaveBeenCalledOnce();
+  expect(material).toHaveBeenCalledOnce();
+  vi.unstubAllGlobals();
 });
 
 it('fits a built monument site’s tap target to the monument, measured before batching', () => {

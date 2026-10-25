@@ -622,7 +622,7 @@ describe('Sky saucer sparkle wake', () => {
   it('leaves the wake off with reduced motion', () => {
     const { d, saucer, trail } = wake();
     try {
-      d.liveVisitorsReducedMotion = true;
+      d.reducedMotion = true;
       for (const t of [48.9, 49.5, 50, 52, 136, 140]) {
         d.motions[0](t);
         expect(saucer.visible).toBe(true);

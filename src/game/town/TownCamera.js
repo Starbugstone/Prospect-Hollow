@@ -113,6 +113,8 @@ export function frameTown(d) {
   }
 }
 
+// The keyboard's stepped camera moves, shared by every settlement map. `reset` frames
+// the map's overview through its own frameTown().
 export function cameraAction(d, action) {
   if (!d.controls.enabled) return;
   d.overview = action === 'reset';
@@ -143,15 +145,17 @@ export function findVisitor(d, id) {
   return true;
 }
 
-export function focusTownPlace(d, id) {
+/**
+ * Explicit navigation (a Build row, a notice, a link) turns the orbit to a place at
+ * `distance`, keeping the camera's heading and staying above the map's own ground
+ * (`d.terrainHeight`, the valley's by default). Shared by every settlement map; a tap
+ * never comes through here.
+ */
+export function focusCamera(d, [x, z], distance) {
   // Panels pause player controls; their own focus requests still move the camera.
   // Scripted cameras retain priority over these requests.
   if (d.raid || d.cinematic || d.presentation || d.eventCamera) return false;
-  const area = areasForSettlement().find((a) => a.id === id);
-  const position = PLOTS[id] ?? area?.positions[0];
-  if (!position) return false;
-  const target = point(position[0], 2, position[1]);
-  const distance = area ? 32 : 19;
+  const target = point(x, 2, z);
   const offset = d.camera.position
     .clone()
     .sub(d.controls.target)
@@ -159,9 +163,15 @@ export function focusTownPlace(d, id) {
     .multiplyScalar(distance);
   d.controls.target.copy(target);
   d.camera.position.copy(target).add(offset);
-  keepCameraAboveTerrain(d.camera.position, target);
+  keepCameraAboveTerrain(d.camera.position, target, undefined, d.terrainHeight);
   d.overview = false;
   d.controls.update();
   d.render();
   return true;
+}
+
+export function focusTownPlace(d, id) {
+  const area = areasForSettlement().find((a) => a.id === id);
+  const position = PLOTS[id] ?? area?.positions[0];
+  return !!position && focusCamera(d, position, area ? 32 : 19);
 }

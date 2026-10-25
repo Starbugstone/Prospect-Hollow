@@ -3,7 +3,8 @@ import { Scene } from 'three';
 import { createPinia, setActivePinia } from 'pinia';
 import { createTown, MOON_BUILDINGS } from '../src/data/town';
 import { TOWN_ACTIONS, buildingActionLabel } from '../src/data/townIndicators';
-import { buildingStatusLabel } from '../src/game/town/TownBuildingFeedback';
+import { buildingStatus } from '../src/game/town/TownBuildingFeedback';
+import { moonLotDetail } from '../src/game/town/moon/MoonLotStatus';
 import {
   advanceConstruction,
   buildingIndicators,
@@ -24,8 +25,14 @@ beforeEach(() => {
 });
 afterEach(() => vi.unstubAllGlobals());
 
+// The Moon scene is its own drawing kit, clock and town for the shared reveal.
 function view() {
-  const v = { d: new TownPrimitives(), scene: new Scene(), elapsed: 0, reducedMotion: false };
+  const v = Object.assign(new TownPrimitives(), {
+    scene: new Scene(),
+    elapsed: 0,
+    reducedMotion: false,
+  });
+  v.d = v;
   v.construction = new MoonConstruction(v);
   return v;
 }
@@ -47,7 +54,7 @@ it.each(MOON_BUILDINGS.map(({ id }) => id))(
     expect(first.parent).toBe(v.scene);
     expect(first.userData.progress).toBe(constructionVisual(store.town.projects[id]));
     expect(first.userData.ready).toBe(false);
-    expect(buildingStatusLabel(store.town, id)).toBe('0/2');
+    expect(moonLotDetail(store.town, id)).toBe('0/2');
     expect(store.finishConstruction(id, 1)).toBe(false);
     const geometry = first.children.find((part) => part.isMesh).geometry;
     const release = vi.spyOn(geometry, 'dispose');
@@ -56,7 +63,7 @@ it.each(MOON_BUILDINGS.map(({ id }) => id))(
     expect(release).toHaveBeenCalledOnce();
     expect(first.parent).toBeNull();
     expect(v.construction.sites.get(id).root.userData.progress).toBe(2);
-    expect(buildingStatusLabel(store.town, id)).toBe('1/2');
+    expect(moonLotDetail(store.town, id)).toBe('1/2');
     store.town = advanceConstruction(store.town);
     v.construction.sync(store.town);
     const ready = v.construction.sites.get(id).root;
@@ -66,7 +73,7 @@ it.each(MOON_BUILDINGS.map(({ id }) => id))(
     const indicators = buildingIndicators(store.town);
     expect(indicators[id]).toBe('ready');
     expect(TOWN_ACTIONS[indicators[id]].icon).toContain('builder-hammer');
-    expect(buildingStatusLabel(store.town, id, indicators[id])).toBe('Tap to finish');
+    expect(moonLotDetail(store.town, id, { indicators })).toBe('Tap to finish');
     expect(buildingActionLabel(store.town, id, indicators[id])).toMatch(/^Finish /);
     expect(store.finishConstruction(id, 1)).toBe(true);
     v.construction.sync(store.town);
@@ -103,9 +110,14 @@ it('shares affordable-upgrade and collect labels without retaining the ready ham
   Object.assign(town.buildings, { ribbonLanding: 1, settlerDomes: 1 });
   town.coins = 1e6;
   expect(buildingIndicators(town).settlerDomes).toBe('upgrade');
-  expect(buildingStatusLabel(town, 'settlerDomes', 'upgrade', true)).toBe('Upgrade');
+  expect(
+    moonLotDetail(town, 'settlerDomes', {
+      indicators: { settlerDomes: 'upgrade' },
+      availableIds: ['settlerDomes'],
+    }),
+  ).toBe('Upgrade');
   town.income.stored = 17;
-  expect(buildingStatusLabel(town, 'saloon', 'coins')).toBe('Collect 17 coins');
+  expect(buildingStatus(town, 'saloon', { indicator: 'coins' }).text).toBe('Collect 17 coins');
   expect(buildingActionLabel(town, 'blacksmith', 'tnt')).toBe('Collect 1 TNT');
 });
 

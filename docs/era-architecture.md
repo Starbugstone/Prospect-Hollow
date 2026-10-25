@@ -661,6 +661,23 @@ its own chunk, loaded before startup only for French players. CI fails when a ga
 chunk exceeds 500 kB, a library exceeds its budget, the first screen loads Phaser
 or Three, or a mesh catalog is imported statically (`scripts/check-bundle-budget.mjs`).
 
+Both settlement maps recover their renderer the same way: `TownRenderer.watchContextLoss`
+stops a scene whose WebGL context is lost and `useGraphicsRecovery` rebuilds it on a
+fresh canvas with the same camera, twice at most. After that, or on any other failure,
+the valley shows its retry notice and the Moon its SVG map.
+
+### Reduced motion
+
+The app's reduced-motion setting (which starts from the system preference) is the one
+value both settlement maps read, as `d.reducedMotion` on `TownDiorama` and `MoonScene`.
+The policy is the valley's on every map. Effects, reveals, camera flights and decorative
+motion stop: construction reveals, presentation camera moves (frames stay still), raids
+and their inset, meteors, the saucer's sparkle wake and landing dust, monument mechanisms
+and the crest banner. Villagers, settlers and vehicles (rovers, the climber, the saucer,
+trains and planes) keep moving. Live visitors stand still. Reduced motion never freezes
+a whole map. `testing/future-eras.test.js` covers the Moon, and
+`testing/town-personalisation.test.js` and `testing/airport-flight.test.js` the valley.
+
 ### Footprints and construction
 
 Run `npm run assets:footprints` after changing building geometry or renderer

@@ -29,20 +29,22 @@ export class TownPresentation {
       const t = Math.min(1, time / 1.4);
       d.camera.position.lerpVectors(d.eventCamera.position, eye, t * t * (3 - 2 * t));
       d.controls.target.lerpVectors(d.eventCamera.target, focus, t * t * (3 - 2 * t));
-      (d.keepCameraAboveSurface ?? keepCameraAboveTerrain)(d.camera.position, d.controls.target);
+      // Each map's own ground: the valley's terrain unless the map supplies its height.
+      keepCameraAboveTerrain(d.camera.position, d.controls.target, undefined, d.terrainHeight);
       d.camera.lookAt(d.controls.target);
     }
-    for (const motion of d.motions) motion(d.elapsed);
+    // The valley advances its scenery here; a map without per-frame motions (the Moon) has none.
+    for (const motion of d.motions ?? []) motion(d.elapsed);
     const phase = shadowPhase ?? (time < 7 ? 0 : 1);
     if (this.phase !== phase) d.renderer.shadowMap.needsUpdate = true;
     this.phase = phase;
-    d.frameCache.valid = false;
+    if (d.frameCache) d.frameCache.valid = false;
     d.render();
   }
   dispose(restore = true) {
     this.effect.dispose();
     if (restore) restoreEventCamera(this.d);
     this.d.renderer.shadowMap.needsUpdate = true;
-    this.d.frameCache.valid = false;
+    if (this.d.frameCache) this.d.frameCache.valid = false;
   }
 }

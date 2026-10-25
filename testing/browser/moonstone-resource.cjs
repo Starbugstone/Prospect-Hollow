@@ -19,7 +19,7 @@ campaign.save();
 window.campaign=campaign;
 window.app=createApp({render(){return h(Workshop,{town:campaign.town,sellMoonstones:campaign.sellMoonstones,cooldownSeconds:30})}});
 app.mount('#fixture');
-window.showMoon=()=>{app.unmount();document.querySelector('#fixture').style.cssText='position:relative;width:100vw;height:100vh;max-width:none';document.body.style.margin='0';window.app=createApp({render(){return h(Moon,{town:campaign.town,reducedMotion:true,active:false,onCollect:()=>campaign.collectMoonstones()})}});app.mount('#fixture')};
+window.showMoon=()=>{app.unmount();document.querySelector('#fixture').style.cssText='position:relative;width:100vw;height:100vh;max-width:none';document.body.style.margin='0';window.app=createApp({render(){return h(Moon,{town:campaign.town,reducedMotion:true,active:false,onSelect:(id)=>id==='moonstoneWorkshop'&&campaign.collectMoonstones()})}});app.mount('#fixture')};
 window.getScene=()=>app._instance.subTree.component.setupState.scene;
 `,
 });

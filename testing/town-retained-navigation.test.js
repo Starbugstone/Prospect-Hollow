@@ -205,9 +205,9 @@ it('keeps legacy animal safePoint arguments compatible with constrained retained
 
 it('revalidates retained transport VIP and live-visitor owners before their first rebuilt frame', () => {
   const { view, town } = fixture('tomorrow');
+  view.setReducedMotion(true);
   view.setLiveVisitors(
     [{ id: 'retained-nav-visitor', name: 'Camille', townName: 'Silver Creek', era: 'tomorrow' }],
-    true,
     'retained-nav-town',
   );
   const vip =
@@ -290,7 +290,7 @@ it('revalidates retained transport VIP and live-visitor owners before their firs
   // attach/update calls and their immediate render before a locomotion step.
   // The corrected position can be off the replacement route; its nearest pose
   // must not briefly become the actor's accepted position.
-  view.liveVisitorsReducedMotion = false;
+  view.reducedMotion = false;
   const resumedFrame = frames.length;
   for (const step of populateLife(view, town)) void step;
   let offRoute = false;

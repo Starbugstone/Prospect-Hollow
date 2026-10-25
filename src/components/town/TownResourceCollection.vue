@@ -5,7 +5,7 @@
       still: reducedMotion,
       'resource-tnt': resource === 'tnt' || resource === 'project-hammer',
     }"
-    :style="{ left: `clamp(72px, ${origin.x}%, calc(100% - 72px))`, top: `${origin.y}%` }"
+    :style="position"
     role="status"
     aria-live="polite"
   >
@@ -94,6 +94,13 @@ const resources = {
   },
 };
 const appearance = computed(() => resources[props.resource] ?? resources.coins);
+// Every map hands over where its place sits on screen (in percent); the collection
+// rises from there, kept clear of the map's edges.
+const within = (value, min, max) => Math.max(min, Math.min(max, value));
+const position = computed(() => ({
+  left: `clamp(72px, ${within(props.origin.x, 8, 92)}%, calc(100% - 72px))`,
+  top: `${within(props.origin.y, 20, 90)}%`,
+}));
 const emit = defineEmits(['cue', 'close']);
 const playCue = (index) => emit('cue', { name: appearance.value.cue, index });
 const timers = [];

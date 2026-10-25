@@ -1,146 +1,142 @@
 <template>
-  <!-- The valley's own controls sit on the parent scene: keep Moon input to the Moon. -->
+  <!-- Input reaches the document (Escape, audio unlock); the valley ignores it while the
+       Moon covers it (TownScene). -->
   <section
     ref="viewElement"
     class="town-moon-view"
     :class="{ 'is-fallback': unavailable, 'is-compact': compact }"
     role="region"
     :aria-label="t('New Hollow on the Moon')"
-    @pointerdown.stop
-    @wheel.stop
-    @keydown.stop
   >
-    <!-- Controls capture only the canvas. Releases must reach their document listener. -->
-    <canvas v-if="!unavailable" ref="canvas" class="town-moon-canvas" aria-hidden="true" />
-    <svg
-      v-else
-      class="town-moon-map"
-      viewBox="-60 -50 120 100"
-      preserveAspectRatio="xMidYMid meet"
-      aria-hidden="true"
-    >
-      <rect x="-60" y="-50" width="120" height="100" fill="#10162b" />
-      <circle cx="-38" cy="-38" r="7" fill="#4f8fc7" />
-      <ellipse cy="6" rx="52" ry="40" fill="#b9b6ad" />
-      <ellipse
-        cy="6"
-        :rx="MOON_RING_ROAD * 1.3"
-        :ry="MOON_RING_ROAD * 1.05"
-        fill="none"
-        stroke="#cfccc3"
-        stroke-width="1.6"
+    <!-- The camera gestures and taps share this surface with the lot labels and action
+         buttons, as the valley's share its scene: a drag from a label orbits. -->
+    <div class="town-moon-surface">
+      <canvas
+        v-if="!unavailable"
+        ref="canvas"
+        :key="canvasVersion"
+        class="town-moon-canvas"
+        tabindex="0"
+        :aria-label="
+          t('Town camera. Arrow keys rotate, plus and minus zoom, Home resets the view.')
+        "
+        @keydown="cameraKey"
       />
-      <polyline
-        v-for="route in mapApproaches"
-        :key="route.id"
-        :points="route.points"
-        fill="none"
-        stroke="#cfccc3"
-        :stroke-width="route.width * 1.2"
-        stroke-linejoin="round"
-        data-moon-approach="true"
-      />
-      <g
-        v-for="lot in mapLots"
-        :key="lot.id"
-        :transform="`translate(${lot.x} ${lot.y}) scale(.07)`"
-      >
-        <TownMoonBuilding :kind="lot.id" :level="town.buildings[lot.id] ?? 0" />
-        <TownMoonConstruction v-if="town.projects?.[lot.id]" :project="town.projects[lot.id]" />
-      </g>
-      <g
-        v-for="site in mapMonuments"
-        :key="site.id"
-        :data-moon-monument="site.id"
-        :transform="`translate(${site.x} ${site.y})`"
-      >
-        <TownMoonMonument :site="site" />
-      </g>
-    </svg>
-    <div
-      v-show="!props.presentation"
-      class="town-moon-lots"
-      role="group"
-      :aria-label="t('Moon lots')"
-    >
       <svg
-        class="town-moon-leaders"
-        :viewBox="`0 0 ${viewport.width} ${viewport.height}`"
+        v-else
+        class="town-moon-map"
+        viewBox="-60 -50 120 100"
+        preserveAspectRatio="xMidYMid meet"
         aria-hidden="true"
       >
-        <template v-for="lot in shownLots" :key="lot.id">
-          <g v-if="lot.leader">
-            <line v-bind="lot.leader" />
-            <circle :cx="lot.leader.x2" :cy="lot.leader.y2" r="2" />
-          </g>
-        </template>
-      </svg>
-      <button
-        v-for="lot in shownLots"
-        :key="lot.id"
-        type="button"
-        class="town-moon-lot"
-        :data-moon-lot="lot.id"
-        :aria-pressed="selected === lot.id"
-        :class="{
-          'is-pin': lot.collapsed,
-          selected: selected === lot.id,
-          'is-collectable': lot.id === 'moonstoneWorkshop' && canCollectMoonstones,
-          built: !!(town.buildings[lot.id] || moonMonumentChoice(town, lot.id)),
-          open: AREA_BY_ID[lot.id] ? status(lot.id) === 'open' : availableIds.includes(lot.id),
-          'is-ready': indicators[lot.id] === 'ready' || status(lot.id) === 'ready',
-          'is-working': !!town.projects?.[lot.id] || status(lot.id) === 'work',
-        }"
-        :style="{
-          left: `${lot.x}%`,
-          top: `${lot.y}%`,
-          width: `${lot.width ?? 104}px`,
-          height: `${lot.height ?? 52}px`,
-        }"
-        :aria-label="lotLabel(lot.id)"
-        :title="lotLabel(lot.id)"
-        @focus="revealOnFocus($event, lot.id)"
-        @click="
-          !readOnly && canCollectMoonstones && lot.id === 'moonstoneWorkshop'
-            ? emit('collect', lot.id)
-            : choose(lot.id)
-        "
-      >
-        <span v-if="lot.collapsed" class="moon-lot-pin" aria-hidden="true"></span>
-        <img
-          v-else-if="compact && TOWN_ACTIONS[indicators[lot.id]]"
-          class="moon-inline-action"
-          :src="TOWN_ACTIONS[indicators[lot.id]].icon"
-          alt=""
+        <rect x="-60" y="-50" width="120" height="100" fill="#10162b" />
+        <circle cx="-38" cy="-38" r="7" fill="#4f8fc7" />
+        <ellipse cy="6" rx="52" ry="40" fill="#b9b6ad" />
+        <ellipse
+          cy="6"
+          :rx="MOON_RING_ROAD * 1.3"
+          :ry="MOON_RING_ROAD * 1.05"
+          fill="none"
+          stroke="#cfccc3"
+          stroke-width="1.6"
         />
-        <strong v-if="!lot.collapsed">{{ moonLotName(lot.id) }}</strong>
-        <small v-if="!lot.collapsed">{{ lotDetail(lot.id) }}</small>
-        <span
-          v-if="!lot.collapsed && indicators[lot.id] === 'upgrade'"
-          class="moon-upgrade-hint"
-          aria-hidden="true"
-          >↑</span
+        <polyline
+          v-for="route in mapApproaches"
+          :key="route.id"
+          :points="route.points"
+          fill="none"
+          stroke="#cfccc3"
+          :stroke-width="route.width * 1.2"
+          stroke-linejoin="round"
+          data-moon-approach="true"
+        />
+        <g
+          v-for="lot in mapLots"
+          :key="lot.id"
+          :transform="`translate(${lot.x} ${lot.y}) scale(.07)`"
         >
-      </button>
-    </div>
-    <div class="town-moon-actions" role="group" :aria-label="t('Village buildings')">
-      <button
-        v-for="lot in actionLots"
-        :key="lot.id"
-        type="button"
-        class="town-action-icon town-moon-action"
-        :class="TOWN_ACTIONS[indicators[lot.id]].class"
-        :data-moon-action="lot.id"
-        :style="{
-          left: `${lot.actionPoint?.x ?? lot.anchor?.x ?? lot.x}%`,
-          top: `${lot.actionPoint?.y ?? lot.anchor?.y ?? lot.y}%`,
-          '--action-scale': TOWN_ACTIONS[indicators[lot.id]].scale,
-        }"
-        :aria-label="buildingActionLabel(town, lot.id, indicators[lot.id])"
-        @click="choose(lot.id)"
+          <TownMoonBuilding :kind="lot.id" :level="town.buildings[lot.id] ?? 0" />
+          <TownMoonConstruction v-if="town.projects?.[lot.id]" :project="town.projects[lot.id]" />
+        </g>
+        <g
+          v-for="site in mapMonuments"
+          :key="site.id"
+          :data-moon-monument="site.id"
+          :transform="`translate(${site.x} ${site.y})`"
+        >
+          <TownMoonMonument :site="site" />
+        </g>
+      </svg>
+      <div
+        v-show="!props.presentation"
+        class="town-moon-lots"
+        role="group"
+        :aria-label="t('Moon lots')"
       >
-        <img :src="TOWN_ACTIONS[indicators[lot.id]].icon" alt="" />
-      </button>
+        <svg
+          class="town-moon-leaders"
+          :viewBox="`0 0 ${viewport.width} ${viewport.height}`"
+          aria-hidden="true"
+        >
+          <template v-for="lot in shownLots" :key="lot.id">
+            <g v-if="lot.leader">
+              <line v-bind="lot.leader" />
+              <circle :cx="lot.leader.x2" :cy="lot.leader.y2" r="2" />
+            </g>
+          </template>
+        </svg>
+        <button
+          v-for="lot in shownLots"
+          :key="lot.id"
+          type="button"
+          class="town-moon-lot"
+          :data-moon-lot="lot.id"
+          :aria-pressed="selected === lot.id"
+          :class="[
+            lotInfo[lot.id].look,
+            {
+              'is-pin': lot.collapsed,
+              selected: selected === lot.id,
+              'is-collectable': collecting(lot.id),
+            },
+          ]"
+          :style="{
+            left: `${lot.x}%`,
+            top: `${lot.y}%`,
+            width: `${lot.width ?? 104}px`,
+            height: `${lot.height ?? 52}px`,
+          }"
+          :aria-label="lotInfo[lot.id].label"
+          :title="lotInfo[lot.id].label"
+          @focus="revealOnFocus($event, lot.id)"
+          @click="activateLabel(lot.id, $event)"
+        >
+          <span v-if="lot.collapsed" class="moon-lot-pin" aria-hidden="true"></span>
+          <img
+            v-else-if="compact && TOWN_ACTIONS[indicators[lot.id]]"
+            class="moon-inline-action"
+            :src="TOWN_ACTIONS[indicators[lot.id]].icon"
+            alt=""
+          />
+          <strong v-if="!lot.collapsed">{{ lotInfo[lot.id].name }}</strong>
+          <TownLabelStatus v-if="!lot.collapsed" :status="lotInfo[lot.id].status" />
+        </button>
+      </div>
+      <div class="town-action-icons" role="group" :aria-label="t('Village buildings')">
+        <TownActionIcon
+          v-for="lot in actionLots"
+          :key="lot.id"
+          class="town-moon-action"
+          :indicator="indicators[lot.id]"
+          :label="buildingActionLabel(town, lot.id, indicators[lot.id])"
+          :data-moon-action="lot.id"
+          :style="{
+            left: `${lot.actionPoint?.x ?? lot.anchor?.x ?? lot.x}%`,
+            top: `${lot.actionPoint?.y ?? lot.anchor?.y ?? lot.y}%`,
+          }"
+          @click="activateLabel(lot.id, $event)"
+        />
+      </div>
     </div>
     <header class="town-moon-header">
       <button type="button" class="town-moon-back" @click="emit('close')">
@@ -174,7 +170,6 @@ import {
 } from '../../data/moonSettlement';
 import { TOWN_ACTIONS, buildingActionLabel } from '../../data/townIndicators';
 import {
-  AREA_BY_ID,
   areaChoice,
   areaShownStage,
   areaUnlocked,
@@ -190,15 +185,20 @@ import {
 } from '../../game/town/moon/MoonLabelDensity';
 import {
   canCollectMoonstones as collectable,
-  moonLotDetail,
+  moonLotInfo,
+  moonLotLabel,
   moonLotName,
   moonLotStatus,
-  moonMonumentChoice,
 } from '../../game/town/moon/MoonLotStatus';
+import TownActionIcon from './TownActionIcon.vue';
+import TownLabelStatus from './TownLabelStatus.vue';
 import TownMoon from './TownMoon.vue';
 import TownMoonstoneBalance from './TownMoonstoneBalance.vue';
 import TownMoonBuilding from './TownMoonBuilding.vue';
 import TownMoonConstruction from './TownMoonConstruction.vue';
+import { cameraKeyAction } from '../../game/town/TownCameraKeys';
+import { keyboardActivation } from '../../game/town/TownTapGesture';
+import { useGraphicsRecovery } from '../../composables/useGraphicsRecovery';
 import { t } from '../../i18n';
 
 // New Hollow, the town's settlement on the Moon. Its own small 3D scene sits over
@@ -213,13 +213,14 @@ const props = defineProps({
   reducedMotion: { type: Boolean, default: false },
   indicators: { type: Object, default: () => ({}) },
   availableIds: { type: Array, default: () => [] },
+  // The valley's upgrade glow rule (TownScene): lots whose indicator is 'upgrade'.
+  upgradeIds: { type: Array, default: () => [] },
   readOnly: Boolean,
 });
 const emit = defineEmits([
   'select',
   'inspect',
   'close',
-  'collect',
   'presentation-ready',
   'presentation-unavailable',
   // The valley's VIP flow: a purchase receipt, and the named VIP's tag for the shared label.
@@ -272,11 +273,44 @@ const mapApproaches = computed(() =>
   })),
 );
 const allLots = computed(() => [...mapLots.value, ...mapMonuments.value]);
+// Each lot's name, shared status (TownLabelStatus) and look, recomputed when the town or
+// its markers change rather than on every camera frame. The looks are the valley
+// labels': can-build, is-ready and has-income for the same states.
+const lotInfo = computed(() => {
+  const options = {
+    indicators: props.indicators,
+    availableIds: props.availableIds,
+    collectable: canCollectMoonstones.value,
+    readOnly: props.readOnly,
+  };
+  return Object.fromEntries(
+    allLots.value.map(({ id }) => {
+      const status = moonLotInfo(props.town, id, options);
+      return [
+        id,
+        {
+          name: moonLotName(id),
+          status,
+          label: moonLotLabel(props.town, id, options),
+          state: moonLotStatus(props.town, id),
+          look: {
+            'can-build': status?.kind === 'available',
+            'is-ready': status?.kind === 'ready',
+            'has-income': status?.kind === 'coins' || status?.kind === 'tnt',
+          },
+        },
+      ];
+    }),
+  );
+});
+const collecting = (id) =>
+  id === 'moonstoneWorkshop' && lotInfo.value[id]?.status?.kind === 'coins';
 const needsAttention = (id) =>
+  !props.readOnly &&
   moonLabelNeedsAttention({
-    status: status(id),
+    status: lotInfo.value[id]?.state,
     action: TOWN_ACTIONS[props.indicators[id]],
-    collectable: id === 'moonstoneWorkshop' && canCollectMoonstones.value,
+    collectable: collecting(id),
   });
 const shownLots = computed(() => {
   const { width, height } = viewport.value;
@@ -293,11 +327,7 @@ const shownLots = computed(() => {
       width,
       height,
       { near: !unavailable.value && cameraDistance.value <= 48, selected: selectedLot.value },
-    ).map((lot) =>
-      lot.id === 'moonstoneWorkshop' && canCollectMoonstones.value
-        ? { ...lot, width: 128, height: 64 }
-        : lot,
-    ),
+    ).map((lot) => (collecting(lot.id) ? { ...lot, width: 128, height: 64 } : lot)),
     width,
     height,
   ).filter((lot) => lot.visible);
@@ -309,23 +339,21 @@ const choose = (id) => {
   selectedLot.value = id;
   emit(props.readOnly ? 'inspect' : 'select', id);
 };
+// Pointer taps on labels and action buttons settle through the scene's shared tap
+// gesture; their click opens a lot only from the keyboard, or on the SVG map. Opening
+// the workshop collects its moonstones, as the valley's saloon pays out (TownView).
+function activateLabel(id, event) {
+  if (!scene || keyboardActivation(event)) choose(id);
+}
+function cameraKey(event) {
+  const action = cameraKeyAction(event);
+  if (action) scene?.cameraAction(action);
+}
 function revealOnFocus(event, id) {
   if (event.target.matches(':focus-visible')) selectedLot.value = id;
 }
-const status = (id) => moonLotStatus(props.town, id);
-const lotDetail = (id) =>
-  moonLotDetail(props.town, id, {
-    indicators: props.indicators,
-    availableIds: props.availableIds,
-    collectable: canCollectMoonstones.value,
-  });
-const lotLabel = (id) => `${moonLotName(id)} · ${lotDetail(id)}`;
-// The upgrade glow matches the valley's: every affordable offer, plus collectable stock.
-const updateAvailable = () => {
-  scene?.setAvailable([
-    ...props.availableIds,
-    ...(canCollectMoonstones.value ? ['moonstoneWorkshop'] : []),
-  ]);
+const updateGlow = () => {
+  scene?.setUpgradeable(props.upgradeIds);
   scene?.setLabelActions(
     Object.keys(props.indicators).filter((id) => TOWN_ACTIONS[props.indicators[id]]),
   );
@@ -350,10 +378,35 @@ watch(
 function updateMotion() {
   scene?.setMotion(props.active && !props.paused && !document.hidden);
 }
+// A lost graphics context rebuilds the Moon on a fresh canvas, as the valley does; when
+// it cannot, the SVG map takes over.
+let pendingFocus = null;
+const recovery = useGraphicsRecovery({
+  scene: () => scene,
+  release: () => {
+    scene?.dispose();
+    scene = null;
+  },
+  restart: () => start(),
+  fail: (error) => {
+    console.warn('3D Moon unavailable.', error);
+    unavailable.value = true;
+    // Let a render in progress unwind before releasing its resources.
+    nextTick(() => {
+      scene?.dispose();
+      scene = null;
+    });
+    if (props.presentation) {
+      emit('presentation-unavailable');
+      emit('presentation-ready');
+    }
+  },
+});
+const { canvasVersion } = recovery;
 async function start() {
   try {
     const { MoonScene } = await import('../../game/town/moon/MoonScene');
-    if (disposed || !canvas.value) return;
+    if (disposed || !canvas.value || scene) return;
     scene = new MoonScene(canvas.value, {
       reducedMotion: props.reducedMotion,
       onLabels: (next, distance) => {
@@ -366,39 +419,36 @@ async function start() {
       onSelect: (id) => choose(id),
       onVipSpend: (receipt) => emit('vip-spend', receipt),
       onVillagerLabel: (label) => emit('villager-label', label),
+      onUnavailable: (error, contextLost) => !disposed && recovery.recover(error, contextLost),
       // A shared town is only a view: VIP guests visit the owner's own game.
       vipsHidden: props.readOnly,
     });
     scene.update(props.town);
     scene.setSelected(selectedLot.value);
-    updateAvailable();
+    recovery.restorePose(scene);
+    if (pendingFocus) scene.focusPlace(pendingFocus);
+    pendingFocus = null;
+    updateGlow();
     updatePresentation();
     updateMotion();
   } catch (error) {
-    console.error(error);
-    unavailable.value = true;
-    if (props.presentation) {
-      emit('presentation-unavailable');
-      emit('presentation-ready');
-    }
+    if (!disposed) recovery.recover(error);
   }
 }
-// Watch only visual lifecycle fields; honours and the rest of the town stay out.
-watch(
-  () => [
+// Only what the Moon draws rebuilds it, as in the valley (TownScene): coins, honours and
+// the rest of the town stay out. The visiting saucer follows the airport's era.
+const visual = computed(() =>
+  JSON.stringify([
     props.town.buildings,
     props.town.projects,
     props.town.buildingEras,
     props.town.buildingEraLevels,
-    // The visiting saucer follows the valley airport's finish.
-    props.town.buildingEras?.airport,
     props.town.era,
     props.town.personalisation,
-  ],
-  () => scene?.update(props.town),
-  { deep: true },
+  ]),
 );
-watch(() => [props.indicators, props.availableIds, canCollectMoonstones.value], updateAvailable);
+watch(visual, () => scene?.update(props.town));
+watch(() => [props.indicators, props.upgradeIds], updateGlow);
 watch(selectedLot, (id) => scene?.setSelected(id ?? null));
 watch(() => [props.active, props.paused], updateMotion);
 watch(
@@ -420,23 +470,38 @@ onBeforeUnmount(() => {
   scene?.dispose();
   scene = null;
 });
+// Explicit navigation (a Build row) to a lot, remembered until the scene has loaded.
+function focusPlace(id) {
+  if (scene) return scene.focusPlace(id);
+  pendingFocus = id;
+  return true;
+}
 defineExpose({
-  resetView: () => scene?.resetView(),
+  // The valley's camera contract: keys, the Village tab's reset and navigation.
+  cameraAction: (action) => scene?.cameraAction(action),
+  resetView: () => scene?.cameraAction('reset'),
+  focusPlace,
   presentationFrame: (time) => {
     presentationTime = time;
     scene?.presentationFrame(time, props.reducedMotion);
   },
-  // A coin popup rises from the lot's label, or from the lot itself when its label is
-  // tucked away.
+  // A collection rises from the lot itself, as in the valley; TownResourceCollection
+  // keeps it on screen.
   collectionOrigin: (id) => {
-    const lot =
-      shownLots.value.find((lot) => lot.id === id) ??
-      labels.value.find((lot) => lot.id === id && lot.visible);
+    const lot = labels.value.find((lot) => lot.id === id);
     return { x: lot?.x ?? 50, y: lot?.y ?? 50 };
   },
 });
 </script>
 <style scoped>
+.town-moon-surface {
+  position: absolute;
+  inset: 0;
+}
+.town-moon-canvas:focus-visible {
+  outline: 3px solid #89e2f5;
+  outline-offset: -3px;
+}
 .town-moon-leaders {
   position: absolute;
   inset: 0;
@@ -465,52 +530,22 @@ defineExpose({
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.town-moon-actions {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
 .town-moon-action {
   border-radius: 50%;
   background: radial-gradient(circle, #142f48db 35%, #61d6ec55 60%, transparent 72%);
 }
-.town-moon-action img {
+.town-moon-action :deep(img) {
   filter: drop-shadow(0 0 5px #bcecff);
 }
 .town-moon-lot.selected {
   outline: 3px solid #f5df91;
   outline-offset: 2px;
 }
-.town-moon-lot.is-working {
-  border-color: #83c5dc;
-  background: #172d43ed;
-  color: #edf9ff;
-}
 .town-moon-lot.is-collectable small {
   white-space: normal;
   overflow: visible;
   text-overflow: clip;
 }
-.town-moon-lot.is-working small {
-  color: #b5e4ef;
-}
-.town-moon-lot.is-ready {
-  border-color: #f5d885;
-}
-.moon-upgrade-hint {
-  position: absolute;
-  right: -10px;
-  top: -12px;
-  border-radius: 50%;
-  background: #c0ffbc;
-  color: #204e42;
-  font-size: 20px;
-  font-weight: 900;
-  width: 24px;
-}
-</style>
-
-<style scoped>
 .town-moon-lot.is-pin {
   min-height: 0;
   padding: 0;

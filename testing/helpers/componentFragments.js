@@ -23,13 +23,29 @@ export const childrenSource = (node) => node.children.map((child) => child.loc.s
 // Icons render as their name so snapshots stay readable. `prepare` may adjust the
 // setup's state (refs and functions) before the fragment renders.
 const IconName = { props: ['name'], render: (props) => h('i', { 'data-icon': props.name }) };
+// Icons render as their name in nested components too (a shared label status, say).
+const isComponent = (value) =>
+  !!value && typeof value.setup === 'function' && !!(value.render || value.ssrRender);
+function nameIcons(state) {
+  for (const icon of ['GameIcon', 'TownIcon']) if (icon in state) state[icon] = IconName;
+  for (const [key, value] of Object.entries(state))
+    if (isComponent(value) && value !== IconName)
+      state[key] = {
+        ...value,
+        setup(props, context) {
+          const nested = value.setup(props, context);
+          nameIcons(nested);
+          return nested;
+        },
+      };
+}
 function harness(component, path, template, prepare) {
   return {
     ...component,
     ssrRender: undefined,
     setup(props, context) {
       const state = component.setup(props, context);
-      for (const icon of ['GameIcon', 'TownIcon']) if (icon in state) state[icon] = IconName;
+      nameIcons(state);
       prepare?.(state);
       return state;
     },

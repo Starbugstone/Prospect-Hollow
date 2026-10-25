@@ -10,6 +10,7 @@ import {
 } from 'three';
 import { TRAIL_SILVER } from '../../data/skyCraft';
 import { SAUCER_HULL, SAUCER_RADIUS } from './RoundedTransports';
+import { clamp01, hash01, mod, smooth01 } from './TownMath';
 
 // The sky saucer's sparkle wake. As it leaps away, a star-flash bursts open, and a
 // stream of small four-point twinkles is shed along its path, drifting apart and down as
@@ -19,18 +20,6 @@ import { SAUCER_HULL, SAUCER_RADIUS } from './RoundedTransports';
 // under the saucer but cancels the saucer's transform, so twinkles stay where they were
 // shed. It is hidden unless the saucer is departing or arriving; its instanced bucket
 // then draws nothing.
-
-const clamp01 = (x) => Math.max(0, Math.min(1, x));
-const smooth = (x) => {
-  const t = clamp01(x);
-  return t * t * (3 - 2 * t);
-};
-const mod = (n, m) => ((n % m) + m) % m;
-// Deterministic jitter in [0, 1) for twinkle k.
-const hash = (k) => {
-  const x = Math.sin(k * 127.1 + 311.7) * 43758.5453;
-  return x - Math.floor(x);
-};
 
 // Flight segments the wake follows, in seconds of the airport cycle. The departure
 // window opens a moment early for the flash, which bursts just before it moves.
@@ -91,7 +80,7 @@ function flashColor(hex) {
 export function createSaucerTrail(
   d,
   parent,
-  { colors: palette, path, departure = DEPARTURE, approach = APPROACH, scale = 1 },
+  { colors: palette, path, departure = DEPARTURE, approach = APPROACH, scale = 1, camera: view },
 ) {
   const geometry = new BufferGeometry();
   const position = new BufferAttribute(new Float32Array(VERTICES * 3), 3);
@@ -176,7 +165,8 @@ export function createSaucerTrail(
       // Cancel the saucer's own transform, so vertices are in world space.
       parent.updateMatrix();
       mesh.matrix.copy(s.inverse.copy(parent.matrix).invert());
-      const camera = d.camera ?? null,
+      // The scene's own camera unless the caller names one (the Moon's).
+      const camera = view ?? d.camera ?? null,
         tints = toMoon ? colors.moon : colors.sky,
         arriving = segment === approach;
 
@@ -194,7 +184,7 @@ export function createSaucerTrail(
           continue;
         }
         const life = age / MOTE_LIFE,
-          h = hash(k + (arriving ? 1000 : 0)),
+          h = hash01(k + (arriving ? 1000 : 0)),
           shed = emitFrom + k * MOTE_EVERY;
         // Shed from the hull's trailing edge, at hull height, so they start behind the
         // saucer rather than under it.
@@ -205,7 +195,7 @@ export function createSaucerTrail(
         s.p.addScaledVector(s.heading.normalize(), -0.9 * SAUCER_RADIUS * scale);
         s.p.y += SAUCER_HULL * scale;
         // Drift apart along a fixed random direction, and sink a little.
-        s.drift.set(hash(k * 3 + 1) - 0.5, hash(k * 5 + 2) - 0.5, hash(k * 7 + 3) - 0.5);
+        s.drift.set(hash01(k * 3 + 1) - 0.5, hash01(k * 5 + 2) - 0.5, hash01(k * 7 + 3) - 0.5);
         if (s.drift.lengthSq() < 1e-6) s.drift.set(0, 1, 0);
         s.p.addScaledVector(s.drift.normalize(), (0.6 + 2.2 * life) * scale);
         s.p.y -= 0.9 * life * life * scale;
@@ -216,7 +206,7 @@ export function createSaucerTrail(
           s.p,
           (0.38 + 0.34 * h) * (1 - 0.45 * life),
           tints[slot % 2],
-          (1 - smooth(life)) * twinkle,
+          (1 - smooth01(life)) * twinkle,
         );
       }
       // Upload once per frame, after the flash below is written too.
@@ -236,13 +226,13 @@ export function createSaucerTrail(
       path(segment.start, toMoon, s.p);
       s.p.y += SAUCER_HULL * scale;
       billboard(camera, s.p);
-      star(MOTES, s.p, 1 + 1.8 * smooth(k * 1.4), tints[0], 0.85 * (1 - smooth(k)));
+      star(MOTES, s.p, 1 + 1.8 * smooth01(k * 1.4), tints[0], 0.85 * (1 - smooth01(k)));
       star(
         MOTES + 1,
         s.p,
-        0.8 + 0.9 * smooth(k * 2.5),
+        0.8 + 0.9 * smooth01(k * 2.5),
         tints[2],
-        1 - smooth((age - 0.2) / 0.35),
+        1 - smooth01((age - 0.2) / 0.35),
         Math.PI / 4,
       );
     },
