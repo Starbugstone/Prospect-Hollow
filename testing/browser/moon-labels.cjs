@@ -65,7 +65,16 @@ window.getMoon=()=>app._instance.subTree.component.setupState;
           s.viewChanged = true;
           s.render();
         });
-        await page.waitForTimeout(100);
+        // The view learns its size from a ResizeObserver, on a later frame under load:
+        // measure only once it lays labels out for this size, and Vue has drawn them.
+        await page.waitForFunction(
+          ([w, h]) => {
+            const { viewport } = window.getMoon();
+            return viewport.width === w && viewport.height === h;
+          },
+          [width, height],
+        );
+        await page.evaluate(() => new Promise((done) => requestAnimationFrame(() => done())));
         const layout = await page.locator('.town-moon-lot').evaluateAll((elements) =>
           elements.map((el) => ({
             id: el.dataset.moonLot,
@@ -152,16 +161,39 @@ window.getMoon=()=>app._instance.subTree.component.setupState;
         }
         // The Moon lot list lives in the Build tab; the Moon map has no directory overlay.
         assert.equal(await page.locator('.moon-lot-directory').count(), 0);
-        const leaders = await page.evaluate(() =>
-          window
-            .getMoon()
-            .shownLots.filter((l) => l.leader)
-            .map((l) => ({ line: l.leader, anchor: l.anchor })),
+        // A label moved off its building connects to it with a leader ending at its own
+        // anchor; one still over its anchor needs none.
+        const lots = await page.evaluate(() =>
+          window.getMoon().shownLots.map(({ id, x, y, width, height, leader, anchor }) => ({
+            id,
+            x,
+            y,
+            width,
+            height,
+            leader,
+            anchor,
+          })),
         );
-        if (width < 1000) assert.ok(leaders.length > 0, 'Crowded labels expose their own leaders');
-        for (const { line, anchor } of leaders) {
-          assert.ok(Math.abs(line.x2 - (anchor.x * width) / 100) < 0.1);
-          assert.ok(Math.abs(line.y2 - (anchor.y * height) / 100) < 0.1);
+        for (const lot of lots) {
+          if (!lot.anchor) continue;
+          const anchor = { x: (lot.anchor.x * width) / 100, y: (lot.anchor.y * height) / 100 };
+          const left = (lot.x * width) / 100 - lot.width / 2,
+            top = (lot.y * height) / 100 - lot.height;
+          const over =
+            anchor.x >= left - 2 &&
+            anchor.x <= left + lot.width + 2 &&
+            anchor.y >= top - 2 &&
+            anchor.y <= top + lot.height + 2;
+          assert.ok(over || lot.leader, `${lot.id} moved off its building without a leader`);
+          if (!lot.leader) continue;
+          assert.ok(
+            Math.abs(lot.leader.x2 - anchor.x) < 0.1,
+            `${lot.id} leader ends at its anchor`,
+          );
+          assert.ok(
+            Math.abs(lot.leader.y2 - anchor.y) < 0.1,
+            `${lot.id} leader ends at its anchor`,
+          );
         }
         await page
           .locator('#fixture')

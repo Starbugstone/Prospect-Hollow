@@ -8,8 +8,12 @@ import {MOON_LOTS} from '/src/data/moonSettlement.js';
 import {createTown} from '/src/data/town.js';
 const town=createTown();town.era='twin-hollows';
 Object.assign(town.buildings,{spaceElevator:1,...Object.fromEntries(Object.keys(MOON_LOTS).map(id=>[id,1]))});
-window.events={inspect:[],close:0,valley:0};
-window.app=createApp({render(){return h('div',{style:'position:relative;width:100%;height:100%',onPointerdown(){window.events.valley++}},[h(Moon,{reducedMotion:true,town,onSelect(id){window.events.inspect.push(id)},onClose(){window.events.close++}})])}});
+window.events={inspect:[],close:0,document:0,escape:0};
+// Moon input reaches the document (sheets close on Escape, a press unlocks audio); the
+// valley's own scene ignores it while the Moon covers it (unit tests: moon-view).
+document.addEventListener('pointerdown',()=>window.events.document++);
+document.addEventListener('keydown',(event)=>event.key==='Escape'&&window.events.escape++);
+window.app=createApp({render(){return h('div',{style:'position:relative;width:100%;height:100%'},[h(Moon,{reducedMotion:true,town,onSelect(id){window.events.inspect.push(id)},onClose(){window.events.close++}})])}});
 app.mount('#fixture');
 window.getScene=()=>app._instance.subTree.children[0].component.setupState.scene;
 `);
@@ -59,6 +63,34 @@ window.getScene=()=>app._instance.subTree.children[0].component.setupState.scene
         await lot.focus();
         await page.keyboard.press('Enter');
         assert.equal(await page.evaluate(() => window.events.inspect.length), 3);
+        await page.keyboard.press('Escape');
+        assert.equal(await page.evaluate(() => window.events.escape), 1, 'Escape reaches sheets');
+        // A drag that starts on a label orbits, as in the valley, and opens nothing.
+        const label = await lot.boundingBox();
+        const from = { x: label.x + label.width / 2, y: label.y + label.height / 2 };
+        const before = await page.evaluate(() => window.getScene().camera.position.toArray());
+        if (touch) {
+          const cdp = await context.newCDPSession(page);
+          for (const [type, touchPoints] of [
+            ['touchStart', [from]],
+            ['touchMove', [{ x: from.x + 50, y: from.y + 10 }]],
+            ['touchMove', [{ x: from.x + 80, y: from.y + 14 }]],
+            ['touchEnd', []],
+          ])
+            await cdp.send('Input.dispatchTouchEvent', { type, touchPoints });
+        } else {
+          await page.mouse.move(from.x, from.y);
+          await page.mouse.down();
+          await page.mouse.move(from.x + 80, from.y + 14, { steps: 8 });
+          await page.mouse.up();
+        }
+        await page.waitForFunction(() => !window.getScene().tapGesture.pressed);
+        assert.notDeepEqual(
+          await page.evaluate(() => window.getScene().camera.position.toArray()),
+          before,
+          'a drag from a label orbits the Moon',
+        );
+        assert.equal(await page.evaluate(() => window.events.inspect.length), 3);
         const dragStart = { x: Math.round(width * 0.5), y: Math.round(height * 0.78) };
         const dragEnd = { x: dragStart.x + 60, y: dragStart.y + 12 };
         const start = await page.evaluate(() => window.getScene().camera.position.toArray());
@@ -103,7 +135,7 @@ window.getScene=()=>app._instance.subTree.children[0].component.setupState.scene
         );
         await page.evaluate(() => window.getScene().resetView());
         await page.waitForFunction(
-          () => !window.getScene().viewChanged && !window.getScene().frame,
+          () => !window.getScene().viewChanged && !window.getScene().cameraFrame,
         );
         const earth = await page.evaluate(() => {
           const scene = window.getScene(),
@@ -131,14 +163,13 @@ window.getScene=()=>app._instance.subTree.children[0].component.setupState.scene
           2,
           'Earth tap returns to valley',
         );
-        assert.equal(
-          await page.evaluate(() => window.events.valley),
-          0,
-          'Moon presses stay out of valley controls',
+        assert.ok(
+          (await page.evaluate(() => window.events.document)) > 0,
+          'Moon presses reach the document',
         );
         assert.deepEqual(errors, []);
         console.log(
-          `${width}x${height} ${touch ? 'Touch' : 'Mouse'}: first/repeated lot, Back, no letters overlay, keyboard, orbit/release, Earth and valley isolation passed.`,
+          `${width}x${height} ${touch ? 'Touch' : 'Mouse'}: first/repeated lot, Back, no letters overlay, keyboard, Escape, label drag, orbit/release, Earth and document events passed.`,
         );
         await context.close();
       }
