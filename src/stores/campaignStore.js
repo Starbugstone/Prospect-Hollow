@@ -286,21 +286,24 @@ const load = (loaded = localProfile.load(), persistRecovered = true) => {
     // Older saves earn what their state already proves, with an unknown date. Nothing is
     // written here: the next save stores it, so repeated loads give the same result.
     state.honours = backfillHonours(honourState(state));
-    if (
-      persistRecovered &&
-      recovered.length &&
-      !state.readOnly &&
-      !localProfile.save({
-        ...saved,
-        powers: state.powers,
-        town: state.town,
-        townProjectFocus: state.townProjectFocus,
-        builderHammers: state.builderHammers,
-        pendingChests: [],
-        integrity: state.integrity,
-      })
-    )
-      state.saveWarning = 'Your progress is not saving. Keep this page open to continue.';
+    if (persistRecovered && recovered.length && !state.readOnly) {
+      // Like save(): no write and no warning while writes are suspended, as when a
+      // view reload applies a synced save. The live store saves the claim once writes
+      // resume; until then storage keeps the chest unopened, and a reload claims it again.
+      if (localProfile.writesSuspended) localProfile.whenResumed(() => useCampaignStore().save());
+      else if (
+        !localProfile.save({
+          ...saved,
+          powers: state.powers,
+          town: state.town,
+          townProjectFocus: state.townProjectFocus,
+          builderHammers: state.builderHammers,
+          pendingChests: [],
+          integrity: state.integrity,
+        })
+      )
+        state.saveWarning = 'Your progress is not saving. Keep this page open to continue.';
+    }
   } catch (error) {
     if (!persistRecovered) throw error;
     /* Unavailable or invalid storage starts a fresh in-memory journey. */

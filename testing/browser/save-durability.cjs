@@ -120,15 +120,18 @@ const {
     const a = await device(),
       b = await device();
     // Local progress through the normal game: win the next level, collecting exactly
-    // `coins` gems in chapter 1 (1x depth). Its chest waits unopened, so the wallet
-    // grows by exactly that amount.
+    // `coins` gems in chapter 1 (1x depth), then open its chest as the player does,
+    // tapping while the reel shows a supply. An unopened chest is claimed later with
+    // its random prize, which may be 500 coins: when the next run starts, or when
+    // another device loads this save from the cloud.
     const earn = (d, coins) =>
-      d.page.evaluate((coins) => {
+      d.page.evaluate(async (coins) => {
+        const { availableChestDrops } = await import('/src/data/rewards.js');
         const campaign = window.stores().get('campaign');
         const id = campaign.nextLevel,
           before = campaign.town.coins;
         const runId = campaign.beginRun('normal', id);
-        campaign.recordVictory({
+        const chests = campaign.recordVictory({
           id,
           runId,
           score: 100,
@@ -137,12 +140,38 @@ const {
           jewels: coins,
           chooseRewards: true,
         });
+        for (const chest of chests) {
+          const supply = availableChestDrops(campaign).find((drop) => drop.kind !== 'coins');
+          campaign.claimChest(chest.id, supply.id);
+          const receipt = campaign.integrity.actions.at(-1);
+          if (
+            receipt.kind !== 'chest-claim' ||
+            receipt.data.chestId !== chest.id ||
+            receipt.data.selection !== supply.id
+          )
+            throw new Error(`Level ${id} did not open its chest on ${supply.id}.`);
+        }
+        if (!chests.length || campaign.pendingChests.length)
+          throw new Error(`Level ${id} left a chest unopened.`);
         if (campaign.town.coins !== before + coins)
           throw new Error(`Level ${id} did not pay exactly ${coins} coins.`);
       }, coins);
     const sync = async (d) => {
-      await d.page.waitForFunction(async () => !(await window.cloudModule()).cloud.busy);
-      const result = await d.page.evaluate(async () => (await window.cloudModule()).syncNow());
+      // syncNow declines while another sync runs, such as the scheduler retrying
+      // offline progress. Wait for that one and ask again, so the check observes a
+      // sync it requested before reading the result.
+      let result = 'declined';
+      for (let tries = 0; result === 'declined'; tries++) {
+        assert(tries < 10, 'Another sync kept the cloud busy.');
+        await d.page.waitForFunction(async () => !(await window.cloudModule()).cloud.busy);
+        result = await d.page.evaluate(async () => {
+          const { cloud, syncNow } = await window.cloudModule();
+          const synced = await syncNow();
+          return synced === undefined && cloud.account && !cloud.sessionExpired
+            ? 'declined'
+            : synced;
+        });
+      }
       // A lost-response retry may acknowledge an older checkpoint first. Observe
       // the normal scheduler flushing newer progress before checking the server.
       if (result)
@@ -233,13 +262,25 @@ const {
     await earn(b, 1);
     await sync(b);
     assert.equal(remote.profile.town.coins, 70);
-    // An IndexedDB failure must keep dirty progress until the player retries.
-    await b.page.evaluate(() => {
-      window.savedPut = IDBObjectStore.prototype.put;
-      IDBObjectStore.prototype.put = function () {
-        throw new DOMException('Full', 'QuotaExceededError');
-      };
-    });
+    // An IndexedDB failure must keep dirty progress until the player retries. The
+    // background worker writes the archive, so the storage fails there as well.
+    const archiveScopes = [b.page, ...b.page.workers()];
+    assert(b.page.workers().some((worker) => worker.url().includes('backgroundJson.worker')));
+    const failStorage = (full) =>
+      Promise.all(
+        archiveScopes.map((scope) =>
+          scope.evaluate((full) => {
+            if (!full) IDBObjectStore.prototype.put = self.savedPut;
+            else {
+              self.savedPut = IDBObjectStore.prototype.put;
+              IDBObjectStore.prototype.put = function () {
+                throw new DOMException('Full', 'QuotaExceededError');
+              };
+            }
+          }, full),
+        ),
+      );
+    await failStorage(true);
     b.mode.offline = true;
     await earn(b, 3);
     await sync(a);
@@ -249,9 +290,7 @@ const {
     await sync(b);
     assert.equal(await current(b), 73);
     await b.page.getByRole('alert').filter({ hasText: 'Cloud saving is paused' }).waitFor();
-    await b.page.evaluate(() => {
-      IDBObjectStore.prototype.put = window.savedPut;
-    });
+    await failStorage(false);
     await b.page.getByRole('button', { name: 'Retry cloud saving', exact: true }).click();
     await b.page.waitForFunction(() => window.stores().get('campaign').town.coins === 80);
     // Cached towns remain accessible without a valid cloud session. Removing an
