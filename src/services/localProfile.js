@@ -3,7 +3,8 @@ import { SAVE_SCHEMA_VERSION } from '../data/saveFormat';
 export { SAVE_KEY };
 let paused = 0,
   loadedId = null,
-  loadedStorage;
+  loadedStorage,
+  resumed = [];
 export const localProfile = {
   get writesSuspended() {
     return paused > 0 || !townStorage.canWrite();
@@ -40,9 +41,16 @@ export const localProfile = {
     paused++;
     let released = false;
     return () => {
-      if (!released) paused--;
+      if (released) return;
       released = true;
+      paused--;
+      if (!paused) for (const callback of resumed.splice(0)) callback();
     };
+  },
+  // Runs `callback` once paused writes resume. Without a pause (no writer lock) it does
+  // nothing: the load that follows acquiring the lock stores its own state.
+  whenResumed(callback) {
+    if (paused) resumed.push(callback);
   },
   save(data, onStoredIntegrity = null) {
     try {
