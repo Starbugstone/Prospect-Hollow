@@ -1,5 +1,6 @@
-// Optional asset-maintenance tool; the game ships the resulting MP3s.
-// Usage: FFMPEG=/path/to/ffmpeg node scripts/prepare-village-audio.mjs
+// Optional asset-maintenance tool; the game ships the resulting MP3s, plus Opus for streamed music.
+// Usage: FFMPEG=/path/to/ffmpeg node scripts/prepare-village-audio.mjs [name ...]
+// With names, only those assets are rebuilt.
 import { mkdir, writeFile, mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -8,11 +9,15 @@ import { execFileSync } from 'node:child_process';
 const ffmpeg = process.env.FFMPEG || 'ffmpeg';
 const output = new URL('../public/sound/village/', import.meta.url);
 const scratch = await mkdtemp(join(tmpdir(), 'village-audio-'));
+const only = process.argv.slice(2);
 const assets = [
   {
     name: 'porch-swing',
     url: 'https://incompetech.com/music/royalty-free/mp3-royaltyfree/Porch%20Swing%20Days%20-%20slower.mp3',
     filter: 'loudnorm=I=-22:TP=-3:LRA=11,afade=t=in:d=1.5',
+    // Streamed on every village visit: Opus first, a lighter MP3 for browsers without it.
+    bitrate: '128k',
+    opus: true,
   },
   {
     name: 'birds',
@@ -62,7 +67,8 @@ const assets = [
 
 await mkdir(output, { recursive: true });
 try {
-  for (const { name, url, filter, seam } of assets) {
+  for (const { name, url, filter, seam, bitrate = '192k', opus } of assets) {
+    if (only.length && !only.includes(name)) continue;
     const response = await fetch(url);
     if (!response.ok) throw new Error(`${url}: ${response.status}`);
     const source = join(scratch, name);
@@ -105,23 +111,24 @@ try {
       await writeFile(loop, pcm.subarray(overlap * 8));
       input = ['-f', 'f32le', '-ar', '44100', '-ac', '2', '-i', loop];
     }
-    execFileSync(ffmpeg, [
-      '-hide_banner',
-      '-loglevel',
-      'error',
-      '-y',
-      ...input,
-      '-map_metadata',
-      '-1',
-      '-ar',
-      '44100',
-      '-c:a',
-      'libmp3lame',
-      '-b:a',
-      '192k',
-      new URL(`${name}.mp3`, output).pathname,
-    ]);
+    const encode = (codec, file) =>
+      execFileSync(ffmpeg, [
+        '-hide_banner',
+        '-loglevel',
+        'error',
+        '-y',
+        ...input,
+        '-map_metadata',
+        '-1',
+        ...codec,
+        new URL(file, output).pathname,
+      ]);
+    encode(['-ar', '44100', '-c:a', 'libmp3lame', '-b:a', bitrate], `${name}.mp3`);
     console.log(`Prepared ${name}.mp3`);
+    if (opus) {
+      encode(['-c:a', 'libopus', '-b:a', '64k', '-vbr', 'on'], `${name}.ogg`);
+      console.log(`Prepared ${name}.ogg`);
+    }
   }
 } finally {
   await rm(scratch, { recursive: true, force: true });

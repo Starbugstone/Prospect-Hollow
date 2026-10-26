@@ -2,10 +2,12 @@ import { INCIDENT_AUDIO } from '../../data/townEvents';
 
 // Recorded village audio. Provenance and edits: public/sound/village/credits.html.
 const asset = (name) => `/sound/village/${name}.mp3`;
+// Streamed music also ships as Opus, under half the size of its MP3 on mobile data.
+const music = (name) => ({ src: asset(name), opus: `/sound/village/${name}.ogg` });
 export const VILLAGE_AUDIO = Object.freeze({
-  music: { src: asset('porch-swing'), volume: 0.45 },
+  music: { ...music('porch-swing'), volume: 0.45 },
   // Played once over a monument's unveiling, in place of the village music.
-  fanfare: { src: asset('monument-unveiling'), volume: 0.45 },
+  fanfare: { ...music('monument-unveiling'), volume: 0.45 },
   birds: { src: asset('birds'), volume: 0.5, loop: true },
   chatter: { src: asset('chatter'), volume: 0.32, loop: true },
   building: { src: asset('building'), volume: 0.32 },
@@ -49,6 +51,9 @@ export const villageSounds = (state) =>
         ...(state.construction ? ['building'] : []),
         ...(state.stable ? ['horse', 'hooves'] : []),
       ];
+// Browsers without Ogg Opus (older Safari) fall back to the MP3.
+export const streamSource = (player, { src, opus }) =>
+  opus && player.canPlayType?.('audio/ogg; codecs=opus') ? opus : src;
 const clamp = (value) => Math.min(1, Math.max(0, Number(value) || 0));
 // The village music, softer during raids and silent under an unveiling fanfare.
 const musicLevel = (state) =>
@@ -182,7 +187,7 @@ export class TownSoundscape {
       this.player = this.mediaFactory();
       this.player.preload = 'none';
       this.player.loop = true;
-      this.player.src = VILLAGE_AUDIO.music.src;
+      this.player.src = streamSource(this.player, VILLAGE_AUDIO.music);
       this.musicSource = this.ctx.createMediaElementSource(this.player);
       this.musicSource.connect(this.music);
     }
@@ -215,7 +220,7 @@ export class TownSoundscape {
       this.fanfarePlayer = this.mediaFactory();
       this.fanfarePlayer.preload = 'auto';
       this.fanfarePlayer.loop = false;
-      this.fanfarePlayer.src = VILLAGE_AUDIO.fanfare.src;
+      this.fanfarePlayer.src = streamSource(this.fanfarePlayer, VILLAGE_AUDIO.fanfare);
       this.fanfareBus = this.ctx.createGain();
       this.fanfareBus.gain.value = 0;
       this.fanfareSource = this.ctx.createMediaElementSource(this.fanfarePlayer);

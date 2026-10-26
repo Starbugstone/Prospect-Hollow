@@ -13,9 +13,10 @@ const ffmpeg = process.env.FFMPEG || 'ffmpeg';
 const url = 'https://incompetech.com/music/royalty-free/mp3-royaltyfree/Thaxted.mp3';
 // The cut points belong to this master; audition them again if the download changes.
 const sha256 = '72bc5f1d32f034628b10b9e54828cb086a0a9d5c01dcd79f6afbe38cec086480';
-const output = fileURLToPath(
-  new URL('../public/sound/village/monument-unveiling.mp3', import.meta.url),
-);
+const output = (extension) =>
+  fileURLToPath(
+    new URL(`../public/sound/village/monument-unveiling.${extension}`, import.meta.url),
+  );
 // Final full-orchestra verse: cut in the breath before the strongest downbeat (123.24 s),
 // ride the cadence to the held B-flat tonic chord (about 15 s in), let the orchestra release
 // (about 18 s in) and fade the hall reverb over the last 2.5 seconds.
@@ -82,29 +83,28 @@ try {
     throw new Error(`Excerpt would peak at ${Number(measured.input_tp) + gain} dBTP`);
   }
 
-  execFileSync(ffmpeg, [
-    '-hide_banner',
-    '-loglevel',
-    'error',
-    '-y',
-    '-i',
-    source,
-    '-af',
-    `${shape},volume=${gain.toFixed(2)}dB`,
-    '-vn',
-    '-map_metadata',
-    '-1',
-    '-ar',
-    '44100',
-    '-ac',
-    '2',
-    '-c:a',
-    'libmp3lame',
-    '-b:a',
-    '192k',
-    output,
-  ]);
-  console.log(`Prepared monument-unveiling.mp3 (${gain.toFixed(2)} dB gain)`);
+  // Streamed: Opus first, a lighter MP3 for browsers without it.
+  const encode = (codec, file) =>
+    execFileSync(ffmpeg, [
+      '-hide_banner',
+      '-loglevel',
+      'error',
+      '-y',
+      '-i',
+      source,
+      '-af',
+      `${shape},volume=${gain.toFixed(2)}dB`,
+      '-vn',
+      '-map_metadata',
+      '-1',
+      '-ac',
+      '2',
+      ...codec,
+      file,
+    ]);
+  encode(['-ar', '44100', '-c:a', 'libmp3lame', '-b:a', '128k'], output('mp3'));
+  encode(['-c:a', 'libopus', '-b:a', '64k', '-vbr', 'on'], output('ogg'));
+  console.log(`Prepared monument-unveiling.mp3 and .ogg (${gain.toFixed(2)} dB gain)`);
 } finally {
   await rm(scratch, { recursive: true, force: true });
 }
