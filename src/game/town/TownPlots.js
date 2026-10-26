@@ -1,3 +1,4 @@
+import { townLabelWidth } from './TownLabelLayout';
 import { TownItineraries } from './TownItineraries';
 
 import {
@@ -1002,7 +1003,7 @@ export function rebuildTown(
     d.targets.push(group);
     d.anchors.push({
       id,
-      width: id === 'mine' ? 160 : Math.max(76, labels[id].length * 7 + 35),
+      width: id === 'mine' ? 160 : townLabelWidth(labels[id]),
       position: point(x, 0.2, z + (id === 'mine' ? 1.65 : 1.85)),
     });
     let movingPart = cached?.movingPart ?? ready?.movingPart;

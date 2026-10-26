@@ -974,6 +974,7 @@ export class MoonScene extends TownPrimitives {
       return {
         id,
         action: this.labelActions?.has(id) ?? false,
+        depth: point.z,
         x: (point.x + 1) * 50,
         y: (1 - point.y) * 50,
         visible:

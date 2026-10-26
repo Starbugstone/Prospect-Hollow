@@ -2,7 +2,8 @@ import { Vector3 } from 'three';
 import { constructionReady } from './TownRules';
 import { overlapsEventInset } from './TownInset';
 import { forEachWalker } from './TownWalkers';
-import { labelsOverlap, townLabelRank, townLabelDetail } from './TownLabels';
+import { TOWN_LABEL_DETAIL_DISTANCE, townLabelRank, townLabelDetail } from './TownLabels';
+import { layoutTownLabels } from './TownLabelLayout';
 
 // Screen placement of building labels, collection icons and the named-villager tag.
 // Runs on every camera frame, so it reuses scratch vectors instead of cloning.
@@ -27,7 +28,7 @@ export function projectLabelPositions(d) {
     d.lastAudioDistance = cameraDistance;
     d.onCameraDistance?.(cameraDistance);
   }
-  const distant = cameraDistance > 66;
+  const distant = cameraDistance > TOWN_LABEL_DETAIL_DISTANCE;
   const width = d.canvas.clientWidth,
     height = d.canvas.clientHeight,
     town = d.town;
@@ -58,6 +59,9 @@ export function projectLabelPositions(d) {
       rank: labelRank(d, id),
       inView: inFront(p) && Math.abs(p.x) < 0.95 && Math.abs(p.y) < 0.9,
       width: labelWidth,
+      height: id === 'mine' ? 102 : 42,
+      offsetY: id === 'mine' ? -56 : d.labelActions?.has(id) ? 24 : 0,
+      action: d.labelActions?.has(id) ?? false,
       visible:
         !site &&
         !overlapsEventInset(d, ((p.x + 1) * width) / 2, ((1 - p.y) * height) / 2, labelWidth) &&
@@ -78,34 +82,7 @@ export function projectLabelPositions(d) {
         }),
     };
   });
-  // Higher-ranked labels claim their space first; overlapping later ones hide.
-  const shown = [];
-  for (const anchor of [...projected].sort((a, b) => a.rank - b.rank || a.depth - b.depth)) {
-    if (!anchor.visible) continue;
-    if (
-      shown.some((other) =>
-        labelsOverlap(
-          {
-            x: (anchor.x * width) / 100,
-            y: (anchor.y * height) / 100,
-            width: anchor.width,
-            height: anchor.id === 'mine' ? 102 : 42,
-          },
-          {
-            x: (other.x * width) / 100,
-            y: (other.y * height) / 100,
-            width: other.width,
-            height: other.id === 'mine' ? 102 : 42,
-          },
-          4,
-          0,
-        ),
-      )
-    )
-      anchor.visible = false;
-    else shown.push(anchor);
-  }
-  d.onLabels(projected);
+  d.onLabels(layoutTownLabels(projected, width, height));
   projectVillager(d);
   projectPlaque(d);
 }

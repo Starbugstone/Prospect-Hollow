@@ -1,5 +1,7 @@
 import { TOWN_ACTIONS } from '../../data/townIndicators';
 
+export const TOWN_LABEL_DETAIL_DISTANCE = 66;
+
 // Both settlements keep selected lots and work visible before routine level labels.
 export const townLabelRank = ({ essential, selected, ready, guided, available }) =>
   essential ? 0 : selected ? 1 : ready ? 2 : guided ? 3 : available ? 4 : 5;
@@ -15,7 +17,10 @@ export const labelsOverlap = (a, b, gap = 4, verticalGap = gap) =>
 // not. Vue renders only layout changes; positions go straight to the elements.
 export const labelLayout = (anchors) =>
   anchors
-    .map(({ id, visible, collection }) => `${id}:${+!!visible}${+!!collection?.visible}`)
+    .map(
+      ({ id, visible, collection, width }) =>
+        `${id}:${+!!visible}${+!!collection?.visible}:${width ?? 0}`,
+    )
     .join('|');
 
 // Returns true when Vue must re-render. Otherwise the current (non-reactive) anchor
@@ -50,9 +55,12 @@ export function labelBox() {
 }
 
 export function placeLabels(anchors, labels, actions, box) {
-  for (const { id, x, y, collection } of anchors) {
+  for (const { id, x, y, collection, offsetY } of anchors) {
     const label = labels.get(id);
-    if (label) label.style.translate = box.translate({ x, y });
+    if (label) {
+      label.style.translate = box.translate({ x, y });
+      if (offsetY !== undefined) label.style.setProperty('--label-offset', `${offsetY}px`);
+    }
     const action = actions.get(id);
     if (action && collection) action.style.translate = box.translate(collection);
   }

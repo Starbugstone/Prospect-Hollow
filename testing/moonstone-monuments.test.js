@@ -243,19 +243,25 @@ it.each([
   [1440, 900],
   [900, 360],
   [375, 740],
-])('declutters all lunar labels at %sx%s', (width, height) => {
+])('declutters crowded lunar sites without moving their names at %sx%s', (width, height) => {
   const labels = layoutMoonLabels(
-    Array.from({ length: 13 }, (_, n) => ({ id: n, x: 50, y: 50, visible: true })),
+    Array.from({ length: 13 }, (_, n) => ({
+      id: n,
+      x: 50,
+      y: 50,
+      visible: true,
+      rank: n === 12 ? 1 : 5,
+      action: n === 12,
+    })),
     width,
     height,
   );
-  expect(labels.every((l) => l.visible)).toBe(true);
-  for (const [i, a] of labels.entries())
-    for (const b of labels.slice(i + 1))
-      expect(
-        (Math.abs(a.x - b.x) * width) / 100 >= a.width + 5 ||
-          (Math.abs(a.y - b.y) * height) / 100 >= a.height + 5,
-      ).toBe(true);
+  // The valley policy: selection wins the collision, other names hide, and the
+  // site's action remains reachable. No site inherits an unrelated vacant slot.
+  expect(labels).toHaveLength(13);
+  expect(labels.filter((label) => label.visible).map((label) => label.id)).toEqual([12]);
+  expect(labels.every((label) => label.x === 50 && label.y === 50)).toBe(true);
+  expect(labels[12].collection.visible).toBe(true);
 });
 
 it('finishes Twin Hollows with both resource sites empty or under construction', () => {

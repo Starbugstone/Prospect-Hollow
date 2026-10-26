@@ -4,7 +4,7 @@
   <section
     ref="viewElement"
     class="town-moon-view"
-    :class="{ 'is-fallback': unavailable, 'is-compact': compact }"
+    :class="{ 'is-fallback': unavailable }"
     role="region"
     :aria-label="t('New Hollow on the Moon')"
   >
@@ -73,44 +73,26 @@
         role="group"
         :aria-label="t('Moon lots')"
       >
-        <svg
-          class="town-moon-leaders"
-          :viewBox="`0 0 ${viewport.width} ${viewport.height}`"
-          aria-hidden="true"
-        >
-          <template v-for="lot in shownLots" :key="lot.id">
-            <g v-if="lot.leader">
-              <line v-bind="lot.leader" />
-              <circle :cx="lot.leader.x2" :cy="lot.leader.y2" r="2" />
-            </g>
-          </template>
-        </svg>
         <TownMapLabel
           v-for="lot in shownLots"
           :key="lot.id"
           :name="lotInfo[lot.id].name"
           :status="lotInfo[lot.id].status"
-          :collapsed="lot.collapsed"
+          :ref="(label) => trackElement(labelElements, lot.id, label?.$el)"
           class="town-moon-lot"
           :data-moon-lot="lot.id"
           :aria-pressed="selected === lot.id"
-          :class="[
-            lotInfo[lot.id].look,
-            {
-              'is-pin': lot.collapsed,
-              selected: selected === lot.id,
-              'is-collectable': collecting(lot.id),
-            },
-          ]"
+          :class="{
+            selected: selected === lot.id,
+            'has-action-icon': !!TOWN_ACTIONS[indicators[lot.id]],
+          }"
           :style="{
-            left: `${lot.x}%`,
-            top: `${lot.y}%`,
-            width: `${lot.width ?? 104}px`,
-            height: `${lot.height ?? 52}px`,
+            translate: box.translate(lot),
+            maxWidth: `${lot.width}px`,
+            '--label-offset': `${lot.offsetY ?? 0}px`,
           }"
           :aria-label="lotInfo[lot.id].label"
           :title="lotInfo[lot.id].label"
-          @focus="revealOnFocus($event, lot.id)"
           @click="activateLabel(lot.id, $event)"
         />
       </div>
@@ -118,14 +100,11 @@
         <TownActionIcon
           v-for="lot in actionLots"
           :key="lot.id"
-          class="town-moon-action"
+          :ref="(icon) => trackElement(actionElements, lot.id, icon?.$el)"
           :indicator="indicators[lot.id]"
           :label="buildingActionLabel(town, lot.id, indicators[lot.id])"
           :data-moon-action="lot.id"
-          :style="{
-            left: `${lot.collection.x}%`,
-            top: `${lot.collection.y}%`,
-          }"
+          :style="{ translate: box.translate(lot.collection) }"
           @click="activateLabel(lot.id, $event)"
         />
       </div>
@@ -171,11 +150,7 @@ import {
 import TownMoonMonument from './TownMoonMonument.vue';
 import { MOON_SETTLEMENT } from '../../data/settlements';
 import { layoutMoonLabels, moonMapLabel } from '../../game/town/moon/MoonLabelLayout';
-import {
-  compactMoonViewport,
-  moonLabelDensity,
-  moonLabelNeedsAttention,
-} from '../../game/town/moon/MoonLabelDensity';
+import { townLabelWidth } from '../../game/town/TownLabelLayout';
 import {
   canCollectMoonstones as collectable,
   moonLotInfo,
@@ -185,7 +160,16 @@ import {
 } from '../../game/town/moon/MoonLotStatus';
 import TownActionIcon from './TownActionIcon.vue';
 import TownMapLabel from './TownMapLabel.vue';
-import { townActionAnchors } from '../../game/town/TownLabels';
+import {
+  TOWN_LABEL_DETAIL_DISTANCE,
+  townActionAnchors,
+  townLabelDetail,
+  townLabelRank,
+  labelBox,
+  updateLabels,
+  placeLabels,
+  trackElement,
+} from '../../game/town/TownLabels';
 import TownMoon from './TownMoon.vue';
 import TownMoonstoneBalance from './TownMoonstoneBalance.vue';
 import TownMoonBuilding from './TownMoonBuilding.vue';
@@ -234,7 +218,11 @@ watch(
   () => props.selected,
   (id) => (selectedLot.value = id ?? null),
 );
-const compact = computed(() => compactMoonViewport(viewport.value.width, viewport.value.height));
+const box = labelBox();
+const labelElements = new Map(),
+  actionElements = new Map();
+const renderedLots = shallowRef([]);
+let renderedLayout = '';
 let scene = null,
   disposed = false;
 
@@ -268,9 +256,8 @@ const mapApproaches = computed(() =>
   })),
 );
 const allLots = computed(() => [...mapLots.value, ...mapMonuments.value]);
-// Each lot's name, shared status (TownLabelStatus) and look, recomputed when the town or
-// its markers change rather than on every camera frame. The looks are the valley
-// labels': can-build, is-ready and has-income for the same states.
+// Content changes with the town or its markers, not with camera frames.
+// TownMapLabel owns all state styling on both maps.
 const lotInfo = computed(() => {
   const options = {
     indicators: props.indicators,
@@ -288,11 +275,6 @@ const lotInfo = computed(() => {
           status,
           label: moonLotLabel(props.town, id, options),
           state: moonLotStatus(props.town, id),
-          look: {
-            'can-build': status?.kind === 'available',
-            'is-ready': status?.kind === 'ready',
-            'has-income': status?.kind === 'coins' || status?.kind === 'tnt',
-          },
         },
       ];
     }),
@@ -300,37 +282,59 @@ const lotInfo = computed(() => {
 });
 const collecting = (id) =>
   id === 'moonstoneWorkshop' && lotInfo.value[id]?.status?.kind === 'coins';
-const needsAttention = (id) =>
-  !props.readOnly &&
-  moonLabelNeedsAttention({
-    status: lotInfo.value[id]?.state,
-    action: TOWN_ACTIONS[props.indicators[id]],
-    collectable: collecting(id),
-  });
 const placedLots = computed(() => {
   const { width, height } = viewport.value;
   const projected = unavailable.value
     ? allLots.value.map((lot) => moonMapLabel(lot, viewport.value))
     : labels.value;
   return layoutMoonLabels(
-    moonLabelDensity(
-      projected.map((lot) => ({
+    projected.map((lot) => {
+      const info = lotInfo.value[lot.id];
+      const selected = lot.id === selectedLot.value;
+      const attention =
+        !props.readOnly &&
+        (!!TOWN_ACTIONS[props.indicators[lot.id]] ||
+          collecting(lot.id) ||
+          ['open', 'work', 'ready'].includes(info.state));
+      return {
         ...lot,
-        attention: needsAttention(lot.id),
+        width: townLabelWidth(info.name),
+        rank: townLabelRank({
+          selected,
+          ready: info.status?.kind === 'ready',
+          available: attention,
+        }),
+        inView: lot.visible,
+        visible:
+          lot.visible &&
+          townLabelDetail({
+            distant: !unavailable.value && cameraDistance.value > TOWN_LABEL_DETAIL_DISTANCE,
+            selected,
+            attention,
+          }),
         action: !!TOWN_ACTIONS[props.indicators[lot.id]],
-      })),
-      width,
-      height,
-      { near: !unavailable.value && cameraDistance.value <= 48, selected: selectedLot.value },
-    ).map((lot) => (collecting(lot.id) ? { ...lot, width: 128, height: 64 } : lot)),
+      };
+    }),
     width,
     height,
   );
 });
-const shownLots = computed(() => placedLots.value.filter((lot) => lot.visible));
-// Action icons stand apart from the labels on every screen, as the valley's do, so a
-// finish or collection stays in reach on phones and with village labels hidden.
-const actionLots = computed(() => townActionAnchors(placedLots.value, props.indicators));
+// The same composited movement as the valley: camera frames update DOM transforms,
+// and Vue only redraws when visibility or label dimensions change.
+watch(
+  placedLots,
+  (positions) => {
+    const layout = updateLabels(renderedLots.value, positions, renderedLayout);
+    if (layout === null) placeLabels(renderedLots.value, labelElements, actionElements, box);
+    else {
+      renderedLayout = layout;
+      renderedLots.value = positions;
+    }
+  },
+  { immediate: true, flush: 'sync' },
+);
+const shownLots = computed(() => renderedLots.value.filter((lot) => lot.visible));
+const actionLots = computed(() => townActionAnchors(renderedLots.value, props.indicators));
 const choose = (id) => {
   selectedLot.value = id;
   emit(props.readOnly ? 'inspect' : 'select', id);
@@ -344,9 +348,6 @@ function activateLabel(id, event) {
 function cameraKey(event) {
   const action = cameraKeyAction(event);
   if (action) scene?.cameraAction(action);
-}
-function revealOnFocus(event, id) {
-  if (event.target.matches(':focus-visible')) selectedLot.value = id;
 }
 const updateGlow = () => {
   scene?.setUpgradeable(props.upgradeIds);
@@ -453,6 +454,7 @@ watch(
 );
 onMounted(() => {
   labelObserver = new ResizeObserver(([entry]) => {
+    box.measure(viewElement.value);
     viewport.value = { width: entry.contentRect.width, height: entry.contentRect.height };
   });
   labelObserver.observe(viewElement.value);
@@ -497,68 +499,5 @@ defineExpose({
 .town-moon-canvas:focus-visible {
   outline: 3px solid #89e2f5;
   outline-offset: -3px;
-}
-.town-moon-leaders {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-  pointer-events: none;
-}
-.town-moon-leaders line {
-  stroke: #bba77c;
-  stroke-width: 1.5;
-  filter: drop-shadow(0 1px 1px #10162b88);
-}
-.town-moon-leaders circle {
-  fill: #fbf8ea;
-  stroke: #bba77c;
-}
-.town-moon-lot :deep(.plot-name) {
-  align-self: end;
-  font-weight: 700;
-}
-.town-moon-lot :deep(small) {
-  align-self: start;
-  font-size: 10px;
-  line-height: 1.2;
-}
-.town-moon-action {
-  border-radius: 50%;
-  background: radial-gradient(circle, #142f48db 35%, #61d6ec55 60%, transparent 72%);
-}
-.town-moon-action :deep(img) {
-  filter: drop-shadow(0 0 5px #bcecff);
-}
-.town-moon-lot.selected {
-  outline: 3px solid #f5df91;
-  outline-offset: 2px;
-}
-.town-moon-lot.is-collectable :deep(small) {
-  white-space: normal;
-  overflow: visible;
-  text-overflow: clip;
-}
-.town-moon-lot.is-pin {
-  min-height: 0;
-  padding: 0;
-  place-items: center;
-  border: 0;
-  border-radius: 50%;
-  background: transparent;
-  box-shadow: none;
-}
-.town-moon-lot:active:not(:disabled) {
-  transform: translate(-50%, -100%) scale(0.97);
-}
-.town-moon-lot:focus-visible {
-  outline: 3px solid #89e2f5;
-  outline-offset: 2px;
-}
-.is-compact .town-moon-lot:not(.is-pin) {
-  min-height: 0;
-  padding: 2px 5px;
-  font-size: 10px;
 }
 </style>

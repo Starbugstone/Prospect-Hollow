@@ -272,37 +272,26 @@ and a timeout. If other containers are busy, replace `--network host` with
 
 `testing/browser/moon-labels.cjs` uses the same Docker browser setup. Substitute
 that filename in the second command to check WebGL and SVG at 1440×900, 900×360
-and 375×740. It checks every lot/site label or pin for overlap, screen bounds,
-leader anchors, touch/keyboard selection, compact coverage, the ready lot's finish
-icon (on screen at every size and tappable with labels hidden), and that no lot
-directory sits over the map (the Build tab lists the Moon lots). Set `PH_SCREENSHOT_DIR` to save the corresponding captures. Run it after changing lunar labels or camera framing.
+and 375×740. It checks visible labels for overlap, screen bounds, attachment to
+projected buildings, touch/keyboard selection, English/French text overflow and
+finish icons that remain tappable with names hidden. Set `PH_SCREENSHOT_DIR` to
+save captures. `testing/browser/town-label-parity.cjs` compares computed styling
+in both real map components across sizes, languages and interaction states.
 
-Moon labels retain their projected building anchors and move only to clear other
-labels or screen controls. Displaced labels and pins connect to their own anchor.
-Both settlements use the priority and distant-detail contract in `TownLabels.js`:
-selection and work take precedence over routine level names. On a Moon canvas
-narrower than 600px or shorter than 450px, completed lots use 10px pins inside
-28px named buttons. Open/buildable lots, construction, ready work, collections
-and unfinished monument sites keep full names and statuses. Action icons (the finish
-hammer, collections) stand apart from the labels at every size, as the valley's do,
-so they stay in reach on phones and with village labels hidden; the layout reserves
-their space so no label covers them. At a relative
-camera distance of 48 or less, nearby names return within the same budget; keyboard
-focus reveals one name, and activating any pin answers like a tap on its lot.
-Tapping a lot's pad or building in the scene opens it like its label, with labels
-on or off. The **Build** tab lists every Moon lot while the player is on the Moon,
-and the **Story** tab keeps the letters from New Hollow; neither sits on the map.
-Cinematics hide these controls.
+Both maps use `TownMapLabel.vue` for the complete pill: inline name/status,
+typography, colours, selection, focus, hover, press and responsive sizing.
+`TownLabelLayout.js` keeps each name at its projected building and hides lower
+priority names when they overlap or do not fit. `TownLabels.js` supplies priority,
+distant-detail and composited DOM movement. Selection and work take precedence;
+routine names disappear at distant zoom and return when zooming in. They do not
+move into vacant slots or change into dots. The Build tab still lists every lot,
+and every 3D parcel remains tappable with labels on or off.
 
-`MoonLabelDensity.js` caps routine name expansion at 25% of canvas area, counting
-full button rectangles (including transparent pin hit areas). Attention cards
-and selection take priority; all 13 current lots needing attention simultaneously
-still fit under the budget at both 375×740 and 900×360. The budget excludes shared
-header/footer chrome and panels explicitly opened by the player. Larger future
-catalogs must extend the worst-case regression before shipping. Desktop placement
-and external finish/collection targets are unchanged. SVG projection uses the same
-density and collision rules with the centred, letterboxed viewBox. Portrait framing
-preserves orbit and relative zoom while keeping the outer lunar lots in view.
+Map adapters supply projected coordinates and header/footer clearance. Moon SVG
+projection accounts for the centred, letterboxed viewBox and uses the same layout.
+Portrait framing preserves orbit and relative zoom. Action icons remain separate
+from text and reserve their own space, so a hidden name never hides its finish or
+collection button. Cinematics hide the controls.
 
 `PH_TEST_ORIGIN` points the check at another server.
 

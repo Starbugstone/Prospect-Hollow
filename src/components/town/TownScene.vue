@@ -107,18 +107,20 @@
         :name="placeName(anchor.id)"
         :status="labelStatus[anchor.id]"
         :quiet="quietPlot(anchor.id)"
+        :available="availableIds.includes(anchor.id)"
         :data-town-plot="anchor.id"
         v-show="anchor.visible"
-        :style="{ translate: labelTranslate(anchor) }"
+        :style="{
+          translate: labelTranslate(anchor),
+          maxWidth: `${anchor.width}px`,
+          '--label-offset': `${anchor.offsetY ?? 0}px`,
+        }"
         :class="{
           'scene-mine-button': anchor.id === 'mine',
           'quiet-plot': quietPlot(anchor.id),
           'suggested-plot': anchor.id === suggestedId,
           selected: anchor.id === selected,
-          'is-ready': constructionReady(town.projects[anchor.id]),
           'raid-defense-ready': raidDefenseIds.includes(anchor.id),
-          'can-build': availableIds.includes(anchor.id),
-          'has-income': indicators[anchor.id] === 'coins',
           'has-action-icon': !!TOWN_ACTIONS[indicators[anchor.id]],
         }"
         :aria-label="plotLabel(anchor.id)"
@@ -246,7 +248,6 @@ import { cameraKeyAction } from '../../game/town/TownCameraKeys';
 import { useGraphicsRecovery } from '../../composables/useGraphicsRecovery';
 import {
   constructionVisual,
-  constructionReady,
   availablePurchases,
   openOffers,
   nextGoal,
@@ -686,6 +687,7 @@ async function update() {
     scene.eraFrame(cinematicProgress, props.reducedMotion);
     emit('cinematic-ready');
   }
+  updateLabelActions();
   scene.setAvailable([...availableIds.value, ...(props.town.income.stored > 0 ? ['saloon'] : [])]);
   scene.setUpgradeable(props.cinematic ? [] : upgradeIds.value);
   scene.select(props.selected);
@@ -894,6 +896,12 @@ watch(
     scene?.setUpgradeable(value ? [] : upgradeIds.value);
   },
 );
+function updateLabelActions() {
+  scene?.setLabelActions(
+    Object.keys(indicators.value).filter((id) => TOWN_ACTIONS[indicators.value[id]]),
+  );
+}
+watch(indicators, updateLabelActions);
 watch(upgradeIds, (ids) => {
   if (props.active) scene?.setUpgradeable(props.cinematic ? [] : ids);
 });

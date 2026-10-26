@@ -35,17 +35,14 @@ window.getScene=()=>app._instance.subTree.children[0].component.setupState.scene
         const errors = pageErrors(page);
         console.log(touch ? 'Starting touch fixture' : 'Starting mouse fixture');
         await openFixture(page, 'moon-input-test', fixture);
-        await page
-          .getByRole('button', { name: /Ribbon landing/ })
-          .waitFor()
-          .catch(async (error) => {
-            throw new Error(
-              error.message +
-                '\n' +
-                JSON.stringify({ errors, text: await page.locator('body').innerText() }),
-            );
-          });
         await page.waitForFunction(() => !!window.getScene?.());
+        // Selection keeps a name visible at overview distance, using the same
+        // distant-detail policy as Earth. It does not navigate the camera.
+        await page.evaluate(() => {
+          window.app._instance.subTree.children[0].component.setupState.selectedLot =
+            'ribbonLanding';
+        });
+        await page.getByRole('button', { name: /Ribbon landing/ }).waitFor();
         console.log('Scene ready');
         await page.evaluate(() => window.getScene().setMotion(false));
         const activate = async (locator) => (touch ? locator.tap() : locator.click());

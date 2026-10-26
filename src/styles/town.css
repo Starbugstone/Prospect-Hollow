@@ -378,87 +378,6 @@
   inset: 0;
   pointer-events: none;
 }
-.town-scene-labels button {
-  position: absolute;
-  /* Placed with the per-frame `translate` property (see TownLabels.js). */
-  left: 0;
-  top: 0;
-  transform: translate(-50%, -30%);
-  pointer-events: auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  min-height: 36px;
-  padding: 7px 12px;
-  border-radius: 16px;
-  border: 1px solid #bba77c;
-  background: #ffffff;
-  color: #4e5b45;
-  font:
-    13px Georgia,
-    serif;
-  box-shadow: 0 3px 7px #534a3022;
-  white-space: nowrap;
-}
-.town-scene-labels button:active:not(:disabled) {
-  transform: translate(-50%, -30%) scale(0.97);
-}
-.town-scene-labels button.has-action-icon {
-  margin-top: 24px;
-}
-.town-scene-labels button.selected {
-  outline: 2px solid #789788;
-  outline-offset: 2px;
-}
-.town-scene-labels button:focus-visible {
-  outline: 3px solid #426654;
-  outline-offset: 3px;
-}
-.town-scene-labels button small {
-  font: 9px var(--font-body);
-}
-/* A shortage names the building that would fix it. */
-.town-scene-labels button small.need-hint {
-  color: #8a4f0f;
-  font-weight: 700;
-}
-.high-contrast .town-view .scene-mine-button small {
-  color: inherit;
-}
-.town-scene-labels button:hover {
-  box-shadow: 0 4px 14px #534a3044;
-}
-/* Keep the mine entrance visible below its label at every camera distance. */
-.town-scene-labels .scene-mine-button {
-  margin-top: -56px;
-}
-/* Enlarge the tap target without changing the visible mine label. */
-.town-scene-labels .scene-mine-button::before {
-  content: '';
-  position: absolute;
-  inset: -14px;
-  border-radius: inherit;
-}
-@media (max-width: 550px) {
-  .town-scene-labels button {
-    min-height: 32px;
-    padding: 7px;
-    gap: 3px;
-    font-size: 10px;
-    border-radius: 11px;
-  }
-  .town-scene-labels button small {
-    font-size: 8px;
-  }
-  .town-scene-labels button small.need-hint {
-    font-size: 10px;
-  }
-  .town-scene-labels .scene-mine-button {
-    flex-direction: column;
-    min-height: 44px;
-  }
-}
 .town-project-progress {
   border-block: 1px solid #d5cbb4;
   padding-block: 18px;
@@ -1379,23 +1298,6 @@ html:has(.town-museum[open]) {
   object-fit: contain;
 }
 
-/* The same state looks the same on every map's labels, the valley's and the Moon's. */
-.town-scene-labels button.can-build,
-.town-moon-lot.can-build {
-  background: #d9f1fa;
-  border-color: #83b7c6;
-  color: #345663;
-}
-.town-scene-labels button.is-ready,
-.town-scene-labels button.has-income,
-.town-moon-lot.is-ready,
-.town-moon-lot.has-income,
-.town-scene-labels .scene-mine-button {
-  background: #e1f0c0;
-  border-color: #8baa65;
-  color: #405b35;
-}
-
 .town-map-wallet {
   position: absolute;
   top: max(60px, calc(env(safe-area-inset-top) + 60px));
@@ -2133,30 +2035,6 @@ html:has(.town-museum[open]) {
   inset: 0;
   pointer-events: none;
 }
-.town-moon-lot {
-  position: absolute;
-  transform: translate(-50%, -100%);
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: minmax(0, 1fr) auto;
-  gap: 1px;
-  min-height: 38px;
-  padding: 4px 10px;
-  border: 1px solid #b9c2a4;
-  border-radius: 10px;
-  background: #fbf8eaee;
-  box-shadow: 0 3px 14px #0000003a;
-  color: #3f5547;
-  font-size: 12px;
-  line-height: 1.15;
-  text-align: center;
-  pointer-events: auto;
-  cursor: pointer;
-}
-.town-moon-lot small {
-  color: #6c6a5d;
-  font-weight: 600;
-}
 .town-moon-header {
   position: absolute;
   /* Below the town's save status and savings, which stay visible on the Moon. */
@@ -2190,13 +2068,6 @@ html:has(.town-museum[open]) {
 .town-moon-title .town-moon {
   width: 26px;
   height: 26px;
-}
-@media (max-width: 600px) {
-  .town-moon-lot {
-    min-height: 44px;
-    padding: 3px 7px;
-    font-size: 11px;
-  }
 }
 
 /* The Moon in the valley sky is painted in the scene (TownSkyMoon); this is only its

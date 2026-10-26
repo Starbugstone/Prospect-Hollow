@@ -7,6 +7,8 @@ import Moon from '/src/components/town/TownMoonView.vue';
 import {MOON_LOTS} from '/src/data/moonSettlement.js';
 import {createTown} from '/src/data/town.js';
 import {areasForSettlement,areaUnlocked} from '/src/data/townLandmarks.js';
+import {moonMapLabel} from '/src/game/town/moon/MoonLabelLayout.js';
+window.moonMapLabel=moonMapLabel;
 import {setLocale} from '/src/i18n/index.js';
 window.setLocale=setLocale;
 const town=reactive(createTown());window.town=town;town.era='twin-hollows';
@@ -89,30 +91,12 @@ window.getMoon=()=>app._instance.subTree.component.setupState;
           layout.length,
           'Every Moon label uses the shared map renderer',
         );
-        assert.equal(
-          layout.length,
-          await page.evaluate(() => window.expectedCount),
-          'Every lunar lot and site keeps a reachable label or pin',
+        assert.ok(layout.length > 0, 'The map shows important names');
+        assert.ok(
+          layout.every((lot) => !lot.pin),
+          'Every visible name uses a pill',
         );
-        const compact = width < 600 || height < 450;
-        if (compact) {
-          assert.ok(
-            layout.some((lot) => lot.pin),
-            'Routine lots collapse to pins',
-          );
-          assert.equal(
-            layout.find((lot) => lot.id === 'settlerDomes').pin,
-            false,
-            'Ready construction always labelled',
-          );
-          const coverage =
-            layout.reduce((sum, lot) => sum + lot.box.width * lot.box.height, 0) / (width * height);
-          assert.ok(coverage <= 0.25, `Label/pin coverage ${coverage} exceeds 25%`);
-        } else
-          assert.ok(
-            layout.every((lot) => !lot.pin),
-            'Desktop labels preserved',
-          );
+        assert.ok(layout.length <= (await page.evaluate(() => window.expectedCount)));
         // The finish hammer stands apart from the labels on every screen, as the valley's.
         const hammer = page.locator('[data-moon-action="settlerDomes"]');
         const hammerBox = await hammer.boundingBox();
@@ -157,62 +141,30 @@ window.getMoon=()=>app._instance.subTree.component.setupState;
           'Ready work retains its own touch target',
         );
         await page.waitForFunction(() => window.outlined.at(-1) === 'settlerDomes');
-        if (compact) {
-          const pin = page.locator('.town-moon-lot.is-pin').first();
-          const pinId = await pin.getAttribute('data-moon-lot');
-          await pin.focus();
-          await page.keyboard.press('Enter');
-          assert.equal(
-            await page.evaluate(() => window.selected.at(-1)),
-            pinId,
-            'Keyboard opens a collapsed lot',
-          );
-          await page.waitForFunction(
-            (id) => !document.querySelector(`[data-moon-lot="${id}"]`).classList.contains('is-pin'),
-            pinId,
-          );
-          if (width === 375 && process.env.PH_SCREENSHOT_DIR)
-            await page.screenshot({
-              animations: 'disabled',
-              path: `${process.env.PH_SCREENSHOT_DIR}/moon-${fallback ? 'svg' : 'webgl'}-375-revealed.png`,
-            });
-        }
+        const first = page.locator('.town-moon-lot').first();
+        const firstId = await first.getAttribute('data-moon-lot');
+        await first.focus();
+        await page.keyboard.press('Enter');
+        assert.equal(
+          await page.evaluate(() => window.selected.at(-1)),
+          firstId,
+          'Keyboard opens the named lot',
+        );
         // The Moon lot list lives in the Build tab; the Moon map has no directory overlay.
         assert.equal(await page.locator('.moon-lot-directory').count(), 0);
-        // A label moved off its building connects to it with a leader ending at its own
-        // anchor; one still over its anchor needs none.
-        const lots = await page.evaluate(() =>
-          window.getMoon().shownLots.map(({ id, x, y, width, height, leader, anchor }) => ({
-            id,
-            x,
-            y,
-            width,
-            height,
-            leader,
-            anchor,
-          })),
-        );
-        for (const lot of lots) {
-          if (!lot.anchor) continue;
-          const anchor = { x: (lot.anchor.x * width) / 100, y: (lot.anchor.y * height) / 100 };
-          const left = (lot.x * width) / 100 - lot.width / 2,
-            top = (lot.y * height) / 100 - lot.height;
-          const over =
-            anchor.x >= left - 2 &&
-            anchor.x <= left + lot.width + 2 &&
-            anchor.y >= top - 2 &&
-            anchor.y <= top + lot.height + 2;
-          assert.ok(over || lot.leader, `${lot.id} moved off its building without a leader`);
-          if (!lot.leader) continue;
-          assert.ok(
-            Math.abs(lot.leader.x2 - anchor.x) < 0.1,
-            `${lot.id} leader ends at its anchor`,
-          );
-          assert.ok(
-            Math.abs(lot.leader.y2 - anchor.y) < 0.1,
-            `${lot.id} leader ends at its anchor`,
-          );
-        }
+        const detached = await page.evaluate(() => {
+          const moon = window.getMoon();
+          const source = moon.unavailable
+            ? moon.allLots.map((lot) => window.moonMapLabel(lot, moon.viewport))
+            : moon.labels;
+          return moon.shownLots
+            .filter((lot) => {
+              const anchor = source.find((point) => point.id === lot.id);
+              return !anchor || lot.x !== anchor.x || lot.y !== anchor.y;
+            })
+            .map((lot) => lot.id);
+        });
+        assert.deepEqual(detached, [], 'Names stay at their projected buildings');
         await page
           .locator('#fixture')
           .evaluate((element) => element.classList.add('town-labels-hidden'));
@@ -232,9 +184,7 @@ window.getMoon=()=>app._instance.subTree.component.setupState;
         await page
           .locator('#fixture')
           .evaluate((element) => element.classList.remove('town-labels-hidden'));
-        // Long translated names used to grow beyond the fixed layout rectangle.
-        // Inspect the real shared renderer, including a selected workshop and its
-        // multi-line collection status, on both sides of the compact breakpoint.
+        // Long translated names and collection statuses must stay inside the pill.
         for (const language of ['en', 'fr']) {
           await page.evaluate((language) => {
             window.setLocale(language);
@@ -262,9 +212,10 @@ window.getMoon=()=>app._instance.subTree.component.setupState;
         }
         await page.evaluate(() => window.setLocale('en'));
         console.log(
-          `${fallback ? 'SVG' : 'WebGL'} ${width}x${height}: all ${layout.length} lots reachable, separate, anchored and within compact coverage budget.`,
+          `${fallback ? 'SVG' : 'WebGL'} ${width}x${height}: ${layout.length} visible names stay separate and anchored; actions, touch, keyboard and translated bounds pass.`,
         );
       }
+      assert.deepEqual(errors, []);
       await page.evaluate(() => window.app.unmount());
       await page.close();
     }

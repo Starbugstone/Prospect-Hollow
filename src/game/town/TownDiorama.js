@@ -347,6 +347,13 @@ export class TownDiorama extends TownPrimitives {
     this.availablePlots = new Set(ids);
     this.render();
   }
+  setLabelActions(ids) {
+    const key = ids.join(',');
+    if (key === this.labelActionKey) return;
+    this.labelActionKey = key;
+    this.labelActions = new Set(ids);
+    this.render();
+  }
   // The valley's Moon, fixed in the world; the scene above it keeps only its tap target.
   showSkyMoon(lights) {
     if (this.skyMoon?.show(lights)) this.render();

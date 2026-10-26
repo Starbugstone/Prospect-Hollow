@@ -58,6 +58,7 @@ function moonView(template, props, ids, prepare) {
     pinia,
     prepare(state) {
       state.viewport.value = { width: 1200, height: 800 };
+      state.cameraDistance.value = 40;
       state.labels.value = ids.map((id, n) => ({ id, x: 30 + n * 20, y: 50, visible: true }));
       prepare?.(state);
     },
@@ -113,11 +114,11 @@ describe('A read-only Moon shows levels only, as the valley does', () => {
     const owner = await moonView(lots, props, ids);
     expect(owner).toMatch(/Tap to finish|Build|Choose a design/);
     // The valley's look for a place to build.
-    expect(owner).toMatch(/class="[^"]*town-moon-lot[^"]*can-build/);
+    expect(owner).toMatch(/class="[^"]*can-build/);
     const visitor = await moonView(lots, { ...props, readOnly: true }, ids);
     expect(visitor).toContain('Lv. 2');
     expect(visitor).not.toMatch(/Tap to finish|Build|Choose a design|Under construction/);
-    expect(visitor).not.toMatch(/class="[^"]*town-moon-lot[^"]*(can-build|is-ready)/);
+    expect(visitor).not.toMatch(/class="[^"]*(can-build|is-ready)/);
   });
 });
 
