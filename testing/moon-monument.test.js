@@ -1,4 +1,4 @@
-import { afterEach, expect, it } from 'vitest';
+import { afterEach, expect, it, vi } from 'vitest';
 import { createSSRApp, h } from 'vue';
 import { renderToString } from 'vue/server-renderer';
 import { Box3, Group, PerspectiveCamera, Scene, Vector3 } from 'three';
@@ -34,14 +34,16 @@ import {
   buildMoonMonuments,
   moonMonumentSignature,
   moonLabelAnchors,
+  syncMoonMonuments,
 } from '../src/game/town/moon/MoonMonuments';
-import { buildPersonalAreas } from '../src/game/town/TownPersonalisation';
+import { buildPersonalAreas, buildTownBanner } from '../src/game/town/TownPersonalisation';
 import { buildLandmark } from '../src/game/town/TownLandmarks';
 import { focusTownPlace } from '../src/game/town/TownCamera';
 import { updateEventCamera } from '../src/game/town/TownEventCamera';
 import { TownPrimitives } from '../src/game/town/TownPrimitives';
 import TownMoonMonument from '../src/components/town/TownMoonMonument.vue';
 import TownMonumentSite from '../src/components/town/TownMonumentSite.vue';
+import TownLandmarkPreview from '../src/components/town/TownLandmarkPreview.vue';
 import schema from '../backend/content/public-schema.json';
 
 const area = AREA_BY_ID['earthrise-plaza'];
@@ -70,6 +72,88 @@ afterEach(() => {
 });
 const render = (component, props) =>
   renderToString(createSSRApp({ render: () => h(component, props) }));
+
+const townCrest = {
+  shape: 'swallowtail',
+  pattern: 'quartered',
+  emblem: 'otter',
+  primary: '#367673',
+  secondary: '#e8bf79',
+  emblemColour: '#9f4f48',
+};
+
+it('flies the actual town flag at First Footprints, with the same cloth as the valley', () => {
+  const value = town();
+  value.personalisation.crest = townCrest;
+  const d = fixture(value);
+  const banner = buildTownBanner(d, value);
+  const monument = buildLandmark(d, d.world, 'first-footprints', 1);
+  const cloth = monument.getObjectByName('Crest emblem: otter');
+  expect(cloth).toBeDefined();
+  const valleyCloth = banner.getObjectByName('Crest emblem: otter');
+  expect(cloth.material.color.getHex()).toBe(valleyCloth.material.color.getHex());
+  expect(Array.from(cloth.geometry.attributes.uv.array)).toEqual(
+    Array.from(valleyCloth.geometry.attributes.uv.array),
+  );
+  expect(cloth.geometry.parameters.width / cloth.geometry.parameters.height).toBeCloseTo(
+    valleyCloth.geometry.parameters.width / valleyCloth.geometry.parameters.height,
+  );
+  const held = Array.from(cloth.geometry.attributes.position.array);
+  monument.getObjectByName('Town flag').userData.sceneryUpdate(10);
+  expect(Array.from(cloth.geometry.attributes.position.array)).toEqual(held);
+});
+
+it('refreshes the Moon monument when the town flag is edited or removed', () => {
+  const value = finish(choose(town(), 'first-footprints'), 1);
+  value.personalisation.crest = townCrest;
+  const original = moonMonumentSignature(value);
+  const d = fixture(value);
+  d.d = d;
+  d.requestFrame = vi.fn();
+  syncMoonMonuments(d, value);
+  const initial = d.monuments;
+  const cloth = initial.getObjectByName('Crest emblem: otter');
+  expect(cloth).toBeDefined();
+  const disposed = vi.fn();
+  cloth.geometry.addEventListener('dispose', disposed);
+  const edited = {
+    ...value,
+    personalisation: { ...value.personalisation, crest: { ...townCrest, emblem: 'fox' } },
+  };
+  expect(moonMonumentSignature(edited)).not.toBe(original);
+  d.town = edited;
+  syncMoonMonuments(d, edited);
+  expect(d.monuments).not.toBe(initial);
+  expect(d.monuments.getObjectByName('Crest emblem: fox')).toBeDefined();
+  expect(disposed).toHaveBeenCalledOnce();
+  const removed = { ...edited, personalisation: { ...edited.personalisation, crest: null } };
+  d.town = removed;
+  syncMoonMonuments(d, removed);
+  expect(d.monuments.getObjectByName('Crest emblem: fox')).toBeUndefined();
+});
+
+it('shows the town crest in the First Footprints design preview too', async () => {
+  const html = await render(TownLandmarkPreview, {
+    choice: 'first-footprints',
+    crest: townCrest,
+  });
+  expect(html).toContain('aria-label="Town crest"');
+  for (const colour of [townCrest.primary, townCrest.secondary, townCrest.emblemColour])
+    expect(html).toContain(colour);
+});
+
+it.each([null, { ...townCrest, emblem: 'future-emblem' }])(
+  'keeps the original mission pennant when no supported town flag exists: %j',
+  (crest) => {
+    const value = town();
+    value.personalisation.crest = crest;
+    const d = fixture(value);
+    expect(buildTownBanner(d, value)).toBeNull();
+    const monument = buildLandmark(d, d.world, 'first-footprints', 1);
+    expect(monument.getObjectByName('Town flag')).toBeUndefined();
+    expect(new Box3().setFromObject(monument).isEmpty()).toBe(false);
+  },
+);
 
 it('uses one settlement contract, with historical defaults and no speculative renderer', () => {
   expect(area).toMatchObject({

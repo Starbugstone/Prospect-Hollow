@@ -1,4 +1,5 @@
 import { futureShape } from '../buildings/futureShapes';
+import { buildTownFlag } from '../TownEmblems';
 
 const SHELL = '#e5e8e7',
   REGOLITH = '#aaa79f',
@@ -22,9 +23,16 @@ export function buildMoonLandmark(d, g, option, tier, move) {
       d.box(g, 0.46, 0.03, 0.8, x, 0.97, z, METAL, true);
       for (let n = 0; n < 3; n++) d.box(g, 0.48, 0.035, 0.04, x, 0.99, z - 0.25 + n * 0.2, SHELL);
     }
-    d.rod(g, [1.2, 0.95, -0.4], [1.2, h, -0.4], 0.07, GOLD);
-    d.box(g, 1.6, 0.9, 0.05, 2, h - 0.6, -0.4, colour);
-    d.ball(g, 2, h - 0.6, -0.35, [0.24, 0.24, 0.04], GOLD, 'rock');
+    const flag = buildTownFlag(d, g, d.town?.personalisation?.crest, { still: true });
+    if (flag) {
+      flag.position.set(1.2, 0.95, -0.4);
+      flag.scale.setScalar(0.55);
+    } else {
+      // Towns without a chosen crest retain the original mission pennant.
+      d.rod(g, [1.2, 0.95, -0.4], [1.2, h, -0.4], 0.07, GOLD);
+      d.box(g, 1.6, 0.9, 0.05, 2, h - 0.6, -0.4, colour);
+      d.ball(g, 2, h - 0.6, -0.35, [0.24, 0.24, 0.04], GOLD, 'rock');
+    }
     const glass = d.material('#a4dbea');
     glass.transparent = true;
     glass.opacity = 0.28;

@@ -21,7 +21,13 @@
 
     <template v-else-if="built">
       <figure class="monument-hero">
-        <TownLandmarkPreview :choice="built" :stage="stage" :paint="paint" :scaffold="!!work" />
+        <TownLandmarkPreview
+          :choice="built"
+          :stage="stage"
+          :paint="paint"
+          :scaffold="!!work"
+          :crest="town.personalisation?.crest"
+        />
         <figcaption>
           <strong>{{ t(LANDMARK_BY_ID[built].label) }}</strong>
           <span>{{ t(LANDMARK_BY_ID[built].detail) }}</span>
@@ -155,7 +161,11 @@
           :aria-checked="picked === choice"
           @click="pick(choice)"
         >
-          <TownLandmarkPreview :choice="choice" :paint="paint" />
+          <TownLandmarkPreview
+            :choice="choice"
+            :paint="paint"
+            :crest="town.personalisation?.crest"
+          />
           <span class="monument-choice-text">
             <strong>{{ t(LANDMARK_BY_ID[choice].label) }}</strong>
             <small>{{ t(LANDMARK_BY_ID[choice].detail) }}</small>

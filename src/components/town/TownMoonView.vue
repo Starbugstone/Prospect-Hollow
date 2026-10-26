@@ -256,6 +256,7 @@ const mapMonuments = computed(() =>
     x: area.positions[0][0] * 1.3,
     y: 6 + area.positions[0][1] * 1.05,
     choice: areaChoice(props.town, area),
+    crest: props.town.personalisation?.crest,
     stage: areaShownStage(props.town, area) || monumentWork(props.town, area)?.level || 1,
     work: monumentWork(props.town, area),
   })),

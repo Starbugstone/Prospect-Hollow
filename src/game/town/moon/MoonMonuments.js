@@ -16,14 +16,15 @@ import { TownPresentation } from '../TownPresentation';
 
 export const MOON_MONUMENT_AREAS = areasForSettlement(MOON_SETTLEMENT);
 export const moonMonumentSignature = (town) =>
-  JSON.stringify(
-    MOON_MONUMENT_AREAS.map((area) => [
+  JSON.stringify([
+    town.personalisation?.crest ?? null,
+    ...MOON_MONUMENT_AREAS.map((area) => [
       areaUnlocked(town, area),
       areaChoice(town, area),
       areaShownStage(town, area),
       monumentWork(town, area),
     ]),
-  );
+  ]);
 /**
  * Where each lot's and open monument site's label hangs: over its building, or lower
  * over a site. Every Moon lot, then each site the town has opened.

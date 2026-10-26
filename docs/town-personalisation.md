@@ -20,6 +20,10 @@ small cloth mesh gently ripples below its fixed crossbar in the existing town
 animation loop. It uses the animated render layer, preserving static town batches
 and the cached background. Pause, hidden views and reduced motion freeze it;
 replacing or removing a banner retires its animation and owned resources.
+`TownEmblems.buildTownFlag()` also supplies the flag preserved inside the Moon's
+First Footprints monument, held still beneath its dome. The monument and its SVG
+previews show the current town crest; changing or removing it refreshes the Moon
+site. Towns without a supported crest retain the original mission pennant.
 
 The distinction plaque sits on the central mine rock face above the sunken shaft.
 It has its own scenery cache entry, so changing it or the crest never rebuilds

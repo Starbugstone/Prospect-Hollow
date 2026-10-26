@@ -89,7 +89,11 @@
       <template v-else-if="form === 'footprints'">
         <ellipse cx="80" cy="105" rx="48" ry="10" fill="#aaa79f" />
         <path d="M51 99v-7h7v7Zm15-9v-7h7v7Zm-15-9v-7h7v7Z" fill="#657481" />
-        <path d="M93 99V42m0 0h26v18H93" stroke="#eacb80" stroke-width="3" />
+        <template v-if="crest">
+          <path d="M93 99V42h26" fill="none" stroke="#655343" stroke-width="3" />
+          <TownCrest :crest="crest" x="95" y="44" width="23" height="28" />
+        </template>
+        <path v-else d="M93 99V42m0 0h26v18H93" stroke="#eacb80" stroke-width="3" />
         <path
           d="M32 105V80a48 52 0 0 1 96 0v25Z"
           fill="#a4dbea"
@@ -420,10 +424,12 @@ import { computed, useId } from 'vue';
 import { MOONSTONE_LANDMARK_FORMS } from '../../game/town/TownMoonstoneLandmarks';
 import { LANDMARK_BY_ID, PERSONAL_AREAS, LANDMARK_PROGRESSION } from '../../data/townLandmarks';
 import { settlementOf } from '../../data/settlements';
+import TownCrest from './TownCrest.vue';
 const props = defineProps({
   choice: { type: String, required: true },
   stage: { type: Number, default: 1 },
   paint: { type: Object, default: () => ({}) },
+  crest: { type: Object, default: null },
   // A level still under construction stands inside scaffolding.
   scaffold: Boolean,
   map: Boolean,
