@@ -6,6 +6,7 @@ import {
   villageSounds,
   villageAmbienceGain,
   VILLAGE_AUDIO,
+  streamSource,
 } from '../src/game/audio/TownSoundscape';
 
 const instances = [];
@@ -202,6 +203,24 @@ describe('Recorded village soundscape', () => {
     expect(fetchAudio).toHaveBeenCalledTimes(3);
     expect(audio.sources.size).toBe(2);
     expect(player.play).toHaveBeenCalledOnce();
+  });
+
+  it('streams Opus music where the browser plays it and the MP3 elsewhere', async () => {
+    const opus = (type) => (type === 'audio/ogg; codecs=opus' ? 'probably' : '');
+    for (const kind of ['music', 'fanfare']) {
+      const { src, opus: ogg } = VILLAGE_AUDIO[kind];
+      expect(ogg).toMatch(/\.ogg$/);
+      expect(existsSync(`public${ogg}`), ogg).toBe(true);
+      expect(existsSync(`public${src}`), src).toBe(true);
+      expect(streamSource({ canPlayType: opus }, VILLAGE_AUDIO[kind])).toBe(ogg);
+      expect(streamSource({ canPlayType: () => '' }, VILLAGE_AUDIO[kind])).toBe(src);
+      expect(streamSource({}, VILLAGE_AUDIO[kind])).toBe(src);
+    }
+    const { audio, player } = setup();
+    player.canPlayType = vi.fn(opus);
+    await audio.unlock();
+    await flush();
+    expect(player.src).toBe(VILLAGE_AUDIO.music.opus);
   });
 
   it('plays sparse activity over the continuous beds without immediately repeating eligible cues', async () => {
