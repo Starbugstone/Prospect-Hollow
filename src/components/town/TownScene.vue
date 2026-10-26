@@ -100,10 +100,13 @@
       role="group"
       :aria-label="t(readOnly ? 'Village buildings' : 'Choose a plot or enter the mine')"
     >
-      <button
+      <TownMapLabel
         v-for="anchor in plotAnchors"
         :key="anchor.id"
-        :ref="(element) => trackElement(labelElements, anchor.id, element)"
+        :ref="(label) => trackElement(labelElements, anchor.id, label?.$el)"
+        :name="placeName(anchor.id)"
+        :status="labelStatus[anchor.id]"
+        :quiet="quietPlot(anchor.id)"
         :data-town-plot="anchor.id"
         v-show="anchor.visible"
         :style="{ translate: labelTranslate(anchor) }"
@@ -125,11 +128,7 @@
         @pointerenter="anchor.id === 'mine' && prefetchBoard()"
         @pointerdown="anchor.id === 'mine' && prefetchBoard()"
         @click="chooseLabel(anchor.id, $event)"
-      >
-        <span v-if="quietPlot(anchor.id)" class="quiet-plot-plus" aria-hidden="true">+</span>
-        <span class="plot-name">{{ placeName(anchor.id) }}</span>
-        <TownLabelStatus :status="labelStatus[anchor.id]" />
-      </button>
+      />
     </div>
     <div
       v-if="needChips.length || moon.homesteads"
@@ -210,7 +209,7 @@ import TownIcon from './TownIcon.vue';
 import TownMoon from './TownMoon.vue';
 import TownMoonView from './TownMoonView.vue';
 import TownActionIcon from './TownActionIcon.vue';
-import TownLabelStatus from './TownLabelStatus.vue';
+import TownMapLabel from './TownMapLabel.vue';
 import { moonSettlement } from '../../data/moonSettlement';
 import GameViewStatus from '../GameViewStatus.vue';
 import { TOWN_ACTIONS, buildingActionLabel } from '../../data/townIndicators';
@@ -232,6 +231,7 @@ import {
   sameIndicators,
   trackElement,
   updateLabels,
+  townActionAnchors,
 } from '../../game/town/TownLabels';
 import { BUILDINGS, BUILDING_BY_ID, EARTH_BUILDINGS } from '../../data/town';
 import {
@@ -469,11 +469,7 @@ const upgradeIds = computed(() =>
 );
 // Monument sites carry an action icon but never a label.
 const plotAnchors = computed(() => anchors.value.filter((anchor) => !anchor.site));
-const actionAnchors = computed(() =>
-  anchors.value.filter(
-    (anchor) => TOWN_ACTIONS[indicators.value[anchor.id]] && anchor.collection.visible,
-  ),
-);
+const actionAnchors = computed(() => townActionAnchors(anchors.value, indicators.value));
 const buildingName = (id) => t(BUILDING_BY_ID[id].shortName);
 const actionLabel = (id) =>
   props.readOnly

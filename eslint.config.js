@@ -14,6 +14,7 @@ export const MAP_OVERLAY_FILES = [
   'src/components/town/TownDefenseStatus.vue',
   'src/components/town/TownIcon.vue',
   'src/components/town/TownLabelStatus.vue',
+  'src/components/town/TownMapLabel.vue',
   'src/components/town/TownLandmarkPreview.vue',
   'src/components/town/TownMoon.vue',
   'src/components/town/TownMoonBuilding.vue',

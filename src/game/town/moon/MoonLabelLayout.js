@@ -107,8 +107,6 @@ export function layoutMoonLabels(labels, width, height) {
     if (!changed) break;
   }
   for (const label of shown) {
-    const action = actions.find((point) => point.id === label.id);
-    if (action) label.actionPoint = { x: (action.x / width) * 100, y: (action.y / height) * 100 };
     const w = label.width,
       h = label.height;
     const anchor = { x: (label.anchor.x * width) / 100, y: (label.anchor.y * height) / 100 };
@@ -120,6 +118,25 @@ export function layoutMoonLabels(labels, width, height) {
         ? { x1: edge.x, y1: edge.y, x2: anchor.x, y2: anchor.y }
         : null;
   }
-  const byId = new Map(result.map((label) => [label.id, label]));
+  // Text can run out of room. The action at the projected place remains available,
+  // following the same collection-anchor contract as the valley's map.
+  const byId = new Map(
+    result.map((label) => {
+      const action = actions.find((point) => point.id === label.id);
+      return [
+        label.id,
+        action
+          ? {
+              ...label,
+              collection: {
+                x: (action.x / width) * 100,
+                y: (action.y / height) * 100,
+                visible: true,
+              },
+            }
+          : label,
+      ];
+    }),
+  );
   return labels.map((label) => byId.get(label.id));
 }

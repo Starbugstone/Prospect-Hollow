@@ -85,10 +85,12 @@
             </g>
           </template>
         </svg>
-        <button
+        <TownMapLabel
           v-for="lot in shownLots"
           :key="lot.id"
-          type="button"
+          :name="lotInfo[lot.id].name"
+          :status="lotInfo[lot.id].status"
+          :collapsed="lot.collapsed"
           class="town-moon-lot"
           :data-moon-lot="lot.id"
           :aria-pressed="selected === lot.id"
@@ -110,11 +112,7 @@
           :title="lotInfo[lot.id].label"
           @focus="revealOnFocus($event, lot.id)"
           @click="activateLabel(lot.id, $event)"
-        >
-          <span v-if="lot.collapsed" class="moon-lot-pin" aria-hidden="true"></span>
-          <strong v-if="!lot.collapsed">{{ lotInfo[lot.id].name }}</strong>
-          <TownLabelStatus v-if="!lot.collapsed" :status="lotInfo[lot.id].status" />
-        </button>
+        />
       </div>
       <div class="town-action-icons" role="group" :aria-label="t('Village buildings')">
         <TownActionIcon
@@ -125,8 +123,8 @@
           :label="buildingActionLabel(town, lot.id, indicators[lot.id])"
           :data-moon-action="lot.id"
           :style="{
-            left: `${lot.actionPoint?.x ?? lot.anchor?.x ?? lot.x}%`,
-            top: `${lot.actionPoint?.y ?? lot.anchor?.y ?? lot.y}%`,
+            left: `${lot.collection.x}%`,
+            top: `${lot.collection.y}%`,
           }"
           @click="activateLabel(lot.id, $event)"
         />
@@ -186,7 +184,8 @@ import {
   moonLotStatus,
 } from '../../game/town/moon/MoonLotStatus';
 import TownActionIcon from './TownActionIcon.vue';
-import TownLabelStatus from './TownLabelStatus.vue';
+import TownMapLabel from './TownMapLabel.vue';
+import { townActionAnchors } from '../../game/town/TownLabels';
 import TownMoon from './TownMoon.vue';
 import TownMoonstoneBalance from './TownMoonstoneBalance.vue';
 import TownMoonBuilding from './TownMoonBuilding.vue';
@@ -307,7 +306,7 @@ const needsAttention = (id) =>
     action: TOWN_ACTIONS[props.indicators[id]],
     collectable: collecting(id),
   });
-const shownLots = computed(() => {
+const placedLots = computed(() => {
   const { width, height } = viewport.value;
   const projected = unavailable.value
     ? allLots.value.map((lot) => moonMapLabel(lot, viewport.value))
@@ -325,13 +324,12 @@ const shownLots = computed(() => {
     ).map((lot) => (collecting(lot.id) ? { ...lot, width: 128, height: 64 } : lot)),
     width,
     height,
-  ).filter((lot) => lot.visible);
+  );
 });
+const shownLots = computed(() => placedLots.value.filter((lot) => lot.visible));
 // Action icons stand apart from the labels on every screen, as the valley's do, so a
 // finish or collection stays in reach on phones and with village labels hidden.
-const actionLots = computed(() =>
-  shownLots.value.filter((lot) => TOWN_ACTIONS[props.indicators[lot.id]]),
-);
+const actionLots = computed(() => townActionAnchors(placedLots.value, props.indicators));
 const choose = (id) => {
   selectedLot.value = id;
   emit(props.readOnly ? 'inspect' : 'select', id);
@@ -516,16 +514,14 @@ defineExpose({
   fill: #fbf8ea;
   stroke: #bba77c;
 }
-.town-moon-lot strong {
+.town-moon-lot :deep(.plot-name) {
   align-self: end;
+  font-weight: 700;
 }
-.town-moon-lot small {
+.town-moon-lot :deep(small) {
   align-self: start;
   font-size: 10px;
   line-height: 1.2;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 .town-moon-action {
   border-radius: 50%;
@@ -538,7 +534,7 @@ defineExpose({
   outline: 3px solid #f5df91;
   outline-offset: 2px;
 }
-.town-moon-lot.is-collectable small {
+.town-moon-lot.is-collectable :deep(small) {
   white-space: normal;
   overflow: visible;
   text-overflow: clip;
@@ -551,14 +547,6 @@ defineExpose({
   border-radius: 50%;
   background: transparent;
   box-shadow: none;
-}
-.moon-lot-pin {
-  width: 10px;
-  height: 10px;
-  border: 2px solid #fbf8ea;
-  border-radius: 50%;
-  background: #345166;
-  box-shadow: 0 1px 4px #10162b;
 }
 .town-moon-lot:active:not(:disabled) {
   transform: translate(-50%, -100%) scale(0.97);

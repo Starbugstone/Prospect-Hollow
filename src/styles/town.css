@@ -2137,6 +2137,8 @@ html:has(.town-museum[open]) {
   position: absolute;
   transform: translate(-50%, -100%);
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
   gap: 1px;
   min-height: 38px;
   padding: 4px 10px;

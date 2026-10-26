@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { PerspectiveCamera, Vector3 } from 'three';
 import { MoonScene } from '../src/game/town/moon/MoonScene';
-import { labelsOverlap } from '../src/game/town/TownLabels';
+import { labelsOverlap, townActionAnchors } from '../src/game/town/TownLabels';
 import {
   layoutMoonLabels,
   moonMapLabel,
@@ -9,6 +9,19 @@ import {
 } from '../src/game/town/moon/MoonLabelLayout';
 
 const label = (id, x, y, visible = true) => ({ id, x, y, visible });
+
+it('keeps a ready action available when its text label cannot fit', () => {
+  const placed = layoutMoonLabels(
+    [{ ...label('ready', 50, 50), action: true, width: 1000, height: 1000 }],
+    375,
+    740,
+  );
+  expect(placed[0].visible).toBe(false);
+  expect(townActionAnchors(placed, { ready: 'ready' })).toHaveLength(1);
+  expect(placed[0].collection.visible).toBe(true);
+  expect(townActionAnchors(placed, {})).toEqual([]);
+  expect(townActionAnchors(placed, { ready: 'unsupported' })).toEqual([]);
+});
 
 describe('Moon labels stay attached to their own projected building', () => {
   it('leaves noncolliding labels exactly at their anchors instead of snapping to a grid', () => {
@@ -152,8 +165,8 @@ it.each([
   );
   const top = width < 600 ? 164 : height < 450 ? 110 : 112;
   const icon = {
-    x: (ready.actionPoint.x * width) / 100,
-    y: (ready.actionPoint.y * height) / 100,
+    x: (ready.collection.x * width) / 100,
+    y: (ready.collection.y * height) / 100,
     width: 68,
     height: 68,
   };

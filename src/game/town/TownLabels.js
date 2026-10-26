@@ -1,3 +1,5 @@
+import { TOWN_ACTIONS } from '../../data/townIndicators';
+
 // Both settlements keep selected lots and work visible before routine level labels.
 export const townLabelRank = ({ essential, selected, ready, guided, available }) =>
   essential ? 0 : selected ? 1 : ready ? 2 : guided ? 3 : available ? 4 : 5;
@@ -65,3 +67,7 @@ export function trackElement(elements, id, element) {
   if (element) elements.set(id, element);
   else elements.delete(id);
 }
+// Action targets belong to projected places, independently of text-label density,
+// collisions or the player's label preference. Both maps publish `collection`.
+export const townActionAnchors = (anchors, indicators) =>
+  anchors.filter((anchor) => TOWN_ACTIONS[indicators[anchor.id]] && anchor.collection?.visible);

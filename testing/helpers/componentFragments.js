@@ -18,7 +18,6 @@ export function find(node, match) {
 }
 export const bound = (node, name) =>
   node.props?.find((prop) => prop.name === 'bind' && prop.arg?.content === name)?.exp?.content;
-export const childrenSource = (node) => node.children.map((child) => child.loc.source).join('');
 
 // Icons render as their name so snapshots stay readable. `prepare` may adjust the
 // setup's state (refs and functions) before the fragment renders.

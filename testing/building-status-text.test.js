@@ -13,7 +13,7 @@ import { plotInEra } from '../src/game/town/TownEras';
 import { moonLotDetail } from '../src/game/town/moon/MoonLotStatus';
 import { useCampaignStore } from '../src/stores/campaignStore';
 import { setLocale } from '../src/i18n';
-import { bound, childrenSource, find, renderFragment, sfc } from './helpers/componentFragments';
+import { bound, find, renderFragment, sfc } from './helpers/componentFragments';
 
 // Pins the exact status text the player reads for a building on the valley map's labels,
 // on the Moon's lot labels and in the Build tab's lists, so moving that text into one
@@ -29,7 +29,8 @@ const sceneAst = sfc(SCENE).template.ast;
 const labels = find(sceneAst, (node) =>
   node.props?.some((prop) => prop.name === 'class' && prop.value?.content === 'town-scene-labels'),
 );
-const labelContents = childrenSource(find(labels, (node) => node.tag === 'button'));
+const labelNode = find(labels, (node) => node.tag === 'TownMapLabel');
+const labelContents = `<TownMapLabel :name="${bound(labelNode, 'name')}" :status="${bound(labelNode, 'status')}" :quiet="${bound(labelNode, 'quiet')}" />`;
 // The Build tab's status line in its list of purchases and in "All current-era plots".
 const viewAst = sfc(VIEW).template.ast;
 const listStatus = (label) => {
@@ -382,7 +383,7 @@ async function statusText(id, town, props) {
       `<div v-for="anchor in [{ id: $plot }]" :key="anchor.id">${labelContents}</div>`,
       scene,
       { $plot: id },
-    ).then((html) => html.replace(/^<div>|<\/div>$/g, '')),
+    ).then((html) => html.replace(/^<div><button[^>]*>|<\/button><\/div>$/g, '')),
   };
   if (!BUILDING_BY_ID[id]) return shown;
   // The Moon lot labels, fed as TownMoonView feeds them. A read-only visitor sees levels

@@ -113,18 +113,18 @@ describe('A read-only Moon shows levels only, as the valley does', () => {
     const owner = await moonView(lots, props, ids);
     expect(owner).toMatch(/Tap to finish|Build|Choose a design/);
     // The valley's look for a place to build.
-    expect(owner).toMatch(/class="town-moon-lot[^"]*can-build/);
+    expect(owner).toMatch(/class="[^"]*town-moon-lot[^"]*can-build/);
     const visitor = await moonView(lots, { ...props, readOnly: true }, ids);
     expect(visitor).toContain('Lv. 2');
     expect(visitor).not.toMatch(/Tap to finish|Build|Choose a design|Under construction/);
-    expect(visitor).not.toMatch(/class="town-moon-lot[^"]*(can-build|is-ready)/);
+    expect(visitor).not.toMatch(/class="[^"]*town-moon-lot[^"]*(can-build|is-ready)/);
   });
 });
 
 describe('One label renderer for both maps', () => {
   it('draws valley and Moon labels and action icons with the same components', () => {
     for (const ast of [moonAst, sceneAst]) {
-      expect(find(ast, (node) => node.tag === 'TownLabelStatus')).toBeTruthy();
+      expect(find(ast, (node) => node.tag === 'TownMapLabel')).toBeTruthy();
       expect(find(ast, (node) => node.tag === 'TownActionIcon')).toBeTruthy();
     }
   });

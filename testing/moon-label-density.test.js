@@ -43,11 +43,11 @@ describe.each([
       width,
       height,
     );
-    const { actionPoint } = placed[0];
-    expect(actionPoint).toBeTruthy();
+    const { collection } = placed[0];
+    expect(collection).toBeTruthy();
     const icon = {
-      x: (actionPoint.x * width) / 100,
-      y: (actionPoint.y * height) / 100,
+      x: (collection.x * width) / 100,
+      y: (collection.y * height) / 100,
       width: 68,
       height: 68,
     };

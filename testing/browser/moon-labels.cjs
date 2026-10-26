@@ -7,6 +7,8 @@ import Moon from '/src/components/town/TownMoonView.vue';
 import {MOON_LOTS} from '/src/data/moonSettlement.js';
 import {createTown} from '/src/data/town.js';
 import {areasForSettlement,areaUnlocked} from '/src/data/townLandmarks.js';
+import {setLocale} from '/src/i18n/index.js';
+window.setLocale=setLocale;
 const town=reactive(createTown());window.town=town;town.era='twin-hollows';
 Object.assign(town.buildings,{spaceElevator:3,...Object.fromEntries(Object.keys(MOON_LOTS).map(id=>[id,3]))});
 window.expectedCount=Object.keys(MOON_LOTS).length+areasForSettlement('moon').filter(area=>areaUnlocked(town,area)).length;
@@ -81,6 +83,11 @@ window.getMoon=()=>app._instance.subTree.component.setupState;
             box: el.getBoundingClientRect().toJSON(),
             pin: el.classList.contains('is-pin'),
           })),
+        );
+        assert.equal(
+          await page.locator('.town-moon-lot.town-map-label').count(),
+          layout.length,
+          'Every Moon label uses the shared map renderer',
         );
         assert.equal(
           layout.length,
@@ -225,6 +232,35 @@ window.getMoon=()=>app._instance.subTree.component.setupState;
         await page
           .locator('#fixture')
           .evaluate((element) => element.classList.remove('town-labels-hidden'));
+        // Long translated names used to grow beyond the fixed layout rectangle.
+        // Inspect the real shared renderer, including a selected workshop and its
+        // multi-line collection status, on both sides of the compact breakpoint.
+        for (const language of ['en', 'fr']) {
+          await page.evaluate((language) => {
+            window.setLocale(language);
+            window.getMoon().selectedLot = 'moonstoneWorkshop';
+            window.town.moonstoneProduction = { stored: 30, wins: 0 };
+          }, language);
+          await page.evaluate(() => new Promise((done) => requestAnimationFrame(done)));
+          const overflow = await page.locator('.town-moon-lot:not(.is-pin)').evaluateAll((labels) =>
+            labels.flatMap((label) => {
+              const box = label.getBoundingClientRect();
+              return [...label.querySelectorAll('.plot-name, small')]
+                .filter((part) => {
+                  const child = part.getBoundingClientRect();
+                  return (
+                    child.left < box.left - 1 ||
+                    child.right > box.right + 1 ||
+                    child.top < box.top - 1 ||
+                    child.bottom > box.bottom + 1
+                  );
+                })
+                .map((part) => `${label.dataset.moonLot}: ${part.textContent}`);
+            }),
+          );
+          assert.deepEqual(overflow, [], `${language} label text stays inside its laid-out button`);
+        }
+        await page.evaluate(() => window.setLocale('en'));
         console.log(
           `${fallback ? 'SVG' : 'WebGL'} ${width}x${height}: all ${layout.length} lots reachable, separate, anchored and within compact coverage budget.`,
         );
