@@ -987,6 +987,17 @@ flows through `landmarkPayment` into `townCurrency.payPrice` in the atomic
 personalisation commit; the server's shared `landmark-buy` replay applies that
 same catalog currency together with ownership. `TownMoonstoneLandmarks.js` owns
 six mineral silhouettes without expanding the main renderer's form switch.
+`TownMapLabel.vue` renders names, quiet markers and `TownLabelStatus` on every
+settlement map. Its text containment applies to translated names and statuses;
+map-specific styles choose a row or stacked layout. `TownActionIcon.vue` renders
+the shared action definition, and `townActionAnchors()` selects its targets from
+each map's projected `collection` anchors. Action visibility never depends on a
+text label surviving density or collision layout. A new settlement implements
+projection and layout, then reuses these components and this anchor contract.
+
+Moon rover models face +z, like the valley's vehicles and shared path poses;
+their cabin and wheel axles therefore agree with the heading sampled by the map.
+
 `MoonLabelLayout.js` positions both WebGL and SVG Moon labels in screen space,
 using the canvas/container dimensions and fixed label widths to keep lot and
 monument controls separate. Neither settlement creates its own purchase,

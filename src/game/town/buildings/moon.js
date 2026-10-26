@@ -204,19 +204,20 @@ function gable(d, g, x, z, w, dep, h, roof = p.roof) {
   );
   airlock(d, g, x, 0.65, z + dep / 2 + 0.02);
 }
-/** New Hollow's rover: parked at the barn and the lookout, and driving the ring road. */
+/** New Hollow's rover, facing +z like the valley's vehicles and shared walk poses. */
 export function moonRover(d, g, x = 0, z = 0, turn = 0) {
   const r = d.group(g, x, 0, z);
   r.rotation.y = turn;
-  d.box(r, 1.1, 0.35, 0.65, 0, 0.5, 0, p.shell, true);
-  d.box(r, 0.45, 0.25, 0.55, 0.15, 0.78, 0, p.glass);
-  for (const dx of [-0.38, 0.38])
-    for (const dz of [-0.36, 0.36]) {
+  d.box(r, 0.65, 0.35, 1.1, 0, 0.5, 0, p.shell, true);
+  d.box(r, 0.55, 0.25, 0.45, 0, 0.78, 0.15, p.glass).name = 'Rover cabin';
+  for (const dx of [-0.36, 0.36])
+    for (const dz of [-0.38, 0.38]) {
       const wheel = d.mesh(r, 'cylinder', [0.17, 0.1, 0.17], [dx, 0.2, dz], p.deep);
-      wheel.rotation.x = Math.PI / 2;
+      wheel.rotation.z = Math.PI / 2;
+      wheel.name = 'Rover wheel';
     }
-  d.rod(r, [-0.4, 0.68, -0.2], [-0.4, 1.2, -0.2], 0.02, p.deep);
-  d.ball(r, -0.4, 1.24, -0.2, 0.05, p.flower, 'rock');
+  d.rod(r, [0.2, 0.68, -0.4], [0.2, 1.2, -0.4], 0.02, p.deep);
+  d.ball(r, 0.2, 1.24, -0.4, 0.05, p.flower, 'rock');
   return r;
 }
 function willowkinTree(d, g, x, y, z, scale = 1) {
