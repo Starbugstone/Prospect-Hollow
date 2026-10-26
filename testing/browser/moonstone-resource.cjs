@@ -1,5 +1,6 @@
 // Run against the Docker Vite server, with the same Playwright setup as moon-input.cjs.
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
 const { chromium, SOFTWARE_WEBGL, fixturePage, openFixture, pageErrors } = require('./helpers.cjs');
 const fixture = fixturePage({
   stylesheets: ['/src/styles/town.css'],
@@ -63,6 +64,24 @@ window.getScene=()=>app._instance.subTree.component.setupState.scene;
       progress: 2,
       stored: 0,
     });
+    const stored = await page.evaluate(() => {
+      const { town } = JSON.parse(localStorage.getItem('crystal-cascade-profile-v3'));
+      return {
+        coins: town.coins,
+        stones: town.moonstones,
+        earned: town.moonstonesEarned,
+        production: town.moonstoneProduction,
+      };
+    });
+    assert.deepEqual(stored, {
+      coins: 11500,
+      stones: 12,
+      earned: 69,
+      production: { progress: 2, stored: 0 },
+    });
+    fs.mkdirSync('output/playwright/moonstones', { recursive: true });
+    fs.writeFileSync('output/playwright/moonstones/result.json', JSON.stringify(stored, null, 2));
+    await page.screenshot({ path: 'output/playwright/moonstones/collected.png' });
     assert.deepEqual(errors, []);
     console.log(
       'Moonstone browser checks passed: confirmation, cancel, quantity sale, all sale, lifetime balance and Moon collection.',

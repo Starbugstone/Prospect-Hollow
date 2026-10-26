@@ -1,5 +1,6 @@
 // Run against the Docker Vite server; see docs/future-eras.md#moon-input-check.
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
 const { chromium, moonPage, openFixture, pageErrors } = require('./helpers.cjs');
 const fixture = moonPage(`
 import {createApp,h} from '/node_modules/.vite/deps/vue.js';
@@ -47,8 +48,14 @@ window.getScene=()=>app._instance.subTree.children[0].component.setupState.scene
         await page.evaluate(() => window.getScene().setMotion(false));
         const activate = async (locator) => (touch ? locator.tap() : locator.click());
         const lot = page.locator('[data-moon-lot="ribbonLanding"]');
+        const tapCamera = await page.evaluate(() => window.getScene().camera.position.toArray());
         await activate(lot);
         await activate(lot);
+        assert.deepEqual(
+          await page.evaluate(() => window.getScene().camera.position.toArray()),
+          tapCamera,
+          'Tapping a parcel label must not move the camera',
+        );
         assert.deepEqual(await page.evaluate(() => window.events.inspect), [
           'ribbonLanding',
           'ribbonLanding',
@@ -165,6 +172,10 @@ window.getScene=()=>app._instance.subTree.children[0].component.setupState.scene
           'Moon presses reach the document',
         );
         assert.deepEqual(errors, []);
+        fs.mkdirSync('output/playwright/moon-input', { recursive: true });
+        await page.screenshot({
+          path: `output/playwright/moon-input/${width}-${touch ? 'touch' : 'mouse'}.png`,
+        });
         console.log(
           `${width}x${height} ${touch ? 'Touch' : 'Mouse'}: first/repeated lot, Back, no letters overlay, keyboard, Escape, label drag, orbit/release, Earth and document events passed.`,
         );

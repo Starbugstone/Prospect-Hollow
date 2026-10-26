@@ -42,6 +42,19 @@ const LEVELS = [1, 289, 294, 312, 319, 324];
       await page.goto(testOrigin(), { timeout: 180000 });
       // A cold Vite dev server optimises dependencies on the first visit.
       await page.waitForFunction(() => !!window.stores()?.get('game'), null, { timeout: 180000 });
+      // Campaign inventory is guarded in the mounted app. Prepare a disposable
+      // imported save before the run, instead of silently ignored console edits.
+      await page.evaluate(async () => {
+        const { POWERS } = await import('/src/data/campaign.js');
+        const { createSaveFile } = await import('/src/services/saveTransfer.js');
+        const campaign = window.stores().get('campaign');
+        campaign.importSave(
+          createSaveFile({
+            ...campaign.profile(),
+            powers: POWERS.map(({ id }) => ({ id, quantity: 1 })),
+          }),
+        );
+      });
       const settle = () =>
         page.evaluate(async () => {
           await new Promise((resolve) =>
@@ -103,7 +116,6 @@ const LEVELS = [1, 289, 294, 312, 319, 324];
                 game.activeBonusMode = null;
                 campaign.seenTips = ['ice', 'bonus', 'fusion', 'powers'];
                 campaign.seenObstacles = ['ice'];
-                campaign.powers.forEach((power) => (power.quantity = 1));
                 game.board[0].type = 'bomb';
                 game.board[1].type = 'ruby';
                 game.refreshBoardVisuals();
@@ -202,6 +214,15 @@ const LEVELS = [1, 289, 294, 312, 319, 324];
             await unchanged(baseline, 'Targeting a power');
             await page.locator('.mine-feedback .board-caption button').click();
             await unchanged(baseline, 'Cancelling a power');
+            assert(
+              await page.evaluate(
+                () => window.stores().get('inventory').availableQuantity('tnt') === 1,
+              ),
+              'Cancelling targeting must preserve the prepared TNT',
+            );
+            console.log(
+              `Passed level ${level}, ${language}, ${mode}, ${size.width}x${size.height}`,
+            );
             report.push({
               level,
               chapter,

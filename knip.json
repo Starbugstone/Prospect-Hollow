@@ -5,6 +5,7 @@
     "scripts/**/*.{js,mjs}",
     "testing/**/*.test.js",
     "testing/browser/*.cjs",
+    "testing/verification/*.cjs",
     "testing/mocks/*.js"
   ],
   "project": ["src/**/*.{js,vue}", "scripts/**/*.{js,mjs}", "testing/**/*.{js,cjs}"],

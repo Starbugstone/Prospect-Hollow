@@ -69,6 +69,12 @@ touch a save.
 Pass/fail browser checks, such as the board motion and mine feedback checks, live in
 `testing/browser/` and share `testing/browser/helpers.cjs`.
 
+`bash scripts/verify-gameplay.sh all` starts an isolated Docker stack, checks backend
+readiness, runs the four [gameplay verification journeys](../.agents/skills/verify-prospect-hollow/feature-map.md),
+then cleans up its containers and volumes. Logs and screenshots remain under
+`output/verification/run-*`. Run `bash scripts/verify-gameplay.sh --help` for individual
+journeys, the doctor and cleanup's dry run.
+
 ## Hosting
 
 | Script                                   | Purpose                                                                              |

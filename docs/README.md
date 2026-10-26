@@ -45,6 +45,8 @@ are independent; puzzle moves remain unlimited.
 
 ## Contributor references
 
+- [Gameplay verification map](../.agents/skills/verify-prospect-hollow/SKILL.md):
+  isolated Docker startup, doctor, four browser journeys and retained evidence.
 - [Contributor rules](../AGENTS.md) and [developer scripts](../scripts/README.md).
 - [Workspace maintenance](workspace-maintenance.md): disposable files, worktrees and image retention.
 - [Historical records](history/README.md): completed plans, retired prototypes and earlier reviews.

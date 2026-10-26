@@ -1,0 +1,75 @@
+services:
+  db:
+    image: postgres:17-bookworm
+    environment:
+      POSTGRES_USER: cascade
+      POSTGRES_PASSWORD: verification-only
+      POSTGRES_DB: cascade
+    volumes:
+      - database:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U cascade -d cascade']
+      interval: 2s
+      timeout: 3s
+      retries: 30
+  app:
+    image: prospect-gameplay-backend:local
+    build:
+      context: ${PH_CHECKOUT}
+      target: runtime
+    ports: ['127.0.0.1::80']
+    environment:
+      APP_SECRET: verification-only-local-stack-secret-00000000
+      DATABASE_URL: postgresql://cascade:verification-only@db:5432/cascade
+      MAILER_DSN: 'null://null'
+      MAIL_FROM: verification@example.test
+    volumes:
+      - ${PH_RUN}/app.env:/var/www/app/.env.local:ro
+      - ${PH_CHECKOUT}/backend/src:/var/www/app/src:ro
+    depends_on:
+      db: { condition: service_healthy }
+  web:
+    image: node:24-bookworm-slim
+    user: '${PH_UID}:${PH_GID}'
+    working_dir: /app
+    environment:
+      HOME: /tmp
+    volumes:
+      - ${PH_CHECKOUT}:/app
+      - dependencies:/app/node_modules
+    ports: ['127.0.0.1::5173']
+    command: [npm, run, dev, --, --host, 0.0.0.0, --port, '5173', --strictPort]
+    healthcheck:
+      test:
+        [
+          CMD,
+          node,
+          -e,
+          "fetch('http://127.0.0.1:5173/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 3s
+      timeout: 5s
+      retries: 40
+  browser:
+    image: prospect-gameplay-browser:local
+    build:
+      context: ${PH_CHECKOUT}
+      dockerfile: testing/verification/browser.Dockerfile
+    user: '${PH_UID}:${PH_GID}'
+    working_dir: /app
+    # Web Locks require a secure context. Share Vite's network namespace so the
+    # real app runs on trusted localhost without disabling browser protections.
+    network_mode: service:web
+    environment:
+      HOME: /tmp
+      PLAYWRIGHT_MODULE: /opt/pw/node_modules/playwright
+      PH_TEST_ORIGIN: http://127.0.0.1:5173
+      PH_BACKEND_ORIGIN: ${PH_BACKEND_ORIGIN:-http://localhost}
+    volumes:
+      - ${PH_CHECKOUT}:/app
+      - dependencies:/app/node_modules:ro
+      - ${PH_RUN}/artifacts:/app/output/playwright
+    shm_size: 1gb
+volumes:
+  database:
+  dependencies:
