@@ -6,6 +6,7 @@ import {
   moonApproaches,
 } from '../../../data/moonSettlement';
 import { swingLimbs } from '../TownGait';
+import { animalModel, animateAnimal } from '../TownAnimalModels';
 import { hash01 as hash } from '../TownMath';
 import { walkPath, walkPose } from '../TownNavigation';
 
@@ -76,7 +77,7 @@ export function moonSettlerBuildings(levels) {
  * One settler's looping day: home → visit → home, three times, resting indoors
  * between walks. Without any building to enter, the settler circles the ring.
  */
-export function moonSettlerPlan(levels, n) {
+export function moonSettlerPlan(levels, n, homeId = null) {
   const buildings = moonSettlerBuildings(levels);
   if (!buildings.length)
     return {
@@ -86,7 +87,9 @@ export function moonSettlerPlan(levels, n) {
       dir: n % 2 ? 1 : -1,
     };
   const homes = buildings.filter(({ id }) => HOMES.includes(id));
-  const home = (homes.length ? homes : buildings)[n % (homes.length || buildings.length)];
+  const home =
+    buildings.find(({ id }) => id === homeId) ??
+    (homes.length ? homes : buildings)[n % (homes.length || buildings.length)];
   const others = buildings.filter((route) => route !== home);
   const segments = [];
   let time = 0;
@@ -194,6 +197,31 @@ export function strideMoonFigure({ body, arms, legs }, distance, walking = true)
   swingLimbs(arms, legs, step, walking);
 }
 
+// The valley's Willowkin keeps its own rig and walk, at the Moon's stride and hop.
+function strideMoonWillowkin(model, distance) {
+  const step = (distance / STRIDE) * TAU;
+  animateAnimal(model, step / 7, 'walking', true);
+  model.body.position.y = Math.abs(Math.sin(step)) * HOP;
+}
+
+/** Completed homes add neighbors. A construction project alone never spawns them. */
+export function createMoonSettlers(d, parent, levels = {}) {
+  const homes = HOMES.reduce((sum, id) => sum + (levels[id] ?? 0), 0);
+  const suits = [p.shell, '#d9dde6', '#e8e1cf'];
+  const settlers = Array.from({ length: Math.min(10, 2 + homes * 2) }, (_, n) => ({
+    ...moonSuitFigure(d, { parent, suit: suits[n % suits.length] }),
+    plan: moonSettlerPlan(levels, n),
+  }));
+  const dome = levels.willowkinDome ?? 0;
+  for (let n = 0; n < (dome > 0 ? Math.min(4, dome + 1) : 0); n++)
+    settlers.push({
+      ...animalModel(d, 'willowkinResident', 0, 'space-helmet', parent),
+      plan: moonSettlerPlan(levels, 100 + n, 'willowkinDome'),
+      stride: strideMoonWillowkin,
+    });
+  return settlers;
+}
+
 const pose = {};
 /** Place and animate one settler: the valley's walk cycle with a hop at each footfall. */
 export function animateMoonSettler(settler, time) {
@@ -204,6 +232,6 @@ export function animateMoonSettler(settler, time) {
   root.position.set(pose.x, pose.y, pose.z);
   root.rotation.y = pose.heading;
   root.scale.setScalar(pose.scale);
-  strideMoonFigure(settler, pose.distance);
+  (settler.stride ?? strideMoonFigure)(settler, pose.distance);
   return pose;
 }

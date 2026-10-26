@@ -4,7 +4,7 @@ import {
   moonMonumentPresentation,
   syncMoonMonuments,
 } from './MoonMonuments';
-import { animateMoonSettler, moonSettlerPlan, moonSuitFigure } from './MoonSettlers';
+import { animateMoonSettler, createMoonSettlers, moonSuitFigure } from './MoonSettlers';
 import { areaUnlocked } from '../../../data/townLandmarks';
 import * as THREE from 'three';
 import { createTownControls } from '../TownControls';
@@ -678,17 +678,7 @@ export class MoonScene extends TownPrimitives {
     this.d.clearGroup(this.life);
     this.life = this.d.group(this.scene);
     this.walkers = [];
-    const homes = ['settlerDomes', 'craterHomesteads'].reduce(
-      (sum, id) => sum + (town?.buildings?.[id] ?? 0),
-      0,
-    );
-    const suits = [p.shell, '#d9dde6', '#e8e1cf'];
-    this.settlers = [];
-    for (let n = 0; n < Math.min(10, 2 + homes * 2); n++)
-      this.settlers.push({
-        ...moonSuitFigure(this.d, { parent: this.life, suit: suits[n % 3] }),
-        plan: moonSettlerPlan(town?.buildings ?? {}, n),
-      });
+    this.settlers = createMoonSettlers(this.d, this.life, town?.buildings ?? {});
     if (town?.buildings?.roverBarn) {
       for (let n = 0; n < town.buildings.roverBarn; n++) {
         const r = moonRover(this.d, this.life);

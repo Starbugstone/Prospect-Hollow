@@ -63,8 +63,8 @@ function catModel(d, root, costume) {
 
 // Small articulated meshes use the same geometry/material caches and instancing
 // as villagers. All species face +Z and put their feet at the root's ground plane.
-export function animalModel(d, species, variant = 0, costume = null) {
-  const root = d.group(d.world);
+export function animalModel(d, species, variant = 0, costume = null, parent = d.world) {
+  const root = d.group(parent);
   root.name = TOWN_ANIMALS[species].name;
   root.userData.animated = true;
   root.userData.species = species;

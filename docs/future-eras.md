@@ -203,6 +203,16 @@ the map falls back to an SVG crater with the same buttons. `buildings/moon.js`
 draws the Moon buildings (glass domes on ceramic drums, airlocks, gold foil,
 solar fins), and `TownMoonBuilding.vue` draws them for cards and the fallback.
 
+A completed Willowkin dome adds two Willowkin neighbors, rising to three at level
+2 and four at level 3. They reuse the valley's mature Willowkin model, animation
+and fitted space suit. Their trips use the settlers' public paths and hatch
+transitions, with the dome as home and the Moon's low-gravity hop. An unfinished
+first dome adds none; residents stay while an existing dome is upgraded. These
+are ambient 3D residents, derived from completed buildings without new save data.
+`testing/moon-willowkin.test.js` covers population, routes, model reuse and animation;
+`testing/browser/moon-willowkin.cjs` checks live completion and upgrades at desktop
+and phone sizes using the [Moon input check's Docker setup](#moon-input-check).
+
 The optional **Saucer Pad** is an eleventh Moon building, unlocked after Ribbon
 Landing level 1 and Rover Barn level 1. Its three levels use the shared Twin
 Hollows prices (31,500 / 35,250 / 39,000 coins), construction, needs and save
