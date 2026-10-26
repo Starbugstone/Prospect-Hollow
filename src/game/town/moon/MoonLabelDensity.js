@@ -38,7 +38,5 @@ export function moonLabelDensity(labels, width, height, { near = false, selected
     collapsed: !detailed.has(lot.id),
     width: detailed.has(lot.id) ? 96 : MOON_PIN_SIZE,
     height: detailed.has(lot.id) ? 40 : MOON_PIN_SIZE,
-    // Compact attention buttons contain their action icon; no second overlay.
-    action: false,
   }));
 }

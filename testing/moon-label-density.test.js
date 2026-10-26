@@ -6,7 +6,7 @@ import {
   MOON_PIN_SIZE,
 } from '../src/game/town/moon/MoonLabelDensity';
 import { layoutMoonLabels } from '../src/game/town/moon/MoonLabelLayout';
-import { townLabelDetail, townLabelRank } from '../src/game/town/TownLabels';
+import { labelsOverlap, townLabelDetail, townLabelRank } from '../src/game/town/TownLabels';
 const lots = Array.from({ length: 13 }, (_, i) => ({ id: `lot${i}`, x: 50, y: 50, visible: true }));
 const area = (labels) =>
   labels.reduce((sum, lot) => sum + (lot.visible ? lot.width * lot.height : 0), 0);
@@ -32,6 +32,37 @@ describe.each([
     const placed = layoutMoonLabels(density, width, height);
     expect(placed.every((lot) => lot.visible && !lot.collapsed)).toBe(true);
     expect(area(placed)).toBeLessThanOrEqual(width * height * MOON_LABEL_COVERAGE);
+  });
+  it('keeps the finish icon of a ready lot apart from every label, as on the valley', () => {
+    const placed = layoutMoonLabels(
+      moonLabelDensity(
+        lots.map((lot, i) => ({ ...lot, x: 20 + i * 5, attention: i < 4, action: i === 0 })),
+        width,
+        height,
+      ),
+      width,
+      height,
+    );
+    const { actionPoint } = placed[0];
+    expect(actionPoint).toBeTruthy();
+    const icon = {
+      x: (actionPoint.x * width) / 100,
+      y: (actionPoint.y * height) / 100,
+      width: 68,
+      height: 68,
+    };
+    for (const lot of placed.filter(({ visible }) => visible))
+      expect(
+        labelsOverlap(
+          {
+            x: (lot.x * width) / 100,
+            y: (lot.y * height) / 100 - lot.height / 2,
+            width: lot.width,
+            height: lot.height,
+          },
+          icon,
+        ),
+      ).toBe(false);
   });
   it('reveals the focused lot and nearby names within the same area budget', () => {
     const density = moonLabelDensity(lots, width, height, { selected: 'lot12' });

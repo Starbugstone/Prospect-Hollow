@@ -106,6 +106,17 @@ window.getMoon=()=>app._instance.subTree.component.setupState;
             layout.every((lot) => !lot.pin),
             'Desktop labels preserved',
           );
+        // The finish hammer stands apart from the labels on every screen, as the valley's.
+        const hammer = page.locator('[data-moon-action="settlerDomes"]');
+        const hammerBox = await hammer.boundingBox();
+        assert.ok(
+          (await hammer.isVisible()) &&
+            hammerBox.x >= 0 &&
+            hammerBox.x + hammerBox.width <= width &&
+            hammerBox.y >= 0 &&
+            hammerBox.y + hammerBox.height <= height,
+          'Ready construction shows its finish icon on screen',
+        );
         if (process.env.PH_SCREENSHOT_DIR) {
           await page.screenshot({
             animations: 'disabled',
@@ -202,6 +213,14 @@ window.getMoon=()=>app._instance.subTree.component.setupState;
           await page.locator('.town-moon-lots').isVisible(),
           false,
           'Hidden village labels hide the Moon labels too',
+        );
+        assert.ok(await hammer.isVisible(), 'Hidden labels keep the finish icon');
+        await page.evaluate(() => window.selected.push(null));
+        await hammer.tap({ timeout: 10000 });
+        assert.equal(
+          await page.evaluate(() => window.selected.at(-1)),
+          'settlerDomes',
+          'The finish icon opens its building with labels hidden',
         );
         await page
           .locator('#fixture')

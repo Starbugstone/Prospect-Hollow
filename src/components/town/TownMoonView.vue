@@ -112,12 +112,6 @@
           @click="activateLabel(lot.id, $event)"
         >
           <span v-if="lot.collapsed" class="moon-lot-pin" aria-hidden="true"></span>
-          <img
-            v-else-if="compact && TOWN_ACTIONS[indicators[lot.id]]"
-            class="moon-inline-action"
-            :src="TOWN_ACTIONS[indicators[lot.id]].icon"
-            alt=""
-          />
           <strong v-if="!lot.collapsed">{{ lotInfo[lot.id].name }}</strong>
           <TownLabelStatus v-if="!lot.collapsed" :status="lotInfo[lot.id].status" />
         </button>
@@ -333,8 +327,10 @@ const shownLots = computed(() => {
     height,
   ).filter((lot) => lot.visible);
 });
+// Action icons stand apart from the labels on every screen, as the valley's do, so a
+// finish or collection stays in reach on phones and with village labels hidden.
 const actionLots = computed(() =>
-  compact.value ? [] : shownLots.value.filter((lot) => TOWN_ACTIONS[props.indicators[lot.id]]),
+  shownLots.value.filter((lot) => TOWN_ACTIONS[props.indicators[lot.id]]),
 );
 const choose = (id) => {
   selectedLot.value = id;
@@ -575,13 +571,5 @@ defineExpose({
   min-height: 0;
   padding: 2px 5px;
   font-size: 10px;
-}
-.moon-inline-action {
-  position: absolute;
-  left: -8px;
-  top: -8px;
-  width: 24px;
-  height: 24px;
-  pointer-events: none;
 }
 </style>

@@ -273,7 +273,8 @@ and a timeout. If other containers are busy, replace `--network host` with
 `testing/browser/moon-labels.cjs` uses the same Docker browser setup. Substitute
 that filename in the second command to check WebGL and SVG at 1440×900, 900×360
 and 375×740. It checks every lot/site label or pin for overlap, screen bounds,
-leader anchors, touch/keyboard selection, compact coverage, and that no lot
+leader anchors, touch/keyboard selection, compact coverage, the ready lot's finish
+icon (on screen at every size and tappable with labels hidden), and that no lot
 directory sits over the map (the Build tab lists the Moon lots). Set `PH_SCREENSHOT_DIR` to save the corresponding captures. Run it after changing lunar labels or camera framing.
 
 Moon labels retain their projected building anchors and move only to clear other
@@ -282,8 +283,10 @@ Both settlements use the priority and distant-detail contract in `TownLabels.js`
 selection and work take precedence over routine level names. On a Moon canvas
 narrower than 600px or shorter than 450px, completed lots use 10px pins inside
 28px named buttons. Open/buildable lots, construction, ready work, collections
-and unfinished monument sites keep full names and statuses. Compact action icons
-sit inside those cards rather than consuming a second large overlay. At a relative
+and unfinished monument sites keep full names and statuses. Action icons (the finish
+hammer, collections) stand apart from the labels at every size, as the valley's do,
+so they stay in reach on phones and with village labels hidden; the layout reserves
+their space so no label covers them. At a relative
 camera distance of 48 or less, nearby names return within the same budget; keyboard
 focus reveals one name, and activating any pin answers like a tap on its lot.
 Tapping a lot's pad or building in the scene opens it like its label, with labels
