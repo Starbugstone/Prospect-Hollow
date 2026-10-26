@@ -1,9 +1,12 @@
 import { defineStore } from 'pinia';
 import { useGameStore } from './gameStore';
 import { useCampaignStore } from './campaignStore';
+import { POWERS } from '../data/campaign';
 
 // Powers that wait for a board tap; they are consumed on that tap.
-export const TARGETED_POWERS = new Set(['tnt', 'color-wand', 'tile-breaker']);
+export const TARGETED_POWERS = new Set(
+  POWERS.filter((power) => power.targeted).map(({ id }) => id),
+);
 
 export const useInventoryStore = defineStore('inventory', {
   getters: {
@@ -21,9 +24,10 @@ export const useInventoryStore = defineStore('inventory', {
       if (TARGETED_POWERS.has(id)) return gameStore.setBonusMode(id);
       gameStore.setBonusMode(null);
       if (id === 'clear-row') return gameStore.activateOneTimeBonus('clear-row', { consume: true });
-      if (id !== 'shuffle' || (await gameStore.shuffleBoard()) === false) return false;
+      // The shuffle spends the item before its resolution can finish the puzzle.
+      if (id !== 'shuffle' || !(await gameStore.shuffleBoard({ consume: id }))) return false;
       await gameStore.ensurePlayableBoard();
-      return this.consumeItem(id);
+      return true;
     },
     consumeItem(id) {
       return useCampaignStore().consumePowerItem(id);

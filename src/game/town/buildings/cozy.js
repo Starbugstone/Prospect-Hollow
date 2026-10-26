@@ -1,3 +1,6 @@
+import { futureBuildingStages } from '../../../data/futureArchitecture';
+import { heritageUpgrade } from '../../../data/heritageUpgrades';
+import { addPurposeGrades, purposeModule, purposeStructure } from './future/finishes';
 import { cityAppearance } from '../../../data/cityAppearance';
 import { COZY_LANDMARKS, cozyAppearance, cozyForm } from '../../../data/cozyArchitecture';
 import { addSquareModernization, buildTownSquare } from '../TownSquare';
@@ -6,6 +9,8 @@ import { leisureModel } from '../LeisureAssets';
 import { BRIDGE, bridgeDeckHeight } from '../TownRiver';
 import { parkedVehicle } from '../TownVehicles';
 import { BufferGeometry, Float32BufferAttribute } from 'three';
+import { addTowerGallery } from './future/towerRefinements';
+import { galleryOverlaps, towerGallery, towerStoreys } from '../../../data/towerRefinements';
 
 // Every part uses the diorama's cached primitives. Geometry is built once per
 // plot purchase and merged by material; no animations, particles or light pools.
@@ -34,6 +39,37 @@ function cachedSurface(d, key, points, faces) {
   }
   return key;
 }
+function eaveRing(d) {
+  if (d.geometries['cozy-eave-ring']) return 'cozy-eave-ring';
+  const n = 12,
+    points = [],
+    faces = [];
+  for (const [radius, y] of [
+    [1, 0.5],
+    [0.72, 0.5],
+    [1, -0.5],
+    [0.72, -0.5],
+  ])
+    for (let i = 0; i < n; i++) {
+      const a = (i * TAU) / n;
+      points.push([Math.sin(a) * radius, y, Math.cos(a) * radius]);
+    }
+  for (let a = 0; a < n; a++) {
+    const b = (a + 1) % n;
+    faces.push(
+      [a, b, n + a],
+      [b, n + b, n + a],
+      [2 * n + a, 3 * n + a, 2 * n + b],
+      [2 * n + b, 3 * n + a, 3 * n + b],
+      [a, 2 * n + a, b],
+      [b, 2 * n + a, 2 * n + b],
+      [n + a, n + b, 3 * n + a],
+      [n + b, 3 * n + b, 3 * n + a],
+    );
+  }
+  return cachedSurface(d, 'cozy-eave-ring', points, faces);
+}
+
 function leafSurface(d) {
   if (d.geometries['cozy-leaf']) return 'cozy-leaf';
   const outline = [
@@ -107,7 +143,9 @@ function seedRoof(d, g, s, x, y, z, r, h) {
 /** Overlapping low-poly leaves in Canopy; pearl-edged glass petals in Riverlight. */
 export function addCozyRoof(d, g, x, y, z, radius, era, depth = radius, petals = 6) {
   const { style, palette: p } = cozyAppearance(era);
-  if (style === 'riverlight') disc(d, g, radius, y - 0.025, x, z, p.shell, depth, 0.14);
+  // A continuous eave connects the petal roof to posts, even between leaves.
+  if (style === 'riverlight') disc(d, g, radius, y - 0.025, x, z, p.shell, depth, 0.16);
+  else d.mesh(g, eaveRing(d), [radius * 0.97, 0.14, depth * 0.97], [x, y - 0.04, z], p.timber);
   for (let n = 0; n < petals; n++) {
     const a = (n / petals) * TAU;
     const leaf = d.mesh(
@@ -121,6 +159,7 @@ export function addCozyRoof(d, g, x, y, z, radius, era, depth = radius, petals =
     // A gentle pitch forms a layered crown instead of a flat round lid.
     leaf.rotation.x = -0.15;
   }
+  drum(d, g, radius * 0.12, radius * 0.25, x, y, z, p.timber, depth * 0.12);
   disc(d, g, radius * 0.24, y + radius * 0.25, x, z, p.shell, depth * 0.24, 0.1);
 }
 
@@ -165,10 +204,10 @@ function cottage(d, g, s, x, z, r = 1, h = 1.8) {
   addCozyRoof(d, g, x, h + 0.2, z, r * 1.25, s.era);
   return { top: h + 0.55, radius: r, x, z };
 }
-function greenhouse(d, g, s, x, z, r, floor = 0) {
+function greenhouse(d, g, s, x, z, r, floor = 0, rise = 1) {
   const p = s.palette;
   disc(d, g, r + 0.1, floor + 0.15, x, z, p.shell, r + 0.1, 0.24);
-  pod(d, g, x, floor + 0.3, z, [r, r * 0.88, r], p.glass);
+  pod(d, g, x, floor + 0.3, z, [r, r * 0.88 * rise, r], p.glass);
   // Polygonal timber arches frame opaque glass, keeping sorting and shadows cheap.
   for (const angle of [0, Math.PI / 2]) {
     const arc = [];
@@ -176,7 +215,7 @@ function greenhouse(d, g, s, x, z, r, floor = 0) {
       const a = (n * Math.PI) / 6;
       arc.push([
         x + Math.cos(a) * r * Math.cos(angle),
-        floor + 0.3 + Math.sin(a) * r * 0.88,
+        floor + 0.3 + Math.sin(a) * r * 0.88 * rise,
         z + Math.cos(a) * r * Math.sin(angle),
       ]);
     }
@@ -185,6 +224,19 @@ function greenhouse(d, g, s, x, z, r, floor = 0) {
 }
 function crystal(d, g, x, y, z, r, p) {
   pod(d, g, x, y + r * 1.3, z, [r * 0.62, r * 1.3, r * 0.62], p.light, 'rock');
+}
+
+function retainedCampusModule(d, g, s, component, build, grade) {
+  const module = purposeModule(
+    d,
+    g,
+    s,
+    component,
+    `Cozy purpose finish ${heritageUpgrade(s.kind)}`,
+  );
+  build(purposeStructure(d, module));
+  addPurposeGrades(d, module, s, grade);
+  return module;
 }
 
 const FORMS = {
@@ -216,8 +268,11 @@ const FORMS = {
           ]
         : [[0, 1.25, s.height]];
     for (const [x, r, h] of towers) {
+      const gallery = towerGallery(s, { r, h }),
+        storeys = towerStoreys(s.style, { first: 1, storey: 1.2 });
       drum(d, g, r, h, x, 0.15, -0.35, p.shell);
-      for (let y = 1; y < h; y += 1.2) {
+      for (let y = storeys.first; y < h; y += storeys.storey) {
+        if (galleryOverlaps(gallery, y - 0.1, y + 1)) continue;
         disc(d, g, r + 0.12, y, x, -0.35, p.deep, r + 0.12, 0.1);
         disc(d, g, r + 0.14, y + 0.13, x, -0.35, p.green, r + 0.14, 0.12);
         for (const side of [-1, 1])
@@ -225,6 +280,7 @@ const FORMS = {
       }
       addCozyRoof(d, g, x, h + 0.15, -0.35, r + 0.28, s.era);
       doorway(d, g, x, r - 0.3, p);
+      addTowerGallery(d, g, s, { x, z: -0.35, r, h });
     }
     return { top: s.height + 0.5, radius: towers[0][1], x: towers[0][0], z: -0.35 };
   },
@@ -233,8 +289,14 @@ const FORMS = {
       r = Math.min(1.4, s.width * 0.34),
       h = Math.max(1.7, s.height * 0.72);
     const crown = cottage(d, g, s, 0, -0.25, r, h);
-    if (s.identity === 'columns')
-      for (const x of [-1.1, 1.1]) drum(d, g, 0.09, 1.5, x, 0.1, 1.15, p.timber);
+    if (s.identity === 'columns') {
+      const porch = d.group(g);
+      porch.name = 'Bank attached leaf portico';
+      for (const x of [-1.1, 1.1]) drum(d, porch, 0.09, 2.1, x, 0.1, 1.15, p.timber);
+      // The back of the cornice enters the wall; its front rests on both columns.
+      d.box(porch, 2.42, 0.15, 0.65, 0, 2.2, 1.1, p.green);
+      addCozyRoof(d, porch, 0, 2.24, 0.85, 1.15, s.era, 0.65);
+    }
     if (['clock', 'bell', 'patrol', 'post'].includes(s.identity)) {
       drum(d, g, 0.3, 0.65, 0, crown.top - 0.1, -0.25, p.shell);
       addCozyRoof(d, g, 0, crown.top + 0.55, -0.25, 0.45, s.era);
@@ -274,7 +336,7 @@ const FORMS = {
       drum(d, g, 0.22, h + 1.05, -w * 0.3, 0.1, -0.8, p.shell);
       disc(d, g, 0.27, h + 1.2, -w * 0.3, -0.8, p.deep, 0.27, 0.13);
     }
-    return { top: h + 0.5, radius: w * 0.4, z: -0.35 };
+    return { top: h + 0.5, roofY: h + 0.22, radius: w * 0.4, z: -0.35 };
   },
   watergarden(d, g, s) {
     const p = s.palette;
@@ -369,10 +431,13 @@ const FORMS = {
       [1.15, 3.1],
       [0.8, 2.6],
     ]) {
+      const gallery = towerGallery(s, { r, h });
       drum(d, g, r, h, 0, y, -0.4, p.glass);
       for (let f = 1; f < h; f += 1.15)
-        disc(d, g, r + 0.12, y + f, 0, -0.4, p.shell, r + 0.12, 0.1);
+        if (!galleryOverlaps(gallery, f - 0.05, f + 0.05))
+          disc(d, g, r + 0.12, y + f, 0, -0.4, p.shell, r + 0.12, 0.1);
       disc(d, g, r + 0.23, y + h, 0, -0.4, p.green, r + 0.23, 0.2);
+      addTowerGallery(d, d.group(g, 0, y, 0), s, { z: -0.4, r, h });
       y += h;
     }
     addCozyRoof(d, g, 0, y + 0.15, -0.4, 1, s.era);
@@ -398,9 +463,27 @@ const FORMS = {
       disc(d, g, 0.34, 0.75, x, 0.9, p.timber);
       d.rod(g, [x, 0.2, 0.9], [x, 0.75, 0.9], 0.05, p.timber);
     }
-    if (s.level >= 2) greenhouse(d, g, s, -1.7, -1.2, 0.9);
-    if (s.level >= 3) {
-      pergola(d, g, 1.8, 0.2, -1.4, 1.1, 1.1, p);
+    if (s.structureLevel >= 2) greenhouse(d, g, s, -1.7, -1.2, 0.9);
+    if (s.structureLevel >= 3) {
+      retainedCampusModule(
+        d,
+        g,
+        s,
+        'coveredVeranda',
+        (structure) => pergola(d, structure, 1.8, 0.2, -1.4, 1.1, 1.1, p),
+        {
+          x: 1.8,
+          y: 1.05,
+          z: -0.85,
+          width: 1,
+          height: 0.65,
+          operationX: 2.1,
+          operationY: 1.8,
+          operationZ: -1.4,
+          operationWidth: 0.65,
+          roof: true,
+        },
+      );
       for (const x of [-2.1, 2.1]) planter(d, g, x, 1.6, p, 0.4);
     }
     return { landmark: true };
@@ -413,8 +496,27 @@ const FORMS = {
     greenhouse(d, g, s, -2.05, -0.8, 1.55);
     drum(d, g, 0.35, 0.65, -2.8, 0.05, 1.15, p.glass);
     disc(d, g, 0.4, 0.7, -2.8, 1.15, p.shell);
-    if (s.level >= 2) greenhouse(d, g, s, 2.05, -0.8, 1.55);
-    if (s.level >= 3) {
+    if (s.structureLevel >= 2)
+      retainedCampusModule(
+        d,
+        g,
+        s,
+        'growingHall',
+        (structure) => greenhouse(d, structure, s, 2.05, -0.8, 1.55),
+        {
+          x: 3.1,
+          y: 0.63,
+          z: 0.25,
+          width: 1.1,
+          height: 0.54,
+          turn: Math.PI / 4,
+          operationX: 3.09,
+          operationY: 0.5,
+          operationZ: 0.24,
+          floor: 0.27,
+        },
+      );
+    if (s.structureLevel >= 3) {
       greenhouse(d, g, s, 1.65, 1.3, 0.9);
       for (const x of [-2.5, -1.5, 1.5, 2.5]) planter(d, g, x, 1.8, p, 0.33);
       pergola(d, g, 0, 0, 1.8, 1.4, 0.8, p);
@@ -430,13 +532,30 @@ const FORMS = {
     const p = s.palette;
     cottage(d, g, s, 0, -1.65, 1, 2.15);
     cottage(d, g, s, -2.1, 0, 0.95, 1.65);
-    if (s.level >= 2) cottage(d, g, s, 2.1, 0, 0.95, 1.65);
-    if (s.level >= 3) {
+    if (s.structureLevel >= 2)
+      retainedCampusModule(
+        d,
+        g,
+        s,
+        'familyCottage',
+        (structure) => cottage(d, structure, s, 2.1, 0, 0.95, 1.65),
+        {
+          x: 2.79,
+          y: 1,
+          z: 0.69,
+          width: 0.85,
+          turn: Math.PI / 4,
+          operationX: 2.78,
+          operationY: 0.6,
+          operationZ: 0.68,
+        },
+      );
+    if (s.structureLevel >= 3) {
       pergola(d, g, -1.1, 0.1, -0.85, 1.1, 1, p);
       pergola(d, g, 1.1, 0.1, -0.85, 1.1, 1, p);
-      d.rod(g, [0, 0.1, 0.85], [0, 1.5, 0.85], 0.12, p.timber);
-      pod(d, g, 0, 1.75, 0.85, [0.75, 0.72, 0.75], p.green);
-      for (const x of [-0.4, 0.4]) pod(d, g, x, 1.9, 1.35, 0.15, p.flower);
+      d.rod(g, [1.3, 0.1, 0.85], [1.3, 1.5, 0.85], 0.12, p.timber);
+      pod(d, g, 1.3, 1.75, 0.85, [0.75, 0.72, 0.75], p.green);
+      for (const x of [-0.4, 0.4]) pod(d, g, x + 1.3, 1.9, 1.35, 0.15, p.flower);
     }
     return { landmark: true };
   },
@@ -447,8 +566,27 @@ const FORMS = {
       disc(d, g, 0.42, 0.22, x, 1.15, p.shell, 0.42, 0.4);
       crystal(d, g, x, 0.45, 1.15, 0.4, p);
     }
-    if (s.level >= 2) greenhouse(d, g, s, 2.2, -0.7, 1);
-    if (s.level >= 3) {
+    if (s.structureLevel >= 2)
+      retainedCampusModule(
+        d,
+        g,
+        s,
+        'workingHall',
+        (structure) => greenhouse(d, structure, s, 2.2, -0.7, 1),
+        {
+          x: 2.86,
+          y: 0.5,
+          z: -0.04,
+          width: 0.8,
+          height: 0.38,
+          turn: Math.PI / 4,
+          operationX: 2.85,
+          operationY: 0.43,
+          operationZ: -0.05,
+          floor: 0.27,
+        },
+      );
+    if (s.structureLevel >= 3) {
       pergola(d, g, 0, 0.1, 1.35, 2.5, 0.75, p);
       for (const x of [-2.7, 2.8]) planter(d, g, x, 0.8, p, 0.35);
     }
@@ -461,15 +599,31 @@ const FORMS = {
       disc(d, g, r, y + 0.35, x, z, p.glass, r * 0.75, 0.05);
     };
     pool(-0.45, 0.6, 2, 0.9);
-    cottage(d, g, s, 2.1, -0.5, 0.95, 2.6);
-    if (s.level >= 2) {
+    retainedCampusModule(
+      d,
+      g,
+      s,
+      'bathhouse',
+      (structure) => cottage(d, structure, s, 2.1, -0.5, 0.95, 2.6),
+      {
+        x: 2.79,
+        y: 1,
+        z: 0.19,
+        width: 0.85,
+        turn: Math.PI / 4,
+        operationX: 2.78,
+        operationY: 0.6,
+        operationZ: 0.18,
+      },
+    );
+    if (s.structureLevel >= 2) {
       pool(-0.35, -1.3, 1.4, 2.05);
       d.box(g, 0.6, 1.2, 0.13, -0.35, 1.82, -0.13, p.glass, true).name =
         'Warm springs water ribbon';
       pergola(d, g, -2.4, 0.1, -1.4, 1.2, 1.3, p);
       addCozyRoof(d, g, -2.4, 1.65, -1.4, 0.85, s.era, 0.9);
     }
-    if (s.level >= 3) {
+    if (s.structureLevel >= 3) {
       pool(-0.35, 2.15, 1.25, 0.15);
       for (const x of [-2.6, 2.4]) planter(d, g, x, 1.6, p, 0.4);
       lantern(d, g, 2.5, 1.25, p, 0, 1.7);
@@ -478,22 +632,42 @@ const FORMS = {
   },
   pavilion(d, g, s) {
     const p = s.palette,
-      r = s.level >= 2 ? 2.8 : 2.4,
-      columns = s.level >= 2 ? 10 : 8;
-    disc(d, g, r + 0.15, 0.15, 0, -0.1, p.shell, r + 0.15, 0.25);
+      r = s.structureLevel >= 2 ? 2.8 : 2.4,
+      columns = s.structureLevel >= 2 ? 10 : 8;
+    const module = purposeModule(
+      d,
+      g,
+      s,
+      'publicPortico',
+      `Cozy purpose finish ${heritageUpgrade(s.kind)}`,
+    );
+    const structure = purposeStructure(d, module);
+    disc(d, structure, r + 0.15, 0.15, 0, -0.1, p.shell, r + 0.15, 0.25);
     for (let n = 0; n < columns; n++) {
       const a = (n * TAU) / columns + TAU / (columns * 2);
       if (Math.cos(a) > 0.84) continue; // wide, legible front entrance
       const x = Math.sin(a) * r * 0.85,
         z = Math.cos(a) * r * 0.85 - 0.1;
-      drum(d, g, 0.09, 2.25, x, 0.25, z, p.deep);
-      lantern(d, g, x, z, p, 0.4, 1.65);
+      drum(d, structure, 0.09, 2.25, x, 0.25, z, p.deep);
+      lantern(d, structure, x, z, p, 0.4, 1.65);
     }
-    addCozyRoof(d, g, 0, 2.6, -0.1, r + 0.28, s.era, r + 0.28, 10);
+    addCozyRoof(d, structure, 0, 2.6, -0.1, r + 0.28, s.era, r + 0.28, 10);
+    addPurposeGrades(d, module, s, {
+      x: r * 0.77,
+      y: 1.25,
+      z: 0.6,
+      width: 1.38,
+      height: 0.9,
+      turn: Math.PI / 4,
+      operationX: r * 0.77 - 0.04,
+      operationY: 0.72,
+      operationZ: 0.56,
+      floor: 0.275,
+    });
     crystal(d, g, 0, 3.2, -0.1, 0.46, p);
     disc(d, g, 0.6, 0.42, 0, -0.1, p.deep, 0.6, 0.35);
     crystal(d, g, 0, 0.62, -0.1, 0.25, p);
-    if (s.level >= 3)
+    if (s.structureLevel >= 3)
       for (const side of [-1, 1]) {
         d.box(g, 1.3, 0.18, 0.38, side * 2.15, 0.48, 1.8, p.timber, true);
         planter(d, g, side * 2.9, 1.5, p, 0.38);
@@ -506,7 +680,18 @@ export function renderCozyBuilding(d, parent, kind, label, level, era, serviceLe
   const form = cozyForm(kind);
   if (!form) return false;
   const appearance = cozyAppearance(era);
-  const s = { ...cityAppearance(era, kind), ...appearance, kind, era, level, serviceLevel };
+  // Kinds without a catalog style (for example later-era landmarks) use ordinary lot sizes.
+  const s = {
+    width: 3.4,
+    height: 3,
+    ...cityAppearance(era, kind),
+    ...appearance,
+    ...futureBuildingStages(kind, era, level, serviceLevel),
+    kind,
+    era,
+    level,
+    serviceLevel,
+  };
   if (['fisherman', 'riverPort'].includes(kind))
     addFishingDock(d, parent, serviceLevel, kind === 'riverPort');
   const root = d.group(parent);
@@ -517,25 +702,57 @@ export function renderCozyBuilding(d, parent, kind, label, level, era, serviceLe
   const crown = FORMS[form](d, root, s),
     p = appearance.palette;
   if (!landmark && crown) {
-    if (level >= 2) {
-      // A rear garden room alters the outline without using the front sidewalk.
+    if (s.structureLevel >= 2) {
       const x = -Math.min(1.75, (s.width ?? 3.4) / 2 - 0.15);
-      greenhouse(d, root, s, x, -0.95, 0.65);
-    }
-    if (level >= 3) {
-      disc(
+      const wing = purposeModule(
         d,
         root,
-        crown.radius + 0.13,
-        ['stable', 'garage', 'busDepot'].includes(kind)
-          ? Math.max(1.9, crown.top * 0.72)
-          : crown.top * 0.56,
-        crown.x ?? 0,
-        crown.z ?? -0.3,
-        p.green,
-        crown.radius + 0.13,
-        0.1,
+        s,
+        'serviceAnnex',
+        `Cozy retained wing ${heritageUpgrade(kind) ?? form}`,
       );
+      const structure = purposeStructure(d, wing);
+      if (form === 'greenhouse') {
+        // The new growing room projects behind the mature dome instead of hiding inside it.
+        greenhouse(d, structure, s, -0.6, -1.95, 0.72);
+        addPurposeGrades(d, wing, s, {
+          x: -1.27,
+          y: 0.5,
+          z: -1.95,
+          width: 0.6,
+          height: 0.32,
+          turn: -Math.PI / 2,
+          operationX: -0.6,
+          operationY: 0.98,
+          operationZ: -1.95,
+          operationWidth: 0.8,
+          operationTurn: 0,
+          roof: true,
+          floor: 0.27,
+        });
+      } else {
+        cottage(d, structure, s, x, -0.95, 0.65, 1.25);
+        addPurposeGrades(d, wing, s, {
+          x,
+          y: 0.68,
+          z: -0.17,
+          width: 0.4,
+          height: 0.82,
+          operationY: 1.71,
+          operationZ: -0.95,
+          operationWidth: 0.8,
+          roof: true,
+        });
+      }
+    }
+    if (level >= 3) {
+      if (form === 'workshop') {
+        // A supported planted roof tray replaces the disc that clipped through workshop walls.
+        const y = crown.roofY;
+        for (const x of [0.1, 1.1]) d.box(root, 0.12, 0.38, 0.12, x, y + 0.1, -0.45, p.timber);
+        d.box(root, 1.4, 0.18, 0.65, 0.6, y + 0.36, -0.45, p.shell);
+        for (const x of [0.15, 0.6, 1.05]) planter(d, root, x, -0.45, p, 0.17, y + 0.45);
+      }
       const sides = kind === 'busDepot' ? [-1.85, 1.85] : [-1.4, 1.4];
       for (const x of sides) {
         planter(d, root, x, 1.4, p, 0.23);
@@ -543,7 +760,15 @@ export function renderCozyBuilding(d, parent, kind, label, level, era, serviceLe
       }
     }
   } else if (form === 'garden') {
-    if (level >= 2) pergola(d, root, 1.4, 0, -1.6, 1.2, 0.8, p);
+    if (s.structureLevel >= 2)
+      retainedCampusModule(
+        d,
+        root,
+        s,
+        'gardenShelter',
+        (structure) => pergola(d, structure, 1.4, 0, -1.6, 1.2, 0.8, p),
+        { x: 1.4, y: 0.9, z: -1.2, width: 1.1, height: 0.6, operationY: 0.55, operationZ: -1.25 },
+      );
     if (level >= 3) for (const x of [-1.5, 1.5]) planter(d, root, x, 1.55, p, 0.25);
   }
   if (['stable', 'garage', 'busDepot'].includes(kind)) {
@@ -553,6 +778,15 @@ export function renderCozyBuilding(d, parent, kind, label, level, era, serviceLe
     vehicle.rotation.y = Math.PI / 2;
   }
   if (!['square', 'garden'].includes(form)) {
+    if (s.identity === 'columns')
+      root.userData.authoredSignMount = {
+        type: 'facade',
+        x: 0,
+        y: 2.2,
+        z: 1.5315,
+        width: 1.6,
+        brackets: [-0.55, 0.55].map((x) => ({ x, y: 2.2, back: 1.425, front: 1.4805 })),
+      };
     d.sign(root, label, landmark ? 2 : 2.4, 0, landmark ? 1.35 : 1.45, landmark ? 2.3 : 1.72);
   }
   return true;
@@ -586,7 +820,7 @@ export function addCozyBridge(d, parent, era, level) {
     }
     if (level >= 3) {
       // Tall arches rest beyond the rail, clear of all traffic headroom.
-      for (const z of [-1.75, 1.75]) d.rod(root, [x, y, z], [x, y + 3.8, z], 0.055, p.timber);
+      for (const z of [-1.75, 1.75]) d.rod(root, [x, y, z], [x, y + 3.9, z], 0.055, p.timber);
       addCozyRoof(d, root, x, y + 3.9, 0, 0.6, era, 2.05);
     }
   }

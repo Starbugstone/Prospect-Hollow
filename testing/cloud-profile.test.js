@@ -649,11 +649,13 @@ it.each([413, 422])(
       return remote(1);
     });
     await expect(sync.sync()).rejects.toMatchObject({ status });
-    expect(townStorage.active().meta.pending).toBeNull();
+    if (status === 422) expect(townStorage.active().meta.pending.rejected).toBe(true);
+    else expect(townStorage.active().meta.pending).toBeNull();
     expect(townStorage.active().meta.uploadError.status).toBe(status);
     const calls = api.mock.calls.length;
     await sync.sync();
-    expect(api).toHaveBeenCalledTimes(calls);
+    // Only a read for a newer cloud save; the rejected snapshot is not resent.
+    expect(api.mock.calls.slice(calls).every(([, body]) => !body)).toBe(true);
     townStorage.save(profile(11));
     api.mockImplementation(async (_, body) =>
       body ? remote(2, body.profile.town.coins) : remote(1),
@@ -679,7 +681,7 @@ it('does not repeatedly submit an unsupported format as the player continues off
   const calls = api.mock.calls.length;
   townStorage.save(profile(11));
   await sync.sync();
-  expect(api).toHaveBeenCalledTimes(calls);
+  expect(api.mock.calls.slice(calls).every(([, body]) => !body)).toBe(true);
   expect(townStorage.active().profile.town.coins).toBe(11);
 });
 it('refreshes metadata at an unchanged gameplay revision without replacing local progress', async () => {
@@ -772,4 +774,45 @@ it('requires a fresh confirmation if progress changes while a replacement is bei
   expect(townStorage.active().profile.town.coins).toBe(11);
   expect(api.mock.calls.filter(([, body]) => body)).toHaveLength(0);
   expect(outbox.size).toBe(0);
+});
+it('accepts a newer identical snapshot without reapplying gameplay, but adopts its receipt epoch', async () => {
+  setupAccount();
+  const receipt = vi.fn();
+  sync = createSyncService({
+    storage: townStorage,
+    request: api,
+    account: () => owner,
+    applied,
+    integrityApplied: receipt,
+  });
+  const cloud = {
+    ...remote(2),
+    name: 'Renamed elsewhere',
+    profile: {
+      ...Object.fromEntries(Object.entries(profile()).reverse()),
+      integrity: { version: 1, epoch: 'new-epoch', baseSequence: 0, actions: [] },
+    },
+  };
+  api.mockResolvedValue(cloud);
+  await sync.sync();
+  expect(applied).not.toHaveBeenCalled();
+  expect(receipt).toHaveBeenCalledWith(cloud.townId, cloud.profile.integrity);
+  expect(townStorage.active().meta).toMatchObject({
+    baseRevision: 2,
+    dirty: false,
+    name: 'Renamed elsewhere',
+  });
+  expect(townStorage.active().profile.integrity.epoch).toBe('new-epoch');
+});
+it('applies an income checkpoint change even when other gameplay fields are identical', async () => {
+  const local = profile();
+  local.town.income = { at: 100, stored: 0, remainder: 0 };
+  townStorage.save(local);
+  setupAccount();
+  api.mockResolvedValue({
+    ...remote(2),
+    profile: { ...local, town: { ...local.town, income: { ...local.town.income, at: 200 } } },
+  });
+  await sync.sync();
+  expect(applied).toHaveBeenCalledOnce();
 });

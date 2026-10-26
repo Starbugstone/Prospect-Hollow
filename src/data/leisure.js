@@ -37,8 +37,8 @@ export const LEISURE_BUILDINGS = [
       ? ['Industrial · Level 1', 'Industrial · Level 2', 'Industrial · Level 3']
       : ['Motor Age · Level 1', 'Motor Age · Level 2', 'Motor Age · Level 3']),
   ],
+  // Each level costs its era's newBuildingPrices (BUILDINGS in town.js).
   upgrades: benefits.map((benefit, index) => ({
-    cost: [4320, 6000, 7920][index],
     runs: index ? 2 : 1,
     title: index ? 'Expand {building}' : 'Build {building}',
     benefit,

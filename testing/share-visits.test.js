@@ -8,7 +8,7 @@ import {
   saloonIncomeRate,
   settleSaloonIncome,
 } from '../src/game/town/TownRules';
-import { newerGuest, normalizeGuestVip } from '../src/data/guestVip';
+import { normalizeGuestVip } from '../src/data/guestVip';
 import { TownDiorama } from '../src/game/town/TownDiorama';
 import { TownVipArrivals } from '../src/game/town/TownVipArrivals';
 import { createTownGeometries } from '../src/game/town/TownGeometries';
@@ -111,7 +111,7 @@ describe('visitor saloon collection reaching the owner', () => {
   });
 });
 
-describe('the latest signed-in viewer as a guest VIP', () => {
+describe('a guest VIP saved before live presence', () => {
   it('accepts only sanitised names', () => {
     expect(normalizeGuestVip({ name: 'Silver Creek', at: 12 })).toEqual({
       name: 'Silver Creek',
@@ -121,29 +121,17 @@ describe('the latest signed-in viewer as a guest VIP', () => {
     for (const name of ['<script>', 'a@b.fr', 'www.example.com', "O'Hara", 'ab', 'Two  Spaces'])
       expect(normalizeGuestVip({ name, at: 12 })).toBeNull();
     expect(normalizeGuestVip({ name: 'Silver Creek', at: 0 })).toBeNull();
-    expect(newerGuest({ name: 'Old Town', at: 12 }, { name: 'Old Town', at: 12 })).toBeNull();
   });
 
-  it('keeps only the latest guest and never touches coins', () => {
+  it('marks the guest seen once they walk in, without touching coins', () => {
     const c = saloonTown();
-    expect(c.welcomeGuest({ name: 'Silver Creek', at: 3_000 })).toBe('Silver Creek');
-    expect(c.welcomeGuest({ name: 'Old Town', at: 2_000 })).toBeNull();
-    expect(c.welcomeGuest(null)).toBeNull();
-    expect(c.welcomeGuest({ name: 'Red Rock', at: 4_000 })).toBe('Red Rock');
-    expect(c.town).toMatchObject({ coins: 100, saloonVisitAt: 0 });
-    expect(roundTrip(c.town).guestVip).toEqual({ name: 'Red Rock', at: 4_000, seen: false });
-  });
-
-  it('marks the guest seen once they walk in, and a newer visit arrives again', () => {
-    const c = saloonTown();
-    c.welcomeGuest({ name: 'Red Rock', at: 4_000 });
+    c.town = roundTrip({ ...c.town, guestVip: { name: 'Red Rock', at: 4_000 } });
     expect(c.town.guestVip).toEqual({ name: 'Red Rock', at: 4_000, seen: false });
     expect(c.markGuestSeen(3_000)).toBe(false);
     expect(c.markGuestSeen(4_000)).toBe(true);
+    expect(c.markGuestSeen(4_000)).toBe(false);
     expect(roundTrip(c.town).guestVip.seen).toBe(true);
-    expect(c.welcomeGuest({ name: 'Red Rock', at: 4_000 })).toBeNull();
-    c.welcomeGuest({ name: 'Blue Hill', at: 5_000 });
-    expect(c.town.guestVip).toEqual({ name: 'Blue Hill', at: 5_000, seen: false });
+    expect(c.town).toMatchObject({ coins: 100, saloonVisitAt: 0 });
   });
 });
 
@@ -197,6 +185,21 @@ describe('the guest VIP arrival', () => {
     d.vipArrivals.update();
     expect(guestActor(d).started).toBe(0);
     expect(d.onGuestVip).toHaveBeenCalledOnce();
+  });
+
+  it('holds the saved guest while Moon view stops valley motion, then arrives exactly once', () => {
+    const d = guestScene({ name: 'Red Rock', at: 5, seen: false });
+    d.motionEnabled = false;
+    d.vipArrivals.attach(d.town);
+    d.vipArrivals.update();
+    expect(guestActor(d).started).toBeUndefined();
+    expect(d.town.guestVip.seen).toBe(false);
+    expect(d.onGuestVip).not.toHaveBeenCalled();
+    d.motionEnabled = true;
+    d.vipArrivals.update();
+    d.vipArrivals.update();
+    expect(guestActor(d).started).toBe(0);
+    expect(d.onGuestVip).toHaveBeenCalledExactlyOnceWith(5);
   });
 
   it('keeps walking when the save marks them seen, and does not return on later connections', () => {

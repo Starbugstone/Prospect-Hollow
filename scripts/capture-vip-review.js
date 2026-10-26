@@ -1,4 +1,5 @@
-// Playwright CLI callback: start Vite, open a fresh browser session, then run
+// Playwright CLI callback: generate the era fixtures (npm run demo:eras), start Vite,
+// open a fresh browser session, then run
 // playwright-cli run-code "$(cat scripts/capture-vip-review.js)"
 // Uses isolated browser save data and production selection/models. Each scene
 // contains one VIP. Packaging validates every required file before making a ZIP.
@@ -40,8 +41,15 @@ async (page) => {
         }
   }
   await page.setViewportSize({ width: 1440, height: 900 });
+  // Each era loads its completed disposable fixture from output/era-demo/, written
+  // before the game starts so the running town cannot save over it.
+  await page.addInitScript(() => {
+    const fixture = sessionStorage.getItem('vip-review-fixture');
+    if (!fixture) return;
+    localStorage.setItem('crystal-cascade-profile-v3', fixture);
+    sessionStorage.removeItem('vip-review-fixture');
+  });
   await page.goto('http://127.0.0.1:5173/');
-  await page.getByRole('button', { name: 'Village', exact: true }).click();
   const results = [];
   for (let index = 0; index < eras.length; index++) {
     const era = eras[index],
@@ -55,7 +63,20 @@ async (page) => {
         'airport',
         'airport',
       ][index];
-    await page.evaluate((era) => window.prospectDebug.prepareEra(era), era);
+    const fixture = { frontier: 'frontier-ready' }[era] ?? `${era}-complete`;
+    await page.evaluate(async (fixture) => {
+      const response = await fetch(`/output/era-demo/${fixture}.json`);
+      if (!response.ok) throw new Error(`Run npm run demo:eras first (${fixture}.json).`);
+      const profile = await response.json();
+      // No raid, era cinematic or building presentation interrupts the capture.
+      profile.town.nextRaidRun = 99999;
+      profile.town.presentations = Object.fromEntries(
+        Object.keys(profile.town.presentations ?? {}).map((id) => [id, 'seen']),
+      );
+      sessionStorage.setItem('vip-review-fixture', JSON.stringify(profile));
+    }, fixture);
+    await page.reload();
+    await page.getByRole('button', { name: 'Village', exact: true }).click();
     await page.waitForFunction((era) => {
       const d = document.querySelector('.town-scene')?.__vueParentComponent?.setupState?.scene;
       return d?.town.era === era;

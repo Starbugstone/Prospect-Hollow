@@ -156,9 +156,74 @@
       <path :d="dome(0, -300, 26, 20)" :fill="p.accent" />
       <path d="M0-320v-40" :stroke="p.shell" stroke-width="4" />
     </template>
-    <g v-if="level >= 2 && !['garden'].includes(form)">
+    <g v-if="structureLevel >= 2 && !['garden'].includes(form)">
       <ellipse cx="-104" cy="-20" rx="24" ry="20" :fill="p.shell" />
       <ellipse cx="-104" cy="-28" rx="18" ry="7" :fill="p.glass" />
+    </g>
+    <g
+      v-if="moduleLevel >= 2 && form !== 'garden'"
+      :data-upgrade-feature="feature ?? 'service'"
+      :data-module-level="moduleLevel"
+    >
+      <g v-if="(form === 'tower' && style.height >= 4) || form === 'spire'">
+        <path
+          :d="drum(0, form === 'spire' ? -155 : -96, 51, 28)"
+          :fill="level >= 2 ? p.glass : p.shell"
+          :stroke="p.shell"
+          stroke-width="4"
+        />
+        <ellipse
+          :cy="(form === 'spire' ? -155 : -96) - 28"
+          rx="57"
+          ry="12"
+          :fill="p.green"
+          :stroke="p.shell"
+          stroke-width="3"
+        />
+      </g>
+      <g v-else-if="form === 'greenhouse'">
+        <path
+          d="M-24-3v-27q28-17 57 0v27Z"
+          :fill="level >= 2 ? p.glass : p.shell"
+          :stroke="p.shell"
+          stroke-width="4"
+        />
+      </g>
+      <g v-else>
+        <path d="M-66 0v-58m132 58v-58" :stroke="p.accent" stroke-width="5" />
+        <ellipse cy="-60" rx="76" ry="12" :fill="p.shell" />
+        <path d="M-42-57h84v13h-84Z" :fill="level >= 2 ? p.glass : p.accent" />
+      </g>
+      <g
+        :transform="
+          (form === 'tower' && style.height >= 4) || form === 'spire'
+            ? 'translate(0 -139)'
+            : form === 'greenhouse'
+              ? 'translate(6 -30)'
+              : 'translate(0 -65)'
+        "
+      >
+        <path d="M-16 0v-17m32 17v-17M-22-19h44" :stroke="p.shell" stroke-width="5" />
+        <g :transform="level >= 3 ? 'translate(0 -34)' : undefined">
+          <path :d="level >= 3 ? 'M-17 0v-18h34V0Z' : 'M-10-3v-8h20v8Z'" :fill="p.accent" />
+          <path d="M-10-10H10" :stroke="level >= 3 ? p.glass : p.shell" stroke-width="4" />
+          <path
+            v-if="
+              level >= 3 &&
+              ['dispatch', 'studio', 'auditorium', 'computers', 'research'].includes(feature)
+            "
+            d="M0-18v-22m-12 7h24"
+            :stroke="p.shell"
+            stroke-width="3"
+          />
+          <path
+            v-if="level >= 3 && feature === 'pumping'"
+            d="M-12-16v-15h9v15m8 0v-15h9v15"
+            :stroke="p.shell"
+            stroke-width="3"
+          />
+        </g>
+      </g>
     </g>
     <g v-if="level >= 3 && !['garden'].includes(form)">
       <g v-for="x in [-92, 92]" :key="x">
@@ -173,14 +238,26 @@
 import { computed } from 'vue';
 import { cityAppearance } from '../../data/cityAppearance';
 import { ROUNDED_PALETTE as p, roundedForm } from '../../data/roundedArchitecture';
+import { buildingStages } from '../../data/buildingStages';
+import { heritageUpgrade } from '../../data/heritageUpgrades';
 import TownLeisureBuilding from './TownLeisureBuilding.vue';
 const props = defineProps({
   kind: String,
   era: String,
   level: Number,
+  serviceLevel: { type: Number, default: 3 },
 });
 const form = computed(() => roundedForm(props.kind));
 const style = computed(() => cityAppearance(props.era, props.kind));
+const feature = computed(() => heritageUpgrade(props.kind));
+const structureLevel = computed(
+  () => buildingStages(props.kind, props.era, props.level, props.serviceLevel).structureLevel,
+);
+const moduleLevel = computed(
+  () =>
+    buildingStages(props.kind, props.era, props.level, props.serviceLevel).moduleLevel ??
+    structureLevel.value,
+);
 // A vertical drum and a dome in the map's front-on projection.
 const drum = (x, base, r, h) =>
   `M${x - r} ${base}v${-h}a${r} ${r * 0.25} 0 0 1 ${r * 2} 0v${h}a${r} ${r * 0.25} 0 0 1 ${-r * 2} 0Z`;

@@ -1,7 +1,37 @@
 <template>
   <g v-if="feature" stroke="#dfcba4" stroke-width="3" stroke-linejoin="round">
+    <g v-if="feature === 'pumping'" transform="translate(-96 0)">
+      <path d="M-29-2v-64l43 9V8Z" fill="#ad725c" />
+      <path d="M-34-68 8-59 29-72-13-82Z" fill="#526e79" />
+      <path d="M-21-53-1-49v24l-20-4Z" fill="#9bbbbb" />
+      <path
+        d="M-20-74v-20h12m16 25v-20h12M12-40h25"
+        fill="none"
+        stroke="#526e79"
+        stroke-width="5"
+      />
+      <path d="M-34-3 15 8 26 1-23-11Z" fill="#dfcba4" />
+    </g>
+    <g v-else-if="feature === 'landing'" transform="translate(-96 0)">
+      <path d="M-35-77 11-67 32-81-14-92Z" fill="#526e79" />
+      <path
+        d="M-10-87v74M31-80v78M-29-74V0M18-67v78"
+        fill="none"
+        stroke="#53726d"
+        stroke-width="5"
+      />
+      <path d="M-24-16 11-8v13l-35-8Z" fill="#856b4a" />
+      <path d="M-21-3V9M7 3v12" fill="none" stroke="#53726d" stroke-width="4" />
+      <path d="M-21-28 6-22m-24-15 26 6" stroke="#dfcba4" stroke-width="4" />
+      <path
+        d="M-25-64 13-56m-31-6v14m10-12v14m10-12v14"
+        fill="none"
+        stroke="#dfcba4"
+        stroke-width="2"
+      />
+    </g>
     <g
-      v-if="
+      v-else-if="
         ['veranda', 'classroom', 'clinic', 'office', 'gallery', 'dispatch', 'hayloft'].includes(
           feature,
         )

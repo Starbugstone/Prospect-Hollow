@@ -1,11 +1,18 @@
-import { describe, expect, it } from 'vitest';
-import { Scene, Vector3 } from 'three';
-import { setTownAtmosphere } from '../src/game/town/TownAtmosphere';
+import { describe, expect, it, vi } from 'vitest';
+import { MeshStandardMaterial, PerspectiveCamera, Scene, Vector3 } from 'three';
+import { MoonScene, moonHeight } from '../src/game/town/moon/MoonScene';
+import { moonParcels } from '../src/data/moonSettlement';
+import { TOWN_EDGE, horizonMaterial, setTownAtmosphere } from '../src/game/town/TownAtmosphere';
 import { landscapeGeometry } from '../src/game/town/TownMillrace';
+import { RAIL_EDGE } from '../src/game/town/TownLayout';
+import { RIVER, riverCenterX, riverPath } from '../src/game/town/TownRiver';
+import { focusTownPlace } from '../src/game/town/TownCamera';
+import { PERSONAL_AREAS } from '../src/data/townPersonalisation';
 import {
   groundHeight,
   cameraTerrainHeight,
   keepCameraAboveTerrain,
+  landscapeGroundHeight,
 } from '../src/game/town/TownLandscape';
 import { PLOTS } from '../src/game/town/TownDiorama';
 
@@ -16,8 +23,9 @@ describe('An explorable town on rolling terrain', () => {
       .map(([, position]) => position))
       for (const dx of [-1.5, 0, 1.5])
         for (const dz of [-1.5, 0, 1.5]) expect(groundHeight(x + dx, z + dz)).toBe(0);
-    expect(groundHeight(-38, -42)).toBeGreaterThan(1);
-    expect(groundHeight(-38, -42)).toBeLessThan(5);
+    // The space elevator levels the ridge's town-facing foot; it still rises behind.
+    expect(groundHeight(-38, -56)).toBeGreaterThan(1);
+    expect(groundHeight(-38, -56)).toBeLessThan(5);
   });
   it('keeps all permitted orbit headings above the hills without changing distance', () => {
     const target = new Vector3(0, 0.7, 0);
@@ -67,7 +75,7 @@ it('only lifts a camera that intersects the actual hillside, with no repeated up
   expect(position.equals(corrected)).toBe(true);
 });
 
-it('keeps every village plot clear and reaches full fog before any terrain edge', () => {
+it('keeps every plot and monument site clear and reaches full fog before any terrain edge', () => {
   const scene = new Scene();
   setTownAtmosphere(scene);
   const geometry = landscapeGeometry();
@@ -75,16 +83,214 @@ it('keeps every village plot clear and reaches full fog before any terrain edge'
     geometry.computeBoundingBox();
     const { min, max } = geometry.boundingBox;
     expect(scene.fog.color.equals(scene.background)).toBe(true);
-    expect(scene.fog.near).toBeLessThan(scene.fog.far);
+    // A wide ring keeps the fade gradual rather than a hard wall.
+    expect(scene.fog.far - scene.fog.near).toBeGreaterThanOrEqual(60);
     for (const [id, [x, z]] of Object.entries(PLOTS)) {
       const halfWidth = id === 'airport' ? 10 : 6;
       const halfDepth = id === 'airport' ? 20 : 6;
-      expect(Math.abs(x) + halfWidth, `${id} remains outside the fog`).toBeLessThan(scene.fog.near);
-      expect(Math.abs(z) + halfDepth, `${id} remains outside the fog`).toBeLessThan(scene.fog.near);
+      expect(
+        Math.hypot(Math.abs(x) + halfWidth, Math.abs(z) + halfDepth),
+        `${id} remains outside the fog`,
+      ).toBeLessThan(scene.fog.near);
     }
-    for (const edge of [min.x, max.x, min.z, max.z])
-      expect(scene.fog.far).toBeLessThan(Math.abs(edge));
+    for (const { id, positions, radius } of PERSONAL_AREAS)
+      for (const [x, z] of positions)
+        expect(Math.hypot(x, z) + radius, `${id} has open prairie before the fog`).toBeLessThan(
+          scene.fog.near - 40,
+        );
+    // The fog is round, so the square terrain only has to reach its radius on each axis.
+    for (const edge of [min.x, max.x, min.z, max.z]) expect(Math.abs(edge)).toBe(TOWN_EDGE);
+    expect(scene.fog.far).toBeLessThan(TOWN_EDGE);
+    // The river and railway run on into full fog instead of stopping in view.
+    for (const [x, z] of [riverPath()[0], riverPath().at(-1), RAIL_EDGE.from, RAIL_EDGE.to])
+      expect(Math.hypot(x, z)).toBeGreaterThan(scene.fog.far);
   } finally {
     geometry.dispose();
   }
+});
+it('keeps the river channel and railway cutting open across the coarse far terrain', () => {
+  const geometry = landscapeGeometry();
+  const p = geometry.attributes.position,
+    index = geometry.index.array;
+  // The surface the player sees between vertices, beyond the detailed core.
+  const far = [];
+  for (let i = 0; i < index.length; i += 3) {
+    const corners = [index[i], index[i + 1], index[i + 2]].map((v) => [
+      p.getX(v),
+      p.getZ(v),
+      landscapeGroundHeight(p.getX(v), p.getZ(v)),
+    ]);
+    if (corners.some(([x, z]) => Math.max(Math.abs(x), Math.abs(z)) > 130)) far.push(corners);
+  }
+  const surface = (x, z) => {
+    for (const [[ax, az, ay], [bx, bz, by], [cx, cz, cy]] of far) {
+      const area = (bx - ax) * (cz - az) - (cx - ax) * (bz - az);
+      const u = ((x - ax) * (cz - az) - (cx - ax) * (z - az)) / area,
+        v = ((bx - ax) * (z - az) - (x - ax) * (bz - az)) / area;
+      if (u >= -1e-9 && v >= -1e-9 && u + v <= 1 + 1e-9) return ay + u * (by - ay) + v * (cy - ay);
+    }
+    throw new Error(`no far terrain at ${x}, ${z}`);
+  };
+  try {
+    for (let d = 131; d < TOWN_EDGE; d += 3)
+      for (const z of [-d, d]) {
+        // Water over the bed, then dry banks: no flooded trough beside the river.
+        for (const dx of [-2.5, 0, 2.5])
+          expect(surface(riverCenterX(z) + dx, z), `river at z ${z}`).toBeLessThan(
+            RIVER.waterHeight - 0.2,
+          );
+        for (const dx of [-1, 1])
+          expect(
+            surface(riverCenterX(z) + dx * (RIVER.bankWidth + 1), z),
+            `bank at z ${z}`,
+          ).toBeGreaterThan(RIVER.waterHeight + 0.2);
+      }
+    for (let d = 131; d < TOWN_EDGE; d += 3)
+      for (const x of [-d, d])
+        for (const dz of [-0.85, 0, 0.85])
+          expect(surface(x, RAIL_EDGE.from[1] + dz), `rail at x ${x}`).toBeLessThanOrEqual(0.01);
+  } finally {
+    geometry.dispose();
+  }
+});
+it('measures fog by horizontal distance from the town center, giving a round horizon', () => {
+  const material = horizonMaterial(new MeshStandardMaterial());
+  const shader = { vertexShader: '#include <fog_vertex>', fragmentShader: '' };
+  material.onBeforeCompile(shader);
+  expect(shader.vertexShader).toContain('vFogDepth = length(horizonPosition.xz);');
+  material.dispose();
+});
+
+describe('Panel requests to focus a town place', () => {
+  const scene = () => ({
+    camera: { position: new Vector3(25, 25, 25) },
+    controls: { enabled: false, target: new Vector3(), update: vi.fn() },
+    overview: true,
+    render: vi.fn(),
+  });
+  it('frames a monument behind an open panel with player controls disabled', () => {
+    const d = scene();
+    const area = PERSONAL_AREAS[0];
+    expect(focusTownPlace(d, area.id)).toBe(true);
+    expect(d.controls.target.toArray()).toEqual([area.positions[0][0], 2, area.positions[0][1]]);
+    expect(d.controls.enabled).toBe(false);
+    expect(d.overview).toBe(false);
+    expect(d.render).toHaveBeenCalledOnce();
+    expect(d.controls.update).toHaveBeenCalledOnce();
+  });
+  it('frames the mine plot for the Distinctions plaque with player controls disabled', () => {
+    const d = scene();
+    expect(focusTownPlace(d, 'mine')).toBe(true);
+    expect(d.controls.target.toArray()).toEqual([PLOTS.mine[0], 2, PLOTS.mine[1]]);
+    expect(d.camera.position.distanceTo(d.controls.target)).toBeGreaterThan(0);
+    expect(d.render).toHaveBeenCalledOnce();
+  });
+  it.each(['raid', 'cinematic', 'presentation', 'eventCamera'])(
+    'preserves %s camera priority while a panel is open',
+    (camera) => {
+      const d = scene();
+      d[camera] = {};
+      expect(focusTownPlace(d, PERSONAL_AREAS[0].id)).toBe(false);
+      expect(d.controls.target.toArray()).toEqual([0, 0, 0]);
+      expect(d.render).not.toHaveBeenCalled();
+    },
+  );
+});
+
+// The Moon's camera keeps the valley's contract (AGENTS.md, settlement maps): above its
+// own ground on every change, the same keyboard moves and reset, and explicit
+// navigation to a lot, through the shared TownCamera helpers.
+describe('The Moon camera', () => {
+  const element = () => {
+    const listeners = () => ({ addEventListener() {}, removeEventListener() {} });
+    return {
+      ...listeners(),
+      style: {},
+      ownerDocument: listeners(),
+      getRootNode: listeners,
+      setPointerCapture() {},
+      releasePointerCapture() {},
+    };
+  };
+  function moon() {
+    const camera = new PerspectiveCamera(48, 1.5, 0.1, 600);
+    camera.position.set(0, 26, 66);
+    const scene = Object.assign(Object.create(MoonScene.prototype), {
+      camera,
+      terrainHeight: moonHeight,
+      requestFrame: vi.fn(),
+      render: vi.fn(),
+    });
+    scene.attachCamera(element());
+    return scene;
+  }
+  // A crater-rim hill and a camera buried in it, looking back at the settlement.
+  const hill = () => {
+    let best = [0, 0];
+    for (let a = 0; a < Math.PI * 2; a += 0.05)
+      for (const r of [52, 60, 70, 85]) {
+        const point = [Math.cos(a) * r, Math.sin(a) * r];
+        if (moonHeight(...point) > moonHeight(...best)) best = point;
+      }
+    return best;
+  };
+
+  it('stays above the Moon’s hills, not the valley’s, on every change', () => {
+    const [x, z] = hill();
+    expect(moonHeight(x, z)).toBeGreaterThan(3);
+    const target = new Vector3(x * 0.8, 0, z * 0.8);
+    const buried = new Vector3(x, moonHeight(x, z) - 0.5, z);
+    const position = buried.clone();
+    expect(keepCameraAboveTerrain(position, target, 0.55, moonHeight)).toBe(true);
+    expect(position.y).toBeGreaterThanOrEqual(moonHeight(position.x, position.z) + 1.2);
+    // The scene runs the same guard on every camera change.
+    const scene = moon();
+    scene.controls.target.copy(target);
+    scene.camera.position.copy(buried);
+    scene.cameraChanged();
+    expect(scene.camera.position.y).toBeGreaterThanOrEqual(
+      moonHeight(scene.camera.position.x, scene.camera.position.z) + 1.2 - 1e-6,
+    );
+    expect(scene.requestFrame).toHaveBeenCalled();
+    scene.controls.dispose();
+  });
+
+  it('turns to a Build row’s lot or site, keeping its heading, unless a scene holds it', () => {
+    for (const parcel of moonParcels()) {
+      const scene = moon();
+      const heading = scene.camera.position.clone().sub(scene.controls.target).normalize();
+      expect(scene.focusPlace(parcel.id), parcel.id).toBe(true);
+      expect(scene.controls.target.distanceTo(new Vector3(parcel.x, 2, parcel.z))).toBeLessThan(
+        1e-9,
+      );
+      const after = scene.camera.position.clone().sub(scene.controls.target).normalize();
+      expect(after.angleTo(heading), parcel.id).toBeLessThan(0.6);
+      expect(scene.camera.position.y).toBeGreaterThanOrEqual(
+        moonHeight(scene.camera.position.x, scene.camera.position.z) + 1.2 - 1e-6,
+      );
+      expect(scene.render).toHaveBeenCalled();
+      scene.controls.dispose();
+    }
+    const scene = moon();
+    scene.presentation = {};
+    expect(scene.focusPlace('settlerDomes')).toBe(false);
+    expect(scene.focusPlace('nowhere')).toBe(false);
+    scene.controls.dispose();
+  });
+
+  it('answers the valley’s camera keys and frames New Hollow on reset', () => {
+    const scene = moon();
+    const overview = scene.camera.position.clone();
+    scene.cameraAction('left');
+    expect(scene.camera.position.distanceTo(overview)).toBeGreaterThan(1);
+    scene.cameraAction('in');
+    scene.cameraAction('reset');
+    expect(scene.camera.position.distanceTo(overview)).toBeLessThan(1e-6);
+    expect(scene.overview).toBe(true);
+    // A presentation's event camera turns player controls off: keys wait.
+    scene.controls.enabled = false;
+    scene.cameraAction('left');
+    expect(scene.camera.position.distanceTo(overview)).toBeLessThan(1e-6);
+    scene.controls.dispose();
+  });
 });

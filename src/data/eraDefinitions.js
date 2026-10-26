@@ -4,13 +4,15 @@ import { ERA_SUPPLY_STEP } from './townNeeds';
 
 /**
  * @typedef {'frontier'|'river-rail'|'industrial'|'motor-age'|'city'} BuildingStyle
- * @typedef {'standard'|'rounded'|'cozy'} CityArchitecture
+ * @typedef {'standard'|'rounded'|'cozy'|'sail'|'observatory'|'homestead'|'twin'} CityArchitecture
  * @typedef {'standard'|'rounded'} TransportStyle
  * @typedef {Object} EraEvolution
  * @property {BuildingStyle} style Shared building/modernization renderer family.
  * @property {CityArchitecture} architecture City building forms: Blender period shells
  *   (`standard`), procedural domes/pods (`rounded`) or planted timber/glass
- *   architecture selected by the shared `cozyStyle` profile (`cozy`).
+ *   architecture selected by the shared `cozyStyle` profile (`cozy`), or one of the
+ *   shared future archetype styles: sailcloth decks (`sail`), night-blue observatory
+ *   domes (`observatory`) or moon-white gabled homesteads (`homestead`).
  * @property {'canopy'|'riverlight'|null} cozyStyle Shared cozy architecture palette and forms.
  * @property {TransportStyle} transportStyle Airport, station, port and street vehicles:
  *   period and city models (`standard`) or the sky saucer, solar express, hover ferry
@@ -29,6 +31,8 @@ import { ERA_SUPPLY_STEP } from './townNeeds';
  * @property {string} roadStyle Surface treatment registered in roadStyles.js.
  * @property {boolean} roadBridge Continuous surfaced bridge deck instead of timber steps.
  * @property {string} incident
+ * @property {readonly string[]|null} incidentGate The era's incidents wait until one of
+ *   these plots is built; null starts them as soon as the town has residents.
  * @property {readonly number[]|null} prices Three modernization prices; never mining rewards.
  * @property {string|null} cityAssets Blender asset family shared by city eras.
  * @property {string|null} detailAsset
@@ -37,17 +41,33 @@ import { ERA_SUPPLY_STEP } from './townNeeds';
  * @property {boolean} digitalCity
  * @property {boolean} tallCity
  * @property {string|null} cityDescription
- * @property {readonly number[]|null} newBuildingPrices
+ * @property {readonly number[]|null} newBuildingPrices The coin price of each level of a
+ *   plot this era introduces; major city landmarks add their premium. Without them a
+ *   plot pays its own authored cost through the shared purchase multiplier.
+ * @property {boolean} repricesEarlierPlots Plots from earlier eras that are still being
+ *   built also take this era's newBuildingPrices.
  * @property {boolean} cityBoat
  * @property {readonly number[]} waterworks Water capacity at each modernization tier.
  * @property {readonly number[]} farmCapacity Additional farm capacity at each tier.
  * @property {string} upgradeTitle
  * @property {readonly string[]} upgradeDescriptions Second and third modernization descriptions.
  * @property {boolean} requiresPower
+ * @property {readonly string[]|null} modernizes Building ids this era modernizes; null
+ *   modernizes every building. Others keep their earlier finish and count as complete.
+ * @property {boolean} moonSettlement Settlement lights on the Moon and the space elevator's
+ *   climbers follow this era's completed supply projects.
  */
 
 /** Registered city building forms; renderers and SVG drawings exist for each. */
-export const CITY_ARCHITECTURES = Object.freeze(['standard', 'rounded', 'cozy']);
+export const CITY_ARCHITECTURES = Object.freeze([
+  'standard',
+  'rounded',
+  'cozy',
+  'sail',
+  'observatory',
+  'homestead',
+  'twin',
+]);
 /** Registered vehicle families; each has airport, rail, ferry and traffic models. */
 export const TRANSPORT_STYLES = Object.freeze(['standard', 'rounded']);
 
@@ -144,6 +164,7 @@ export function defineEra(definition) {
     roadStyle: 'dirt',
     roadBridge: false,
     incident: 'bandits',
+    incidentGate: null,
     prices: null,
     cityAssets: null,
     detailAsset: null,
@@ -153,12 +174,15 @@ export function defineEra(definition) {
     tallCity: false,
     cityDescription: null,
     newBuildingPrices: null,
+    repricesEarlierPlots: false,
     cityBoat: false,
     waterworks: null,
     farmCapacity: null,
     upgradeTitle: '',
     upgradeDescriptions: [],
     requiresPower: false,
+    moonSettlement: false,
+    modernizes: null,
     ...STYLES[style],
     ...definition.evolution,
   };
@@ -180,8 +204,23 @@ export function defineEra(definition) {
       !evolution.upgradeDescriptions.every((text) => typeof text === 'string' && text.length))
   )
     throw new Error(`Missing modernization copy for era ${definition.id}`);
+  if (evolution.repricesEarlierPlots && !evolution.newBuildingPrices)
+    throw new Error(`Missing new building prices for era ${definition.id}`);
+  if (
+    evolution.incidentGate != null &&
+    (!Array.isArray(evolution.incidentGate) ||
+      !evolution.incidentGate.length ||
+      !evolution.incidentGate.every((id) => typeof id === 'string' && id))
+  )
+    throw new Error(`Invalid incident gate for era ${definition.id}`);
   if (style !== 'frontier' && !evolution.prices)
     throw new Error(`Missing modernization prices for era ${definition.id}`);
+  if (
+    evolution.modernizes != null &&
+    (!Array.isArray(evolution.modernizes) ||
+      !evolution.modernizes.every((id) => typeof id === 'string' && id))
+  )
+    throw new Error(`Invalid modernizes list for era ${definition.id}`);
   if (!CITY_ARCHITECTURES.includes(evolution.architecture))
     throw new Error(`Unsupported architecture for era ${definition.id}`);
   if (!Object.hasOwn(TOWN_FAUNA, evolution.wildlife))

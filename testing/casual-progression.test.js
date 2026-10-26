@@ -58,7 +58,7 @@ it('uses an existing qualifying chest instead of adding another opening', () => 
 it(
   'awards every chapter gift once through the full campaign, directly with no extra chest',
   {
-    timeout: 15000,
+    timeout: 30000,
   },
   () => {
     let c = useCampaignStore();

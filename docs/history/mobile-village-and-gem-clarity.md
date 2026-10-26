@@ -14,9 +14,3 @@ Chromium checks at `http://127.0.0.1:5174/` covered French mobile 390×844 and 3
 The sapphire, ruby and emerald outlines were visually checked on the board and in the French obstacle guide. The current Develop campaign has all three seals at level 51; level 58 was also opened and currently contains chains and relics. The shared seal fix applies wherever those seals appear.
 
 All **64 targeted tests** passed (progression guidance, beta feedback, expansion rules and town layout), including existing colored-seal rules. A separate asset check verified all three seal outlines against their gems and all 864 level/gem art-to-texture mappings. Original gem assets are byte-for-byte unchanged. Production compilation and formatting passed. Browser checks reported no uncaught application exceptions or failed HTTP requests; the normal mobile flow also had no console errors. Forced WebGL unavailability produces the expected fallback notice.
-
-## Screenshots
-
-- [Unobstructed mobile village](../images/polish-village-mobile.png) and [optional progress popup](../images/polish-village-progress.png)
-- [Original art with subtle variants and matching seals](../images/polish-gem-comparison.png)
-- [French seal guide](../images/polish-sapphire-guide.png) and [seals on the board](../images/polish-seals-board.png)

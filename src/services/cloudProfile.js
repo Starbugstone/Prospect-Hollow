@@ -5,6 +5,9 @@ import { townCoordinator } from './townCoordinator';
 import { createSyncService, legacyRecovery, uploadBlocked } from './syncService';
 import { recoveryStore } from './recoveryStore';
 import { prepareIntegritySnapshot } from './saveIntegrity';
+import { backgroundJson } from './backgroundJson';
+import { waitForSyncIdle } from './syncIdle';
+import { fetchCloudReply } from './backgroundTransport';
 const native = Capacitor.isNativePlatform();
 const base = (import.meta.env.VITE_API_BASE ?? '/api/v1').replace(/\/$/, '');
 let bearer = '',
@@ -44,7 +47,15 @@ export async function request(
   const generation = epoch,
     storedGeneration = townStorage.auth().generation;
   const townId = path.match(/^towns\/([^/]+)/)?.[1] ?? (path === 'towns' ? body?.townId : null);
-  const response = await fetch(`${base}/${path}`, {
+  if (!authentication) await waitForSyncIdle();
+  const serialized = body === undefined ? undefined : await backgroundJson.stringify(body);
+  if (generation !== epoch || storedGeneration !== townStorage.auth().generation)
+    throw new Error('The account changed while this request was in progress.');
+  // Relative API bases resolve against the page, including when fetch executes
+  // from an assets-directory worker or a Capacitor document origin.
+  const endpoint = `${base}/${path}`;
+  const url = globalThis.location?.href ? new URL(endpoint, location.href).href : endpoint;
+  const options = {
     method,
     credentials: native ? 'omit' : 'same-origin',
     cache: 'no-store',
@@ -53,11 +64,21 @@ export async function request(
       'X-CSRF-Token': cloud.csrf,
       ...(native && bearer ? { Authorization: `Bearer ${bearer}` } : {}),
     },
-    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-    signal: AbortSignal.timeout(15000),
-  });
+    ...(body === undefined ? {} : { body: serialized }),
+  };
+  // Network delivery/decoding also stays off the rendering thread for big saves.
+  // Session and town identity checks remain on the owning tab.
+  const response = await backgroundJson.run('fetchText', { url, options }, () =>
+    fetchCloudReply({ url, options }),
+  );
   // Hosting may reject oversized requests before the API can return JSON.
-  const data = await response.json().catch(() => {
+  const decoded =
+    response.text !== undefined
+      ? backgroundJson.parse(response.text)
+      : response.unreadable
+        ? Promise.reject(new SyntaxError())
+        : Promise.resolve(response.data);
+  const data = await decoded.catch(() => {
     if (response.ok) throw new Error('The server returned an unreadable save response.');
     return {
       error:
@@ -109,7 +130,11 @@ export function configureSync(options) {
   }
   sessionGeneration = townStorage.auth().generation;
   service = createSyncService({
-    storage: townStorage,
+    storage: {
+      ...townStorage,
+      get: townStorage.getAsync.bind(townStorage),
+      mutate: townStorage.mutateAsync.bind(townStorage),
+    },
     request,
     account: () => (cloud.sessionExpired ? null : cloud.account),
     ...options,
@@ -127,8 +152,9 @@ export const latestVillage = (id) =>
 // Any visitor may collect a shared town's saloon for its owner, once per hour per town.
 export const tapSaloon = (id) =>
   request(`villages/${encodeURIComponent(id)}/saloon`, {}, 'POST', true);
-// Once the owner's save holds the latest guest, the server forgets that visitor.
-export const clearGuest = (id, guestAt) => request(`towns/${id}/guest`, { guestAt }, 'DELETE');
+// A signed-in visitor found the space helmet; `townId` is their own town to reward.
+export const tapHelmet = (id, townId) =>
+  request(`villages/${encodeURIComponent(id)}/helmet`, { townId }, 'POST');
 export function refreshAccount() {
   const generation = townStorage.auth().generation;
   if (accountRefresh?.generation === generation) return accountRefresh.promise;
@@ -154,17 +180,19 @@ async function fetchAccount() {
 }
 export async function syncNow({ pull = true, retryRejected = false } = {}) {
   if (!cloud.account || cloud.sessionExpired || cloud.busy || !service) return;
-  if (retryRejected) {
-    const meta = townStorage.active()?.meta;
-    if (meta?.owner === cloud.account.id)
-      townStorage.mutate(meta.id, meta.owner, (r) => {
-        r.meta.uploadError = null;
-      });
-  }
+  await waitForSyncIdle();
+  if (!cloud.account || cloud.sessionExpired || cloud.busy || !service) return;
   cloud.busy = true;
   cloud.status = 'syncing';
   cloud.error = '';
   try {
+    if (retryRejected) {
+      const meta = townStorage.activeMeta();
+      if (meta?.owner === cloud.account.id)
+        await townStorage.mutateAsync(meta.id, meta.owner, (r) => {
+          r.meta.uploadError = null;
+        });
+    }
     if (!cloud.csrf) await refreshAccount();
     await service.sync({ pull });
     updateSaveStatus();
@@ -374,6 +402,31 @@ export async function deleteCachedTown(id) {
     await recoveryStore.clearTown(owner, id);
     townStorage.forget(id, owner);
     cloud.storageVersion++;
+  });
+}
+// Deletes a cloud town at the revision the player reviewed: the town being played
+// deletes at its own base revision, any other at the revision its card shows. A device
+// copy is kept but marked missing, so it stays playable and is never uploaded again.
+export async function deleteAccountTown(town, confirmation) {
+  return townAction(town.townId, async () => {
+    const owner = cloud.account.id;
+    const selected = townStorage.selectedKey() === townKey(town.townId, owner);
+    const baseRevision = selected
+      ? townStorage.get(town.townId, owner).meta.baseRevision
+      : town.revision;
+    try {
+      await request(`towns/${town.townId}`, { baseRevision, confirmation }, 'DELETE');
+    } catch (error) {
+      // The town changed elsewhere: show its latest card before another attempt.
+      if (error.status === 409) await refreshAccount().catch(() => {});
+      throw error;
+    }
+    townStorage.mutate(town.townId, owner, (r) => {
+      r.meta.missing = true;
+      r.meta.conflict = null;
+    });
+    cloud.storageVersion++;
+    await refreshAccount();
   });
 }
 export async function deleteAccount(confirmation) {

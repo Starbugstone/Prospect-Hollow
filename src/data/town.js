@@ -1,10 +1,13 @@
-import { hasShortProgression } from './buildingProgression';
-import { purchasePrice, RIVER_RAIL_LEVEL_PRICES } from './economy';
+import { createMoonstones } from './moonstones';
+import { HOME_SETTLEMENT, MOON_SETTLEMENT, settlementOf, settlementPlaces } from './settlements';
+import { createPersonalisation } from './townPersonalisation';
+import { PROGRESSION_VERSION, hasShortProgression } from './buildingProgression';
+import { purchasePrice } from './economy';
 import { FRONTIER_BUILDINGS } from './frontier';
-import { FRONTIER_ERA, createEraState } from './eras';
+import { FRONTIER_ERA, createEraState, eraEvolution } from './eras';
 import { RIVER_RAIL_BUILDINGS } from './riverRail';
-import { INDUSTRIAL_BUILDINGS, INDUSTRIAL_LEVEL_PRICES } from './industrial';
-import { CITY_BUILDINGS } from './city';
+import { INDUSTRIAL_BUILDINGS } from './industrial';
+import { CITY_BUILDINGS, cityBuildingPrice } from './city';
 import { MOTOR_AGE_BUILDINGS } from './motorAge';
 import { LEISURE_BUILDINGS } from './leisure';
 
@@ -553,6 +556,13 @@ for (const building of ORIGINAL_BUILDINGS) {
     });
   }
 }
+// A plot an era introduces costs that era's newBuildingPrices at each level, with the
+// major-landmark premium; plots of eras without them pay their own authored cost.
+export const newBuildingPrice = (building, index) => {
+  const price = eraEvolution(building.introducedEra).newBuildingPrices?.[index];
+  return price == null ? null : cityBuildingPrice(building.id, price);
+};
+
 export const BUILDINGS = [
   ...ORIGINAL_BUILDINGS,
   ...FRONTIER_BUILDINGS,
@@ -589,18 +599,13 @@ export const BUILDINGS = [
 ].map((building) => {
   const upgrades = building.upgrades.map((upgrade, index) => ({
     ...upgrade,
-    cost:
-      building.introducedEra === 'river-rail'
-        ? RIVER_RAIL_LEVEL_PRICES[index]
-        : building.introducedEra === 'industrial'
-          ? INDUSTRIAL_LEVEL_PRICES[index]
-          : purchasePrice(upgrade.cost),
+    cost: newBuildingPrice(building, index) ?? purchasePrice(upgrade.cost),
   }));
   const short = hasShortProgression(building.id);
   return {
     ...building,
     introducedEra: building.introducedEra ?? FRONTIER_ERA,
-    requiredForEraCompletion: true,
+    requiredForEraCompletion: building.requiredForEraCompletion ?? true,
     legacyUpgradeCosts: short ? upgrades.map((upgrade) => upgrade.cost) : undefined,
     stages: short ? [...building.stages.slice(0, 3), building.stages.at(-1)] : building.stages,
     upgrades: (short
@@ -613,6 +618,14 @@ export const BUILDINGS = [
   };
 });
 
+// Buildings on valley lots; Moon settlement buildings stand on the Moon map.
+export const EARTH_BUILDINGS = settlementPlaces(HOME_SETTLEMENT, BUILDINGS);
+export const MOON_BUILDINGS = settlementPlaces(MOON_SETTLEMENT, BUILDINGS);
+// Each finished level of these earns one moonstone: the buildings of every settlement
+// whose registry entry says so (settlements.js).
+export const MOONSTONE_BUILDINGS = Object.freeze(
+  BUILDINGS.filter((building) => settlementOf(building).moonstones).map(({ id }) => id),
+);
 export const BUILDING_BY_ID = Object.fromEntries(
   BUILDINGS.map((building) => [building.id, building]),
 );
@@ -625,8 +638,10 @@ export const INITIAL_STORY = {
 };
 
 export const createTown = () => ({
+  personalisation: createPersonalisation(),
   ...createEraState(BUILDINGS.map(({ id }) => id)),
   coins: 0,
+  ...createMoonstones(),
   tourSeen: false,
   buildings: Object.fromEntries(BUILDINGS.map(({ id }) => [id, 0])),
   events: {},
@@ -635,9 +650,13 @@ export const createTown = () => ({
   completedRuns: 0,
   nextRaidRun: null,
   income: { at: null, remainder: 0, stored: 0 },
-  lastCollections: { saloon: null, blacksmith: null },
+  lastCollections: { saloon: null, blacksmith: null, moonstoneWorkshop: null },
   // Share-link events: the last visitor saloon collection applied, and the latest guest.
   saloonVisitAt: 0,
+  // Space-helmet finds: the completed puzzle count whose wearer the owner found, and the
+  // latest find while visiting another town that this town has redeemed.
+  helmetRun: 0,
+  helmetVisitAt: 0,
   guestVip: null,
-  progressionVersion: 1,
+  progressionVersion: PROGRESSION_VERSION,
 });

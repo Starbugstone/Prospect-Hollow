@@ -33,6 +33,16 @@
         {{ t(account.signedIn.value ? 'My towns & saves' : 'Protect my progress') }}
         <GameIcon name="arrow" />
       </button>
+      <button
+        v-if="account.signedIn.value"
+        type="button"
+        class="account-open"
+        :disabled="!account.canOpen.value"
+        @click="openOffice"
+      >
+        {{ t('Mayor’s Office: profile and data') }}
+        <GameIcon name="arrow" />
+      </button>
     </section>
     <button v-if="showHome" type="button" class="settings-home" @click="$emit('home')">
       <GameIcon name="home" />{{ t('Home page and news') }}
@@ -92,6 +102,8 @@
     </fieldset>
     <p class="audio-credits">
       <a :href="audioCreditsUrl" target="_blank" rel="noopener">{{ t('Audio credits') }}</a>
+      ·
+      <a :href="privacyUrl()" target="_blank" rel="noopener">{{ t('Privacy') }}</a>
     </p>
     <details class="settings-more">
       <summary>
@@ -144,7 +156,7 @@
           {{ t('Shift + arrow to swap. Esc to cancel.') }}
         </p>
       </div>
-      <div v-if="!campaign.readOnly && !townStorage.state()?.active.owner" class="testing-reset">
+      <div v-if="!campaign.readOnly && !townStorage.activeMeta()?.owner" class="testing-reset">
         <button v-if="!confirmReset" class="text-button" @click="confirmReset = true">
           {{ t('Start a new village') }}
         </button>
@@ -172,6 +184,7 @@ import { computed, inject, ref, watch } from 'vue';
 import { HONOUR_NOTICE_MODES, useSettingsStore } from '../stores/settingsStore';
 import { useCampaignStore } from '../stores/campaignStore';
 import { downloadSaveFile, saveFileName } from '../services/saveTransfer';
+import { privacyUrl } from '../services/appRoute';
 import { useSaveImport } from '../composables/useSaveImport';
 import GameIcon from './GameIcon.vue';
 const props = defineProps({ open: Boolean, allowSaveTransfer: Boolean, showHome: Boolean });
@@ -184,6 +197,10 @@ const backupHere = computed(() => props.allowSaveTransfer && !account?.accountTo
 function openAccount() {
   emit('close');
   account.open();
+}
+function openOffice() {
+  emit('close');
+  account.openOffice();
 }
 const saveInput = ref(null);
 const {
@@ -200,7 +217,7 @@ function exportProgress() {
   saveError.value = '';
   saveStatus.value = '';
   try {
-    downloadSaveFile(campaign.exportSave(), saveFileName(townStorage.state()?.active.name));
+    downloadSaveFile(campaign.exportSave(), saveFileName(townStorage.activeMeta()?.name));
     saveStatus.value = 'Save file download started.';
   } catch {
     saveError.value = 'Your save could not be exported. Please try again.';
@@ -321,6 +338,12 @@ const closeBackdrop = (event) => {
   color: #fff5e1;
   font-size: 14px;
   font-weight: 600;
+}
+/* The Mayor's Office sits under My towns as the quieter of the two. */
+.account-settings .account-open + .account-open {
+  margin-top: 8px;
+  background: transparent;
+  font-weight: 500;
 }
 .account-open svg {
   width: 18px;

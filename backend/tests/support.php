@@ -31,6 +31,7 @@ function callApi(
     mixed $body = null,
     array $session = [],
     array $headers = [],
+    bool $captureContent = true,
 ): array {
     global $api;
     $headers += [
@@ -54,7 +55,20 @@ function callApi(
         }
     }
     $response = $api($r, explode('?', $path)[0]);
-    $data = json_decode($response->getContent(), true);
+    $content = $response->getContent();
+    if (
+        $captureContent &&
+        $response instanceof \Symfony\Component\HttpFoundation\StreamedResponse
+    ) {
+        ob_start();
+        try {
+            $response->sendContent();
+            $content = ob_get_contents();
+        } finally {
+            ob_end_clean();
+        }
+    }
+    $data = $captureContent ? json_decode($content ?: '', true) : null;
     return ['status' => $response->getStatusCode(), 'data' => $data, 'response' => $response];
 }
 function status(int $expected, array $result, string $label): array
@@ -65,7 +79,8 @@ function status(int $expected, array $result, string $label): array
     );
     return $result['data'];
 }
-function account(): array
+// Headers such as REMOTE_ADDR give a test its own sign-in rate limit.
+function account(array $headers = []): array
 {
     global $db, $auth, $accounts;
     $email = 'test-' . bin2hex(random_bytes(8)) . '@example.test';
@@ -75,7 +90,7 @@ function account(): array
         'email' => $email,
         'expires_at' => time() + 900,
     ]);
-    $result = callApi('POST', 'auth/confirm', ['token' => $token]);
+    $result = callApi('POST', 'auth/confirm', ['token' => $token], [], $headers);
     $data = status(200, $result, 'sign in');
     $accounts[] = $data['account']['id'];
     $cookie = $result['response']->headers->getCookies()[0]->getValue();

@@ -1,13 +1,23 @@
+import { EXTERIOR_HABITATS } from '../../data/townAnimals';
+import { areasForSettlement } from '../../data/townPersonalisation';
 import { terrainMaterial } from './TownAtmosphere';
 import { addMineExcavation } from './TownMineShaft';
 import * as THREE from 'three';
 import { MINE_FACE_COLUMNS, MINE_HILLSIDE, mineHillsideHeight } from './TownMineHillside';
 import { MILLRACE, millraceDistance, millraceHeight, landscapeGeometry } from './TownMillrace';
-import { GARDEN_PARCELS, GARDEN_CLEARING, GARDEN_LANE_X } from '../../data/townGardenDistrict';
+import {
+  GARDEN_PARCELS,
+  GARDEN_LANE_X,
+  PARCEL_CLEARINGS,
+  isLaneParcel,
+} from '../../data/townGardenDistrict';
 import { TOWN_TRACKS, PLOTS, RAIL_EDGE, segmentDistance, gardenConnections } from './TownLayout';
 import { RIVER, riverDistance, wetBank, buildRiver } from './TownRiver';
 import { hash01, smoothBetween } from './TownMath';
 import { addCactus } from './buildings/frontierParts';
+
+// Level grassy verges support wildlife and visitors around the distant courts.
+const wildlifeClearings = [...areasForSettlement(), ...Object.values(EXTERIOR_HABITATS)];
 
 function noise(x, z) {
   const ix = Math.floor(x),
@@ -21,6 +31,13 @@ function noise(x, z) {
   );
 }
 
+const RIDGES = [
+  [-38, -42, 11],
+  [32, -45, 14],
+  [55, 4, 12],
+  [-45, 28, 9],
+  [5, 58, 11],
+];
 // A level clearing for foundations blends into rolling prairie in every direction.
 export function groundHeight(x, z) {
   const distance = Math.hypot(x, z);
@@ -29,25 +46,33 @@ export function groundHeight(x, z) {
     noise(x * 0.048, z * 0.048) * 6.5 +
     Math.sin(x * 0.065 + z * 0.027) * 1.9 +
     noise(x * 0.14, z * 0.14) * 0.7;
-  const ridges = [
-    [-38, -42, 11],
-    [32, -45, 14],
-    [55, 4, 12],
-    [-45, 28, 9],
-    [5, 58, 11],
-  ].reduce(
-    (height, [hx, hz, rise]) => height + rise * Math.exp(-((x - hx) ** 2 + (z - hz) ** 2) / 440),
-    0,
-  );
+  let ridges = 0;
+  for (const [hx, hz, rise] of RIDGES)
+    ridges += rise * Math.exp(-((x - hx) ** 2 + (z - hz) ** 2) / 440);
+  // Sampled for every terrain vertex and by camera and animal motion: plain loops
+  // keep this allocation-free.
+  let personalClearing = Infinity;
+  for (const { positions, radius } of wildlifeClearings)
+    for (const [px, pz] of positions)
+      personalClearing = Math.min(
+        personalClearing,
+        Math.hypot(
+          Math.max(0, Math.abs(x - px) - radius - 3),
+          Math.max(0, Math.abs(z - pz) - radius - 3),
+        ),
+      );
   const eastClearing = Math.hypot(Math.max(37 - x, 0, x - 70), Math.max(-17 - z, 0, z - 33));
-  const gardenClearing = Math.hypot(
-    Math.max(GARDEN_CLEARING.minX - x, 0, x - GARDEN_CLEARING.maxX),
-    Math.max(GARDEN_CLEARING.minZ - z, 0, z - GARDEN_CLEARING.maxZ),
-  );
+  let gardenClearing = Infinity;
+  for (const { minX, maxX, minZ, maxZ } of PARCEL_CLEARINGS)
+    gardenClearing = Math.min(
+      gardenClearing,
+      Math.hypot(Math.max(minX - x, 0, x - maxX), Math.max(minZ - z, 0, z - maxZ)),
+    );
   const westClearing = Math.hypot(Math.max(-59 - x, 0, x + 28), Math.max(-18 - z, 0, z - 26));
   // Low rolling hills leave room for orbiting and a north/south flight corridor.
   const flightCorridor = smoothBetween(4, 13, Math.abs(x + 53));
   const prairie =
+    smoothBetween(0, 4, personalClearing) *
     smoothBetween(34, 49, distance) *
     smoothBetween(0, 7, eastClearing) *
     smoothBetween(0, 7, westClearing) *
@@ -58,6 +83,7 @@ export function groundHeight(x, z) {
   // A local mountain shoulder rises north of the mine. The existing railway
   // cutting below keeps the full train corridor open in every era.
   const mineRidge =
+    smoothBetween(0, 7, gardenClearing) *
     (1 - smoothBetween(8, 23, Math.abs(x + 1))) *
     smoothBetween(25, 30, -z) *
     (1 - smoothBetween(37, 52, -z)) *
@@ -99,6 +125,9 @@ export function landscapeGroundHeight(x, z) {
 }
 
 const reservedGround = (x, z) =>
+  wildlifeClearings.some((area) =>
+    area.positions.some(([px, pz]) => Math.hypot(x - px, z - pz) < area.radius + 4),
+  ) ||
   (z < PLOTS.mine[1] && z > PLOTS.mine[1] - 13 && Math.abs(x) < 12) ||
   millraceDistance(x, z) < MILLRACE.bankWidth + 0.4 ||
   (x > -63 && x < -28 && z > -20 && z < 28) ||
@@ -110,17 +139,28 @@ const reservedGround = (x, z) =>
 
 // Reserve future plot extents and the entire new street/sidewalk envelope from
 // permanent prairie props, even before those parcels become visible.
-let gardenStreetConnections;
+let gardenStreetConnections, laneRows;
 function gardenGroundReserved(x, z) {
-  if (x >= GARDEN_LANE_X - 3 && x <= GARDEN_LANE_X + 3 && z >= -11.5 && z <= GARDEN_CLEARING.maxZ)
+  laneRows ??= Object.entries(GARDEN_PARCELS)
+    .filter(([id]) => isLaneParcel(id))
+    .map(([, { position, streetOffset }]) => position[1] + streetOffset);
+  if (
+    x >= GARDEN_LANE_X - 3 &&
+    x <= GARDEN_LANE_X + 3 &&
+    z >= Math.min(-11.5, ...laneRows) &&
+    z <= Math.max(...laneRows)
+  )
     return true;
   gardenStreetConnections ??= gardenConnections();
   if (gardenStreetConnections.some(({ from, to }) => segmentDistance(x, z, from, to) < 3))
     return true;
   return Object.values(GARDEN_PARCELS).some(
-    ({ position: [px, pz], halfWidth, halfDepth, streetOffset }) =>
-      (Math.abs(x - px) <= halfWidth + 2 && Math.abs(z - pz) <= halfDepth + 2) ||
-      (x >= GARDEN_LANE_X - 3 && x <= px + 3 && Math.abs(z - pz - streetOffset) <= 3),
+    ({ position: [px, pz], halfWidth, halfDepth, streetOffset, access }) => {
+      if (Math.abs(x - px) <= halfWidth + 2 && Math.abs(z - pz) <= halfDepth + 2) return true;
+      const street = [px, pz + streetOffset];
+      const route = access ? [...access, street] : [[GARDEN_LANE_X, street[1]], street];
+      return route.slice(1).some((to, i) => segmentDistance(x, z, route[i], to) <= 3);
+    },
   );
 }
 
@@ -140,7 +180,7 @@ function trackDistance(x, z) {
 export function cameraTerrainHeight(x, z) {
   return mineHillsideHeight(x, z, PLOTS.mine[1], groundHeight(x, z));
 }
-function cameraFloor(position) {
+function cameraFloor(position, height) {
   return (
     Math.max(
       ...[
@@ -149,31 +189,39 @@ function cameraFloor(position) {
         [0.35, 0],
         [0, -0.35],
         [0, 0.35],
-      ].map(([dx, dz]) => cameraTerrainHeight(position.x + dx, position.z + dz)),
+      ].map(([dx, dz]) => height(position.x + dx, position.z + dz)),
     ) + 1.2
   );
 }
-export function keepCameraAboveTerrain(position, target, minPolarAngle = 0.25) {
-  if (position.y >= cameraFloor(position)) return false;
+// Every settlement map keeps its camera above its own ground: `height` is the map's
+// terrain (the valley's by default, moonHeight on the Moon).
+export function keepCameraAboveTerrain(
+  position,
+  target,
+  minPolarAngle = 0.25,
+  height = cameraTerrainHeight,
+) {
+  const floor = () => cameraFloor(position, height);
+  if (position.y >= floor()) return false;
   const orbit = new THREE.Spherical().setFromVector3(position.clone().sub(target));
   let blocked = orbit.phi;
   while (orbit.phi > minPolarAngle) {
     blocked = orbit.phi;
     orbit.phi = Math.max(minPolarAngle, orbit.phi - 0.025);
     position.setFromSpherical(orbit).add(target);
-    if (position.y >= cameraFloor(position)) break;
+    if (position.y >= floor()) break;
   }
-  if (position.y < cameraFloor(position)) {
+  if (position.y < floor()) {
     // A panned focus can be beneath a tall ridge at minimum zoom. In that case
     // lift the camera out instead of leaving it buried at the rotation limit.
-    position.y = cameraFloor(position) + 0.001;
+    position.y = floor() + 0.001;
     return true;
   }
   let clear = orbit.phi;
   for (let i = 0; i < 12; i++) {
     orbit.phi = (clear + blocked) / 2;
     position.setFromSpherical(orbit).add(target);
-    if (position.y >= cameraFloor(position) + 0.001) clear = orbit.phi;
+    if (position.y >= floor() + 0.001) clear = orbit.phi;
     else blocked = orbit.phi;
   }
   orbit.phi = clear;
@@ -225,7 +273,7 @@ export function buildLandscape(town) {
   geometry.computeVertexNormals();
   geometry.userData.owned = true;
   const ground = new THREE.Mesh(geometry, terrainMaterial({ vertexColors: true }));
-  ground.receiveShadow = true;
+  ground.castShadow = ground.receiveShadow = true;
   landscape.add(ground);
   buildRiver(town, landscape);
   addMineCliff(town, landscape);

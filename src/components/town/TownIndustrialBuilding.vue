@@ -157,7 +157,10 @@
       <path d="M-42-76 4-66 31-80-17-92Z" fill="#527b70" />
       <path d="M-27-54v22l18 4v-22Z" fill="#bfd5b9" stroke="#e2d0a7" stroke-width="3" />
     </g>
-    <TownHeritageUpgrade v-if="level >= 3" :kind="kind" />
+    <TownHeritageUpgrade
+      v-if="level >= 3 && !['square', 'well', 'farm', 'fisherman', 'riverPort'].includes(kind)"
+      :kind="kind"
+    />
     <g v-if="kind === 'stable'"
       ><path d="M-69-77-3-60V0L-69-17Z" fill="#607c75" /><path
         v-for="n in 5"
@@ -179,6 +182,53 @@
       v-if="level >= 3 && ['square', 'well', 'farm', 'fisherman', 'riverPort'].includes(kind)"
       transform="translate(-100 -30)"
     >
+      <g v-if="kind === 'well' || kind === 'farm'" :data-upgrade-feature="utilityFeature">
+        <path d="M-30-80 13-70v42l-43-10Z" fill="#b0af98" stroke="#dfcba4" stroke-width="3" />
+        <path d="M-34-84 9-74 29-85-13-97Z" fill="#53726d" />
+        <path d="M-21-67-1-62v19l-20-5Z" fill="#9bbbbb" stroke="#dfcba4" stroke-width="3" />
+        <path
+          v-if="kind === 'well'"
+          d="M-20-91v-22h11m17 27v-22h11"
+          fill="none"
+          stroke="#53726d"
+          stroke-width="5"
+        />
+        <path v-else d="M0-93v-13l28 7v46" fill="none" stroke="#53726d" stroke-width="4" />
+      </g>
+      <g
+        v-else-if="kind === 'fisherman' || kind === 'riverPort'"
+        :data-upgrade-feature="utilityFeature"
+      >
+        <path
+          :d="kind === 'riverPort' ? 'M-35-79 9-69 33-83-11-94Z' : 'M-35-54 9-44 33-58-11-69Z'"
+          fill="#53726d"
+        />
+        <path
+          :d="
+            kind === 'riverPort'
+              ? 'M-9-91V-6M31-83V0M-28-77V8M17-70v85'
+              : 'M-9-66V-6M31-58V0M-28-52V8M17-45v60'
+          "
+          stroke="#53726d"
+          stroke-width="4"
+        />
+        <g transform="translate(0 -25)">
+          <path d="M-24-10 10-3v13l-34-7Z" fill="#856b4a" />
+          <path
+            v-if="kind === 'fisherman'"
+            d="M-21-20 8-13m-24-16 25 6"
+            stroke="#dfcba4"
+            stroke-width="4"
+          />
+          <path
+            v-else
+            d="M-21-11v-20l18 4v20m4 5v-20l18 4V2m-16-26v-20l18 4v20"
+            fill="#b79869"
+            stroke="#dfcba4"
+            stroke-width="2"
+          />
+        </g>
+      </g>
       <path d="M0 0V-105" stroke="#53786a" stroke-width="6" /><circle
         cy="-112"
         r="12"
@@ -191,11 +241,13 @@
 import TownHeritageUpgrade from './TownHeritageUpgrade.vue';
 import { computed } from 'vue';
 import TownSquare from './TownSquare.vue';
+import { heritageUpgrade } from '../../data/heritageUpgrades';
 const props = defineProps({
   kind: String,
   era: { type: String, default: 'industrial' },
   level: { type: Number, default: 1 },
 });
+const utilityFeature = computed(() => heritageUpgrade(props.kind));
 const civic = computed(() =>
   ['well', 'school', 'doctor', 'museum', 'bank', 'sheriff'].includes(props.kind),
 );

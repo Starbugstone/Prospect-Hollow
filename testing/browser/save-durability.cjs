@@ -1,6 +1,12 @@
-const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
+const {
+  chromium,
+  closeTownPanel,
+  openNextStep,
+  preparePage,
+  testOrigin,
+} = require('./helpers.cjs');
 (async () => {
   const browser = await chromium.launch({ headless: true });
   try {
@@ -34,60 +40,14 @@ const fs = require('node:fs');
       });
       context.setDefaultTimeout(20000);
       const mode = { offline: false, reject: 0, expired: false };
-      await context.addInitScript(
-        ({ owner, id, remote }) => {
-          const get = HTMLCanvasElement.prototype.getContext;
-          HTMLCanvasElement.prototype.getContext = function (kind, ...args) {
-            return /webgl/i.test(kind) ? null : get.call(this, kind, ...args);
-          };
-          if (!localStorage.getItem('prospect-account-v2')) {
-            localStorage.setItem(
-              'prospect-account-v2',
-              JSON.stringify({
-                account: { id: owner, email: 'review@example.test' },
-                generation: crypto.randomUUID(),
-              }),
-            );
-            localStorage.setItem(
-              'prospect-town-v2:' + owner + ':' + id,
-              JSON.stringify({
-                ...remote.profile,
-                _cloud: {
-                  version: 2,
-                  active: {
-                    id,
-                    owner,
-                    name: remote.name,
-                    baseRevision: remote.revision,
-                    sequence: 0,
-                    dirty: false,
-                  },
-                },
-              }),
-            );
-          }
-          window.cloudModule = async () => {
-            const active = document.querySelector('#app').__vue_app__._instance.setupState.cloud;
-            const urls = performance
-              .getEntriesByType('resource')
-              .map((e) => e.name)
-              .filter((url) => new URL(url).pathname === '/src/services/cloudProfile.js')
-              .reverse();
-            for (const url of urls) {
-              const module = await import(url);
-              if (module.cloud === active) return module;
-            }
-            throw new Error('Cannot locate the mounted cloud module.');
-          };
-          window.stores = () => {
-            const p = document.querySelector('#app').__vue_app__._context.provides;
-            return Object.getOwnPropertySymbols(p)
-              .map((k) => p[k])
-              .find((v) => v?._s?.get)?._s;
-          };
+      await context.addInitScript(preparePage, {
+        webgl: false,
+        account: {
+          id: owner,
+          email: 'review@example.test',
+          towns: [{ id, name: remote.name, revision: remote.revision, profile: remote.profile }],
         },
-        { owner, id, remote },
-      );
+      });
       await context.route('**/api/v1/**', async (route) => {
         const req = route.request(),
           path = new URL(req.url()).pathname.split('/api/v1/')[1];
@@ -152,17 +112,66 @@ const fs = require('node:fs');
       });
       const page = await context.newPage();
       page.on('pageerror', (error) => errors.push(error.message));
-      await page.goto((process.env.PH_TEST_ORIGIN || 'http://127.0.0.1:8192') + '/?play=' + id);
-      await page.getByRole('button', { name: 'Play level 1', exact: true }).waitFor();
+      await page.goto(testOrigin() + '/?play=' + id);
+      await openNextStep(page, 1);
+      await closeTownPanel(page);
       return { context, page, mode };
     }
     const a = await device(),
       b = await device();
-    const grant = (d, coins) =>
-      d.page.evaluate((coins) => window.prospectDebug.grant({ coins, hammers: 0 }), coins);
+    // Local progress through the normal game: win the next level, collecting exactly
+    // `coins` gems in chapter 1 (1x depth), then open its chest as the player does,
+    // tapping while the reel shows a supply. An unopened chest is claimed later with
+    // its random prize, which may be 500 coins: when the next run starts, or when
+    // another device loads this save from the cloud.
+    const earn = (d, coins) =>
+      d.page.evaluate(async (coins) => {
+        const { availableChestDrops } = await import('/src/data/rewards.js');
+        const campaign = window.stores().get('campaign');
+        const id = campaign.nextLevel,
+          before = campaign.town.coins;
+        const runId = campaign.beginRun('normal', id);
+        const chests = campaign.recordVictory({
+          id,
+          runId,
+          score: 100,
+          target: 6000,
+          combo: 1,
+          jewels: coins,
+          chooseRewards: true,
+        });
+        for (const chest of chests) {
+          const supply = availableChestDrops(campaign).find((drop) => drop.kind !== 'coins');
+          campaign.claimChest(chest.id, supply.id);
+          const receipt = campaign.integrity.actions.at(-1);
+          if (
+            receipt.kind !== 'chest-claim' ||
+            receipt.data.chestId !== chest.id ||
+            receipt.data.selection !== supply.id
+          )
+            throw new Error(`Level ${id} did not open its chest on ${supply.id}.`);
+        }
+        if (!chests.length || campaign.pendingChests.length)
+          throw new Error(`Level ${id} left a chest unopened.`);
+        if (campaign.town.coins !== before + coins)
+          throw new Error(`Level ${id} did not pay exactly ${coins} coins.`);
+      }, coins);
     const sync = async (d) => {
-      await d.page.waitForFunction(async () => !(await window.cloudModule()).cloud.busy);
-      const result = await d.page.evaluate(async () => (await window.cloudModule()).syncNow());
+      // syncNow declines while another sync runs, such as the scheduler retrying
+      // offline progress. Wait for that one and ask again, so the check observes a
+      // sync it requested before reading the result.
+      let result = 'declined';
+      for (let tries = 0; result === 'declined'; tries++) {
+        assert(tries < 10, 'Another sync kept the cloud busy.');
+        await d.page.waitForFunction(async () => !(await window.cloudModule()).cloud.busy);
+        result = await d.page.evaluate(async () => {
+          const { cloud, syncNow } = await window.cloudModule();
+          const synced = await syncNow();
+          return synced === undefined && cloud.account && !cloud.sessionExpired
+            ? 'declined'
+            : synced;
+        });
+      }
       // A lost-response retry may acknowledge an older checkpoint first. Observe
       // the normal scheduler flushing newer progress before checking the server.
       if (result)
@@ -183,9 +192,11 @@ const fs = require('node:fs');
       }, id);
     // Real independent browser stores model phone + computer with one cloud town.
     b.mode.offline = true;
-    await grant(b, 7);
+    await earn(b, 7);
+    await openNextStep(a.page);
     await a.page.getByRole('button', { name: 'Build for free', exact: true }).click();
-    await grant(a, 10);
+    await closeTownPanel(a.page);
+    await earn(a, 10);
     await sync(a);
     assert.equal(remote.profile.town.coins, 60);
     assert.equal(remote.profile.town.buildings.well, 1);
@@ -197,8 +208,8 @@ const fs = require('node:fs');
     assert.equal(copies[0].coins, 57);
     const firstId = copies[0].id;
     b.mode.offline = true;
-    await grant(b, 5);
-    await grant(a, 8);
+    await earn(b, 5);
+    await earn(a, 8);
     await sync(a);
     b.mode.offline = false;
     await sync(b);
@@ -207,7 +218,8 @@ const fs = require('node:fs');
     assert.equal(copies.length, 2);
     assert.deepEqual(copies.map((c) => c.coins).sort(), [57, 65]);
     await b.page.reload();
-    await b.page.getByRole('button', { name: 'Play level 1', exact: true }).waitFor();
+    await openNextStep(b.page);
+    await closeTownPanel(b.page);
     assert.equal((await archive(b)).length, 2);
     await b.page.getByRole('button', { name: 'Compare saves', exact: true }).click();
     await b.page.getByRole('combobox').selectOption(firstId);
@@ -240,35 +252,45 @@ const fs = require('node:fs');
     assert.equal(await current(b), 68);
     // A permanent rejection does not poll and newer valid progress is not held behind it.
     b.mode.reject = 413;
-    await grant(b, 1);
+    await earn(b, 1);
     await sync(b);
     await b.page.getByRole('alert').filter({ hasText: 'Cloud saving is paused' }).waitFor();
     const count = requests.filter((r) => r.mode === b.mode && r.method === 'PUT').length;
     await b.page.waitForTimeout(3500);
     assert.equal(requests.filter((r) => r.mode === b.mode && r.method === 'PUT').length, count);
     b.mode.reject = 0;
-    await grant(b, 1);
+    await earn(b, 1);
     await sync(b);
     assert.equal(remote.profile.town.coins, 70);
-    // An IndexedDB failure must keep dirty progress until the player retries.
-    await b.page.evaluate(() => {
-      window.savedPut = IDBObjectStore.prototype.put;
-      IDBObjectStore.prototype.put = function () {
-        throw new DOMException('Full', 'QuotaExceededError');
-      };
-    });
+    // An IndexedDB failure must keep dirty progress until the player retries. The
+    // background worker writes the archive, so the storage fails there as well.
+    const archiveScopes = [b.page, ...b.page.workers()];
+    assert(b.page.workers().some((worker) => worker.url().includes('backgroundJson.worker')));
+    const failStorage = (full) =>
+      Promise.all(
+        archiveScopes.map((scope) =>
+          scope.evaluate((full) => {
+            if (!full) IDBObjectStore.prototype.put = self.savedPut;
+            else {
+              self.savedPut = IDBObjectStore.prototype.put;
+              IDBObjectStore.prototype.put = function () {
+                throw new DOMException('Full', 'QuotaExceededError');
+              };
+            }
+          }, full),
+        ),
+      );
+    await failStorage(true);
     b.mode.offline = true;
-    await grant(b, 3);
+    await earn(b, 3);
     await sync(a);
-    await grant(a, 10);
+    await earn(a, 10);
     await sync(a);
     b.mode.offline = false;
     await sync(b);
     assert.equal(await current(b), 73);
     await b.page.getByRole('alert').filter({ hasText: 'Cloud saving is paused' }).waitFor();
-    await b.page.evaluate(() => {
-      IDBObjectStore.prototype.put = window.savedPut;
-    });
+    await failStorage(false);
     await b.page.getByRole('button', { name: 'Retry cloud saving', exact: true }).click();
     await b.page.waitForFunction(() => window.stores().get('campaign').town.coins === 80);
     // Cached towns remain accessible without a valid cloud session. Removing an
@@ -299,7 +321,8 @@ const fs = require('node:fs');
       );
     }, cachedId);
     await b.page.getByRole('dialog').waitFor({ state: 'hidden' });
-    await b.page.getByRole('button', { name: 'Play level 1', exact: true }).waitFor();
+    await openNextStep(b.page);
+    await closeTownPanel(b.page);
     const callsWhileExpired = requests.length;
     await b.page.getByRole('button', { name: 'Sign in again', exact: true }).click();
     await b.page.getByText('Towns stored on this device', { exact: true }).click();

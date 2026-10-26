@@ -25,6 +25,13 @@ export function timeTown(name, fn, detail) {
     recordTownTiming(name, start, detail);
   }
 }
+// A frame or a scheduled step this long is a browser long task: it is recorded on its
+// own, so `townTimings().longTasks` can name what blocked input.
+const LONG_STEP_MS = 50;
+export const slowStart = now;
+export function slowEnd(name, start) {
+  if (now() - start > LONG_STEP_MS) recordTownTiming(name, start);
+}
 // Measure scheduled work: total busy time plus its longest uninterruptible step.
 export function* timedSteps(name, iterator) {
   let first = null,
@@ -37,6 +44,7 @@ export function* timedSteps(name, iterator) {
       first ??= start;
       const next = iterator.next();
       const ms = now() - start;
+      if (ms > LONG_STEP_MS) push(entries, { name: `${name}-step`, start, ms });
       total += ms;
       longest = Math.max(longest, ms);
       steps++;
@@ -71,11 +79,15 @@ export function townTimings({ clear = false } = {}) {
   const report = {
     summary,
     entries: entries.map((entry) => ({ ...entry })),
-    // Associate each long task with the town phases that overlapped it.
+    // Associate each long task with the town phases that overlapped it. Scheduled work
+    // spreads its steps over many frames: only its own long steps can name a task.
     longTasks: longTasks.map((task) => ({
       ...task,
       during: entries
-        .filter(({ start, ms }) => start < task.start + task.ms && start + ms > task.start)
+        .filter(
+          ({ start, ms, detail }) =>
+            detail?.steps === undefined && start < task.start + task.ms && start + ms > task.start,
+        )
         .map(({ name }) => name),
     })),
   };

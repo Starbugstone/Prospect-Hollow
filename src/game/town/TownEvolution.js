@@ -1,4 +1,5 @@
 import { Box3, DoubleSide, Raycaster, Vector3 } from 'three';
+import { finishWork } from '../PresentationWork';
 import { walkObstacle } from './TownNavigation';
 import { cityAppearance } from '../../data/cityAppearance';
 import { eraEvolution } from '../../data/eras';
@@ -194,11 +195,16 @@ function surface({ target, bounds }, a, b, radius = 0.035) {
 }
 /** Service drops run from their street pole to the first surface of the finished
  * building, so a wire never continues through a wall or roof. Built after the plots
- * (and again when one plot is swapped); `plots` maps plot ids to their groups. */
+ * (and again when one plot is swapped); `plots` maps plot ids to their groups. Drops of
+ * other connections are taken from `previous` when it has them. */
 export function addServiceDrops(d, grid, plots, previous = null) {
+  return finishWork(serviceDropsWork(d, grid, plots, previous, d.world));
+}
+/** The same drops built one per step under `parent`, e.g. ahead of a rebuild. */
+export function* serviceDropsWork(d, grid, plots, previous, parent) {
   const connections = grid?.userData.connections;
   if (!connections?.length) return null;
-  const root = d.group(d.world);
+  const root = d.group(parent);
   root.name = 'Building service drops';
   root.userData.static = true;
   // Static batching caches each drop, so a swap re-merges retained drops cheaply.
@@ -242,6 +248,7 @@ export function addServiceDrops(d, grid, plots, previous = null) {
     d.ball(drop, ...points.at(-1), 0.045, '#c6d7c4');
     // Preserve per-plot geometry so a swap only repeats its own surface queries.
     d.batch(drop);
+    yield;
   }
   return root;
 }

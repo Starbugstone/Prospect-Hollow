@@ -1,6 +1,7 @@
 import { LATE_CHAPTERS } from './lateLevels.js';
 import { TOMORROW_CHAPTERS } from './tomorrowLevels.js';
 import { DEEP_MINE_CHAPTERS } from './deepMineLevels.js';
+import { HOLLOW_MINE_CHAPTERS } from './hollowMineLevels.js';
 // A chapter owns its board dimensions and active jewel count. Two-level seams
 // rotate identities only; larger boards introduce the fifth color at level 13.
 import { CITY_CHAPTERS } from './cityLevels.js';
@@ -156,6 +157,7 @@ export const CHAPTERS = [
   ...LATE_CHAPTERS,
   ...TOMORROW_CHAPTERS,
   ...DEEP_MINE_CHAPTERS,
+  ...HOLLOW_MINE_CHAPTERS,
 ].map(withBoardDefaults);
 export const LEVEL_COUNT = CHAPTERS.length * LEVELS_PER_CHAPTER;
 
@@ -168,17 +170,25 @@ export const getLevelGemTypes = (id) => {
   const chapterIndex = chapterIndexOf(id);
   const chapter = CHAPTERS[chapterIndex];
   const seam = Math.floor(chapterSlotOf(id) / 2);
+  // A level may add one more color to its seam's set (a six-color board).
+  const extra = chapter.extraColors?.[chapterSlotOf(id)];
   const palettes = chapter.palettes ?? FIVE_COLOR_SEAMS;
-  return [...palettes[(seam + (chapter.palettes ? 0 : chapterIndex)) % palettes.length]];
+  const set = [...palettes[(seam + (chapter.palettes ? 0 : chapterIndex)) % palettes.length]];
+  return extra ? [...set, extra] : set;
 };
 
+// Toolbar powers. `blast`: fires through the board bonus rules (BonusActivator), like a
+// board bonus. `targeted`: waits for a board tap and is spent on that tap. Each draws
+// /art/powers/<id>.svg (src/data/boardSprites.js). Saves and chest drops copy only
+// `powerRecord`, so these behaviour fields never enter a profile.
 export const POWERS = [
-  { id: 'clear-row', label: 'Clear Row', dropWeight: 30 },
-  { id: 'tnt', label: 'TNT', dropWeight: 25 },
-  { id: 'color-wand', label: 'Color Wand', dropWeight: 20 },
+  { id: 'clear-row', label: 'Clear Row', dropWeight: 30, blast: true },
+  { id: 'tnt', label: 'TNT', dropWeight: 25, blast: true, targeted: true },
+  { id: 'color-wand', label: 'Color Wand', dropWeight: 20, blast: true, targeted: true },
   { id: 'shuffle', label: 'Shuffle', dropWeight: 10 },
-  { id: 'tile-breaker', label: 'Tile Breaker', dropWeight: 15 },
+  { id: 'tile-breaker', label: 'Tile Breaker', dropWeight: 15, blast: true, targeted: true },
 ];
+export const powerRecord = ({ id, label, dropWeight }) => ({ id, label, dropWeight });
 // One chest per goal met. Chests have no tiers for now; see issue #57 for tier ideas.
 export const CHEST_LABELS = Object.freeze({
   completion: 'Completion chest',

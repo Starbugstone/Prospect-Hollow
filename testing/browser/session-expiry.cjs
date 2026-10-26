@@ -1,5 +1,5 @@
-const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const assert = require('node:assert/strict');
+const { chromium, preparePage, testOrigin } = require('./helpers.cjs');
 (async () => {
   const browser = await chromium.launch({ headless: true });
   try {
@@ -27,63 +27,20 @@ const assert = require('node:assert/strict');
       isPublic: false,
       publicId: townId,
     }));
-    await context.addInitScript(
-      ({ towns, owner }) => {
-        const get = HTMLCanvasElement.prototype.getContext;
-        HTMLCanvasElement.prototype.getContext = function (kind, ...args) {
-          return /webgl/i.test(kind) ? null : get.call(this, kind, ...args);
-        };
-        if (!localStorage.getItem('prospect-account-v2')) {
-          localStorage.setItem(
-            'prospect-account-v2',
-            JSON.stringify({
-              account: { id: owner, email: 'test@example.test' },
-              generation: 'test-generation',
-            }),
-          );
-          for (const town of towns)
-            localStorage.setItem(
-              'prospect-town-v2:' + owner + ':' + town.townId,
-              JSON.stringify({
-                ...town.profile,
-                _cloud: {
-                  version: 2,
-                  active: {
-                    id: town.townId,
-                    name: town.name,
-                    owner,
-                    baseRevision: 1,
-                    sequence: 0,
-                    dirty: false,
-                    pending: null,
-                    conflict: null,
-                  },
-                },
-              }),
-            );
-        }
-        window.cloudModule = async () => {
-          const active = document.querySelector('#app').__vue_app__._instance.setupState.cloud;
-          const urls = performance
-            .getEntriesByType('resource')
-            .map((e) => e.name)
-            .filter((url) => new URL(url).pathname === '/src/services/cloudProfile.js')
-            .reverse();
-          for (const url of urls) {
-            const module = await import(url);
-            if (module.cloud === active) return module;
-          }
-          throw new Error('Cannot locate the mounted cloud module.');
-        };
-        window.stores = () => {
-          const provides = document.querySelector('#app').__vue_app__._context.provides;
-          return Object.getOwnPropertySymbols(provides)
-            .map((k) => provides[k])
-            .find((v) => v?._s?.get)?._s;
-        };
+    await context.addInitScript(preparePage, {
+      webgl: false,
+      account: {
+        id: owner,
+        email: 'test@example.test',
+        generation: 'test-generation',
+        towns: towns.map(({ townId, name, profile }) => ({
+          id: townId,
+          name,
+          revision: 1,
+          profile,
+        })),
       },
-      { towns, owner },
-    );
+    });
     const errors = [],
       calls = [],
       receipts = new Map();
@@ -131,7 +88,7 @@ const assert = require('node:assert/strict');
     const page = async (id) => {
       const p = await context.newPage();
       p.on('pageerror', (e) => errors.push(e.message));
-      await p.goto((process.env.PH_TEST_ORIGIN || 'http://127.0.0.1:8192') + '/?play=' + id);
+      await p.goto(testOrigin() + '/?play=' + id);
       return p;
     };
 

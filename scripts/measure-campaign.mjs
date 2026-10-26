@@ -9,6 +9,9 @@ const seedCount = Number(process.argv[3] ?? 0);
 const requestedCount = process.argv[4] ? Number(process.argv[4]) : undefined;
 const selectedIds = process.argv[5]?.split(',').map(Number);
 const firstSeed = Number(process.env.FIRST_SEED ?? 1);
+// A fixed number of moves defines a diagnostic continuous visit, not a gameplay
+// allowance. Keep resolving after objectives are gone, as the live continuous mode does.
+const continuousMoves = Number(process.env.CONTINUOUS_VISIT_MOVES ?? 0);
 const seeds = seedCount ? Array.from({ length: seedCount }, (_, i) => i + firstSeed) : [1, 19, 73];
 const moduleAt = (file) => import(pathToFileURL(resolve(source, file)));
 const { generateLevelConfigs } = await moduleAt('game/engine/LevelGenerator.js');
@@ -45,7 +48,7 @@ const { eraGate, advanceEra } = await loader.ssrLoadModule('/src/game/town/TownE
 const { bonusCapacity } = await loader
   .ssrLoadModule('/src/data/rewards.js')
   .catch(() => ({ bonusCapacity: () => null }));
-const { levelElements } = await loader
+const { levelElements, consumedElements } = await loader
   .ssrLoadModule('/src/data/honours.js')
   .catch(() => ({ levelElements: () => ({}) }));
 const allLevels = generateLevelConfigs(requestedCount);
@@ -85,14 +88,19 @@ try {
         fusions = 0,
         maxCombo = 1;
       const fusionKeys = new Set();
+      const fusionsByKey = {};
       const gems = {};
+      const continuousScoreMilestones = {};
       const comboCounts = {},
         multiMatchCounts = {};
       const remaining = () =>
         tiles.some((tile) => layerCount(tile) > 0) ||
         board.some((gem) => gem?.type === 'relic') ||
         mechanics.remainingOre(oreOrders) > 0;
-      while (remaining() && turns < 400 && shuffles < 30) {
+      while (
+        (continuousMoves ? turns < continuousMoves : remaining() && turns < 400) &&
+        shuffles < 30
+      ) {
         const move = hints.findBestMove(board, tiles, cols, rows, { oreOrders });
         let evaluation;
         if (move) {
@@ -145,11 +153,15 @@ try {
           score += clearScore
             ? clearScore(step, index)
             : (step.cleared?.length ?? 0) * 100 * cascadeTier(step, index);
+          if (continuousMoves)
+            for (const goal of [25000, 100000, 500000])
+              if (score >= goal) continuousScoreMilestones[goal] ??= turns;
           jewels += step.collectedJewels?.length ?? 0;
           // Honours count a swap fusion by its key; the recovery sweep's fusion has none.
           if (step.bonusFusion?.key) {
             fusions++;
             fusionKeys.add(step.bonusFusion.key);
+            fusionsByKey[step.bonusFusion.key] = (fusionsByKey[step.bonusFusion.key] ?? 0) + 1;
           }
           for (const { type } of step.collectedJewels ?? []) gems[type] = (gems[type] ?? 0) + 1;
           if (!step.cleared?.length) return;
@@ -183,7 +195,11 @@ try {
         gems,
         fusions,
         fusionKeys: [...fusionKeys].sort(),
-        mine: levelElements(level),
+        fusionsByKey,
+        mine: continuousMoves
+          ? consumedElements(level, { board, tiles, oreOrders })
+          : levelElements(level),
+        ...(continuousMoves ? { visitMoves: continuousMoves, continuousScoreMilestones } : {}),
         coins: rules.miningPayout(jewels, bonuses, comboCounts, multiMatchCounts, level.id),
       });
     }
@@ -286,4 +302,4 @@ const villages = selectedIds
       };
     });
 console.log(JSON.stringify({ chapters, villages, results }, null, 2));
-if (results.some((run) => !run.complete)) process.exitCode = 1;
+if (!continuousMoves && results.some((run) => !run.complete)) process.exitCode = 1;

@@ -236,7 +236,7 @@ describe('Museum deep links', () => {
     campaign.honours = earn(campaign.honours, lanterns);
     const html = await openFor('mine-lanterns');
     expect(html).toMatch(
-      /<option value="mine-lanterns" selected[^>]*>\s*Lamplighter · Gold · earned/,
+      /<option value="mine-lanterns" selected[^>]*>\s*Lamplighter · Diamond · earned/,
     );
     expect(cards(html)).toBe(2);
   });

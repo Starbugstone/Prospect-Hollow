@@ -1,4 +1,5 @@
 import { setTownAtmosphere, horizonMaterial } from './TownAtmosphere';
+import { TOWN_CAMERA_POSITION } from '../../data/townCamera';
 
 import { navigationScene, releaseNavigation } from './NavigationDebug';
 
@@ -7,6 +8,8 @@ import {
   frameEnd,
   frameStart,
   setFrameContext,
+  slowEnd,
+  slowStart,
   watchLongTasks,
 } from './TownProfiler';
 
@@ -14,10 +17,18 @@ import { TownLiveVisitors } from './TownLiveVisitors';
 import { vipVisitor } from '../../data/villagers';
 import { updateTownLocomotion } from './TownLocomotion';
 import { MINE_SHAFT, addMineShaft } from './TownMineShaft';
+import { mineHillsideHeight } from './TownMineHillside';
 import { TownPresentation } from './TownPresentation';
 import { ERA_CONSTRUCTION } from '../../data/mineEvolution';
 
-import { TownRenderQuality } from './TownRenderQuality';
+import {
+  adaptRenderQuality,
+  aimAt,
+  createTownRenderer,
+  loseContext,
+  requestTownFrame,
+  watchContextLoss,
+} from './TownRenderer';
 import { updateTownShadowCoverage } from './TownShadows';
 import { TownUpgradeGlow } from './TownUpgradeGlow';
 import * as THREE from 'three';
@@ -39,15 +50,18 @@ import {
   cameraAction,
   findVisitor,
   frameTown,
+  focusTownPlace,
 } from './TownCamera';
 import {
+  hoverVillager,
   projectLabelPositions,
+  projectPlaque,
   projectVillager,
   selectVillager,
   showVillager,
 } from './TownLabelProjection';
 import { addHorse, addPerson, animatePerson, setVillagerIdentity } from './TownPeople';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { createTownControls, syncTownControls } from './TownControls';
 
 import { TownFrameCache } from './TownFrameCache';
 import { TownStatics } from './TownStatics';
@@ -59,9 +73,14 @@ import { TownRaid } from './TownActivity';
 import { TownEraIncident } from './TownEraIncident';
 import { eventKind } from '../../data/townEvents';
 import { plotUnlocked } from './TownRules';
-import { buildLandscape, keepCameraAboveTerrain } from './TownLandscape';
+import { AREA_BY_ID, areaUnlocked } from '../../data/townLandmarks';
+import { spaceHelmetTap } from './TownSpaceHelmet';
+import { buildLandscape, groundHeight, keepCameraAboveTerrain } from './TownLandscape';
 
 import { PLOTS } from './TownLayout';
+import { parcelContains, valleyLot, valleySites } from './TownParcels';
+import { TownSkyMoon } from './TownSkyMoon';
+import { parcelOutlineMesh } from './TownParcelOutline';
 
 export { PLOTS } from './TownLayout';
 const point = (x, y, z) => new THREE.Vector3(x, y, z);
@@ -69,7 +88,8 @@ const point = (x, y, z) => new THREE.Vector3(x, y, z);
 // Original geometry shares static scenery batches and animated actor instances.
 export class TownDiorama extends TownPrimitives {
   // `options` holds the owner's callbacks (onSelect, onLabels, onCameraDistance,
-  // onUnavailable, onVillagerLabel, onEventInset, onVipSpend, onGuestVip, onFirstFrame)
+  // onUnavailable, onVillagerLabel, onEventInset, onVipSpend, onGuestVip, onHelmet,
+  // onHelmetZoom, onFirstFrame)
   // and `vipsHidden` for a read-only shared town.
   constructor(canvas, options = {}) {
     super();
@@ -82,17 +102,12 @@ export class TownDiorama extends TownPrimitives {
     // drawFrame() updates world matrices once for all of a frame's render calls.
     this.scene.matrixWorldAutoUpdate = false;
     setTownAtmosphere(this.scene);
-    this.camera = new THREE.PerspectiveCamera(40, 1, 0.1, 400);
-    this.camera.position.set(12, 12, 25);
-    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
-    this.renderQuality = new TownRenderQuality(window.devicePixelRatio || 1);
-    this.renderer.setPixelRatio(this.renderQuality.ratio);
-    this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFShadowMap;
+    // Reach the full fog on the far side of the town from the widest orbit (360).
+    this.camera = new THREE.PerspectiveCamera(40, 1, 0.1, 700);
+    this.camera.position.set(...TOWN_CAMERA_POSITION);
+    Object.assign(this, createTownRenderer(canvas, { exposure: 1.25 }));
+    // The valley's scenery stands still: its shadows redraw only when asked.
     this.renderer.shadowMap.autoUpdate = false;
-    this.renderer.outputColorSpace = THREE.SRGBColorSpace;
-    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.25;
     this.scene.add(new THREE.HemisphereLight('#e1eff7', '#ba9460', 2.1));
     const sun = new THREE.DirectionalLight('#ffe3ad', 3.5);
     sun.castShadow = true;
@@ -127,6 +142,7 @@ export class TownDiorama extends TownPrimitives {
       };
     });
     this.upgradeGlow = new TownUpgradeGlow(this.scene);
+    this.skyMoon = new TownSkyMoon(this.scene);
     this.raycaster = new THREE.Raycaster();
     this.raycaster.layers.enable(1);
     this.elapsed = 0;
@@ -137,20 +153,12 @@ export class TownDiorama extends TownPrimitives {
     this.sceneryRenderer = new TownStatics(this.scene);
     this.sceneryRenderer.rebuild([this.landscape]);
     this.buildingRenderer = new TownStatics(this.scene);
-    this.controls = new OrbitControls(this.camera, canvas.parentElement);
-    this.controls.cursorStyle = 'grab';
+    this.controls = createTownControls(this.camera, canvas.parentElement);
     this.controls.target.set(0, CAMERA_FOCUS_HEIGHT, 0);
-    this.controls.enablePan = true;
-    this.controls.screenSpacePanning = false;
-    this.controls.mouseButtons.MIDDLE = THREE.MOUSE.PAN;
-    this.controls.enableDamping = false;
     this.controls.minDistance = CAMERA_MIN_DISTANCE;
     this.controls.maxDistance = 110;
     this.controls.minPolarAngle = 0.25;
     this.controls.maxPolarAngle = Math.PI / 2 - 0.02;
-    this.controls.rotateSpeed = 0.7;
-    this.controls.zoomSpeed = 0.85;
-    this.controls.touches.TWO = THREE.TOUCH.DOLLY_PAN;
     this.controls.update();
     this.overview = true;
     this.beginCameraGesture = () => {
@@ -174,11 +182,7 @@ export class TownDiorama extends TownPrimitives {
       )
         this.controls.update();
       // Pointer events can arrive faster than frames. Render only the latest pose.
-      if (!this.cameraFrame)
-        this.cameraFrame = requestAnimationFrame(() => {
-          this.cameraFrame = 0;
-          this.render();
-        });
+      requestTownFrame(this);
     };
     this.controls.addEventListener('change', this.cameraChanged);
     this.tick = this.tick.bind(this);
@@ -187,17 +191,12 @@ export class TownDiorama extends TownPrimitives {
     this.observer.observe(canvas);
     this.resize();
     this.prepareConstructionCue();
-    this.contextLost = this.handleContextLoss.bind(this);
-    canvas.addEventListener('webglcontextlost', this.contextLost);
+    this.unwatchContext = watchContextLoss(this);
   }
+  // The owner disposes this scene while the context is lost, then rebuilds it on a
+  // fresh canvas: the recovery every settlement map shares (TownRenderer).
   handleContextLoss(event) {
-    event.preventDefault();
-    this.contextUnavailable = true;
-    this.frameCache.valid = false;
-    this.renderer.setAnimationLoop(null);
-    // The owner disposes this scene while the context is lost, then rebuilds on
-    // a fresh canvas. No buffers or cached attachments cross graphics contexts.
-    this.onUnavailable?.(new Error('Town graphics context lost'), true);
+    loseContext(this, event);
   }
   // three would otherwise update every world matrix again inside each render call
   // (static cache, foreground, inset). Update once per drawn frame instead.
@@ -209,6 +208,8 @@ export class TownDiorama extends TownPrimitives {
       const cull = this.camera && !this.eventInsetVisible;
       if (cull) this.camera.updateMatrixWorld();
       this.actorRenderer?.update(this.scene, cull ? [this.camera] : null);
+      this.staticScenery?.movingParts?.update(this.scene);
+      this.skyMoon?.follow(this.camera);
       this.frameCache.render(this.scene, this.camera, refresh);
       renderEventInset(this);
       return true;
@@ -274,13 +275,8 @@ export class TownDiorama extends TownPrimitives {
   showVillager(clientX, clientY, pin) {
     return showVillager(this, clientX, clientY, pin);
   }
-  // Pointer hover can fire many times per frame: evaluate only the latest position.
   hoverVillager(clientX, clientY) {
-    this.hoverPoint = [clientX, clientY];
-    this.hoverFrame ||= requestAnimationFrame(() => {
-      this.hoverFrame = 0;
-      if (!this.disposed) showVillager(this, ...this.hoverPoint);
-    });
+    hoverVillager(this, clientX, clientY);
   }
   selectVillager(actor, toggle) {
     selectVillager(this, actor, toggle);
@@ -290,6 +286,9 @@ export class TownDiorama extends TownPrimitives {
   }
   projectLabelPositions() {
     projectLabelPositions(this);
+  }
+  focusPlace(id) {
+    return focusTownPlace(this, id);
   }
   frameTown() {
     frameTown(this);
@@ -333,12 +332,34 @@ export class TownDiorama extends TownPrimitives {
   setUpgradeable(ids) {
     if (this.upgradeGlow.setAvailable(ids)) this.render();
   }
+  // The tutorial's plot keeps its label and joins the phone framing while the camera
+  // rests on the overview; a camera the player moved stays where it is.
+  setCoachPlot(id) {
+    if ((this.coachPlot ?? null) === (id ?? null)) return;
+    this.coachPlot = id ?? null;
+    if (this.overview) this.frameTown();
+    this.render();
+  }
   setAvailable(ids) {
     const key = ids.join(',');
     if (this.availableKey === key) return;
     this.availableKey = key;
     this.availablePlots = new Set(ids);
     this.render();
+  }
+  setLabelActions(ids) {
+    const key = ids.join(',');
+    if (key === this.labelActionKey) return;
+    this.labelActionKey = key;
+    this.labelActions = new Set(ids);
+    this.render();
+  }
+  // The valley's Moon, fixed in the world; the scene above it keeps only its tap target.
+  showSkyMoon(lights) {
+    if (this.skyMoon?.show(lights)) this.render();
+  }
+  skyMoonPoint() {
+    return this.skyMoon?.screenPoint(this.camera) ?? { visible: false };
   }
   select(id) {
     if (this.selected === id && this.selection?.parent === this.world) return;
@@ -348,21 +369,32 @@ export class TownDiorama extends TownPrimitives {
       this.selection.geometry.dispose();
       this.selection.material.dispose();
     }
-    const [x, z] = PLOTS[id] ?? [0, 0];
-    this.selection = new THREE.Mesh(
-      new THREE.RingGeometry(1.65, 1.71, 64),
-      new THREE.MeshBasicMaterial({
-        color: '#f2dda1',
-        side: THREE.DoubleSide,
-        transparent: true,
-        opacity: 0.85,
-      }),
-    );
+    // The outline follows the parcel's own shape: a plot's rectangle or a site's
+    // circle. Moon buildings have no valley parcel to outline.
+    const parcel = this.parcelOf(id);
+    if (!parcel) {
+      this.selection = null;
+      this.render();
+      return;
+    }
+    this.selection = parcelOutlineMesh(parcel);
     horizonMaterial(this.selection.material);
-    this.selection.rotation.x = -Math.PI / 2;
-    this.selection.position.set(x, 0.095, z);
+    // Plots sit on the level town floor; a site follows its own ground.
+    const ground = parcel.kind === 'site' ? groundHeight(parcel.x, parcel.z) : 0;
+    this.selection.position.set(parcel.x, ground + 0.095, parcel.z);
     this.world.add(this.selection);
     this.render();
+  }
+  // A redrawn plot's parcel can change size: its outline is redrawn with it.
+  refreshSelection(id) {
+    if (this.selected !== id) return;
+    this.selected = undefined;
+    this.select(id);
+  }
+  // A plot's drawn parcel (its lot before the town is drawn) or a monument site's circle.
+  parcelOf(id) {
+    if (PLOTS[id]) return this.parcels?.get(id) ?? valleyLot(id);
+    return valleySites().find((site) => site.id === id) ?? null;
   }
   selectInsetVisitor() {
     const actor = this.vipArrivals?.active?.actor;
@@ -379,37 +411,87 @@ export class TownDiorama extends TownPrimitives {
     this.render();
   }
   pick(clientX, clientY) {
-    if (this.showVillager(clientX, clientY, true)) return;
-    const rect = this.canvas.getBoundingClientRect();
-    this.raycaster.setFromCamera(
-      new THREE.Vector2(
-        ((clientX - rect.left) / rect.width) * 2 - 1,
-        (-(clientY - rect.top) / rect.height) * 2 + 1,
-      ),
-      this.camera,
+    // The space-helmet wearer is small and easily covered, so finding it wins over people
+    // and plots. Asking to zoom in never does: only a tap nothing else answers shows it.
+    const helmet = spaceHelmetTap(this, clientX, clientY);
+    if (helmet && !helmet.zoom) this.onHelmet?.(helmet);
+    else if (!this.pickTown(clientX, clientY) && helmet?.zoom) this.onHelmetZoom?.();
+  }
+  // Names a villager or opens a plot, site or plaque under the tap; false when none.
+  pickTown(clientX, clientY) {
+    if (this.showVillager(clientX, clientY, true)) return true;
+    if (!aimAt(this.raycaster, this.camera, this.canvas, clientX, clientY)) return false;
+    // Monument sites are scenery; a tap on one opens its card like a plot. The mine works
+    // and its hill answer for the mine, so its whole structure enters, not only the portal.
+    const mine = ['mine-works', 'mine-hillside'].map(
+      (id) => this.staticScenery?.entries.get(id)?.group,
     );
-    const hit = this.raycaster.intersectObjects(this.targets, true)[0];
-    let object = hit?.object;
-    while (object && !object.userData.plot) object = object.parent;
-    if (object) this.onSelect(object.userData.plot);
-    else {
-      const ground = this.raycaster.ray.intersectPlane(
-        new THREE.Plane(point(0, 1, 0), -0.08),
-        new THREE.Vector3(),
-      );
-      if (!ground) return;
-      for (const [id, [x, z]] of Object.entries(PLOTS)) {
-        if (
-          id !== 'mine' &&
-          plotUnlocked(this.town, id) &&
-          Math.abs(ground.x - x) < 1.55 &&
-          Math.abs(ground.z - z) < 1.4
-        ) {
-          this.onSelect(id);
-          break;
-        }
-      }
+    const scenery = ['personal-areas', 'mine-plaque', 'mine-works', 'mine-hillside']
+      .map((id) => this.staticScenery?.entries.get(id)?.group)
+      .filter(Boolean);
+    const owner = (object) => {
+      while (
+        object &&
+        !mine.includes(object) &&
+        !object.userData.plot &&
+        !object.userData.monumentSite &&
+        !object.userData.distinction
+      )
+        object = object.parent;
+      return object;
+    };
+    let object = null;
+    for (const hit of this.raycaster.intersectObjects([...this.targets, ...scenery], true)) {
+      object = owner(hit.object);
+      // The hill blends into the plain and the valley slopes at its edges. Only the mound
+      // it raises around the portal is the mine; a tap on a slope looks past it.
+      if (
+        object !== mine[1] ||
+        mineHillsideHeight(hit.point.x, hit.point.z, PLOTS.mine[1], 0) >= 0.5
+      )
+        break;
+      object = null;
     }
+    // A tap on the mine plaque names its honour; a second tap or any other one hides it.
+    const plaque = object?.userData.distinction ? object : null;
+    this.namedPlaque = plaque && this.namedPlaque !== plaque ? plaque : null;
+    projectPlaque(this);
+    if (plaque) {
+      this.render();
+      return true;
+    }
+    if (object) {
+      this.onSelect(
+        mine.includes(object) ? 'mine' : (object.userData.plot ?? object.userData.monumentSite),
+      );
+      return true;
+    }
+    const ground = this.raycaster.ray.intersectPlane(
+      new THREE.Plane(point(0, 1, 0), -0.08),
+      new THREE.Vector3(),
+    );
+    if (!ground) return false;
+    // The ground under a tap answers for the plot whose parcel covers it (the nearest
+    // centre where drawn parcels meet), then for an open monument site.
+    let plot = null,
+      nearest = Infinity;
+    for (const id of Object.keys(PLOTS)) {
+      if (id === 'mine' || !plotUnlocked(this.town, id)) continue;
+      const parcel = this.parcelOf(id);
+      if (!parcelContains(parcel, ground.x, ground.z)) continue;
+      const distance = Math.hypot(ground.x - parcel.x, ground.z - parcel.z);
+      if (distance < nearest) [plot, nearest] = [id, distance];
+    }
+    if (plot) {
+      this.onSelect(plot);
+      return true;
+    }
+    const site = valleySites().find(
+      (site) =>
+        areaUnlocked(this.town, AREA_BY_ID[site.id]) && parcelContains(site, ground.x, ground.z),
+    );
+    if (site) this.onSelect(site.id);
+    return !!site;
   }
   resize() {
     const width = this.canvas.clientWidth,
@@ -461,9 +543,11 @@ export class TownDiorama extends TownPrimitives {
       !this.canvas.clientHeight
     )
       return;
-    const started = frameStart();
+    const started = frameStart(),
+      slow = slowStart();
     if (this.drawFrame(true)) this.projectLabels();
     frameEnd('render', started);
+    slowEnd('slow-render', slow);
   }
   projectLabels() {
     const started = frameStart();
@@ -472,7 +556,8 @@ export class TownDiorama extends TownPrimitives {
   }
 
   tick(now) {
-    const started = frameStart();
+    const started = frameStart(),
+      slow = slowStart();
     try {
       if (this.contextUnavailable) return;
       const pacer = (this.pacer ??= new TownFramePacer());
@@ -484,21 +569,8 @@ export class TownDiorama extends TownPrimitives {
         !this.presentation &&
         (!this.cinematic || this.cinematic.finished) &&
         !this.construction
-      ) {
-        const ratio = this.renderQuality?.sample(frameTime);
-        if (ratio !== null && ratio !== undefined) {
-          this.renderer.setPixelRatio(ratio);
-          const size = this.renderQuality.shadowSize;
-          if (this.sun.shadow.mapSize.x !== size) {
-            this.sun.shadow.map?.dispose();
-            this.sun.shadow.map = null;
-            this.sun.shadow.mapSize.set(size, size);
-            this.renderer.shadowMap.needsUpdate = true;
-          }
-          this.frameCache.setSamples?.(this.renderQuality.cacheSamples);
-          this.frameCache.valid = false;
-        }
-      }
+      )
+        adaptRenderQuality(this, frameTime);
       const activeDelta = this.lastFrame ? Math.max(0, (now - this.lastFrame) / 1000) : 0;
       this.activeElapsed = (this.activeElapsed ?? 0) + activeDelta;
       this.lastFrame = now;
@@ -531,6 +603,7 @@ export class TownDiorama extends TownPrimitives {
       }
     } finally {
       frameEnd('tick', started);
+      slowEnd('slow-tick', slow);
     }
   }
   playRaid(event, onPhase, onComplete, onCue) {
@@ -603,16 +676,23 @@ export class TownDiorama extends TownPrimitives {
       presentation?.dispose();
       this.render();
     }
-    this.controls.enabled = !enabled && !this.paused && !this.eventCamera;
+    syncTownControls(this);
   }
   eraFrame(progress, still = false) {
     if (!this.cinematic) return;
     this.cinematic.finished = progress >= 1;
     this.cinematic.presentation.frame(progress * ERA_CONSTRUCTION.duration, still);
   }
-  setLiveVisitors(visitors, reducedMotion = false, townKey = null) {
+  /**
+   * The app's reduced-motion setting, one value for every settlement map
+   * (docs/era-architecture.md#reduced-motion): effects, reveals, camera flights and
+   * decorative motion stop; villagers and vehicles keep moving. Live visitors stand still.
+   */
+  setReducedMotion(value) {
+    this.reducedMotion = !!value;
+  }
+  setLiveVisitors(visitors, townKey = null) {
     this.livePresenceEnabled = true;
-    this.liveVisitorsReducedMotion = reducedMotion;
     // Existing saves may still contain the obsolete queued guest. Presence owns
     // only that guest slot; ordinary transport and random VIPs remain intact.
     if (this.vipArrivals?.guest) {
@@ -632,7 +712,13 @@ export class TownDiorama extends TownPrimitives {
       else this.construction?.resume();
     }
     this.paused = paused;
-    this.controls.enabled = !paused && !this.cinematic && !this.eventCamera;
+    syncTownControls(this);
+  }
+  // Another settlement's map (the Moon) drawn over the valley keeps the valley's camera
+  // still: its drags, wheel and pinches belong to that map.
+  setCovered(covered) {
+    this.covered = covered;
+    syncTownControls(this);
   }
   // The village always lives while it is shown; only a hidden or paused view stops.
   setMotion(enabled) {
@@ -656,12 +742,13 @@ export class TownDiorama extends TownPrimitives {
     releaseNavigation(this);
     this.cinematic?.presentation.dispose(false);
     this.presentation?.dispose(false);
-    this.canvas.removeEventListener('webglcontextlost', this.contextLost);
+    this.unwatchContext?.();
     cancelAnimationFrame(this.cameraFrame);
     cancelAnimationFrame(this.hoverFrame);
     this.frameCache.dispose();
     disposeInsetCache(this);
     this.upgradeGlow.dispose();
+    this.skyMoon?.dispose();
     this.actorRenderer.dispose();
     this.buildingRenderer.dispose();
     this.sceneryRenderer.dispose();

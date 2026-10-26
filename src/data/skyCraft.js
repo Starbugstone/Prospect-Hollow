@@ -1,0 +1,66 @@
+import { ROUNDED_PALETTE } from './roundedArchitecture';
+import { COZY_PALETTES } from './cozyArchitecture';
+import { FUTURE_PALETTES } from './futureArchitecture';
+import { eraEvolution } from './eras';
+import { moonSettlement } from './moonSettlement';
+
+// The Moon hangs in the valley sky in this horizontal direction (x, z) from the town:
+// north-west, above the mine and the space elevator. The sky Moon and the saucers that
+// fly to it share this one direction.
+export const SKY_MOON_DIRECTION = Object.freeze([-0.55, -1]);
+// Like Earth over the Moon's crater rim, it hangs in the sky at an infinite distance:
+// SKY_MOON_ELEVATION above the horizon (rise per unit of horizontal distance, about
+// 10°), clear of the north-west hills. Orbiting or zooming never moves it across the
+// sky, and it shows when the camera looks toward the horizon, not down at the town.
+// SKY_MOON_ANGLE is its diameter as an angle of view (radians).
+export const SKY_MOON_ELEVATION = 0.18;
+export const SKY_MOON_ANGLE = 0.1;
+
+/** The valley sky shows the Moon once New Hollow has homesteads. */
+export const skyMoonShown = (town) => moonSettlement(town).homesteads > 0;
+
+// The sky saucer evolves with the era its airport was modernized in. Each era takes its
+// colours from its own architecture palette and adds one small trait drawn in a couple of
+// meshes (see SAUCER_TRAITS in RoundedTransports.js). Colour roles: hull `shell`, rim band
+// `rim`, dome `glass`, legs `deep`, rim lights and glow `light`, and the trait's `trait`.
+const R = ROUNDED_PALETTE,
+  { canopy: C, riverlight: L } = COZY_PALETTES,
+  { sail: S, observatory: O, homestead: H, twin: T } = FUTURE_PALETTES;
+const saucer = (shell, rim, glass, deep, light, trait = null, traitColor = light) =>
+  Object.freeze({ shell, rim, glass, deep, light, trait, traitColor });
+
+export const SKY_SAUCERS = Object.freeze({
+  tomorrow: saucer(R.shell, R.accent, R.glass, R.deep, R.light),
+  // A pair of leaves sprouts from the dome.
+  canopy: saucer(C.shell, C.roof, C.glass, C.deep, C.light, 'leaves', C.green),
+  // Lavender glass rim, a crystal finial and a little garden ring around the dome.
+  riverlight: saucer(L.shell, L.roof, L.glass, L.deep, L.light, 'crystal', L.green),
+  // Saffron sail fins and a pennant at the stern.
+  skysail: saucer(S.shell, S.deep, S.glass, S.deep, S.light, 'sails', S.flower),
+  // A night-blue hull with a copper rim, a copper dome band and a star on top.
+  stargazer: saucer(O.roof, O.timber, O.glass, O.deep, O.light, 'star', O.timber),
+  // Moon-white ceramic with gold trim and a gold landing beacon.
+  moonward: saucer(H.shell, H.light, H.glass, H.deep, H.light, 'gold-trim', H.light),
+  // Twin lanterns, teal for the valley and gold for the Moon. Twin Hollows does not
+  // modernize the airport, so a real Twin Hollows town flies the Moonward saucer.
+  'twin-hollows': saucer(T.shell, T.light, T.glass, T.deep, T.light, 'twin-lanterns', T.flower),
+});
+
+/** The saucer for an airport era; an era without its own flies the Tomorrow saucer. */
+export const skySaucer = (era) =>
+  Object.hasOwn(SKY_SAUCERS, era) ? SKY_SAUCERS[era] : SKY_SAUCERS.tomorrow;
+
+// The saucer's sparkle wake (src/game/town/SaucerTrails.js) takes the era's trait colour
+// (or the rim, when the trait colour is the light itself) with its light as highlight.
+// On the Moon route a moonlit blue-silver takes the trait colour's place.
+export const TRAIL_SILVER = '#9fb0c8';
+/** The sparkle wake's colours: the era's light, and its trait (or rim) colour. */
+export const saucerTrailColors = (c) => ({
+  light: c.light,
+  secondary: c.traitColor !== c.light ? c.traitColor : c.rim,
+});
+
+/** Whether this airport's saucer flies to the Moon: its airport era supplies the Moon
+ * settlement (the era's `moonSettlement` capability) and the sky shows the Moon. */
+export const saucerFliesToMoon = (era, town) =>
+  !!eraEvolution(era).moonSettlement && skyMoonShown(town);

@@ -304,34 +304,6 @@
   width: 44px;
   height: 44px;
 }
-.town-scene-labels button.quiet-plot {
-  min-width: 44px;
-  min-height: 44px;
-  width: 44px;
-  padding: 4px;
-  background: #f7f1dcdd;
-  border: 1px solid #a9a88c;
-  box-shadow: none;
-  color: #465b4a;
-}
-.town-scene-labels .quiet-plot .plot-name,
-.town-scene-labels .quiet-plot small,
-.town-scene-labels .quiet-plot > span:last-child:not(.plot-name) {
-  display: none;
-}
-.town-scene-labels button.quiet-plot:hover,
-.town-scene-labels button.quiet-plot:focus-visible {
-  width: auto;
-}
-.town-scene-labels .quiet-plot:hover .plot-name,
-.town-scene-labels .quiet-plot:focus-visible .plot-name {
-  display: inline;
-}
-.town-scene-labels button.suggested-plot {
-  background: #f7dfa1;
-  border: 2px solid #896629;
-  color: #3e4e35;
-}
 .high-contrast .guidance-tip {
   color: #16251a;
   background: #fff9e9;

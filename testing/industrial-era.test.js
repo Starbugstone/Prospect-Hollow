@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { BUILDINGS, BANDIT_EVENT, createTown } from '../src/data/town';
-import { INDUSTRIAL_LEVEL_PRICES, hasElectricity } from '../src/data/industrial';
+import { hasElectricity } from '../src/data/industrial';
+import { eraEvolution } from '../src/data/eras';
 import { eraBuildingLevel, eraGate, advanceEra, isEraComplete } from '../src/game/town/TownEras';
 import {
   advanceConstruction,
@@ -122,7 +123,7 @@ describe('Industrial follows every River & Rail upgrade', () => {
     const base = town.buildings[id];
     for (let level = id === 'powerHouse' ? 2 : 1; level <= 3; level++) {
       const offer = upgradeOffer(town, id);
-      expect(offer.cost).toBe(INDUSTRIAL_LEVEL_PRICES[level - 1]);
+      expect(offer.cost).toBe(eraEvolution('industrial').prices[level - 1]);
       town = purchase(town, id, offer.stage);
       expect(purchase(town, id, offer.stage)).toBeNull();
       town = normalizeTown(advanceConstruction(advanceConstruction(town)));

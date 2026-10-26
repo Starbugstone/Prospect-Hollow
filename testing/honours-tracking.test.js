@@ -4,6 +4,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import { readFileSync } from 'node:fs';
 import {
   QUARTERMASTER,
+  HONOURS_VERSION,
   createHonours,
   creditRun,
   levelElements,
@@ -20,10 +21,11 @@ import { levelConfig } from '../src/game/engine/LevelGenerator';
 import { createLocalIntegrityPlugin } from '../src/services/localIntegrity';
 import { localProfile } from '../src/services/localProfile';
 import { createSyncService } from '../src/services/syncService';
-import { createTestingTools } from '../src/services/testingTools';
 import { townStorage } from '../src/services/townStorage';
 import { SAVE_KEY, freshProfile, useCampaignStore } from '../src/stores/campaignStore';
 import { useGameStore } from '../src/stores/gameStore';
+import { eraGate } from '../src/game/town/TownEras';
+import { completedEraTown } from './helpers/eraTown';
 
 const { backups, outbox } = vi.hoisted(() => ({ backups: new Map(), outbox: new Map() }));
 vi.mock('../src/services/recoveryStore', () => ({
@@ -190,7 +192,7 @@ describe('The run tally', () => {
     expect(game.honourTally.fusions).toEqual({ 'bomb+cross': 2 });
   });
 
-  it('credits nothing for continuous play or a puzzle left unfinished', async () => {
+  it('credits committed continuous collection but nothing for an unfinished normal puzzle', async () => {
     const profile = freshProfile();
     profile.records[1] = { score: 10, stars: 1 };
     profile.town.buildings.museum = 1;
@@ -199,7 +201,9 @@ describe('The run tally', () => {
     expect(game.startLevel(1, 'continuous')).toBe(true);
     await swap(game);
     expect(game.collectedJewels).toBeGreaterThan(0);
-    expect(game.honourTally).toEqual({ gems: {}, fusions: {} });
+    expect(total(game.honourTally.gems)).toBeGreaterThan(0);
+    const continuousCounts = JSON.parse(JSON.stringify(campaign.honours.counts));
+    expect(continuousCounts.gems).toEqual(game.honourTally.gems);
     game.remainingLayers = 0;
     game.completeLevel();
     game.exitLevel();
@@ -213,7 +217,23 @@ describe('The run tally', () => {
     game.remainingLayers = 0;
     game.completeLevel();
     expect(game.levelCleared).toBe(true);
+    expect(campaign.honours.counts).toEqual(continuousCounts);
+  });
+
+  it('does not bank a continuous score or collection when leaving before animation commits', () => {
+    const profile = freshProfile();
+    profile.records[1] = { score: 1, stars: 1 };
+    profile.town.buildings.museum = 1;
+    const campaign = open(profile);
+    const game = gameStore();
+    game.startLevel(1, 'continuous');
+    game.animationInProgress = true;
+    game._applyScoring([
+      { cleared: Array(300).fill(0), collectedJewels: Array(300).fill({ type: 'ruby' }) },
+    ]);
+    game.exitLevel();
     expect(campaign.honours.counts).toEqual(createHonours().counts);
+    expect(campaign.continuousRecords).toEqual({});
   });
 });
 
@@ -268,6 +288,24 @@ describe('The town handoff', () => {
     });
     expect(damaged.honourTally).toEqual({ gems: { topaz: 2 }, fusions: { 'bomb+cross': 1 } });
   });
+
+  it('preserves the continuous claim across handoff without recrediting the first window’s gems', async () => {
+    const profile = freshProfile();
+    profile.records[1] = { score: 1, stars: 1 };
+    profile.town.buildings.museum = 1;
+    open(profile);
+    const game = gameStore();
+    game.startLevel(1, 'continuous');
+    await swap(game);
+    const first = JSON.parse(JSON.stringify(counts()));
+    const next = transfer(game);
+    next.syncContinuous();
+    expect(counts()).toEqual(first);
+    next.inputPaused = false;
+    await swap(next);
+    expect(counts().gems).toEqual(next.honourTally.gems);
+    expect(counts().continuousGems).toBe(total(next.honourTally.gems));
+  });
 });
 
 describe('Crediting a victory', () => {
@@ -310,6 +348,80 @@ describe('Crediting a victory', () => {
     const runId = campaign.beginRun('continuous', 1);
     campaign.recordVictory({ id: 1, runId, score: 100, target: 6000, combo: 1, tally });
     expect(counts()).toEqual(createHonours().counts);
+  });
+
+  it('credits continuous deltas after the coin allowance, persists receipts and never credits them as victories', () => {
+    const profile = freshProfile();
+    profile.records[1] = { score: 10, stars: 1 };
+    profile.town.buildings.museum = 1;
+    profile.town.buildings.moonstoneWorkshop = 3;
+    const campaign = open(profile, { guarded: true });
+    const runId = campaign.beginRun('continuous', 1);
+    const visit = (ruby, score = 25000) =>
+      campaign.recordContinuous({
+        id: 1,
+        runId,
+        jewels: ruby,
+        score,
+        tally: { gems: { ruby }, fusions: { 'bomb+cross': 1 }, mine: {} },
+      });
+    expect(visit(600)).toBe(true);
+    expect(visit(600)).toBe(true);
+    expect(visit(2600, 100000)).toBe(true);
+    expect(campaign.continuousRun.moonstoneJewels).toBe(2600);
+    expect(campaign.continuousRecords[1].moonstoneGems).toBe(900);
+    expect(campaign.town.moonstoneProduction.stored).toBe(3);
+    expect(counts().gems).toEqual({ ruby: 2600 });
+    expect(counts().continuousGems).toBe(2600);
+    expect(counts().fusions).toEqual({ 'bomb+cross': 1 });
+    expect(stored().earned['gem-ruby-bronze'].version).toBe(2);
+    expect(stored().earned['endless-seam-bronze']).toBeTruthy();
+    expect(campaign.integrity.actions.filter((a) => a.kind === 'continuous')).toHaveLength(2);
+    expect(campaign.integrity.actions.at(-1).data).toMatchObject({
+      jewels: 2600,
+      honours: { version: 1, gems: { ruby: 2600 } },
+    });
+    expect(campaign.town.completedRuns).toBe(0);
+    expect(campaign.records).toEqual(profile.records);
+    expect(
+      campaign.recordVictory({ id: 1, runId, score: 1e8, target: 1, combo: 10, tally }),
+    ).toEqual([]);
+    expect(counts().gems.ruby).toBe(2600);
+    const normalId = campaign.beginRun('normal', 1);
+    campaign.recordVictory({ id: 1, runId: normalId, score: 1, target: 6000, combo: 1, tally });
+    expect(counts().gems.ruby).toBe(2605);
+    expect(counts().continuousGems).toBe(2600);
+  });
+
+  it('rolls back a failed continuous save with its cumulative claim and retries collection once', () => {
+    const profile = freshProfile();
+    profile.records[1] = { score: 1, stars: 1 };
+    profile.town.buildings.museum = 1;
+    profile.town.buildings.moonstoneWorkshop = 3;
+    const campaign = open(profile);
+    const runId = campaign.beginRun('continuous', 1);
+    const request = {
+      id: 1,
+      runId,
+      jewels: 900,
+      score: 25000,
+      tally: { gems: { ruby: 900 }, fusions: {}, mine: {} },
+    };
+    const original = JSON.parse(JSON.stringify(campaign.honours));
+    const save = vi.spyOn(localStorage, 'setItem').mockImplementation(() => {
+      throw Error('full');
+    });
+    expect(campaign.recordContinuous(request)).toBe(false);
+    expect(campaign.honours).toEqual(original);
+    expect(campaign.continuousRun.honours).toBeUndefined();
+    expect(campaign.continuousRun.moonstoneJewels).toBeUndefined();
+    expect(campaign.town.moonstoneProduction.stored).toBe(0);
+    save.mockRestore();
+    expect(campaign.recordContinuous(request)).toBe(true);
+    expect(campaign.honours.counts.continuousGems).toBe(900);
+    expect(campaign.honours.counts.gems.ruby).toBe(900);
+    expect(campaign.town.moonstoneProduction.stored).toBe(3);
+    expect(campaign.continuousRecords[1].moonstoneGems).toBe(900);
   });
 
   it('credits mine elements from the completed level configuration, replays included', () => {
@@ -369,7 +481,7 @@ describe('Evaluation at save', () => {
     expect(campaign.honours.earned['fusion-bronze'].at).toBeGreaterThan(0);
     expect(stored().earned['fusion-bronze']).toBeTruthy();
 
-    const profile = { ...freshProfile(), schemaVersion: 3 };
+    const profile = { ...freshProfile(), schemaVersion: 5 };
     profile.records[1] = { score: 1, stars: 3 };
     profile.honours = { ...createHonours(), backfilled: 1 };
     const readOnly = open(profile);
@@ -507,11 +619,17 @@ describe('Town Guardian', () => {
 
 describe('Through the Ages', () => {
   it('reaches its gold rank when the town completes the Riverlight Age', () => {
-    const campaign = open(freshProfile(), { guarded: true });
-    const tools = createTestingTools(pinia);
-    tools.prepareEra('broadcast');
+    const profile = freshProfile();
+    profile.town = completedEraTown(profile.town, 'broadcast');
+    let campaign = open(profile, { guarded: true });
+    expect(campaign.save()).toBe(true);
     expect(Object.keys(campaign.honours.earned)).toEqual(['ages-bronze', 'ages-silver']);
-    expect(tools.prepareEra('riverlight').readyToChange).toBe(false);
+    const later = JSON.parse(JSON.stringify(campaign.profile()));
+    later.town = completedEraTown(later.town, 'riverlight');
+    campaign = open(later, { guarded: true });
+    // Skysail follows Riverlight, so a finished Riverlight town is ready to move on.
+    expect(eraGate(campaign.town).available).toBe(true);
+    expect(campaign.save()).toBe(true);
     expect(campaign.honours.earned['ages-gold']).toBeTruthy();
   }, 20000);
 });
@@ -553,7 +671,7 @@ describe('Backfilling older saves', () => {
   it('does not backfill again once the current version has run', () => {
     const profile = freshProfile();
     for (let id = 1; id <= 25; id++) profile.records[id] = { score: 1, stars: 3 };
-    profile.honours.backfilled = 1;
+    profile.honours.backfilled = HONOURS_VERSION;
     const campaign = open(profile);
     expect(campaign.honours.earned).toEqual({});
     expect(campaign.save()).toBe(true);
@@ -690,7 +808,7 @@ describe('Replacing a town copy', () => {
 });
 
 describe('The local mutation guard', () => {
-  it('blocks console honour edits while normal actions and debug tools still earn them', () => {
+  it('blocks console honour edits while normal actions still earn them', () => {
     const profile = freshProfile();
     profile.town.buildings.blacksmith = 1;
     profile.town.forge = { progress: 0, charge: 1 };
@@ -714,11 +832,5 @@ describe('The local mutation guard', () => {
       announced: true,
     });
     expect(campaign.honours.showcase).toEqual(['forge']);
-
-    const tools = createTestingTools(pinia);
-    tools.mineStage(1);
-    games.push(useGameStore(pinia));
-    tools.completeMine();
-    expect(campaign.honours.earned['stars-gold'].at).toBeGreaterThan(0);
-  }, 20000);
+  });
 });

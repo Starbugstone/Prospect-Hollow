@@ -3,6 +3,17 @@ import { BUILDING_BY_ID } from '../../data/town';
 import { eraBuildingLevel } from './TownEras';
 import { constructionReady, constructionRuns, upgradeOffer } from './TownRules';
 
+const projectComplete = (town, project) =>
+  project.era === town.era &&
+  project.buildings.every((id) => eraBuildingLevel(town, id) >= PROJECT_MILESTONES.length);
+// Rewarded projects a change from `before` to `after` finishes. Building levels never go
+// down, so each pays once; the server replay grants the same (`rewardProjects`).
+export const finishedRewardProjects = (before, after) =>
+  TOWN_PROJECTS.filter(
+    (project) =>
+      project.hammers > 0 && projectComplete(after, project) && !projectComplete(before, project),
+  );
+
 // Progress comes from finished buildings, so purchases, hammers, imports and
 // construction elsewhere in town all count without a second completion receipt.
 export function townProjects(town) {

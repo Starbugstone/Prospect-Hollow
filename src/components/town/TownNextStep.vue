@@ -6,7 +6,7 @@
         v-for="need in needs"
         :key="need.id"
         @click="$emit('inspect', need.id)"
-        :class="{ shortage: need.shortage }"
+        :class="{ shortage: need.short }"
         :aria-label="need.label"
         :title="need.label"
       >
@@ -16,6 +16,7 @@
       <span
         v-if="showEraProgress"
         class="village-era-progress"
+        role="img"
         :aria-label="
           t('Era improvements: {count}/{total}', {
             count: eraProgress.done,
@@ -111,7 +112,7 @@ import { t, number } from '../../i18n';
 import { BUILDINGS, BUILDING_BY_ID } from '../../data/town';
 import { plotInEra, eraBuildingLevel } from '../../game/town/TownEras';
 import { useNextStepAction } from '../../composables/useNextStepAction';
-import { constructionRuns, population, needsReport } from '../../game/town/TownRules';
+import { constructionRuns, population } from '../../game/town/TownRules';
 import TownIcon from './TownIcon.vue';
 import TownBuilding from './TownBuilding.vue';
 import TownDefenseStatus from './TownDefenseStatus.vue';
@@ -128,6 +129,7 @@ const { goal, gate, readyProjects, ready, canBuild, action, act } = useNextStepA
   () => props.town,
   () => props.hammers,
   emit,
+  () => campaign.townGoal,
 );
 const project = computed(() => Object.values(props.town.projects)[0]);
 const place = computed(
@@ -150,41 +152,8 @@ const eraProgress = computed(() =>
     { done: 0, total: 0 },
   ),
 );
-const needs = computed(() => {
-  const report = needsReport(props.town);
-  const supply = (stat, icon, name, fallback, label) => ({
-    id: report.fixes[stat] ?? fallback,
-    icon,
-    name,
-    relevant: report[stat] > 0 || report.demand > 0,
-    value: report.demand ? `${report[stat]}/${report.demand}` : report[stat],
-    shortage: report.short[stat],
-    fixable: report.short[stat] && !!report.fixes[stat],
-    label: t(label, { capacity: report[stat], demand: report.demand }),
-  });
-  return [
-    supply('water', 'water', 'Water', 'well', 'Water: {capacity}/{demand}'),
-    supply('food', 'food', 'Food', 'farm', 'Food: {capacity}/{demand}'),
-    {
-      id: report.fixes.housing ?? 'home',
-      icon: 'people',
-      name: 'People',
-      relevant: report.demand > 0,
-      value: report.population,
-      label: t('{count} people', { count: report.population }),
-    },
-    {
-      id: report.fixes.comfort ?? 'square',
-      icon: 'happiness',
-      name: 'Happiness',
-      relevant: report.demand > 0,
-      value: `${report.happiness}%`,
-      shortage: report.short.comfort,
-      fixable: report.short.comfort && !!report.fixes.comfort,
-      label: t('Happiness: {value}%', { value: report.happiness }),
-    },
-  ].filter((need) => need.relevant);
-});
+// The town's supplies, shared with the map (the campaign store's need chips).
+const needs = computed(() => campaign.needChips.filter((need) => need.relevant));
 </script>
 <style scoped>
 .village-next {

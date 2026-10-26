@@ -124,7 +124,7 @@ const FILTERS = [
   { id: 'open', label: 'Not yet' },
 ];
 const NOTES = {
-  mine: 'Completed puzzles count, including museum replays. Each honour climbs from bronze to gold.',
+  mine: 'Gems, fusions and mine elements count in normal and continuous play.',
   town: '{earned} of {total} earned · earned first, then goals still to reach',
   friends: 'Each different player counts once, for visits to your town and from it.',
 };

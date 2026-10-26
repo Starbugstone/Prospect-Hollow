@@ -1,4 +1,4 @@
-import { POWERS } from './campaign';
+import { POWERS, powerRecord } from './campaign';
 import { chestCoinReward } from './economy';
 
 export const BONUS_CAPACITIES = [3, 5, 8, 20];
@@ -9,7 +9,7 @@ export const bonusCapacity = (town) =>
   (BONUS_CAPACITIES[Math.min(3, town.buildings.armory)] ?? 3) + (town.buildings.garage ?? 0) * 2;
 export const CHEST_DROPS = [
   ...POWERS.map((power) => ({
-    ...power,
+    ...powerRecord(power),
     kind: 'power',
     quantity: 1,
     weight: power.dropWeight * 0.7,

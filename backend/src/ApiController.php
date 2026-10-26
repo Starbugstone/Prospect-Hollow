@@ -1,12 +1,13 @@
 <?php
 declare(strict_types=1);
 namespace App;
-use Symfony\Component\HttpFoundation\{Request, JsonResponse};
+use Symfony\Component\HttpFoundation\{Request, JsonResponse, Response};
 use Symfony\Component\Routing\Attribute\Route;
 final class ApiController
 {
     private VisitorService $visitors;
     private TownDirectory $directory;
+    private PlayerData $data;
     public function __construct(
         private Auth $auth,
         private SaveService $saves,
@@ -14,12 +15,14 @@ final class ApiController
         private Database $database,
         ?VisitorService $visitors = null,
         ?TownDirectory $directory = null,
+        ?PlayerData $data = null,
     ) {
         $this->visitors = $visitors ?? new VisitorService($database, $auth, $public);
         $this->directory = $directory ?? new TownDirectory($database, $auth);
+        $this->data = $data ?? new PlayerData($database, $auth, $saves);
     }
     #[Route('/api/v1/{path}', name: 'api', requirements: ['path' => '.*'])]
-    public function __invoke(Request $r, string $path): JsonResponse
+    public function __invoke(Request $r, string $path): Response
     {
         $native = false;
         try {
@@ -77,11 +80,27 @@ final class ApiController
                 }
                 $ip = $r->getClientIp() ?? 'unknown';
                 $this->auth->limit('http:' . $ip, 600, 60);
-                if (in_array($path, ['auth/login-link', 'auth/confirm'], true)) {
+                // Routes that mail an address or prove a mailed token share one per-IP limit.
+                if (
+                    in_array(
+                        $path,
+                        [
+                            'auth/login-link',
+                            'auth/confirm',
+                            'account/email',
+                            'account/email/confirm',
+                        ],
+                        true,
+                    )
+                ) {
                     $this->auth->limit('auth:' . $ip, 30, 900);
                 }
                 $result = match ($method . ' ' . $path) {
                     'GET health' => $this->health(),
+                    // Public: the privacy notice shows the contact an admin has set.
+                    'GET privacy' => [
+                        'contact' => SiteSettings::privacyContact($this->database->get()) ?: null,
+                    ],
                     'POST auth/login-link' => $this->auth->loginLink($r, $body),
                     'POST auth/confirm' => $this->auth->confirm($r, $body),
                     'POST auth/logout' => $this->logout($r, $body, false),
@@ -90,6 +109,10 @@ final class ApiController
                     'GET account/profile' => $this->visitors->profile($r),
                     'PATCH account/profile' => $this->visitors->updateProfile($r, $body),
                     'DELETE account' => $this->deleteAccount($r, $body),
+                    'GET account/data' => $this->data->summary($r),
+                    'GET account/export' => $this->data->export($r),
+                    'POST account/email' => $this->data->requestEmailChange($r, $body),
+                    'POST account/email/confirm' => $this->data->confirmEmailChange($body),
                     'POST towns' => $this->saves->create($r, $body),
                     'GET villages' => $r->query->has('q')
                         ? $this->directory->search($r)
@@ -97,7 +120,7 @@ final class ApiController
                     'GET villages/favourites' => $this->directory->favourites($r),
                     default => $this->townRoute($r, $path, $body),
                 };
-                $response = $result instanceof JsonResponse ? $result : new JsonResponse($result);
+                $response = $result instanceof Response ? $result : new JsonResponse($result);
             }
         } catch (ApiError $e) {
             $response = new JsonResponse(['error' => $e->getMessage()] + $e->details, $e->status);
@@ -169,6 +192,10 @@ final class ApiController
         ) {
             SaveService::keys($b, []);
             return $this->directory->favourite($r, $m[1], $r->isMethod('PUT'));
+        }
+        if ($r->isMethod('POST') && preg_match('~^villages/([a-f0-9]{32})/helmet$~D', $path, $m)) {
+            SaveService::keys($b, ['townId']);
+            return $this->public->findHelmet($r, $m[1], $b);
         }
         if ($r->isMethod('POST') && preg_match('~^villages/([a-f0-9]{32})/saloon$~D', $path, $m)) {
             SaveService::keys($b, []);

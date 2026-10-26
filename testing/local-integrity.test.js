@@ -1,17 +1,15 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { createApp } from 'vue';
 import { createPinia, setActivePinia } from 'pinia';
-import {
-  createLocalIntegrityPlugin,
-  runRegisteredTestingMutation,
-} from '../src/services/localIntegrity';
+import { createLocalIntegrityPlugin, guardedActionNames } from '../src/services/localIntegrity';
 import { freshProfile, useCampaignStore, SAVE_KEY } from '../src/stores/campaignStore';
 import { useInventoryStore } from '../src/stores/inventoryStore';
 import { useGameStore } from '../src/stores/gameStore';
-import { createTestingTools } from '../src/services/testingTools';
 import { townStorage } from '../src/services/townStorage';
 import { acknowledgeIntegrity } from '../src/services/saveIntegrity';
 import { upgradeOffer } from '../src/game/town/TownRules';
+import { eraGate } from '../src/game/town/TownEras';
+import { completedEraTown } from './helpers/eraTown';
 import { SHOP_ITEMS } from '../src/data/shop';
 import { CONTINUOUS_COIN_CAP } from '../src/data/rewards';
 import { HintEngine } from '../src/game/engine/HintEngine';
@@ -91,7 +89,6 @@ it('does not give arbitrary commits, callbacks or reward helpers a mutation capa
       campaign.records[1] = { stars: 3 };
     }),
   ).toBe(false);
-  expect(campaign.awardReward({ kind: 'coins', quantity: 99999 })).toBe(false);
   expect(campaign.recordAction('reward-grant', { quantity: 99999 })).toBe(false);
   expect(campaign.completeProject({ ...campaign.town, coins: 99999 })).toBe(false);
   expect(campaign.town.coins).toBe(0);
@@ -146,22 +143,7 @@ it('consumes items through the bounded campaign action and blocks injected inven
   expect(campaign.integrity.actions.at(-1).kind).toBe('power-spend');
 });
 
-it('keeps registered testing grants and chapter codes explicit without opening generic commits', () => {
-  const campaign = open();
-  const tools = createTestingTools(pinia);
-  expect(tools.grant({ coins: 500, hammers: 2 })).toEqual({ coins: 500, builderHammers: 2 });
-  expect(campaign.commit({ builderHammers: 5 })).toBe(false);
-  const chapter = tools.mineStage(2);
-  expect(chapter.level).toBe(7);
-  expect(campaign.isUnlocked(7)).toBe(true);
-  campaign.town.coins = 999999;
-  expect(campaign.town.coins).toBe(500);
-  expect(() =>
-    runRegisteredTestingMutation(campaign, {}, () => campaign.commit({ builderHammers: 5 })),
-  ).toThrow('unavailable');
-}, 20000);
-
-it('rolls normal and registered transactions back when persistence fails', () => {
+it('rolls normal transactions back when persistence fails', () => {
   const profile = freshProfile();
   profile.town.buildings.blacksmith = 1;
   profile.town.forge.charge = 1;
@@ -173,8 +155,6 @@ it('rolls normal and registered transactions back when persistence fails', () =>
   expect(campaign.town.forge.charge).toBe(1);
   expect(campaign.powers.find((power) => power.id === 'tnt').quantity).toBe(0);
   expect(campaign.integrity.actions).toEqual([]);
-  expect(() => createTestingTools(pinia).grant()).toThrow('Balances were restored');
-  expect(campaign.town.coins).toBe(0);
   write.mockRestore();
   expect(campaign.collectForgeTNT()).toBe(true);
   expect(campaign.save()).toBe(true);
@@ -241,19 +221,17 @@ it('keeps continuous earnings capped by their existing rule and allows score-onl
   expect(campaign.continuousRecords[1].coins).toBe(CONTINUOUS_COIN_CAP);
 });
 
-it('preserves registered era preparation and mine completion, then normal era advancement', () => {
-  const campaign = open();
-  const tools = createTestingTools(pinia);
-  const prepared = tools.prepareEra('frontier');
-  expect(prepared.readyToChange).toBe(true);
+it('advances a completed era through the normal action while records stay protected', () => {
+  const profile = freshProfile();
+  profile.town = completedEraTown(profile.town, 'frontier');
+  profile.records[1] = { score: 0, stars: 3 };
+  const campaign = open(profile);
+  const next = eraGate(campaign.town).next.id;
   expect(campaign.advanceEra('frontier')).toBe(true);
-  expect(campaign.town.era).toBe(prepared.nextEra);
-  tools.mineStage(1);
-  expect(tools.completeMine().stars).toBeGreaterThan(100);
-  expect(campaign.records[1].stars).toBe(3);
+  expect(campaign.town.era).toBe(next);
   campaign.records[1].stars = 1;
   expect(campaign.records[1].stars).toBe(3);
-}, 20000);
+});
 
 it('imports and reloads a confirmed backup without adding journal flags or losing resources', () => {
   const profile = freshProfile();
@@ -338,3 +316,131 @@ it('preserves stored income collection and prevented raid-loss refunds', () => {
   expect(campaign.town.coins).toBeLessThanOrEqual(1073);
   expect(campaign.integrity.actions.map(({ kind }) => kind)).toContain('saloon-collect');
 });
+
+it('saves personalisation and a permanent paid monument through the production mutation guard', () => {
+  const profile = freshProfile();
+  profile.town.era = 'industrial';
+  profile.town.coins = 30000;
+  const campaign = open(profile);
+  const crest = {
+    shape: 'shield',
+    pattern: 'plain',
+    emblem: 'otter',
+    primary: '#123456',
+    secondary: '#abcdef',
+  };
+  expect(campaign.personalise([{ kind: 'crest', value: crest }])).toBe(true);
+  const purchase = {
+    kind: 'area',
+    id: 'monument',
+    slot: 0,
+    value: 'crystal-spire',
+    expectedChoice: null,
+    expectedLevel: 0,
+  };
+  expect(campaign.personalise([purchase])).toBe(true);
+  expect(campaign.town.coins).toBe(22000);
+  expect(campaign.integrity.actions.at(-1).kind).toBe('landmark-buy');
+  const distinction = { ...campaign.honours.earned['monument-gold'] };
+  expect(distinction.at).toBeGreaterThan(0);
+  expect(campaign.personalise([purchase])).toBe(false);
+  expect(
+    campaign.personalise([
+      { ...purchase, value: 'guardian', expectedChoice: 'crystal-spire', expectedLevel: 1 },
+    ]),
+  ).toBe(false);
+  expect(campaign.town.coins).toBe(22000);
+  const saved = JSON.parse(values.get(SAVE_KEY));
+  expect(saved.town.personalisation.areas.monument).toEqual(['crystal-spire']);
+  expect(saved.town.personalisation.crest.primary).toBe('#123456');
+  const restored = open(saved);
+  expect(restored.town.coins).toBe(22000);
+  expect(restored.honours.earned['monument-gold']).toEqual(distinction);
+  expect(
+    restored.personalise([
+      { ...purchase, value: 'celestial-sphere', expectedChoice: 'crystal-spire', expectedLevel: 1 },
+    ]),
+  ).toBe(false);
+  expect(restored.town.personalisation.areas.monument).toEqual(['crystal-spire']);
+  // The named action authorizes its rules, never arbitrary property assignment.
+  restored.town.coins = 1e9;
+  expect(restored.town.coins).toBe(22000);
+});
+it('applies synced scalar changes without replacing unchanged renderer state or receipt copying', () => {
+  const campaign = open();
+  const before = { town: campaign.town, records: campaign.records, powers: campaign.powers };
+  const profile = JSON.parse(JSON.stringify(campaign.profile()));
+  profile.builderHammers += 1;
+  values.set(SAVE_KEY, JSON.stringify(profile));
+  campaign.reloadLocal({ preserveUnchanged: true });
+  expect(campaign.builderHammers).toBe(1);
+  expect(campaign.town).toBe(before.town);
+  expect(campaign.records).toBe(before.records);
+  expect(campaign.powers).toBe(before.powers);
+  const integrity = { version: 1, epoch: 'replacement', baseSequence: 0, actions: [] };
+  values.set(SAVE_KEY, JSON.stringify({ ...profile, integrity }));
+  campaign.reloadLocal({ integrityOnly: true });
+  expect(campaign.integrity).toEqual(integrity);
+  campaign.integrity = { version: 1, epoch: 'console', baseSequence: 0, actions: [] };
+  expect(campaign.integrity.epoch).toBe('replacement');
+});
+
+// Actions the guard leaves unwrapped. They only read the campaign; any action that
+// changes state must be a guarded entry point or an internal helper, or it cannot save.
+const READ_ONLY_ACTIONS = ['canPlay', 'isUnlocked', 'profile', 'exportSave'];
+it('classifies every campaign action as a guarded entry point, an internal helper or read-only', () => {
+  let actions = [];
+  values.set(SAVE_KEY, JSON.stringify(freshProfile()));
+  pinia = createPinia();
+  pinia.use(createLocalIntegrityPlugin());
+  pinia.use(({ store, options }) => {
+    if (store.$id === 'campaign') actions = Object.keys(options.actions ?? {});
+  });
+  createApp({}).use(pinia);
+  setActivePinia(pinia);
+  const campaign = useCampaignStore(pinia);
+  const { normal, internal } = guardedActionNames();
+  const listed = [...normal, ...internal, ...READ_ONLY_ACTIONS];
+  expect(actions.length).toBeGreaterThan(40);
+  expect(actions.filter((name) => !listed.includes(name))).toEqual([]);
+  // No stale or doubly classified names survive a rename.
+  expect(listed.filter((name) => !actions.includes(name))).toEqual([]);
+  expect(new Set(listed).size).toBe(listed.length);
+  // The read-only actions really change nothing.
+  const saved = values.get(SAVE_KEY);
+  const integrity = JSON.stringify(campaign.integrity);
+  campaign.canPlay(1);
+  campaign.isUnlocked(1);
+  campaign.profile();
+  campaign.exportSave();
+  expect(values.get(SAVE_KEY)).toBe(saved);
+  expect(JSON.stringify(campaign.integrity)).toBe(integrity);
+});
+
+it('spends a Shuffle that finishes the puzzle before the victory is recorded', async () => {
+  const profile = freshProfile();
+  profile.powers.find((power) => power.id === 'shuffle').quantity = 2;
+  const campaign = open(profile);
+  const game = useGameStore(pinia);
+  const inventory = useInventoryStore(pinia);
+  game.bootstrap();
+  expect(game.startLevel(1)).toBe(true);
+  // An ordinary shuffle is spent once and the puzzle carries on.
+  expect(await inventory.usePowerUp('shuffle')).toBe(true);
+  expect(game.levelCleared).toBe(false);
+  expect(inventory.availableQuantity('shuffle')).toBe(1);
+  expect(campaign.integrity.actions.map(({ kind }) => kind)).toEqual(['run-start', 'power-spend']);
+  // This shuffle's resolution completes the last objective: the item is spent first, as
+  // every other power is, so the victory and its rewards see the updated inventory.
+  game.remainingLayers = 0;
+  expect(await inventory.usePowerUp('shuffle')).toBe(true);
+  expect(game.levelCleared).toBe(true);
+  expect(campaign.powers.find((power) => power.id === 'shuffle').quantity).toBe(0);
+  expect(campaign.integrity.actions.map(({ kind }) => kind)).toEqual([
+    'run-start',
+    'power-spend',
+    'power-spend',
+    'victory',
+  ]);
+  expect(campaign.nextLevel).toBe(2);
+}, 20000);

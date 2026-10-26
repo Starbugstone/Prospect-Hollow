@@ -3,7 +3,7 @@ import { prepareActorWalk } from './TownNavigation';
 import { villagerIdentity } from '../../data/villagers';
 import { guestVipIdentity } from '../../data/guestVip';
 import { PerspectiveCamera, Vector3, Vector4 } from 'three';
-import { VISITOR_TRANSPORTS, VISITOR_ARRIVAL_SITES } from '../../data/visitorArrivals';
+import { VISITOR_TRANSPORTS, VISITOR_ARRIVAL_SITES, arrivalSeed } from '../../data/visitorArrivals';
 import { visitorPopulation } from './TownRules';
 import { LANE_X, PLOTS, plotStreet, routeBetween } from './TownLayout';
 import { keepCameraAboveTerrain } from './TownLandscape';
@@ -60,7 +60,7 @@ export class TownVipArrivals {
       actor.transportVisitor = true;
       prepareActorWalk(this.d, actor);
       actor.source = id;
-      actor.itinerarySeed = this.seed + VISITOR_TRANSPORTS.indexOf(id) * 101;
+      actor.itinerarySeed = arrivalSeed(this.seed, id);
       actor.root.name = 'Arriving VIP visitor';
       actor.root.visible = false;
       this.actors.push(actor);
@@ -202,10 +202,7 @@ export class TownVipArrivals {
         this.seen.set(actor.source, transport.visit);
         // Never replay a missed arrival when returning from a modal/cinematic.
         // The 1s window also rejects loading a town halfway through a dwell.
-        const guest = d.drawVip(
-          this.seed + VISITOR_TRANSPORTS.indexOf(actor.source) * 101,
-          transport.visit,
-        );
+        const guest = d.drawVip(arrivalSeed(this.seed, actor.source), transport.visit);
         const anyVisitor = this.actors.some((a) => a.started !== undefined);
         if (
           guest &&

@@ -1,6 +1,22 @@
 import { describe, expect, it, vi } from 'vitest';
-import { BoxGeometry, Group, Mesh, MeshStandardMaterial, Raycaster, Scene, Vector3 } from 'three';
+import {
+  BoxGeometry,
+  BufferAttribute,
+  Euler,
+  Group,
+  Matrix4,
+  Mesh,
+  MeshBasicMaterial,
+  MeshStandardMaterial,
+  Quaternion,
+  Raycaster,
+  Scene,
+  Vector3,
+} from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { createTownGeometries, placedCopy } from '../src/game/town/TownGeometries';
 import { TownStatics } from '../src/game/town/TownStatics';
+import { TownPrimitives } from '../src/game/town/TownPrimitives';
 import { TownActors } from '../src/game/town/TownActors';
 
 describe('Batching a growing village without losing color or interaction', () => {
@@ -129,5 +145,130 @@ describe('Batching a growing village without losing color or interaction', () =>
     renderer.dispose();
     geometry.dispose();
     material.dispose();
+  });
+  it('keeps parts marked castShadow = false out of the shadow pass in the static batch', () => {
+    const scene = new Scene(),
+      root = new Group(),
+      geometry = new BoxGeometry(),
+      material = new MeshStandardMaterial({ color: '#c59376' });
+    scene.add(root);
+    const wall = new Mesh(geometry, material),
+      ribbon = new Mesh(geometry, material);
+    wall.castShadow = true;
+    ribbon.castShadow = false;
+    ribbon.position.y = 3;
+    // Sign faces on one atlas page split the same way.
+    const atlas = new MeshBasicMaterial();
+    atlas.userData.signAtlas = true;
+    const signs = [true, false].map((castShadow) => {
+      const face = new Mesh(geometry, atlas);
+      face.castShadow = castShadow;
+      return face;
+    });
+    root.add(wall, ribbon, ...signs);
+    const statics = new TownStatics(scene);
+    statics.sync([root]);
+    const batch = statics.batches.get(root);
+    expect(batch.castShadow).toBe(true);
+    expect(batch.children).toHaveLength(1);
+    const [shadowless] = batch.children;
+    expect([shadowless.castShadow, shadowless.receiveShadow]).toEqual([false, true]);
+    // Each merged mesh holds exactly its own part: the wall casts, the raised ribbon does not.
+    for (const [mesh, y] of [
+      [batch, 0],
+      [shadowless, 3],
+    ]) {
+      expect(mesh.geometry.index.count).toBe(geometry.index.count);
+      mesh.geometry.computeBoundingBox();
+      expect(mesh.geometry.boundingBox.getCenter(new Vector3()).y).toBeCloseTo(y);
+    }
+    expect([...statics.signMeshes.values()].map((mesh) => mesh.castShadow)).toEqual([true, false]);
+    // The shadowless part follows its root's visibility and is released with it.
+    statics.setVisible(root, false);
+    expect(batch.visible).toBe(false);
+    const dispose = vi.spyOn(shadowless.geometry, 'dispose');
+    statics.dispose();
+    expect(dispose).toHaveBeenCalledOnce();
+    expect(batch.parent).toBeNull();
+    expect(statics.signMeshes.size).toBe(0);
+    // A root with no casting parts draws one batch that casts no shadow.
+    const lone = new Mesh(geometry, material);
+    scene.add(lone);
+    statics.sync([lone]);
+    expect(statics.batches.get(lone).castShadow).toBe(false);
+    expect(statics.batches.get(lone).children).toHaveLength(0);
+    statics.dispose();
+    geometry.dispose();
+    material.dispose();
+    atlas.dispose();
+  });
+  it('merges castShadow = false meshes apart when batching a model', () => {
+    const d = new TownPrimitives(),
+      group = new Group();
+    d.box(group, 1, 1, 1, 0, 0, 0, '#c59376');
+    d.box(group, 1, 1, 1, 2, 0, 0, '#c59376');
+    d.box(group, 1, 1, 1, 0, 4, 0, '#c59376').castShadow = false;
+    d.batch(group);
+    const merged = group.children.filter((child) => child.isMesh);
+    expect(merged.map((mesh) => mesh.castShadow)).toEqual([true, false]);
+    expect(merged.map((mesh) => mesh.geometry.index.count)).toEqual([
+      d.geometries.box.index.count * 2,
+      d.geometries.box.index.count,
+    ]);
+    merged.forEach((mesh) => mesh.geometry.dispose());
+    d.disposePrimitives();
+  });
+});
+
+// Issue #54: batching copies each source geometry once. The merged buffers must match
+// the ordinary clone-and-transform exactly, including indexed, welded, colored,
+// grouped and bounds-carrying sources.
+describe('placedCopy', () => {
+  const sources = () => {
+    const geometries = createTownGeometries();
+    const colored = new BoxGeometry(1, 2, 3).toNonIndexed();
+    colored.setAttribute(
+      'color',
+      new BufferAttribute(new Float32Array(colored.attributes.position.count * 3).fill(0.5), 3),
+    );
+    const grouped = new BoxGeometry(2, 1, 1);
+    grouped.computeBoundingSphere();
+    grouped.computeBoundingBox();
+    return [...Object.values(geometries), colored, grouped];
+  };
+  const matrix = new Matrix4().compose(
+    new Vector3(3, -1, 2),
+    new Quaternion().setFromEuler(new Euler(0.3, 1.1, -0.4)),
+    new Vector3(1.5, 0.5, 2),
+  );
+  const arrays = (geometry) => ({
+    index: geometry.index && [...geometry.index.array],
+    attributes: Object.fromEntries(
+      Object.entries(geometry.attributes).map(([name, a]) => [
+        name,
+        { array: [...a.array], itemSize: a.itemSize, normalized: a.normalized },
+      ]),
+    ),
+  });
+  it('merges to the same buffers as clone().applyMatrix4()', () => {
+    for (const source of sources()) {
+      const expected = mergeGeometries([source.clone().applyMatrix4(matrix)]);
+      const actual = mergeGeometries([placedCopy(source, matrix)]);
+      expect(arrays(actual)).toEqual(arrays(expected));
+      expect(placedCopy(source, matrix).groups).toEqual(source.groups);
+    }
+  });
+  it('leaves out only the attribute the caller drops', () => {
+    for (const source of sources()) {
+      const expected = source.clone().applyMatrix4(matrix);
+      expected.deleteAttribute('uv');
+      expect(arrays(placedCopy(source, matrix, 'uv'))).toEqual(arrays(expected));
+    }
+  });
+  it('never changes its source', () => {
+    const [source] = sources();
+    const before = arrays(source);
+    placedCopy(source, matrix).attributes.position.array.fill(9);
+    expect(arrays(source)).toEqual(before);
   });
 });

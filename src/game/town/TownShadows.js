@@ -1,14 +1,15 @@
 import { Box3, Vector3 } from 'three';
-import { GARDEN_CLEARING, GARDEN_PARCELS } from '../../data/townGardenDistrict';
+import { GARDEN_PARCELS, PARCEL_CLEARINGS } from '../../data/townGardenDistrict';
 import { AIRPORT, PLOTS } from './TownLayout';
 
 const SUN_OFFSET = new Vector3(-24, 38, 18);
 const ORIGINAL_CAMERA = { left: -31, right: 31, top: 35, bottom: -35, near: 1, far: 95 };
 const SHADOW_MARGIN = 4;
 
-// Fit once to reserved land, rather than to changing meshes or the moving camera.
-// Include the existing mine hillside and airport alongside the original town lots.
-function gardenCoverage() {
+// Fit once per set of visible clearings to reserved land, rather than to changing
+// meshes or the moving camera. Include the existing mine hillside and airport
+// alongside the original town lots.
+function gardenCoverage(clearings) {
   const bounds = new Box3();
   for (const [id, [x, z]] of Object.entries(PLOTS)) {
     if (GARDEN_PARCELS[id]) continue;
@@ -17,8 +18,10 @@ function gardenCoverage() {
     bounds.expandByPoint(new Vector3(x - halfWidth, -3, z - halfDepth));
     bounds.expandByPoint(new Vector3(x + halfWidth, 20, z + halfDepth));
   }
-  bounds.expandByPoint(new Vector3(GARDEN_CLEARING.minX, 0, GARDEN_CLEARING.minZ));
-  bounds.expandByPoint(new Vector3(GARDEN_CLEARING.maxX, 8, GARDEN_CLEARING.maxZ));
+  for (const { minX, maxX, minZ, maxZ } of clearings) {
+    bounds.expandByPoint(new Vector3(minX, 0, minZ));
+    bounds.expandByPoint(new Vector3(maxX, 8, maxZ));
+  }
   const target = bounds.getCenter(new Vector3());
   const direction = SUN_OFFSET.clone().normalize();
   const right = new Vector3(0, 1, 0).cross(direction).normalize();
@@ -48,19 +51,34 @@ function gardenCoverage() {
     },
   };
 }
-const GARDEN_COVERAGE = gardenCoverage();
+const coverages = new Map();
+const inClearing = ([x, z], { minX, maxX, minZ, maxZ }) =>
+  x >= minX && x <= maxX && z >= minZ && z <= maxZ;
+// The clearings holding a visible parcel; the garden clearing always comes first.
+function visibleClearings(plots) {
+  const parcels = plots.filter(({ id }) => GARDEN_PARCELS[id]);
+  if (!parcels.length) return null;
+  return PARCEL_CLEARINGS.filter(
+    (clearing, index) =>
+      !index || parcels.some(({ id }) => inClearing(GARDEN_PARCELS[id].position, clearing)),
+  );
+}
 
 export function updateTownShadowCoverage(view, plots) {
   if (!view.sun) return false;
-  const expanded = plots.some(({ id }) => GARDEN_PARCELS[id]);
+  const clearings = visibleClearings(plots);
+  const expanded = clearings ? clearings.map((c) => PARCEL_CLEARINGS.indexOf(c)).join() : false;
   if (view.shadowCoverageExpanded === expanded) return false;
+  if (expanded !== false && !coverages.has(expanded))
+    coverages.set(expanded, gardenCoverage(clearings));
+  const coverage = expanded === false ? null : coverages.get(expanded);
   const { sun } = view;
-  sun.position.copy(expanded ? GARDEN_COVERAGE.position : SUN_OFFSET);
-  sun.target.position.copy(expanded ? GARDEN_COVERAGE.target : new Vector3());
-  if (expanded && sun.target.parent !== view.scene) view.scene.add(sun.target);
+  sun.position.copy(coverage ? coverage.position : SUN_OFFSET);
+  sun.target.position.copy(coverage ? coverage.target : new Vector3());
+  if (coverage && sun.target.parent !== view.scene) view.scene.add(sun.target);
   sun.target.updateMatrixWorld(true);
   sun.updateMatrixWorld(true);
-  Object.assign(sun.shadow.camera, expanded ? GARDEN_COVERAGE.camera : ORIGINAL_CAMERA);
+  Object.assign(sun.shadow.camera, coverage ? coverage.camera : ORIGINAL_CAMERA);
   sun.shadow.camera.updateProjectionMatrix();
   view.renderer.shadowMap.needsUpdate = true;
   view.shadowCoverageExpanded = expanded;

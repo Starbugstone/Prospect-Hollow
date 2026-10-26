@@ -1,3 +1,5 @@
+import { normalizePersonalisation } from '../data/townPersonalisation';
+import { CREST_EMBLEM_IDS } from '../data/townCrests';
 import { createTown } from '../data/town';
 import { LEVEL_COUNT } from '../data/campaign';
 import { HONOURS, validShowcase } from '../data/honours';
@@ -75,17 +77,8 @@ export function villageAppearance(village) {
   for (const key of ['buildings', 'buildingEras', 'buildingEraLevels'])
     for (const id of Object.keys(town[key]))
       if (Object.hasOwn(appearance[key], id)) town[key][id] = appearance[key][id];
-  for (const [id, project] of Object.entries(appearance.projects ?? {})) {
-    if (!Object.hasOwn(town.buildings, id)) continue;
-    town.projects[id] = {
-      id,
-      stage: project.stage,
-      type: project.type,
-      targetEra: project.targetEra,
-      eraLevel: project.eraLevel,
-      required: 3,
-      wins: project.visualStage,
-    };
-  }
+  town.personalisation = normalizePersonalisation(appearance.personalisation, CREST_EMBLEM_IDS);
+  town.displayHonours = villageHonours(village);
+  town.displayDistinctions = appearance.plaqueDistinctions ?? {};
   return town;
 }

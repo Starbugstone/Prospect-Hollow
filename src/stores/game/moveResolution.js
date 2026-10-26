@@ -2,12 +2,13 @@ import { toRaw } from 'vue';
 import { advanceOreOrders } from '../../game/engine/ChapterMechanics';
 import { recoverBoard } from '../../game/engine/BoardRecovery';
 import { isPlayableCell } from '../../game/engine/BoardTopology';
-import { GEM_TYPES } from '../../game/engine/GemFactory';
+import { BASE_GEM_TYPES } from '../../game/engine/GemFactory';
 import { MatchEngine } from '../../game/engine/MatchEngine';
 import { cascadeTier, clearScore, simultaneousMatchCount } from '../../game/engine/MatchRewards';
 import { TileManager } from '../../game/engine/TileManager';
 import { BonusActivator } from '../../game/engine/BonusActivator';
 import { HintEngine } from '../../game/engine/HintEngine';
+import { blastLog } from '../../game/engine/LensBeams';
 import { applyBonuses, detectBonusFromMatches } from '../../game/engine/MatchPatterns';
 import {
   BOARD_BONUSES,
@@ -16,7 +17,7 @@ import {
   isAnchored,
   isAdjacent,
 } from '../../game/engine/TileRules';
-import { tallySteps } from '../../data/honours';
+import { tallyContinuousMine, tallySteps } from '../../data/honours';
 import { useInventoryStore } from '../inventoryStore';
 import { plain, workingTiles } from './boardData';
 import { storeTimers } from './storeTimers';
@@ -37,7 +38,7 @@ const boardCenterIndex = (cols, rows) => {
 
 function resolveMatches(store, { board, tiles, matches, bonuses, pendingBonus }) {
   return tileManager.getResolution({
-    gemTypes: store.currentBoardLayout?.gemTypes ?? GEM_TYPES,
+    gemTypes: store.currentBoardLayout?.gemTypes ?? BASE_GEM_TYPES,
     board,
     tiles,
     matches,
@@ -149,7 +150,7 @@ export async function activatePower(store, bonusName, index, consume = false) {
     'Error activating bonus:',
     async (session) => {
       const board = boardOf(store);
-      const blasts = new Map();
+      const blasts = blastLog();
       const clearedIndices = rescue
         ? board.map((_, i) => i)
         : bonusActivator.activatePower(
@@ -390,10 +391,20 @@ export function queueSwap(store, aIndex, bIndex) {
 }
 
 export function commitResolution(store, resolution) {
-  // Only moves that finished animating count; victory credits the tally to honours.
-  if (store.playMode === 'normal')
-    tallySteps(toRaw(store.honourTally), resolution.steps, { recovery: resolution.recovery });
+  // Only moves that finished animating count in either mode.
+  tallySteps(toRaw(store.honourTally), resolution.steps, { recovery: resolution.recovery });
   store.board = plain(resolution.board);
+  if (store.playMode === 'continuous') {
+    tallyContinuousMine(
+      toRaw(store.honourTally),
+      store.currentLevel?.config,
+      store.board,
+      store.tiles,
+      store.oreOrders,
+      { recovery: resolution.recovery },
+    );
+    store.syncContinuous();
+  }
   store.pendingBoardState = null;
   store.boardVersion += 1;
   store.remainingLayers = Math.max(0, store.remainingLayers - (resolution.layersCleared ?? 0));
@@ -485,11 +496,13 @@ export function applyScoring(store, steps) {
     store.score += total;
     store.updateObjectives({ scoreDelta: total });
   }
-  store.syncContinuous();
   return total;
 }
 
-export function shuffleBoard(store, { recoveryBoard = null } = {}) {
+// `consume` names the stored power paying for this shuffle (the Shuffle item). Like
+// every other power it is spent once the shuffle has played and before its resolution
+// commits, so a shuffle that finishes the puzzle is spent before the victory is recorded.
+export function shuffleBoard(store, { recoveryBoard = null, consume = null } = {}) {
   if (!store.sessionActive || store.animationInProgress || store.levelCleared) return false;
   store.cancelHint(true);
   const session = store.sessionVersion;
@@ -536,6 +549,7 @@ export function shuffleBoard(store, { recoveryBoard = null } = {}) {
             cols: store.boardCols,
             rows: store.boardRows,
             animator,
+            consume,
           })
         : false;
     } finally {
@@ -545,7 +559,7 @@ export function shuffleBoard(store, { recoveryBoard = null } = {}) {
   })();
 }
 
-export async function resolveBoardAfterShuffle(store, nextBoard, { cols, rows }) {
+export async function resolveBoardAfterShuffle(store, nextBoard, { cols, rows, consume = null }) {
   const session = store.sessionVersion;
   try {
     const matches = matchEngine.findMatches(nextBoard, cols, rows, tilesOf(store));
@@ -558,6 +572,8 @@ export async function resolveBoardAfterShuffle(store, nextBoard, { cols, rows })
     });
     store._applyScoring(resolution.steps);
     if (!(await showResolution(store, resolution, session))) return false;
+    // Consume before committing so victory rewards see the updated inventory.
+    if (consume && !useInventoryStore().consumeItem(consume)) return false;
     store.tiles = plain(nextTiles);
     store.commitResolution(resolution);
     return true;

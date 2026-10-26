@@ -10,6 +10,7 @@ import {
 import { renderMotorLandmark } from '../src/game/town/buildings/motorAge';
 import { renderWatermill } from '../src/game/town/buildings/watermill';
 import { ERAS } from '../src/data/eras';
+import { BUILDINGS } from '../src/data/town';
 
 function drawing(run) {
   const d = Object.create(TownDiorama.prototype);
@@ -27,8 +28,13 @@ function drawing(run) {
 describe('Purpose-specific heritage upgrades', () => {
   it('preserves the original building identity through River & Rail aliases', () =>
     drawing((d) => {
+      const riverKinds = new Set(
+        BUILDINGS.filter((building) =>
+          ['frontier', 'river-rail'].includes(building.introducedEra),
+        ).map((building) => building.kind),
+      );
       for (const [kind, feature] of Object.entries(HERITAGE_UPGRADES)) {
-        if (['powerHouse', 'fireStation', 'rowHouses', 'mill'].includes(kind)) continue;
+        if (!riverKinds.has(kind)) continue;
         for (const level of [2, 3]) {
           const root = new Group();
           renderModernization(d, root, kind, 'river-rail', level);
@@ -41,6 +47,9 @@ describe('Purpose-specific heritage upgrades', () => {
       expect(heritageUpgrade('post')).not.toBe(heritageUpgrade('shop'));
       expect(heritageUpgrade('railDepot')).not.toBe(heritageUpgrade('museum'));
       expect(heritageUpgrade('unknown-future-building')).toBeNull();
+      const unsupported = new Group();
+      renderModernization(d, unsupported, 'unknown-future-building', 'river-rail', 3);
+      expect(unsupported.children).toHaveLength(0);
     }));
   it('carries the same purpose through industrial models', () =>
     drawing((d) => {

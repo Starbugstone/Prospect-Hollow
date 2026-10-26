@@ -20,7 +20,7 @@ vi.mock('vue', async (original) => ({
 vi.mock('../src/services/cloudProfile', async () => ({
   cloud: (await import('vue')).reactive({ account: { id: 'owner' }, storageVersion: 0 }),
 }));
-vi.mock('../src/services/townStorage', () => ({ townStorage: { active: vi.fn() } }));
+vi.mock('../src/services/townStorage', () => ({ townStorage: { activeMeta: vi.fn() } }));
 vi.mock('../src/services/visitorApi', () => ({ townVisitors: vi.fn(), villageVisitors: vi.fn() }));
 
 const alice = { id: 'visit-a', name: 'Alice', townName: 'Silver Creek' };
@@ -31,7 +31,7 @@ beforeEach(() => {
   vi.stubGlobal('document', new EventTarget());
   vi.stubGlobal('window', new EventTarget());
   Object.assign(cloud, { account: { id: 'owner' }, sessionExpired: false, storageVersion: 0 });
-  townStorage.active.mockReturnValue({ meta: { id: 'town-a', owner: 'owner' } });
+  townStorage.activeMeta.mockReturnValue({ id: 'town-a', owner: 'owner' });
   result = { present: [], history: [] };
   townVisitors.mockImplementation(async () => result);
   collectedAt = 0;
@@ -134,7 +134,7 @@ it('clears old-town notices and fences an in-flight response when switching town
       }),
   );
   await poll();
-  townStorage.active.mockReturnValue({ meta: { id: 'town-b', owner: 'owner' } });
+  townStorage.activeMeta.mockReturnValue({ id: 'town-b', owner: 'owner' });
   result = { present: [anonymous] };
   cloud.storageVersion++;
   await nextTick();
@@ -188,6 +188,34 @@ it('announces and credits a collection once across live polls and cached account
   expect(visitors.notice.value).toEqual({ kind: 'collection', coins: 120 });
   visitors.dismissNotice();
   expect(visitors.notice.value).toBeNull();
+});
+
+// Every tap on a far-off animal asks to zoom in; the hint waits once, not once per tap.
+it('queues a repeated tap hint once while it waits', async () => {
+  await vi.advanceTimersByTimeAsync(0);
+  visitors.enqueue([{ kind: 'helmet-zoom' }]);
+  visitors.enqueue([{ kind: 'helmet-zoom' }]);
+  expect(visitors.notice.value).toEqual({ kind: 'helmet-zoom' });
+  visitors.dismissNotice();
+  expect(visitors.notice.value).toBeNull();
+  visitors.enqueue([{ kind: 'helmet-zoom' }]);
+  expect(visitors.notice.value).toEqual({ kind: 'helmet-zoom' });
+  // Notices with their own details still queue each time.
+  visitors.enqueue([{ kind: 'collection', coins: 120 }]);
+  visitors.enqueue([{ kind: 'collection', coins: 120 }]);
+  visitors.dismissNotice();
+  visitors.dismissNotice();
+  expect(visitors.notice.value).toEqual({ kind: 'collection', coins: 120 });
+  for (const [language, text] of [
+    ['en', 'Zoom in closer to the animals to find the astronaut.'],
+    ['fr', 'Zoomez plus près des animaux pour trouver l’astronaute.'],
+  ]) {
+    setLocale(language);
+    const html = await renderToString(
+      createSSRApp(TownVisitorNotice, { notice: { kind: 'helmet-zoom' } }),
+    );
+    expect(html).toContain(text);
+  }
 });
 
 it('renders a collection notification in French', async () => {

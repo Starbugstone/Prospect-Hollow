@@ -62,7 +62,11 @@ Levels do not all need the same rate. A level that reaches three stars in about
 281 and 320 reach 24–32% on seeds 31–120 and, like 391, keep their targets. Recalibrate a level
 only when it falls clearly below that, as 377, 379 and 388 had (17–21%).
 
-To produce a candidate table for review after changing layouts or scoring:
+Levels 403–546 have their own measured targets and held-out regression coverage;
+see [the floating-seam calibration](hollow-mine-levels.md#effort-and-completion-2026-10-08).
+
+To produce a candidate table after changing layouts or scoring, run these commands
+with the Docker prefix in `AGENTS.md` (keep measurement files in a mounted directory):
 
 ```sh
 node scripts/measure-campaign.mjs . 30 > /tmp/campaign-scores.json
@@ -87,7 +91,7 @@ persistence, independent chest rewards and fallback behavior.
 `testing/levels/star-attainment.test.js` plays 20 held-out refill seeds per level (101–120), checking completion on every run
 and at least one three-star completion per level. The opening levels must
 achieve three stars in at least 14/20 runs each. Levels with blast-only
-obstacles, which need board bonuses to finish (today 373–402), must achieve it in
+obstacles in the deep-mine band (373–402), which need board bonuses to finish, must achieve it in
 at least 5/20. That catches targets left stale by a change to bonus rules, as
 levels 377 (2/20) and 379 (4/20) were before 2026-10-04. Aggregate guards require at
 least 85% three-star attainment in the opening, a decreasing rate across later

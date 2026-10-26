@@ -7,6 +7,8 @@ import { BoardAnimator } from '../src/game/phaser/BoardAnimator';
 import { MatchEngine } from '../src/game/engine/MatchEngine';
 import { HintEngine } from '../src/game/engine/HintEngine';
 import { generateLevelConfigs } from '../src/game/engine/LevelGenerator';
+import { CHAPTERS } from '../src/data/campaign';
+import { chapterSlotOf } from '../src/data/chapters';
 import { createGem } from '../src/game/engine/GemFactory';
 import { TileManager } from '../src/game/engine/TileManager';
 import { isAdjacent } from '../src/game/engine/TileRules';
@@ -21,7 +23,9 @@ afterEach(() => {
 it('generates settled chapter palettes with plenty of legal opening moves', () => {
   for (const level of generateLevelConfigs()) {
     const { board, tiles, boardCols: cols, boardRows: rows } = level;
-    expect(level.boardLayout.gemTypeCount).toBe(level.id <= 12 ? 4 : 5);
+    // Only a level a chapter names in `extraColors` adds a sixth color.
+    const extra = CHAPTERS[level.chapter].extraColors?.[chapterSlotOf(level.id)];
+    expect(level.boardLayout.gemTypeCount).toBe((level.id <= 12 ? 4 : 5) + (extra ? 1 : 0));
     expect(
       new Set(board.filter((gem) => gem && gem.type !== 'relic').map((gem) => gem.type)),
     ).toEqual(new Set(level.boardLayout.gemTypes));

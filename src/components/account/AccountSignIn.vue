@@ -39,6 +39,10 @@
       <p class="account-hint account-center">
         {{ t('No password needed. Your town keeps playing on this device either way.') }}
       </p>
+      <p class="account-hint account-center">
+        {{ t('We use your email only to sign you in and never share it.') }}
+        <a :href="privacyUrl()" target="_blank" rel="noopener">{{ t('Privacy notice') }}</a>
+      </p>
     </template>
     <div v-else-if="step === 'sent'" class="account-sent">
       <span class="account-envelope"><GameIcon name="mail" /></span>
@@ -78,6 +82,7 @@
 <script setup>
 import { computed, inject, onBeforeUnmount, ref, watch } from 'vue';
 import { sendLogin, confirmLogin } from '../../services/cloudProfile';
+import { privacyUrl } from '../../services/appRoute';
 import { useAccountContext } from './accountContext';
 import GameIcon from '../GameIcon.vue';
 import { t } from '../../i18n';

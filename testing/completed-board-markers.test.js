@@ -44,9 +44,28 @@ const ACTIVE = {
     ]),
   ),
   relic: { type: 'standard', health: 0, exit: true },
+  floatstone: { type: 'standard', health: 0, floatStart: true },
+  starglass: { type: 'blocker', bonusOnly: true, lensOnly: true, health: 2, maxHealth: 2 },
+  lens: { type: 'void', health: 0, lens: 'se' },
+  portal: { type: 'standard', health: 0, portal: 'in', portalPair: 0 },
+  'cracked-wall': { type: 'blocker', bonusOnly: true, waist: 'a', health: 2, maxHealth: 2 },
+  'moon-lock': { type: 'standard', health: 0, gravitySwitch: 'lock' },
+  'moon-dial': { type: 'standard', health: 0, gravitySwitch: 'dial', fall: 'up' },
+  'phase-seal': {
+    type: 'standard',
+    health: 2,
+    maxHealth: 2,
+    phaseSeal: true,
+    phaseNext: 'sapphire',
+  },
 };
-// Ore orders are shown in the goal panel, not on a cell.
-const OFF_BOARD = new Set(['ore-orders']);
+// Lens mirrors, portals and moon dials are fixtures the player uses, never completes
+// (agreed with the user, like permanent voids). A dial stays for the whole level,
+// like the other fixtures.
+const FIXTURES = new Set(['lens', 'portal', 'moon-dial']);
+// Ore orders are shown in the goal panel, not on a cell. Floatstones are pieces
+// rather than cell markers; their sky hatches follow the relic exit sample.
+const OFF_BOARD = new Set(['ore-orders', 'floatstone']);
 const PLAIN = { type: 'standard', health: 0 };
 
 // The tile as the engine leaves it once completed. Relic exits are complete
@@ -59,6 +78,7 @@ const complete = (tile) => ({
   ...(tile.signal ? { signalHealth: 0 } : {}),
   ...(tile.fossilGroup != null ? { fossilCollected: true } : {}),
   ...(tile.state === 'FROZEN' ? { state: 'PLAYABLE' } : {}),
+  ...(tile.gravitySwitch === 'lock' ? { gravitySwitch: null } : {}),
 });
 
 function renderer() {
@@ -104,14 +124,14 @@ function renderer() {
     scene: {
       textures,
       add: {
-        image: node,
+        image: vi.fn(node),
         sprite: node,
         rectangle: node,
         container: node,
         circle: node,
         graphics: node,
       },
-      make: { text: () => ({ width: 20, height: 16, canvas: {}, destroy() {} }) },
+      make: { text: vi.fn(() => ({ width: 20, height: 16, canvas: {}, destroy() {} })) },
     },
     backgroundLayer: node(),
     tileLayer: node(),
@@ -125,8 +145,9 @@ const look = (animator, index) => ({
   overlay: animator.tileOverlays.has(index),
   floor: animator.iceSprites.has(index),
   fossil: animator.fossilSprites.has(index),
-  fill: animator.cellHighlights.get(index).fill,
-  stroke: animator.cellHighlights.get(index).stroke,
+  fixture: animator.fixtureSprites.has(index),
+  fill: animator.cellHighlights.get(index)?.fill,
+  stroke: animator.cellHighlights.get(index)?.stroke,
 });
 
 it('has a completion sample for every board obstacle', () => {
@@ -134,14 +155,21 @@ it('has a completion sample for every board obstacle', () => {
   for (const { id, present } of OBSTACLES) expect(present(ACTIVE[id]), id).toBe(true);
 });
 
-it.each(OBSTACLES.map(({ id }) => id))('removes every trace of %s once completed', (id) => {
-  const animator = renderer();
-  animator.tiles = [PLAIN, ACTIVE[id]];
-  animator.drawCells();
-  if (!OFF_BOARD.has(id)) expect(look(animator, 1)).not.toEqual(look(animator, 0));
-  animator.updateTiles([PLAIN, complete(ACTIVE[id])]);
-  animator.syncToBoard([null, null]);
-  expect(look(animator, 1)).toEqual(look(animator, 0));
+it.each(OBSTACLES.map(({ id }) => id).filter((id) => !FIXTURES.has(id)))(
+  'removes every trace of %s once completed',
+  (id) => {
+    const animator = renderer();
+    animator.tiles = [PLAIN, ACTIVE[id]];
+    animator.drawCells();
+    if (!OFF_BOARD.has(id)) expect(look(animator, 1)).not.toEqual(look(animator, 0));
+    animator.updateTiles([PLAIN, complete(ACTIVE[id])]);
+    animator.syncToBoard([null, null]);
+    expect(look(animator, 1)).toEqual(look(animator, 0));
+  },
+);
+
+it('only exempts fixtures that are never completed', () => {
+  for (const id of FIXTURES) expect(complete(ACTIVE[id])).toEqual(ACTIVE[id]);
 });
 
 it('keeps a relic exit while a relic is on the board', () => {
@@ -151,4 +179,33 @@ it('keeps a relic exit while a relic is on the board', () => {
   expect(animator.tileOverlays.has(1)).toBe(true);
   animator.syncToBoard([{ id: 2, type: 'ruby' }, null]);
   expect(animator.tileOverlays.has(1)).toBe(false);
+});
+
+it('keeps a moon dial and updates its arrow after the last cargo leaves its exit', () => {
+  const animator = renderer();
+  const dial = { ...ACTIVE['moon-dial'], fall: 'down' };
+  animator.tiles = [PLAIN, dial, ACTIVE.relic];
+  animator.reset([{ id: 1, type: 'relic' }, null, null], {
+    boardCols: 3,
+    boardRows: 1,
+    cellSize: 48,
+  });
+  // The dial fills its own cell as a fixture: no gem slot and no gem overlay.
+  expect(animator.fixtureSprites.has(1)).toBe(true);
+  expect(animator.cellHighlights.has(1)).toBe(false);
+  expect(animator.tileOverlays.has(2)).toBe(true);
+  const before = animator.fixtureSprites.get(1);
+  animator.syncToBoard([{ id: 2, type: 'ruby' }, null, null]);
+  expect(animator.fixtureSprites.get(1)).toBe(before);
+  expect(look(animator, 1)).not.toEqual(look(animator, 0));
+  expect(look(animator, 2)).toEqual(look(animator, 0));
+  animator.updateTiles([PLAIN, { ...dial, fall: 'up' }, ACTIVE.relic]);
+  expect(animator.fixtureSprites.get(1)).not.toBe(before);
+  expect(animator.scene.add.image).toHaveBeenCalledWith(
+    0,
+    expect.any(Number),
+    expect.stringContaining('glyph:↑:'),
+  );
+  expect(animator.scene.add.image).toHaveBeenCalledWith(0, 0, expect.any(String), 'tile-moon-dial');
+  expect(look(animator, 2)).toEqual(look(animator, 0));
 });

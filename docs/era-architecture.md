@@ -194,6 +194,127 @@ per-building budget (under 4,000 triangles, at most eight materials), the whole-
 comparison, level-by-level visible changes, a synthetic rounded successor era, the new
 plots, prices, benefit previews and the SVG forms.
 
+### Future archetypes: Skysail, Stargazer and Moonward
+
+The six established eastern garden landmarks retain their named forms and scales
+from `COZY_LANDMARKS` in `FUTURE_LANDMARKS`. Their shared successor layouts live in
+`buildings/future/gardenLandmarks.js` and use each era's building kit. The first
+modernization preserves the mature campus, including the orchard's three homes
+and the retreat's terraced pools; later tiers add gardens and rooftop details.
+Do not route these landmarks back through ordinary city-family forms.
+`testing/future-eras.test.js` compares every successor tier with mature Riverlight
+dimensions and checks parcel frontage, art budgets and synthetic successors.
+Skysail's sail corners have supports reaching the local ground; rooftop crowns
+attach to the saddle centre rather than the height of its raised corners.
+
+City, rounded, cozy and future modernizations use `buildingStages()` from
+`src/data/buildingStages.js` in both WebGL and SVG renderers. The former
+`futureBuildingStages()` export remains an alias. Call it with the building's
+`finishEra()`, not the town era: partial modernization must preserve each plot's
+actual finish. `finishLevel` controls the current paid grade, while `structureLevel`
+retains completed construction: annexes, homes, islands, dew towers, harbour
+berths, airport wings/lounge and space-elevator equipment. Native construction
+still reveals these in its original tiers. Synthetic successor definitions inherit
+their architecture's stage rules; unknown definitions keep native behavior.
+Moon settlement kinds are native construction and never inherit valley tiers.
+
+Two stylized effects are deliberate user decisions (22 October 2026). Orbit
+rings may hover without brackets, in keeping with the setting's hovering cars;
+keep that motif unchanged. The existing setback fit can compress a building by
+about 9.3% during construction, and the user explicitly likes this graphic
+effect. Keep that construction squeeze unchanged while retaining every completed
+body and module and keeping its entrance accessible. These exceptions do not
+permit floating rooms, ungrounded stilts or posts in roads and paths.
+
+A paid finish adds an attached, supported element for the building's purpose;
+it never removes a completed structure. `heritageUpgrade(kind)` in
+`src/data/heritageUpgrades.js` is the shared purpose map. An era supplies the
+module's materials and roof language. `moduleLevel` retains the completed purpose
+module at a successor era's first tier: an upper storey remains an upper storey,
+and a service tower remains a working tower. Each building has one mature module
+per purpose, never a stack of new rooms for each era. The second finish tier
+upgrades its frontage or glazing; the third upgrades supported operational
+equipment within the same reserved envelope. Pots, lamps, rails and nameboards
+do not count as either paid step. Native construction keeps its original tier
+sequence. Regression coverage checks semantic counterparts across handovers,
+structural volume, fixed envelopes, actual frontage/operation grade changes and
+per-building geometry ceilings across all fifteen eras.
+
+One narrow replacement exception is the River & Rail well reservoir: the old
+pitched canopy physically intersects the new tank's frame, and the tank takes
+over its shelter and water function. The replacement removes that conflicting
+roof, not the well or completed surrounding construction. It is not permission
+to reset buildings at later era boundaries.
+
+Physical nameboards use one surface-probed mount in `TownSignMounts.js`:
+frontage or canopy fascia first, grounded side directories for open sites.
+Directories stay behind the entry apron and follow the plot's road setback.
+Keep boards readable from the default camera and keep all posts out of roads,
+sidewalks, private footpaths and authored door approaches. Atlas lettering still
+batches town-wide. Probes run at plot construction, never in the frame loop.
+
+Any retained wing or new ground-level module requires regenerated footprint
+families (`assets:footprints`, then `check:footprints`), navigation/door-anchor,
+pedestrian/animal, station, bridge and mine clearance checks. Check real front,
+reverse and default-camera views as well as bounds: a connected route graph
+alone does not prove that a doorway or rendered driveway is clear.
+Rooftop kits receive both the roof peak and `baseY` (its eave), so offset masts,
+dishes and arches extend into the roof instead of hovering over a slope. Airport
+crowns are built on the lounge itself. Lunar lookout rails and the workshop beacon
+also have structural mounts. Regression coverage checks retained structure counts,
+roof intersections, lunar mounts, budgets and distinct upgrade illustrations.
+
+The eras after Riverlight share one set of archetypes and swap a small kit per
+architecture (`sail`, `observatory`, `homestead`): walls, roof, round body, cap,
+door, a level-two wing, a level-three crown and a street prop. The renderer
+registry in `buildings/city.js` maps each architecture to its building, airport
+lounge, airport grounds and bridge hooks, so a new architecture registers once
+instead of adding conditionals. Large parcels may declare an `access` road instead
+of joining the garden lane; shadow coverage grows only with the clearings that
+hold a visible parcel. See [the future eras guide](future-eras.md).
+
+### Partial modernization: `modernizes`
+
+An era may list the building ids it modernizes (`modernizes` in its evolution
+profile; `null`, the default, modernizes every building). Every other building
+keeps the finish of the latest era that did modernize it (`finishEra()`), offers
+no modernization and counts as complete for the era gate. The save rules export
+the list per era and the server's era-complete check reads it. Twin Hollows uses
+it so that, on Earth, only a few homecoming landmarks change while the Moon
+settlement is built. A building may also declare `settlement: 'moon'`: it shares
+every lifecycle but stands on the Moon map instead of a valley lot.
+
+### Settlements: one registry
+
+`src/data/settlements.js` is the one definition of each settlement. Buildings, monument
+sites and presentations name theirs by id (`MOON_SETTLEMENT`); anything undeclared stands
+in the home settlement, the valley. Each entry gives its `map` (the valley's diorama, or a
+map drawn over it: TownScene's `SETTLEMENT_MAPS`), its building `art` (TownBuilding's
+`SETTLEMENT_ART`), whether its finished levels earn `moonstones` (`MOONSTONE_BUILDINGS` in
+`town.js`, which the save rules export), its `labels` (the waiting-event notice, its
+reminder and the grand unveiling title), its `monumentStone` and its `vipBuildings`.
+Shared code reads these facts instead of comparing ids: the Build list puts the
+settlement on screen first, `townEventStage` invites the player to whichever other
+settlement has an event waiting, `placeSettlement` routes navigation and new work to the
+right map, and `EARTH_BUILDINGS`/`MOON_BUILDINGS` are derived with `settlementPlaces`.
+
+`createSettlementRegistry()` validates and freezes the entries. An incomplete entry gets
+safe defaults: without a map its events play in the valley, with no art, moonstones or VIP
+spending of its own. One with a map must name its own labels. A place naming a settlement
+this build does not know reads as the valley for its facts and events, and no map draws
+it. Moon-specific valley features (the sky Moon and its chip) stay with the Moon.
+`testing/settlements.test.js` pins the shipped facts; `testing/settlement-extension.test.js`
+adds a hypothetical third settlement by registry entry only and checks event routing,
+notices, the Build list order, the map on screen, moonstones and VIP spending.
+
+The village's offers, needs report, next goal and need chips are campaign store getters
+(`townOffers`, `openOffers`, `townNeeds`, `townGoal`, `needChips`), computed once per
+town state and read by TownView, the Build tab's next step, the victory screen and the
+map (TownScene's `guidance`; a visit derives its own). Every Build row is
+`TownBuildRow.vue`, whose tap and look follow one rule, `parcelAction`: finish, buy with
+coins or build with a hammer. `testing/town-guidance.test.js` and
+`testing/build-list.test.js` cover both.
+
 ## Regression evidence
 
 `testing/era-definitions.test.js` covers invalid definitions, immutable shared
@@ -215,6 +336,26 @@ in [issue #42](https://github.com/Starbugstone/Prospect-Hollow/issues/42). This 
 does not implement that deferred event runtime.
 
 ### Building completion presentations
+
+`TownEventSettlement.js` is the shared visibility contract. Definitions declare
+`settlement: 'moon'` or inherit it from their `building`; everything else belongs
+to the valley. `townEventStage()` selects only events belonging to the visible
+settlement, gives era construction precedence over incidents and presentations,
+and never consumes a receipt. An inactive town (including an active puzzle) has
+no presentation stage. The other settlement gets a small Watch / Later notice:
+Watch changes settlement, Later collapses the reminder. Merely waiting never
+acknowledges, rerolls, pays or changes an event outcome. Existing pending/seen
+receipts remain the persistence boundary; interrupted scenes resume as before.
+
+Moon buildings, like valley buildings, finish with their construction reveal and no
+cinematic: an opening scene for every lot broke the flow of play. `TownScene` routes
+frames to one settlement camera. The valley stays stopped while the Moon is open;
+there is no second valley scene or inset. Railway openings, era mine construction,
+raids/incidents and campaign celebrations stay in the valley. Monument unveilings
+use their site’s settlement: Earthrise Plaza and Moonrock Court unveil on the Moon;
+valley sites unveil in the valley. First Lights also waits in the valley. A saved
+guest VIP remains unseen until valley motion resumes; ambient scheduled transport arrivals retain their existing
+missed-arrival behavior, without a new saved reward or queue.
 
 `data/townPresentations.js` defines completion scenes and their saved receipts.
 The campaign store queues a receipt in the same transaction as first construction
@@ -325,15 +466,15 @@ graphics the village shows a retry notice and the dialog uses its still mode.
 `testing/building-era-contract.test.js` checks every available building and all
 three later-era stages. `city-era-art.test.js` checks period families, exported
 technology details and future/fallback definitions. `mine-era-construction.test.js`
-covers all seven transitions, worker motion, completion, batch replacement,
+covers era transitions, worker motion, completion, batch replacement,
 skipping, camera restoration and reduced motion.
 
 For reproducible snapshots, run `npm run dev`, open
 `/scripts/era-art-review.html`, and export each era's PNG data to
-`output/era-art-data/<era>.json`. Run `python3 scripts/package-era-art-review.py` to
-write the individual PNGs, comparisons, wiki galleries and downloadable archive.
-The review uses production renderers and real plot positions, including dock
-lengths. See [the visual guide](wiki/Era-Visual-Guide.md).
+`output/era-art-data/<era>.json`. Run the Python packager in Docker as described in
+[the visual guide](wiki/Era-Visual-Guide.md). It writes individual PNGs, comparisons
+and galleries under ignored `output/era-art-review/`, plus a downloadable archive.
+The review uses production renderers and real plot positions, including dock lengths.
 
 ### Villagers and passive VIP visits
 
@@ -347,9 +488,15 @@ coordinated period outfits per visit, including coat length, hat, skirt and acce
 The outfit draw is independent of the name/gender draw and stable during the visit. Their names appear on tap/hover in the main view.
 
 Only identities explicitly marked `vip: true` by the random VIP draw may make
-occasional 5-coin purchases. `canVipSpend` excludes live visitors and legacy
+occasional purchases worth 5 coins times the mining chapter multiplier of their
+host’s highest completed normal level (5 before the first completion). `canVipSpend` excludes live visitors and legacy
 share-link guests, even when named. The same check gates shopping stops, spending
 notifications and wallet receipts, so ordinary visitors produce no coin animation.
+`vipSpend(records)` reuses `miningDepthBonus`; the store returns the credited
+amount to the popup. The exported VIP contract names its base, version and
+highest-completed-normal-level rule. PHP replay derives depth from validated
+records and the existing level mining multipliers. Missing receipt versions retain
+the legacy five coins. VIP MoneyBudget charges use the entire credited amount.
 
 `TownVipArrivals` owns transient visits, never campaign events or rewards.
 Train, boat and airplane motion publish their actual arrival cycle and stopped
@@ -386,8 +533,10 @@ production arrival inset always includes the name; unnamed inset captures are
 review comparisons only. Airport guests use the expanded lounge’s side exit
 after stage two, keeping both outward and return paths clear of its footprint.
 
-To reproduce the complete VIP image set, run Vite and use a fresh Playwright CLI
-browser session with `scripts/capture-vip-review.js` as its `run-code` callback.
+To reproduce the complete VIP image set, generate the era fixtures with
+`npm run demo:eras`, run Vite and use a fresh Playwright CLI browser session with
+`scripts/capture-vip-review.js` as its `run-code` callback; it loads each era's
+completed fixture.
 Then run `python3 scripts/package-vip-review.py`. Packaging checks all 468 required
 images (96 character comparisons, 288 village scenes and 84 inset close-ups),
 writes an offline gallery and image manifest, and creates `output/vip-review.zip`.
@@ -419,7 +568,11 @@ or scenery changes invalidate that result. Open routes turn back at endpoints.
 Spatial buckets and narrow vehicle envelopes provide bounded crowd yielding.
 Route distance and visitor lifecycle clocks advance only by accepted movement;
 indoor rests advance normally. Visitors fade at the source after completing the
-trip, and new transport arrivals reset their movement clock. Unreachable paths
+trip, and new transport arrivals reset their movement clock. Residents with a built
+home (`actor.home`) start and end every tour at its door from
+`TownItineraries.endpoint`, fade in there and rest indoors, hidden, between tours;
+the patrol's beat leaves the sheriff office door, walks its prepared round and
+returns. A walker without a usable door keeps its street anchor. Unreachable paths
 hold their last position. Horse/car speeds are distance-based, independent of
 any route shortening during preparation.
 An era change recreates villagers, animals and visitor-arrival state against the
@@ -430,7 +583,9 @@ building upgrades and rebuilds within an era retain actor identity and position.
 Outdoor task actors share `TownWorkRoutine`: approach a prepared work site,
 perform the task, walk back and take a short break. Farmers, hosts, fishers,
 chatting neighbors and bird feeders keep their task animations, but no longer
-stand in one place indefinitely. Only accepted locomotion advances travel;
+stand in one place indefinitely. The farmer and the saloon host take the break
+indoors: `buildingWalk(..., { door: true })` starts their walk at the building's
+door, where they fade out and back in. Only accepted locomotion advances travel;
 arrival starts the task timer. Task animation never overwrites the accepted
 position. Routes are prepared on layout changes, not searched each frame.
 The leashed park walk also uses distance-based speed and turns back on open paths.
@@ -459,7 +614,7 @@ manual actor routes, cache reuse and scenery removal.
 habitats. `TownAnimals` shares roaming, resting, feeding, flight and disturbance
 handling; `TownAnimalModels` supplies articulated, instanced animal meshes. Dogs
 and cats follow prepared street routes, hens forage around the farm entrance,
-and occasional foxes and raccoons stay along the southern village outskirts.
+and occasional foxes and raccoons explore separate western and eastern verges.
 Ground animals share pedestrian obstacle and traffic clearance. Wildlife turns
 away from nearby people; pigeons take flight when people, pets or traffic approach.
 
@@ -530,8 +685,29 @@ in `startLevel`, preserving the entry gesture, and renderer recovery does not
 restart it. Physical mobile and deployed cache-header checks require their actual
 environments.
 
-Hashed `/assets/*` get immutable hosting headers; the shell revalidates. CI fails
-for JavaScript chunks above 2 MB or static mesh-catalog imports.
+Phaser, Three and the startup libraries have their own chunks (`vite.config.js`),
+so a game release does not invalidate them. Lazy data ships as fetched assets, not
+JavaScript: mesh catalogs as packed binaries and footprints as JSON. French text is
+its own chunk, loaded before startup only for French players. CI fails when a game
+chunk exceeds 500 kB, a library exceeds its budget, the first screen loads Phaser
+or Three, or a mesh catalog is imported statically (`scripts/check-bundle-budget.mjs`).
+
+Both settlement maps recover their renderer the same way: `TownRenderer.watchContextLoss`
+stops a scene whose WebGL context is lost and `useGraphicsRecovery` rebuilds it on a
+fresh canvas with the same camera, twice at most. After that, or on any other failure,
+the valley shows its retry notice and the Moon its SVG map.
+
+### Reduced motion
+
+The app's reduced-motion setting (which starts from the system preference) is the one
+value both settlement maps read, as `d.reducedMotion` on `TownDiorama` and `MoonScene`.
+The policy is the valley's on every map. Effects, reveals, camera flights and decorative
+motion stop: construction reveals, presentation camera moves (frames stay still), raids
+and their inset, meteors, the saucer's sparkle wake and landing dust, monument mechanisms
+and the crest banner. Villagers, settlers and vehicles (rovers, the climber, the saucer,
+trains and planes) keep moving. Live visitors stand still. Reduced motion never freezes
+a whole map. `testing/future-eras.test.js` covers the Moon, and
+`testing/town-personalisation.test.js` and `testing/airport-flight.test.js` the valley.
 
 ### Footprints and construction
 
@@ -546,6 +722,34 @@ Setbacks also reserve the railway's ballast and train clearance before it opens.
 The station uses its full height, including canopies, when fitting between the
 track and front street; `testing/station-clearance.test.js` covers its tiers and
 construction states across eras.
+
+The same generation writes numeric mature setback envelopes for every eligible
+service stage and finish era, including retained finishes in partially
+modernized towns. `FootprintCatalog.matureEnvelopeFor()` supplies the exact union
+of paid finishes before a plot is rendered. Shipped plots therefore do not build
+three temporary finish models on a cold load or construction preparation. A
+missing or incomplete generated definition keeps the existing bounded, memoized
+probe fallback. `check:footprints` checks these envelopes with the collision
+catalogs; `town-setback-catalog.test.js` checks shipped coverage and equality with
+the fallback geometry, including independence from a later town era. The data
+travels with the building's finish family, so a town awaiting modernization uses
+its already-loaded older finish catalog.
+
+That same placement payload contains deduplicated physical nameboard mounts.
+The generator records the live support/visibility resolver's exact result for
+each footprint key, including construction states. A record includes the authored
+board width/position, its parent transform relative to the plot, and the reserved
+camera scale; text stays inside the fixed board. Shipped plots validate that input
+and use the recorded mount without repeating surface and camera raycasts. An
+authored fascia still takes priority, and missing/custom inputs keep the original
+resolver. The existing four parallel catalog requests load both envelopes and
+mounts. An unbuilt lot uses its current town era's empty-site sign record, since
+future kinds retain a default Frontier finish until their first construction;
+this metadata lookup leaves the collision key and town state unchanged.
+`check:footprints` reruns the live resolver for every generated key and checks
+the placement data with the collision catalogs. Raw board requests and
+camera scale match exactly; rounded relative-matrix entries allow one integer
+unit (1e-5) of cross-engine drift while rejecting other custom transforms.
 
 `changeTown` uses `swapPlot` for one changed plot with unchanged infrastructure.
 An accepted purchase is already persisted before presentation starts. A pooled
@@ -663,8 +867,8 @@ locomotion lifecycle. Street neighbors use sidewalks and normal traffic yielding
 they do not flee pedestrians or eat bird seed. The whole model's height and radius
 are checked during route planning, closure, retention and spawn adjustment.
 Neighborhood routes stay on their own riverbank. Bluebirds reuse the bird flight
-and feeding lifecycle; deer and hedgehogs visit the flat southern verge and the
-otter visits the riverbank.
+and feeding lifecycle; deer visit the southern meadow, hedgehogs the northern
+verge, and otters the riverbank.
 
 Cozy models use cached primitives plus two cached faceted roof surfaces. Ordinary
 buildings stay below 4,000 triangles, larger landmarks below 6,000 and each plot
@@ -679,7 +883,29 @@ landscape clearance tests require every unlocked species to have a usable habita
 in every era, keep Canopy saplings outside roads and certify Riverlight street
 loops. `testing/town-animals.test.js` checks the staggered unlocks, persistence into
 later eras and animal retention as the cast grows. The flying cast stays bounded
-at five birds, using the same flight and feeding lifecycle.
+at eight pigeons and five bluebirds, using the same flight and feeding lifecycle.
+`TownBirdHabitats` selects geographically separated grounds beside completed
+buildings and increases the flock with occupied districts. Birds start spread
+across these grounds, prefer unoccupied destinations and occasionally fly across
+districts. Only nearby birds detour to the feeder, so feeding does not pull the
+whole town's flock into the square.
+
+`TownMonumentLife` adds one wild visitor at each unlocked monument site, mixing
+hares, squirrels and badgers with the established foxes, raccoons, deer and
+hedgehogs. Two extra Willowkin visit these grounds only when the fauna profile
+selects a resident species; Canopy saplings remain in their gardens. Site IDs and
+stable seeds preserve identities across rebuilds. `EXTERIOR_HABITATS` defines
+separate outer lands for the original fox, raccoon and hedgehog. Terrain reserves
+level grassy verges around these habitats and monument courts. Prepared routes
+follow clear perimeter arcs, returning along the same safe arc if scenery blocks
+a full circuit; shared roaming adds certified branches within each habitat.
+`testing/monument-wildlife.test.js` checks unlocks, built and unbuilt monument
+clearance, new models and their cosmonaut outfits, and bird distribution.
+
+All three new species join `SPACE_HELMET.wearers`. When a species has multiple
+animals, the existing deterministic puzzle-count selection also picks its
+individual wearer, allowing monument visitors to wear the outfit. There is still
+exactly one wearer, with the same visibility, finding and reward lifecycle.
 
 `townGardenDistrict.js` owns the six larger eastern parcels: position, reserved
 width/depth, street offset, entrance anchor and pedestrian approach points. The
@@ -715,3 +941,64 @@ Scoped updates preserve the complete manifest, unrelated families and the
 all-era mine clearance union. Run the unfiltered `npm run check:footprints`
 command afterward to verify the complete catalog. A new era first requires a
 complete generation so its lazy loaders and manifest are registered.
+
+### Retained city-home terrace fittings
+
+The shared city home finish keeps one mature upper room and balcony. Once the
+module is complete, its three shade blades, their bearings and seating remain
+present from the next era's first finish. Later finishes refit that same module:
+the second adds a deeper weather fascia, and the third opens the existing
+blades for ventilation. Their count and physical envelope stay bounded across
+eras. `TownCityBuilding.vue` follows the same module/finish distinction.
+
+`testing/town-city-home-finish.test.js` covers both visible geometry steps,
+supported fittings, predecessor/successor counterparts and the SVG equivalent.
+The permanent mine entrance and historic portal boards use the eagerly loaded
+`mineSignMounts.json` catalogue, generated and checked with the footprint family.
+Custom inputs retain the validated physical resolver fallback.
+
+### Monument settlements and currencies
+
+Optional sites in `townLandmarks.js` declare `settlement: 'valley' | 'moon'` and
+`currency: 'coins' | 'moonstones'` (defaults are valley and coins). `areasForSettlement()`
+selects the renderer's sites; an unknown settlement has no implicit renderer.
+Persisted choices, level prices, construction, completed-puzzle progress and
+unveiling commits always use the complete site catalog. New Hollow’s Earthrise
+Plaza opens in Twin Hollows with the existing lunar lots. `MoonMonuments.js`
+contains its small works/render hook and supplies the shared `TownPresentation`
+and `TownMonumentUnveiling` contracts with lunar visitors and surface/camera
+adapters. `surfaceHeight`, `keepCameraAboveSurface` and `fauna` are optional scene
+adapters; missing values preserve valley behavior. Presentation definitions carry
+the site's settlement so the parent routes its frames to the correct scene.
+
+`landmarkPayment()` centralizes resource display, affordability and spending.
+Coin and moonstone payments are implemented through the shared currency contract
+and `TownPersonalisation::purchase`. Moonstone Garden and Moonrock Court use
+moonstones; Earthrise Plaza uses coins. Unsupported currencies fail closed.
+Regenerate public content after adding sites, IDs, prices or currency metadata.
+`testing/moon-monument.test.js` checks the lunar layout, the shared lifecycle,
+price export, fallback art, unsupported-currency rejection, geometry budgets and
+Moon camera restoration. `testing/moonstone-monuments.test.js` covers the
+moonstone sites, resource payments and their independence from era completion.
+Valley layout/wildlife tests deliberately select valley sites.
+
+Moonstone-only monuments use the same site and lifecycle contracts. `currency`
+flows through `landmarkPayment` into `townCurrency.payPrice` in the atomic
+personalisation commit; the server's shared `landmark-buy` replay applies that
+same catalog currency together with ownership. `TownMoonstoneLandmarks.js` owns
+six mineral silhouettes without expanding the main renderer's form switch.
+`TownMapLabel.vue` renders names, quiet markers and `TownLabelStatus` on every
+settlement map. Its text containment applies to translated names and statuses;
+map-specific styles choose a row or stacked layout. `TownActionIcon.vue` renders
+the shared action definition, and `townActionAnchors()` selects its targets from
+each map's projected `collection` anchors. Action visibility never depends on a
+text label surviving density or collision layout. A new settlement implements
+projection and layout, then reuses these components and this anchor contract.
+
+Moon rover models face +z, like the valley's vehicles and shared path poses;
+their cabin and wheel axles therefore agree with the heading sampled by the map.
+
+`MoonLabelLayout.js` positions both WebGL and SVG Moon labels in screen space,
+using the canvas/container dimensions and fixed label widths to keep lot and
+monument controls separate. Neither settlement creates its own purchase,
+construction or unveiling state machine for these new sites.

@@ -2,12 +2,15 @@
 // account identity is shared, but gameplay never rewrites another town's record.
 import { acknowledgeIntegrity, compactGuestIntegrity, mergeIntegrity } from './saveIntegrity';
 import { jsonCopy } from './jsonCopy';
+import { backgroundJson, yieldToBrowser } from './backgroundJson';
+import { waitForSyncIdle } from './syncIdle';
+import { SAVE_SCHEMA_VERSION } from '../data/saveFormat';
 export const SAVE_KEY = 'crystal-cascade-profile-v3';
 export const TOWN_CHANGED = 'prospect-town-save-changed';
 const profileOf = ({ _cloud, ...profile }) => profile;
 // Advancing an idle income checkpoint alone is not new player progress. A changed
 // stored balance or fractional earning still makes the snapshot dirty.
-export const progressKey = (profile) =>
+export const progressKey = (profile, { includeIncomeCheckpoint = false } = {}) =>
   JSON.stringify(
     {
       ...profile,
@@ -16,7 +19,12 @@ export const progressKey = (profile) =>
       town: profile.town
         ? {
             ...profile.town,
-            income: profile.town.income ? { ...profile.town.income, at: null } : undefined,
+            income: profile.town.income
+              ? {
+                  ...profile.town.income,
+                  at: includeIncomeCheckpoint ? profile.town.income.at : null,
+                }
+              : undefined,
           }
         : undefined,
     },
@@ -45,11 +53,12 @@ const freshMeta = (name = 'My town') => ({
   conflict: null,
 });
 export const ACCOUNT_KEY = 'prospect-account-v2';
-export const TOWN_PREFIX = 'prospect-town-v2:';
+// Every account town key starts with its owner's prefix.
+const ownerPrefix = (owner) => `prospect-town-v2:${owner}:`;
 const SELECTION_KEY = 'prospect-selected-town-v2';
 const PREFERRED_PREFIX = 'prospect-preferred-town-v2:';
 const CREATION_PREFIX = 'prospect-creation-v2:';
-export const townKey = (id, owner) => (owner ? `${TOWN_PREFIX}${owner}:${id}` : SAVE_KEY);
+export const townKey = (id, owner) => (owner ? `${ownerPrefix(owner)}${id}` : SAVE_KEY);
 // Only ever passed straight to write(), which serializes it; no defensive copy.
 const rootOf = (entry) => ({
   ...entry.profile,
@@ -67,6 +76,8 @@ export function createTownStorage({
   let fallbackSelection = SAVE_KEY,
     previousStorage,
     progressCache,
+    preparedLoad,
+    metadataObservers = 0,
     guard = () => true;
   // Parsed once per stored string: the account record is read by every selection
   // check, and the active town's metadata after every save. Neither is mutated.
@@ -84,14 +95,26 @@ export function createTownStorage({
     return root;
   }
   // `current` is the stored string when the caller has just read it.
-  function write(key, value, current = storage()?.getItem(key)) {
-    if (!storage()) throw new Error('Local storage is unavailable.');
-    const serialized = JSON.stringify(value);
-    if (current !== serialized) {
-      storage().setItem(key, serialized);
+  function commitRaw(key, serialized, current, meta, root) {
+    const updated = current !== serialized;
+    // A quota error must leave both durable state and observed metadata unchanged.
+    if (updated) storage().setItem(key, serialized);
+    if (meta)
+      parsed.set(`meta:${key}`, {
+        store: storage(),
+        raw: serialized,
+        value: Object.freeze({ ...meta }),
+      });
+    if (updated) {
+      if (root) preparedLoad = { store: storage(), key, raw: serialized, root };
       changed();
     }
     return serialized;
+  }
+  function write(key, value, current = storage()?.getItem(key), meta) {
+    if (!storage()) throw new Error('Local storage is unavailable.');
+    const serialized = JSON.stringify(value);
+    return commitRaw(key, serialized, current, meta);
   }
   const accountOf = () =>
     parsedOnce(ACCOUNT_KEY, storage()?.getItem(ACCOUNT_KEY) ?? null, (root) => root?.account);
@@ -102,9 +125,7 @@ export function createTownStorage({
     }
     const selectedKey = session()?.getItem(SELECTION_KEY) ?? fallbackSelection;
     const account = accountOf();
-    return account && selectedKey.startsWith(`${TOWN_PREFIX}${account.id}:`)
-      ? selectedKey
-      : SAVE_KEY;
+    return account && selectedKey.startsWith(ownerPrefix(account.id)) ? selectedKey : SAVE_KEY;
   }
   function rememberPreference(id, owner) {
     // This is only a default for new tabs, never a save or an ownership record.
@@ -131,7 +152,12 @@ export function createTownStorage({
   }
   function persist(entry, key = selected(), current) {
     assertWrite(key);
-    return write(key, rootOf(entry), ...(current === undefined ? [] : [current]));
+    return write(
+      key,
+      rootOf(entry),
+      current === undefined ? storage()?.getItem(key) : current,
+      entry.meta,
+    );
   }
   const api = {
     // Run once under the browser migration lock before mounting the application.
@@ -139,7 +165,8 @@ export function createTownStorage({
     // leaves it recoverable. Retrying never overwrites an already migrated town.
     initialize() {
       const root = read(SAVE_KEY);
-      if (root?.schemaVersion > 2) throw new Error('This save needs a newer version of the game.');
+      if (root?.schemaVersion > SAVE_SCHEMA_VERSION)
+        throw new Error('This save needs a newer version of the game.');
       if (!root || root._cloud?.version === 2) return;
       const legacy = root._cloud;
       if (!legacy) return;
@@ -195,6 +222,17 @@ export function createTownStorage({
       return read(ACCOUNT_KEY) ?? { account: null, generation: null };
     },
     load() {
+      // A worker commit already owns a detached parsed snapshot. Consume it once
+      // for a sync reload; later loads still return independently parsed data.
+      const cached = preparedLoad;
+      preparedLoad = null;
+      if (
+        cached &&
+        cached.store === storage() &&
+        cached.key === selected() &&
+        cached.raw === storage()?.getItem(cached.key)
+      )
+        return cached.root;
       return activeRoot();
     },
     ensure(profile) {
@@ -216,9 +254,26 @@ export function createTownStorage({
     active() {
       return entryOf(activeRoot());
     },
+    // Browser storage events invalidate this cache for other writers. Without an
+    // observer (headless/injected stores), continue comparing the durable string.
+    observeMetadata(target = globalThis.window) {
+      if (!target?.addEventListener) return () => {};
+      metadataObservers++;
+      const invalidate = ({ key }) => {
+        if (key == null) parsed.clear();
+        else parsed.delete(`meta:${key}`);
+      };
+      target.addEventListener('storage', invalidate);
+      return () => {
+        metadataObservers--;
+        target.removeEventListener('storage', invalidate);
+      };
+    },
     // Read-only metadata of the selected town, for status displays and routing.
     activeMeta() {
       const key = selected();
+      const cached = parsed.get(`meta:${key}`);
+      if (metadataObservers && cached?.store === storage()) return cached.value;
       return parsedOnce(`meta:${key}`, storage()?.getItem(key) ?? null, (root) => {
         const entry = entryOf(root);
         return entry ? Object.freeze({ ...entry.meta }) : null;
@@ -227,12 +282,58 @@ export function createTownStorage({
     get(id, owner) {
       return entryOf(read(townKey(id, owner)));
     },
+    async getAsync(id, owner) {
+      const raw = storage()?.getItem(townKey(id, owner));
+      return raw ? entryOf(await backgroundJson.parse(raw)) : null;
+    },
+    // Serialization yields to rendering. Re-read after every yield: a gameplay
+    // save or another tab must never be overwritten by an older worker result.
+    async mutateAsync(id, owner, operation) {
+      const key = townKey(id, owner),
+        generation = this.auth().generation;
+      const owned = () =>
+        this.auth().account?.id === owner && this.auth().generation === generation;
+      for (;;) {
+        if (!owned()) return false;
+        const store = storage(),
+          raw = store?.getItem(key);
+        if (!raw) return false;
+        const next = entryOf(await backgroundJson.parse(raw));
+        if (!next) return false;
+        if (store !== storage()) {
+          await yieldToBrowser();
+          continue;
+        }
+        if (!owned()) return false;
+        assertWrite(key);
+        if (operation(next) === false) {
+          // A no-op must also be evaluated against current gameplay. Successful
+          // operations need only the final comparison, after all worker yields.
+          if (store.getItem(key) !== raw) {
+            await yieldToBrowser();
+            continue;
+          }
+          return false;
+        }
+        const root = rootOf(next);
+        const serialized = await backgroundJson.stringify(root);
+        await waitForSyncIdle();
+        if (!owned()) return false;
+        if (store !== storage() || store.getItem(key) !== raw) {
+          await yieldToBrowser();
+          continue;
+        }
+        assertWrite(key);
+        commitRaw(key, serialized, raw, next.meta, root);
+        return true;
+      }
+    },
     records(owner) {
       const result = [];
       const store = storage();
       for (let i = 0; i < (store?.length ?? 0); i++) {
         const key = store.key(i);
-        if (key?.startsWith(`${TOWN_PREFIX}${owner}:`)) {
+        if (key?.startsWith(ownerPrefix(owner))) {
           const entry = entryOf(read(key));
           if (entry) result.push(entry);
         }
@@ -306,7 +407,7 @@ export function createTownStorage({
       for (let i = 0; i < (storage()?.length ?? 0); i++) {
         const key = storage().key(i);
         if (
-          key.startsWith(`${TOWN_PREFIX}${owner}:`) ||
+          key.startsWith(ownerPrefix(owner)) ||
           key === `${PREFERRED_PREFIX}${owner}` ||
           key === `${CREATION_PREFIX}${owner}`
         )

@@ -1,3 +1,4 @@
+import { MOONSTONE_ECONOMY } from '../src/data/moonstones.js';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { CHAPTERS, LEVEL_COUNT, POWERS } from '../src/data/campaign.js';
@@ -5,8 +6,14 @@ import { LEVELS_PER_CHAPTER } from '../src/data/chapters.js';
 import { ERAS, FORGE_PRODUCTION_RUNS } from '../src/data/eras.js';
 import { defineEra } from '../src/data/eraDefinitions.js';
 import { STAR_CASCADE_TARGET, STAR_SCORE_MULTIPLIER } from '../src/data/starRating.js';
-import { BUILDINGS, BANDIT_EVENT, INTRO_ORDER, createTown } from '../src/data/town.js';
-import { buildingServiceLevel, hasShortProgression } from '../src/data/buildingProgression.js';
+import { BUILDINGS, BANDIT_EVENT, MOONSTONE_BUILDINGS, createTown } from '../src/data/town.js';
+import { PROJECT_MILESTONES, TOWN_PROJECTS } from '../src/data/townProjects.js';
+import {
+  LEGACY_MAX_LEVEL,
+  buildingServiceLevel,
+  hasShortProgression,
+  shortProgressionSince,
+} from '../src/data/buildingProgression.js';
 import {
   CHEST_ECONOMY_VERSION,
   chestCoinCap,
@@ -14,7 +21,7 @@ import {
   chestLevelCoins,
   depthBonusPercent,
 } from '../src/data/economy.js';
-import { chapterGift } from '../src/data/journey.js';
+import { chapterGift, chapterOverflowCoins } from '../src/data/journey.js';
 import {
   BONUS_CAPACITIES,
   CHEST_DROPS,
@@ -25,14 +32,18 @@ import {
   bonusCapacity,
 } from '../src/data/rewards.js';
 import { SHOP_ITEMS, shopSlots } from '../src/data/shop.js';
-import { VIP_SPEND, vipVisitBuildings } from '../src/data/vipVisits.js';
-import { INCIDENT_TARGETS, fireProtection } from '../src/data/townEvents.js';
+import { VIP_SPEND_BASES, VIP_SPEND_VERSION, vipVisitBuildings } from '../src/data/vipVisits.js';
+import { INCIDENT_TARGETS, RAID_RULES, fireProtection } from '../src/data/townEvents.js';
 import { generateLevelConfigs } from '../src/game/engine/LevelGenerator.js';
+import { SPACE_HELMET } from '../src/data/townAnimals.js';
 import { COMBO_COIN_STEP, MULTI_MATCH_COIN_STEP } from '../src/game/engine/MatchRewards.js';
 import {
   BONUS_GEM_COINS,
   HOUR_MS,
+  MAX_CONSTRUCTION_RUNS,
+  SALOON_INCOME,
   collectionCooldownRemaining,
+  projectRuns,
   raidBounty,
   raidIntervalRange,
   saloonIncomeRate,
@@ -46,6 +57,7 @@ import { levelElements } from '../src/data/honours.js';
 import { GEM_TYPES } from '../src/game/engine/GemFactory.js';
 import { FUSION_STYLES } from '../src/game/engine/BonusFusion.js';
 import { freshProfile } from '../src/stores/campaignStore.js';
+import { SUPPORTED_SAVE_SCHEMAS } from '../src/data/saveFormat.js';
 
 // Object keys are canonicalized so the digest survives formatting and irrelevant
 // authoring key-order changes. Content and array order still affect the digest.
@@ -226,10 +238,15 @@ export function buildSaveRules(history = readSaveRuleHistory()) {
   const payload = {
     version: 1,
     profileSchemaVersion: defaultProfile.schemaVersion,
+    // Every save format the game reads; the server accepts the same list.
+    supportedSchemaVersions: SUPPORTED_SAVE_SCHEMAS,
     maxSafeInteger: Number.MAX_SAFE_INTEGER,
     levelCount: LEVEL_COUNT,
     levelsPerChapter: LEVELS_PER_CHAPTER,
     eraBuildingLevels: ERA_BUILDING_LEVELS,
+    // No construction waits for more completed puzzles than this.
+    maxConstructionRuns: MAX_CONSTRUCTION_RUNS,
+    // The first era is the frontier: its plots have no era levels.
     eraOrder: ERAS.map((era) => era.id),
     eras: Object.fromEntries(
       ERAS.map((era) => [
@@ -240,9 +257,13 @@ export function buildSaveRules(history = readSaveRuleHistory()) {
           requiresPower: era.evolution.requiresPower,
           electricity: era.evolution.electricity,
           incident: era.evolution.incident,
+          // Plots one of which must be built before the era's incidents start.
+          incidentGate: era.evolution.incidentGate,
           waterworks: era.evolution.waterworks,
           farmCapacity: era.evolution.farmCapacity,
           chestCoinCap: chestCoinCap(era.id),
+          // Building ids this era modernizes; null modernizes every building.
+          modernizes: era.evolution.modernizes ?? null,
           buildingOffers: offersForEra(era),
         },
       ]),
@@ -254,7 +275,11 @@ export function buildSaveRules(history = readSaveRuleHistory()) {
           kind: building.kind,
           introducedEra: building.introducedEra,
           maxLevel: building.upgrades.length,
-          legacyMaxLevel: hasShortProgression(building.id) ? 5 : building.upgrades.length,
+          legacyMaxLevel: hasShortProgression(building.id)
+            ? LEGACY_MAX_LEVEL
+            : building.upgrades.length,
+          // Saves older than this progression version still hold the longer levels.
+          shortSince: shortProgressionSince(building.id),
           legacyUpgradeCosts: building.legacyUpgradeCosts ?? [],
           requiredForEraCompletion: building.requiredForEraCompletion === true,
           unlock: building.unlock ?? [],
@@ -263,7 +288,7 @@ export function buildSaveRules(history = readSaveRuleHistory()) {
           ),
           upgrades: building.upgrades.map((upgrade, stage) => ({
             cost: upgrade.cost,
-            runs: Math.min(2, upgrade.runs ?? 1),
+            runs: projectRuns(building.id, stage + 1),
             requiresPower: upgrade.requiresPower === true,
             stage,
           })),
@@ -277,6 +302,12 @@ export function buildSaveRules(history = readSaveRuleHistory()) {
       bonusCapacities: BONUS_CAPACITIES,
       garageCapacityPerLevel: bonusCapacity({ buildings: { armory: 0, garage: 1 } }) - garageBase,
       hammerCapacity: HAMMER_CAPACITY,
+      // Starter projects grant builder hammers once every building reaches the last
+      // project stage, past the hammer limit (finishedRewardProjects in TownProjects.js).
+      townProjects: TOWN_PROJECTS.filter((project) => project.hammers > 0).map(
+        ({ era, id, buildings, hammers }) => ({ era, id, buildings, hammers }),
+      ),
+      projectStages: PROJECT_MILESTONES.length,
       overflowCoins: OVERFLOW_COINS,
       continuousCoinCap: CONTINUOUS_COIN_CAP,
       chestEconomyVersion: CHEST_ECONOMY_VERSION,
@@ -319,7 +350,7 @@ export function buildSaveRules(history = readSaveRuleHistory()) {
         index,
         id: chapter.id ?? null,
         gift: { id, kind, quantity },
-        overflowCoins: (index + 1) * 100,
+        overflowCoins: chapterOverflowCoins(index + 1),
       };
     }),
     economy: {
@@ -328,9 +359,14 @@ export function buildSaveRules(history = readSaveRuleHistory()) {
       multiMatchCoinStep: MULTI_MATCH_COIN_STEP,
       starCascadeTarget: STAR_CASCADE_TARGET,
       starScoreMultiplier: STAR_SCORE_MULTIPLIER,
-      vipSpend: VIP_SPEND,
+      vipSpend: {
+        bases: VIP_SPEND_BASES,
+        version: VIP_SPEND_VERSION,
+        depthRule: 'highest-completed-normal-level',
+      },
       vipBuildings: vipVisitBuildings(town),
       forgeRuns: FORGE_PRODUCTION_RUNS,
+      moonstones: { ...MOONSTONE_ECONOMY, buildings: MOONSTONE_BUILDINGS },
       hourMs: HOUR_MS,
       collectionCooldownMs: collectionCooldownRemaining(
         { lastCollections: { saloon: 0 } },
@@ -352,8 +388,14 @@ export function buildSaveRules(history = readSaveRuleHistory()) {
         gangSize: 1,
         sheriffLevel: 1,
       }),
+      // The saved town event every era's incident uses.
       banditEvent: BANDIT_EVENT,
-      introOrder: INTRO_ORDER,
+      saloonIncome: SALOON_INCOME,
+      raid: RAID_RULES,
+      // The first era with a space-helmet wearer to find, and the hours of saloon takings
+      // a find pays the owner and a visitor.
+      spaceHelmetDebut: SPACE_HELMET.debut,
+      spaceHelmetRewardHours: SPACE_HELMET.rewardHours,
     },
     // The keys a victory receipt's Town Honours claim may credit (gem types, fusions).
     honours: { gems: GEM_TYPES, fusions: Object.keys(FUSION_STYLES) },

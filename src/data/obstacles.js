@@ -1,4 +1,7 @@
-import { mineSignalAppearance, mineRelicAppearance } from './mineThemes';
+import { mineSignalAppearance, mineRelicAppearance } from './mineThemes.js';
+// `texture`: the board sprite drawn from `art`, rasterized into the board atlas and
+// loaded as its SVG fallback (src/data/boardSprites.js). Deep-mine obstacles draw from
+// DEEP_MINE_SPRITES instead.
 export const OBSTACLES = [
   {
     id: 'encased-fossil',
@@ -14,7 +17,16 @@ export const OBSTACLES = [
     art: '/art/obstacles/blast-gate.svg',
     instruction:
       'The bomb mark needs a direct blast. Make a bomb near it or a cross in its row or column. Clear below a bonus to let it fall into range; swipe or double-tap it to fire. Ordinary matches do no damage. A gate marked 2 takes two hits, and every blast in a chain reaction counts; a bonus fusion breaks it at once.',
-    present: (tile) => tile.bonusOnly === true && tile.fossilGroup == null,
+    present: (tile) =>
+      tile.bonusOnly === true && tile.fossilGroup == null && !tile.lensOnly && tile.waist == null,
+  },
+  {
+    id: 'cracked-wall',
+    name: 'Cracked walls',
+    art: '/art/obstacles/cracked-wall.svg',
+    instruction:
+      'A cracked wall seals off a deeper chamber. Only bonus blasts break it, and pieces marked 2 need two. When the whole wall is down, the chamber opens and fills with gems.',
+    present: (tile) => tile.waist != null && tile.health > 0,
   },
   {
     id: 'spore',
@@ -44,14 +56,16 @@ export const OBSTACLES = [
     id: 'lantern',
     name: 'Lanterns',
     art: '/art/obstacles/lantern.svg',
+    texture: 'tile-lantern',
     instruction:
-      'Light every lantern by matching on or beside it. Bonuses can light them too; gems pass freely.',
+      'Light every lantern by matching on it. Bonuses that hit it light it too; gems pass freely.',
     present: (tile) => tile.signal === 'lantern',
   },
   {
     id: 'survey',
     name: 'Survey trail',
     art: '/art/obstacles/survey.svg',
+    texture: 'tile-survey',
     instruction:
       'Light the numbered survey markers in order. Match on or beside the next number; gems keep moving freely.',
     present: (tile) => tile.signal === 'survey',
@@ -68,6 +82,7 @@ export const OBSTACLES = [
     id: 'charge-core',
     name: 'Charge core',
     art: '/art/obstacles/core.svg',
+    texture: 'tile-core',
     instruction:
       'Match on or beside the core to charge it, one charge per move. When every pip is lit, it releases a free bonus gem. Gems pass freely.',
     present: (tile) => tile.signal === 'core',
@@ -76,14 +91,20 @@ export const OBSTACLES = [
     id: 'ice',
     name: 'Ice',
     art: '/art/ice/frost.svg',
+    texture: 'ice-frost',
     instruction: 'Match gems on the frosted tile to remove the ice beneath them.',
     present: (tile) =>
-      tile.type !== 'blocker' && !tile.sealColor && tile.fossilGroup == null && tile.health === 1,
+      tile.type !== 'blocker' &&
+      !tile.sealColor &&
+      !tile.phaseSeal &&
+      tile.fossilGroup == null &&
+      tile.health === 1,
   },
   {
     id: 'stone',
     name: 'Stone',
     art: '/art/blocks/stone.svg',
+    texture: 'block-stone',
     instruction:
       'Match directly beside stone, or hit it with a bonus. Diagonal matches do not count. Breaking stone lets the column refill.',
     present: (tile) =>
@@ -93,14 +114,20 @@ export const OBSTACLES = [
     id: 'double-ice',
     name: 'Double ice',
     art: '/art/ice/frost.svg',
+    texture: 'ice-frost',
     instruction: 'Match on this tile twice. The first hit cracks the ice; the second clears it.',
     present: (tile) =>
-      tile.type !== 'blocker' && !tile.sealColor && tile.fossilGroup == null && tile.health > 1,
+      tile.type !== 'blocker' &&
+      !tile.sealColor &&
+      !tile.phaseSeal &&
+      tile.fossilGroup == null &&
+      tile.health > 1,
   },
   {
     id: 'reinforced',
     name: 'Reinforced stone',
     art: '/art/blocks/reinforced.svg',
+    texture: 'block-reinforced',
     instruction:
       'Gold-banded stone needs two hits from adjacent matches or bonuses. A fusion can deal both hits at once.',
     present: (tile) =>
@@ -110,6 +137,7 @@ export const OBSTACLES = [
     id: 'frozen',
     name: 'Frozen gem',
     art: '/art/ice/frost.svg',
+    texture: 'ice-frost',
     instruction:
       'This gem cannot move yet. Clear a neighboring gem to thaw it, then match on its ice.',
     present: (tile) => tile.state === 'FROZEN',
@@ -118,6 +146,7 @@ export const OBSTACLES = [
     id: 'chain',
     name: 'Chained gem',
     art: '/art/obstacles/chain.svg',
+    texture: 'tile-chain',
     instruction:
       'Match two gems with the chained gem to release it, or hit it with a bonus. It stays in place while other gems fall past. Then clear any ice underneath.',
     present: (tile) => tile.chainHealth > 0 && tile.rootGroup == null,
@@ -130,12 +159,82 @@ export const OBSTACLES = [
     id: `seal-${color}`,
     name,
     art: `/art/obstacles/seal-${color}.svg`,
+    texture: `tile-seal-${color}`,
     instruction: `Match ${color} gems on the ${mark} seal, or hit it with any bonus. Other colors can move through but will not open it.`,
     present: (tile) => tile.health > 0 && tile.sealColor === color,
   })),
+  {
+    id: 'moon-lock',
+    name: 'Moon locks',
+    art: '/art/obstacles/moon-lock.svg',
+    instruction:
+      'A moon lock holds the cavern’s gravity. Hit it with a bonus blast and gravity turns over for good: what fell up now falls down, and the other way round. Ordinary matches never touch it.',
+    present: (tile) => tile.gravitySwitch === 'lock',
+  },
+  {
+    id: 'moon-dial',
+    name: 'Moon dials',
+    art: '/art/obstacles/moon-dial.svg',
+    instruction:
+      'A moon dial turns gravity over every time a bonus blast hits it, at most once per move. Its arrow shows which way things fall now. Pearls follow gravity; floatstones go the other way.',
+    present: (tile) => tile.gravitySwitch === 'dial',
+  },
+  {
+    id: 'portal',
+    // 2: the exit became a pad on the top row and gems beam between the pads.
+    revision: 2,
+    name: 'Portals',
+    art: '/art/obstacles/portal.svg',
+    instruction:
+      'A gem that falls into a portal is beamed to the portal of the same color at the top of the board and drops out of it. Moon gems ride portals too.',
+    present: (tile) => tile.portal === 'in',
+  },
+  {
+    id: 'phase-seal',
+    name: 'Phase seals',
+    art: '/art/obstacles/phase-seal.svg',
+    instruction:
+      'After every move, the gem on a phase seal changes to the color shown in its corner. If that lines up a match, it clears like any other, bonuses included. Match on the seal to break it; a seal marked 2 needs two matches.',
+    present: (tile) => tile.phaseSeal === true && tile.health > 0,
+  },
+  {
+    id: 'starglass',
+    name: 'Starglass',
+    art: '/art/obstacles/starglass.svg',
+    instruction:
+      'Starglass shrugs off matches and direct blasts. Only a beam turned by a lens mirror can break it: fire a cross or a spore along a row or column that ends at a lens. Starglass marked 2 needs two turned beams.',
+    present: (tile) => tile.lensOnly === true,
+  },
+  {
+    id: 'lens',
+    name: 'Lens mirrors',
+    art: '/art/obstacles/lens-mirror.svg',
+    instruction:
+      'A lens on the edge of the board turns any row or column beam that reaches it, along its arrow. Silver mirrors turn beams square; gold prisms send them diagonally. Turned beams clear every cell they cross and can reach a second lens.',
+    present: (tile) => !!tile.lens,
+  },
+  {
+    id: 'floatstone',
+    name: 'Floatstones',
+    art: '/art/obstacles/floatstone.svg',
+    instruction:
+      'Floatstones rise. Clear the gems directly above one and it floats up into the gap while other gems sink past it. Bring each one to a sky hatch on the top row. Swap a bonus gem with a floatstone to fire it in its place.',
+    present: (tile) => tile.floatStart === true,
+  },
   // Themes reskin the relic (pearls); the default appearance holds the shared text.
-  { ...mineRelicAppearance(), present: (tile) => tile.exit },
+  { ...mineRelicAppearance(), present: (tile) => tile.exit && !tile.floatExit },
 ];
+// The guide remembers which obstacles the player has met. A reworked obstacle raises its
+// revision, so a player who met an older version sees its guide again, marked as updated.
+export const obstacleSeenKey = ({ id, revision = 1 }) => (revision > 1 ? `${id}@${revision}` : id);
+export const unseenObstacles = (obstacles, seen) =>
+  obstacles
+    .filter((obstacle) => !seen.includes(obstacleSeenKey(obstacle)))
+    .map((obstacle) =>
+      seen.some((key) => key.split('@')[0] === obstacle.id)
+        ? { ...obstacle, updated: true }
+        : obstacle,
+    );
 export const obstaclesInLevel = (tiles, theme) =>
   OBSTACLES.filter((obstacle) => tiles.some((tile) => tile && obstacle.present(tile))).map(
     (obstacle) => {

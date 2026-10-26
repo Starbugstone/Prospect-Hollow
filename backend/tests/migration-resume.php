@@ -1,11 +1,20 @@
 <?php
 // Exercise an interrupted initial install in isolated, randomly named tables.
 // Never drop or alter the application's own tables, even on a shared test database.
+require __DIR__ . '/support.php';
 $prefix = 'resume_' . bin2hex(random_bytes(5)) . '_';
 $directory = sys_get_temp_dir() . '/' . $prefix;
 mkdir($directory . '/src', 0700, true);
 $source = file_get_contents(dirname(__DIR__) . '/src/Database.php');
 $names = [
+    'town_sync_rejections_town',
+    'town_sync_rejections',
+    'town_travels',
+    'email_changes_player',
+    'email_changes',
+    'helmet_finds_host',
+    'helmet_finds_town',
+    'helmet_finds',
     'admin_settings',
     'player_distinction_revocations',
     'player_distinctions',
@@ -53,52 +62,30 @@ $migration = new MigrationResumeTest\Database();
 $connection = $migration->get();
 $mysql =
     $connection->getDatabasePlatform() instanceof Doctrine\DBAL\Platforms\AbstractMySQLPlatform;
-$file = $mysql ? 'schema.sql' : 'schema-postgresql.sql';
-$schema = $rewrite(file_get_contents(dirname(__DIR__) . '/' . $file));
-$visits = $mysql ? 'schema-visits.sql' : 'schema-visits-postgresql.sql';
-file_put_contents(
-    $directory . '/' . $visits,
-    $rewrite(file_get_contents(dirname(__DIR__) . '/' . $visits)),
-);
-$split = $mysql ? 'schema-saloon-guests.sql' : 'schema-saloon-guests-postgresql.sql';
-file_put_contents(
-    $directory . '/' . $split,
-    $rewrite(file_get_contents(dirname(__DIR__) . '/' . $split)),
-);
-$admin = $mysql ? 'schema-admin.sql' : 'schema-admin-postgresql.sql';
-file_put_contents(
-    $directory . '/' . $admin,
-    $rewrite(file_get_contents(dirname(__DIR__) . '/' . $admin)),
-);
-$live = $mysql ? 'schema-live-visitors.sql' : 'schema-live-visitors-postgresql.sql';
-file_put_contents(
-    $directory . '/' . $live,
-    $rewrite(file_get_contents(dirname(__DIR__) . '/' . $live)),
-);
-$favourites = $mysql ? 'schema-town-favourites.sql' : 'schema-town-favourites-postgresql.sql';
-file_put_contents(
-    $directory . '/' . $favourites,
-    $rewrite(file_get_contents(dirname(__DIR__) . '/' . $favourites)),
-);
-$distinctions = $mysql
-    ? 'schema-player-distinctions.sql'
-    : 'schema-player-distinctions-postgresql.sql';
-file_put_contents(
-    $directory . '/' . $distinctions,
-    $rewrite(file_get_contents(dirname(__DIR__) . '/' . $distinctions)),
-);
-$settings = $mysql ? 'schema-admin-settings.sql' : 'schema-admin-settings-postgresql.sql';
-file_put_contents(
-    $directory . '/' . $settings,
-    $rewrite(file_get_contents(dirname(__DIR__) . '/' . $settings)),
-);
-$revocations = $mysql
-    ? 'schema-distinction-revocations.sql'
-    : 'schema-distinction-revocations-postgresql.sql';
-file_put_contents(
-    $directory . '/' . $revocations,
-    $rewrite(file_get_contents(dirname(__DIR__) . '/' . $revocations)),
-);
+// Every migration file Database.php applies, renamed into the isolated tables.
+$files = App\Database::migrationFiles($mysql);
+foreach ($files as $name) {
+    $sql = file_get_contents(dirname(__DIR__) . '/' . $name);
+    // A table or index left out of $names would be created or changed for real.
+    preg_match_all(
+        '/CREATE (?:UNIQUE )?(?:TABLE|INDEX)(?: IF NOT EXISTS)? (\w+)/i',
+        $sql,
+        $created,
+    );
+    foreach ($created[1] as $table) {
+        if (!in_array(strtolower($table), $names, true)) {
+            throw new RuntimeException("Add $table from $name to the isolated names.");
+        }
+    }
+    file_put_contents($directory . '/' . $name, $rewrite($sql));
+}
+$file = $files[0];
+$schema = file_get_contents($directory . '/' . $file);
+$syncApproval = $mysql ? 'schema-sync-approval.sql' : 'schema-sync-approval-postgresql.sql';
+if (!in_array($syncApproval, $files, true)) {
+    throw new RuntimeException('The approval migration this test interrupts is not listed.');
+}
+$approvalSchema = file_get_contents($directory . '/' . $syncApproval);
 try {
     $statements = explode(';', $schema);
     file_put_contents(
@@ -142,6 +129,48 @@ try {
             'created_at' => 1,
         ]);
     }
+    // A deployed v22 town can still have the old indefinite boolean set. Model a
+    // crash after the new column DDL, before clearing that flag and recording v23.
+    $connection->insert($prefix . 'towns', [
+        'id' => 'legacy-approval',
+        'player_id' => 'kept',
+        'name' => 'Legacy',
+        'normalized_name' => 'legacy',
+        'revision' => 1,
+        'profile' => '{}',
+        'saved_at' => 1,
+        'public_id' => str_repeat('a', 32),
+        'force_sync' => 1,
+    ]);
+    $connection->executeStatement('DELETE FROM ' . $prefix . 'schema_versions WHERE version=23');
+    $connection->executeStatement('ALTER TABLE ' . $prefix . 'towns DROP COLUMN sync_approval');
+    file_put_contents(
+        $directory . '/' . $syncApproval,
+        explode(';', $approvalSchema)[0] . '; INVALID_APPROVAL_MIGRATION;',
+    );
+    try {
+        $migration->migrate();
+        throw new RuntimeException('Injected approval migration failure was ignored.');
+    } catch (Doctrine\DBAL\Exception $expected) {
+    }
+    check(
+        isset(
+            $connection->createSchemaManager()->listTableColumns($prefix . 'towns')[
+                'sync_approval'
+            ],
+        ) === $mysql,
+        'approval DDL resumes after MySQL commit or PostgreSQL rollback',
+    );
+    file_put_contents($directory . '/' . $syncApproval, $approvalSchema);
+    $migration->migrate();
+    $legacy = $connection->fetchAssociative(
+        'SELECT force_sync,sync_approval FROM ' . $prefix . 'towns WHERE id=?',
+        ['legacy-approval'],
+    );
+    check(
+        (int) $legacy['force_sync'] === 0 && $legacy['sync_approval'] === null,
+        'v23 expires deployed boolean approvals on resume',
+    );
     // Also model a crash after every DDL statement but before the final version marker.
     $connection->executeStatement('DELETE FROM ' . $prefix . 'schema_versions');
     $migration->migrate();
@@ -199,9 +228,34 @@ try {
         $connection->createSchemaManager()->tablesExist([$prefix . 'admin_settings']),
         'admin settings installed',
     );
+    check(
+        $connection->createSchemaManager()->tablesExist([$prefix . 'email_changes']) &&
+            $connection->createSchemaManager()->tablesExist([$prefix . 'town_travels']) &&
+            isset(
+                array_change_key_case(
+                    $connection
+                        ->createSchemaManager()
+                        ->listTableColumns($prefix . 'visitor_visits'),
+                )['signed_in'],
+            ),
+        'email changes and signed-in visits installed, also when the migration is repeated',
+    );
+    check(
+        $connection->createSchemaManager()->tablesExist([$prefix . 'helmet_finds']) &&
+            isset(
+                $connection->createSchemaManager()->listTableIndexes($prefix . 'helmet_finds')[
+                    $prefix . 'helmet_finds_host'
+                ],
+            ),
+        'space-helmet finds installed with their host index, also when the migration is repeated',
+    );
 } finally {
     foreach (
         [
+            'town_sync_rejections',
+            'town_travels',
+            'email_changes',
+            'helmet_finds',
             'admin_settings',
             'player_distinction_revocations',
             'player_distinctions',
@@ -230,16 +284,11 @@ try {
     ) {
         $connection->executeStatement('DROP TABLE IF EXISTS ' . $prefix . $name);
     }
-    @unlink($directory . '/' . $file);
-    @unlink($directory . '/' . $visits);
-    @unlink($directory . '/' . $split);
-    @unlink($directory . '/' . $admin);
-    @unlink($directory . '/' . $live);
-    @unlink($directory . '/' . $favourites);
-    @unlink($directory . '/' . $distinctions);
-    @unlink($directory . '/' . $revocations);
-    @unlink($directory . '/' . $settings);
+    foreach ($files as $name) {
+        @unlink($directory . '/' . $name);
+    }
     unlink($directory . '/src/Database.php');
     rmdir($directory . '/src');
     rmdir($directory);
 }
+echo "Migration resume checks passed ($count assertions).\n";

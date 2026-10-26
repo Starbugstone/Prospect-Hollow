@@ -7,7 +7,9 @@
     "clerestory": false,
     "curtainWall": false,
     "skylights": false,
-    "aircraft": "airplane"
+    "aircraft": "airplane",
+    "liveryAccent": "#c97868",
+    "liveries": ["#c97868", "#4f7894", "#c99a4b"]
   },
   "metropolitan": {
     "asset": "airport-metropolitan",
@@ -17,7 +19,9 @@
     "clerestory": true,
     "curtainWall": false,
     "skylights": false,
-    "aircraft": "airplane-jet"
+    "aircraft": "airplane-jet",
+    "liveryAccent": "#638b88",
+    "liveries": ["#638b88", "#c97868", "#435764"]
   },
   "connected": {
     "asset": "airport-connected",
@@ -27,6 +31,8 @@
     "clerestory": false,
     "curtainWall": true,
     "skylights": true,
-    "aircraft": "airplane-regional-jet"
+    "aircraft": "airplane-regional-jet",
+    "liveryAccent": "#638b88",
+    "liveries": ["#638b88", "#5b84ad", "#d08a58"]
   }
 }

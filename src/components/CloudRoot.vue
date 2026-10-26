@@ -41,12 +41,18 @@
         t(
           activeMeta.conflict
             ? 'You played {town} on another device. That save will load when you return to the village.'
-            : 'You played {town} on another device, so we loaded that save.',
+            : activeMeta.desyncNotice === 'support'
+              ? 'Support updated {town} in the cloud, so we loaded that save. Your previous progress is kept as a backup.'
+              : 'You played {town} on another device, so we loaded that save.',
           { town: townName },
         )
       }}
     </p>
-    <button v-if="!activeMeta.conflict" class="save-recovery-compare" @click="recoveryOpen = true">
+    <button
+      v-if="!activeMeta.conflict && activeMeta.desyncNotice !== 'support'"
+      class="save-recovery-compare"
+      @click="recoveryOpen = true"
+    >
       {{ t('Compare saves') }}
     </button>
     <button
@@ -136,11 +142,13 @@
   <AccountPanel
     v-if="accountOpen"
     :login-link="loginLink"
+    :email-link="emailLink"
     :section="accountSection"
     :writable="ready"
     @close="accountOpen = false"
     @changed="reload"
     @signed-in="loginLink = ''"
+    @email-link-used="emailLink = ''"
     @recovery="
       accountOpen = false;
       recoveryOpen = true;
@@ -184,6 +192,7 @@ import { localProfile } from '../services/localProfile';
 import { townCoordinator } from '../services/townCoordinator';
 import { createTownHandoff } from '../services/townHandoff';
 import { createSyncScheduler } from '../services/syncScheduler';
+import { deferSync } from '../services/syncIdle';
 import { describeSaveState } from '../services/saveStatus';
 import { uploadBlocked } from '../services/syncService';
 import { syncTownParam } from '../services/appRoute';
@@ -202,6 +211,7 @@ const accountOpen = ref(false),
   communityOpen = ref(false),
   viewVersion = ref(0),
   loginLink = ref(''),
+  emailLink = ref(''),
   ready = ref(false),
   opening = ref(true),
   blocked = ref(false),
@@ -271,6 +281,11 @@ provide('cloudAccount', {
   open: () => {
     accountOpen.value = true;
   },
+  // The player's profile, data, devices and account deletion.
+  openOffice: () => {
+    accountSection.value = 'office';
+    accountOpen.value = true;
+  },
   openRecovery: () => {
     if (!game.sessionActive) recoveryOpen.value = true;
   },
@@ -286,7 +301,8 @@ watch(
   },
   { immediate: true },
 );
-let handoff,
+let stopMetadataObserver,
+  handoff,
   loadedKey,
   activation = Promise.resolve(),
   lastResume = 0;
@@ -301,7 +317,7 @@ const scheduler = createSyncScheduler({
       !townStorage.canWrite()
     )
       return false;
-    const meta = townStorage.active()?.meta;
+    const meta = townStorage.activeMeta();
     return (
       meta?.owner === cloud.account.id &&
       !meta.missing &&
@@ -352,7 +368,8 @@ function activate({ takeOver = false } = {}) {
         moved.value = false;
         ready.value = true;
         syncTownParam();
-        // Cloud latency must never delay local play or the duplicate-tab notice.
+        // The renderer gets the first boot/switch frames before cloud work starts.
+        deferSync();
         if (cloud.account) void syncNow();
       } catch (error) {
         notice.value = error.message;
@@ -451,15 +468,18 @@ function dismissRecovery() {
 function configureTownSync() {
   configureSync({
     targets: (owner) => {
-      const active = townStorage.active();
-      return active?.meta.owner === owner ? [active] : [];
+      const meta = townStorage.activeMeta();
+      return meta?.owner === owner ? [{ meta }] : [];
     },
     eligible: (id, owner) =>
       ready.value && !handingOver.value && townStorage.selectedKey() === townKey(id, owner),
     run: (id, owner, operation) => townCoordinator.run(townKey(id, owner), operation),
-    canApply: (id) => townStorage.active()?.meta.id !== id || !game.sessionActive,
+    canApply: (id) => townStorage.activeMeta().id !== id || !game.sessionActive,
+    integrityApplied: (id) => {
+      if (townStorage.activeMeta()?.id === id) campaign.reloadLocal({ integrityOnly: true });
+    },
     applied: (id) => {
-      if (townStorage.active()?.meta.id === id) reload();
+      if (townStorage.activeMeta().id === id) reload();
     },
   });
 }
@@ -487,10 +507,11 @@ function resume() {
   )
     return;
   scheduler.resume();
-  // A clean town may have changed on another device. Check only on return,
-  // at most once per minute, never on every local checkpoint or storage event.
-  const meta = townStorage.active()?.meta;
-  if (!meta?.dirty && !meta?.pending && Date.now() - lastResume > 60000) {
+  // A clean town may have changed on another device, and a blocked one may have been
+  // reset by support. Check only on return, at most once per minute, never on every
+  // local checkpoint or storage event.
+  const meta = townStorage.activeMeta();
+  if ((!meta?.dirty || uploadBlocked(meta)) && !meta?.pending && Date.now() - lastResume > 60000) {
     lastResume = Date.now();
     syncNow();
   }
@@ -536,10 +557,14 @@ function start() {
       else cloud.status = 'offline';
     });
 }
+// Sign-in (#login=) and email change (#email=) links open the account panel.
 function readLink() {
-  const token = new URLSearchParams(location.hash.slice(1)).get('login');
-  if (!token) return;
-  loginLink.value = token;
+  const hash = new URLSearchParams(location.hash.slice(1));
+  const login = hash.get('login'),
+    email = hash.get('email');
+  if (!login && !email) return;
+  if (login) loginLink.value = login;
+  if (email) emailLink.value = email;
   accountOpen.value = true;
   history.replaceState(null, '', location.pathname + location.search);
 }
@@ -557,10 +582,12 @@ watch(
 watch(
   () => game.sessionActive,
   (active) => {
+    deferSync();
     if (!active) schedule();
   },
 );
 onMounted(() => {
+  stopMetadataObserver = townStorage.observeMetadata();
   if (typeof BroadcastChannel === 'function')
     handoff = createTownHandoff({ coordinator: townCoordinator, prepare: prepareHandoff });
   window.addEventListener(TOWN_CHANGED, schedule);
@@ -573,6 +600,7 @@ onMounted(() => {
   start();
 });
 onBeforeUnmount(() => {
+  stopMetadataObserver?.();
   handoff?.dispose();
   scheduler.dispose();
   townCoordinator.release();

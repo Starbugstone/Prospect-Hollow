@@ -344,6 +344,10 @@
   font-size: 10px;
   color: #8a8c76;
 }
+.landing-footer a {
+  color: inherit;
+  text-underline-offset: 3px;
+}
 .continuous-banner {
   display: flex;
   align-items: center;

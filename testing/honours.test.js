@@ -4,6 +4,7 @@ import {
   COUNTERS,
   FUSION_MASTER_KEYS,
   GEM_GOALS,
+  GEM_DIAMONDS,
   HONOURS,
   HONOURS_VERSION,
   HONOUR_ID,
@@ -12,6 +13,9 @@ import {
   MINE_ELEMENTS,
   NON_MASTERY_ELEMENTS,
   NON_MILESTONE_ERAS,
+  NON_SETTLEMENT_HONOURS,
+  NON_RESOURCE_HONOURS,
+  NON_MONUMENT_HONOURS,
   QUARTERMASTER,
   RANK_METALS,
   SCORE_FROM_LEVEL,
@@ -23,6 +27,9 @@ import {
   createRunTally,
   creditCounter,
   creditRun,
+  creditContinuous,
+  tallyContinuousMine,
+  consumedElements,
   eraStep,
   evaluateHonours,
   honourCollection,
@@ -40,6 +47,7 @@ import {
 } from '../src/data/honours';
 import { elementLevels, levelHonourElements } from '../src/data/honourLevels';
 import honourLevels from '../src/data/honourLevels.json';
+import { PERSONAL_AREAS } from '../src/data/townLandmarks';
 import shippedRanks from './fixtures/shipped-honour-ranks.json';
 import { GEM_TYPES } from '../src/game/engine/GemFactory';
 import { FUSION_STYLES } from '../src/game/engine/BonusFusion';
@@ -48,7 +56,8 @@ import { ERAS } from '../src/data/eras';
 import { OBSTACLES } from '../src/data/obstacles';
 import { LEVEL_COUNT, POWERS } from '../src/data/campaign';
 import { bonusCapacity } from '../src/data/rewards';
-import { BUILDING_BY_ID } from '../src/data/town';
+import { BUILDING_BY_ID, BUILDINGS, createTown } from '../src/data/town';
+import { TOWN_CURRENCIES } from '../src/data/townCurrency';
 import { getLevelStarTarget } from '../src/data/starRating';
 import { useCampaignStore, SAVE_KEY } from '../src/stores/campaignStore';
 import { HONOUR_NOTICE_MODES, useSettingsStore } from '../src/stores/settingsStore';
@@ -131,7 +140,9 @@ describe('The honours registry', () => {
         `gem-${gem}-bronze`,
         `gem-${gem}-silver`,
         `gem-${gem}-gold`,
+        ...(GEM_DIAMONDS[gem] ? [`gem-${gem}-diamond`] : []),
       ]);
+      if (GEM_DIAMONDS[gem]) expect(GEM_DIAMONDS[gem]).toBeGreaterThan(GEM_GOALS[gem][2]);
     }
   });
 
@@ -157,6 +168,36 @@ describe('The honours registry', () => {
     expect(QUARTERMASTER.powers).toBeLessThanOrEqual(POWERS.length);
   });
 
+  it('requires an honours decision for every settlement, town currency and monument site', () => {
+    const measures = HONOURS.definitions.map((rank) => rank.measure);
+    const settlements = new Set(
+      [...BUILDINGS, ...PERSONAL_AREAS].map((entry) => entry.settlement ?? 'valley'),
+    );
+    for (const id of settlements)
+      expect(measures.some((m) => m.settlement === id) !== !!NON_SETTLEMENT_HONOURS[id], id).toBe(
+        true,
+      );
+    const resources = new Set([
+      ...TOWN_CURRENCIES,
+      ...Object.keys(createTown())
+        .filter((key) => key.endsWith('Earned'))
+        .map((key) => key.slice(0, -6)),
+    ]);
+    for (const id of resources)
+      expect(measures.some((m) => m.resource === id) !== !!NON_RESOURCE_HONOURS[id], id).toBe(true);
+    for (const { id } of PERSONAL_AREAS)
+      expect(
+        measures.some((m) => m.area === id || m.areas?.includes(id)) !== !!NON_MONUMENT_HONOURS[id],
+        id,
+      ).toBe(true);
+    // New Moon buildings must not be hidden behind the settlement's existing coverage.
+    for (const building of BUILDINGS.filter((b) => b.settlement === 'moon'))
+      expect(
+        measures.some((m) => m.buildings?.includes(building.id)),
+        building.id,
+      ).toBe(true);
+  });
+
   it('keeps the generated level element index in step with the level definitions', () => {
     const live = Object.fromEntries(
       generateLevelConfigs()
@@ -165,17 +206,20 @@ describe('The honours registry', () => {
     );
     expect(honourLevels).toEqual(live);
     expect(levelHonourElements(247)).toEqual({ lanterns: 2 });
-    expect(elementLevels('lanterns')).toMatchObject({ pieces: 84, chapters: [42, 62] });
+    expect(elementLevels('lanterns')).toMatchObject({ pieces: 183, chapters: [42, 90] });
   });
 
-  it('sets mine silver within one campaign and gold near one and a half campaigns', () => {
+  it('sets mine silver within one campaign and the top rank near one and a half campaigns', () => {
+    // Shipped goals never move; when the campaign outgrows gold, a diamond rank is added.
     for (const element of MINE_ELEMENTS) {
       const perCampaign = elementLevels(element.id).pieces;
       const [bronze, silver, gold] = element.goals;
+      const top = element.diamond?.goal ?? gold;
       expect(bronze, element.id).toBeLessThan(silver);
       expect(silver, element.id).toBeLessThanOrEqual(perCampaign);
-      expect(gold / perCampaign, element.id).toBeGreaterThan(1.3);
-      expect(gold / perCampaign, element.id).toBeLessThan(1.7);
+      if (element.diamond) expect(element.diamond.goal, element.id).toBeGreaterThan(gold);
+      expect(top / perCampaign, element.id).toBeGreaterThan(1.3);
+      expect(top / perCampaign, element.id).toBeLessThan(1.7);
     }
   });
 
@@ -192,6 +236,107 @@ describe('The honours registry', () => {
 });
 
 describe('Measures', () => {
+  it('counts completed Moon building levels, the optional pad and lifetime currency independently of gems', () => {
+    const moon = town({
+      buildings: {
+        ribbonLanding: 3,
+        settlerDomes: 3,
+        craterIceWell: 3,
+        earthlightGreenhouse: 3,
+        willowkinDome: 3,
+      },
+      projects: { roverBarn: { level: 3 } },
+      moonstonesEarned: 60,
+      moonstones: 0,
+    });
+    expect(added({ town: moon })).toEqual(
+      expect.arrayContaining([
+        'new-hollow-bronze',
+        'new-hollow-silver',
+        'moonstone-reserve-bronze',
+        'moonstone-reserve-silver',
+      ]),
+    );
+    expect(added({ town: moon })).not.toContain('new-hollow-gold');
+    expect(added({ town: moon })).not.toContain('saucer-welcome-bronze');
+    expect(added({ town: moon })).not.toContain('gem-moonstone-bronze');
+    expect(added({ town: town({ buildings: { saucerPad: 1 } }) })).toContain(
+      'saucer-welcome-bronze',
+    );
+    expect(added({ town: town({ moonstones: 1000, moonstonesEarned: 9 }) })).not.toContain(
+      'moonstone-reserve-bronze',
+    );
+    for (const value of [-1, NaN, '180', 1.5])
+      expect(added({ town: town({ moonstonesEarned: value }) })).not.toContain(
+        'moonstone-reserve-bronze',
+      );
+  });
+
+  it('sponsors every monument site with valid choices while preserving Monument Square’s shipped meaning', () => {
+    for (const area of PERSONAL_AREAS) {
+      const t = town({ personalisation: { areas: { [area.id]: [area.choices[0]] } } });
+      const ids = added({ town: t });
+      expect(ids, area.id).toContain('landmark-patron-bronze');
+      expect(ids.includes('monument-gold'), area.id).toBe(area.id === 'monument');
+      t.personalisation.areas[area.id] = ['invented-design'];
+      expect(added({ town: t }), area.id).not.toContain('landmark-patron-bronze');
+    }
+  });
+
+  it('credits continuous collection cumulatively with version 2 mastery and leaves completion measures untouched', () => {
+    const claim = { gems: { ruby: 500 }, fusions: { 'bomb+cross': 1 }, mine: { relics: 10 } };
+    let honours = creditContinuous(createHonours(), null, claim, 1, 25000);
+    honours = creditContinuous(honours, claim, claim, 1, 25000);
+    expect(honours.counts.gems.ruby).toBe(500);
+    expect(honours.counts.mine.relics).toBe(10);
+    expect(honours.counts.continuousGems).toBe(500);
+    const ids = added({ honours });
+    expect(ids).toEqual(
+      expect.arrayContaining([
+        'gem-ruby-bronze',
+        'fusion-bronze',
+        'mine-relics-bronze',
+        'continuous-score-bronze',
+      ]),
+    );
+    expect(ids.some((id) => /^(stars|ages|score)-/.test(id))).toBe(false);
+    for (const family of HONOURS.families.filter((f) => /^(gem-|mine-|fusion$)/.test(f.id)))
+      for (const rank of family.ranks) expect(rank.version).toBe(2);
+    const legacy = earned(['gem-ruby-bronze']);
+    const result = evaluateHonours(state({ honours: legacy }));
+    expect(result.honours.earned['gem-ruby-bronze']).toEqual(legacy.earned['gem-ruby-bronze']);
+    expect(result.honours.earned['gem-ruby-bronze'].version).toBe(1);
+  });
+
+  it('counts partial mine consumption once and excludes recovery pieces', () => {
+    const config = {
+      board: [{ type: 'relic' }],
+      tiles: [
+        { signal: 'lantern', signalHealth: 1 },
+        { bonusOnly: true, health: 2 },
+      ],
+      oreOrders: [{ target: 3 }],
+    };
+    const tally = createRunTally();
+    expect(consumedElements(config, { board: [], tiles: [], oreOrders: [] })).toEqual({
+      relics: 1,
+      lanterns: 1,
+      oreOrders: 1,
+      gates: 1,
+    });
+    tallyContinuousMine(tally, config, config.board, config.tiles, [{ target: 3, progress: 0 }]);
+    expect(tally.mine).toEqual({});
+    const tiles = [
+      { signal: 'lantern', signalHealth: 0 },
+      { bonusOnly: true, health: 1 },
+    ];
+    tallyContinuousMine(tally, config, [], tiles, [{ target: 3, progress: 3 }]);
+    expect(tally.mine).toEqual({ relics: 1, lanterns: 1, oreOrders: 1 });
+    tiles[1].health = 0;
+    tallyContinuousMine(tally, config, [], tiles, [{ target: 3, progress: 3 }], { recovery: true });
+    tallyContinuousMine(tally, config, [], tiles, [{ target: 3, progress: 3 }]);
+    expect(tally.mine.gates).toBeUndefined();
+  });
   it('counts three-star puzzles for the stars ladder', () => {
     expect(added({ records: stars(24) })).toEqual([]);
     expect(added({ records: stars(25) })).toEqual(['stars-bronze']);
@@ -215,7 +360,11 @@ describe('Measures', () => {
       target: target(id),
     });
     expect(added(at(10, id - 1))).toEqual([]);
-    expect(bestScoreRun({ 500: { score: 1e9, stars: 3 } }, SCORE_FROM_LEVEL, 500)).toBeNull();
+    // A level past the campaign has no star target, so it never counts.
+    const beyond = LEVEL_COUNT + 1;
+    expect(
+      bestScoreRun({ [beyond]: { score: 1e9, stars: 3 } }, SCORE_FROM_LEVEL, beyond),
+    ).toBeNull();
   });
 
   it('announces only the highest new rank of a family', () => {
@@ -384,6 +533,7 @@ describe('Saved honours', () => {
     });
     expect(Object.keys(honours.earned)).toEqual(['future-honour']);
     expect(honours.counts).toEqual({
+      ...createHonours().counts,
       gems: { ruby: 4 },
       mine: { lanterns: 3 },
       fusions: { 'bomb+cross': 2 },
@@ -459,6 +609,11 @@ describe('Saved honours', () => {
       'guardian',
       'forge',
       'quartermaster',
+      'monument',
+      'new-hollow',
+      'saucer-welcome',
+      'moonstone-reserve',
+      'landmark-patron',
     ]);
     expect(friends.families.map((family) => family.id)).toEqual(['visitors', 'explorer']);
   });
@@ -472,7 +627,9 @@ describe('Extending the registry with later content', () => {
     honourFamilies({ eras }).map((family) => {
       if (family.id === 'stars')
         return { ...family, ranks: [...family.ranks, { metal: 'diamond', goal: 500, since: 2 }] };
-      if (family.id === 'ages')
+      // Through the Ages shipped its diamond with Twin Hollows; a ladder without one
+      // still shows how a later era rank joins it.
+      if (family.id === 'ages' && !family.ranks.some((rank) => rank.metal === 'diamond'))
         return {
           ...family,
           ranks: [
@@ -602,5 +759,56 @@ describe('Honour presentation preferences and navigation', () => {
     navigation.closeCollection();
     navigation.clearMuseumRequest();
     expect(navigation.requests).toEqual({ collection: null, museum: null });
+  });
+});
+
+describe('First monument: one permanent distinction', () => {
+  const monumentTown = (choice) =>
+    town({ era: 'industrial', personalisation: { areas: { monument: [choice] } } });
+  it('has exactly one rank and awards any of the five monuments', () => {
+    expect(ranks('monument')).toEqual(['monument-gold']);
+    for (const choice of PERSONAL_AREAS.find((area) => area.id === 'monument').choices) {
+      expect(added({ town: monumentTown(choice) })).toContain('monument-gold');
+    }
+    for (const choice of [null, 'unknown', 'headframe']) {
+      expect(added({ town: monumentTown(choice) })).not.toContain('monument-gold');
+    }
+    expect(added({ town: town() })).not.toContain('monument-gold');
+  });
+  it('keeps the original award when replaced or restored and never adds another tier', () => {
+    const first = evaluateHonours(state({ town: monumentTown('founders-arch') }), { at: 123 });
+    for (const choice of ['guardian', null]) {
+      const next = evaluateHonours(state({ town: monumentTown(choice), honours: first.honours }), {
+        at: 456,
+      });
+      expect(next.added).not.toContain('monument-gold');
+      expect(next.honours.earned['monument-gold']).toEqual(first.honours.earned['monument-gold']);
+    }
+  });
+  it('treats an unknown landmark parcel as zero progress', () => {
+    const catalog = buildHonourCatalog(
+      honourFamilies().map((family) =>
+        family.id === 'monument'
+          ? { ...family, measure: { kind: 'landmark', area: 'unknown' } }
+          : family,
+      ),
+    );
+    const view = state({ town: town({ personalisation: { areas: { unknown: ['guardian'] } } }) });
+    expect(catalog.byId['monument-gold'].progress(view).value).toBe(0);
+    expect(evaluateHonours(view, { catalog }).added).not.toContain('monument-gold');
+  });
+  it('catches up saves from the previous honour generation once', () => {
+    const old = state({
+      town: monumentTown('world-tree'),
+      honours: { ...createHonours(), version: 1, backfilled: 1, seenGeneration: 1 },
+    });
+    const honours = backfillHonours(old);
+    expect(honours.earned['monument-gold']).toMatchObject({
+      at: null,
+      backfilled: true,
+      version: 1,
+    });
+    expect(honours.backfilled).toBe(HONOURS_VERSION);
+    expect(backfillHonours({ ...old, honours })).toEqual(honours);
   });
 });

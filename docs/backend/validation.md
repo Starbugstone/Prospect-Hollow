@@ -3,19 +3,20 @@
 The September 2026 replacement removes the PHP puzzle engine and tests the account-save contract directly. Save integrity now adds resource-action accounting without puzzle-engine replay. Historical review screenshots and benchmarks describe the retired prototype.
 
 - `npm run verify`: formatting, frontend regression suite (including unlimited puzzle moves) and production build.
-- `node scripts/export-public-content.mjs`: generates only the era/building appearance allowlist from the shared frontend definitions.
+- `node scripts/export-public-content.mjs`: generates `backend/content/public-schema.json` from the shared frontend definitions: the era, building and personalisation allowlist for public towns, plus the Town Honours and player distinctions catalog that `Honours.php` verifies. It fails when an honour uses a measure kind the server does not evaluate.
 - `node scripts/export-save-rules.mjs --check`: checks the generated accounting catalog against shared eras, buildings, levels and reward definitions.
 - `php backend/tests/save-integrity.php`: resource-action replay, legitimate frontend accounting fixtures, malformed values, snapshot injection, migration baselines and recovery.
 - `php backend/tests/money-budget.php`: server-time allowance boundaries, carried credit/debt, clock changes and durable review evidence.
 - `TEST_DATABASE_URL=... php backend/tests/money-sync.php`: real transaction timestamps, observe/hold behavior, exact retries, signed recovery and migration from the trusted database save time.
 - `testing/save-integrity.test.js` and `testing/integrity-sync.test.js`: durable action recording, interrupted rewards, acknowledgment races, exact retries, preserved rejected saves and bounded continuous-play economic receipts.
 - `TEST_DATABASE_URL=... php backend/tests/saves.php`: account authentication, ownership, three slots, per-account names, snapshot validation, revisions, conflicts, idempotent retries, five-save history, moderation, safe public projection, deletion, native transport and revocation.
+- `TEST_DATABASE_URL=... php backend/tests/player-data.php`: the data overview and export, private visits, confirmed email changes, and account erasure by the player and by an admin, which leaves no trace of the account while hosts keep counting its visits.
 - `TEST_DATABASE_URL=... php backend/tests/concurrency.php`: real concurrent connections race for the final account slot and for the same town revision. Both PostgreSQL and MySQL are required.
 - `TEST_HTTP_ORIGIN=http://localhost:8094 php backend/tests/api-http.php`: real packaged HTTP routing, authentication and body limits.
 - `testing/cloud-profile.test.js`: local persistence and the revision/dirty matrix, interrupted uploads, conflict resolution, account changes, live-game replacement guards, independent town revisions, deletion, local-only slots and storage failures.
 - Desync recovery regressions cover automatic server preference with a complete local recovery copy, local continuation from the current server revision, full village/bonus/balance replacement, renewed confirmation after a concurrent server change, deferred application during a mine, offline reconnect, lost overwrite acknowledgments, storage failures and recovery after reload.
 
-CI runs the frontend, both database variants independently, dependency audit, Docker build and packaged HTTP checks. Obsolete engine-parity jobs have been removed with the engine they tested.
+CI runs the frontend, both database variants independently, npm and Composer dependency audits, Docker build and packaged HTTP checks. Obsolete engine-parity jobs have been removed with the engine they tested.
 
 Browser verification uses the isolated local packaged application and local Mailpit; no production account or database is involved. Native protocol tests do not substitute for an iOS/Android device run.
 

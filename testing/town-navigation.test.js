@@ -23,7 +23,11 @@ import { prepareRoute } from '../src/game/town/TownRoutes';
 import { placeTownSpawns } from '../src/game/town/TownTraffic';
 import { PLOTS } from '../src/game/town/TownLayout';
 import { BRIDGE, streetHeight } from '../src/game/town/TownRiver';
-import { geometryFootprints, registerFootprints } from '../src/game/town/BuildingFootprints';
+import {
+  footprintDistance,
+  geometryFootprints,
+  registerFootprints,
+} from '../src/game/town/BuildingFootprints';
 import { updateTownLocomotion } from '../src/game/town/TownLocomotion';
 const pole = (x, z, radius = 0.055) => ({ x, z, y: 0, height: 5, radius });
 it('reuses detour searches until the obstacle geometry changes', () => {
@@ -539,10 +543,100 @@ it('never caches a route that was paused while footprints changed', () => {
   ]);
   const steps = navigation.routeSteps(path);
   steps.next();
+  const revision = navigation.revision;
   navigation.replaceOwner('late-building', [pole(1.5, 0, 0.5)]);
+  expect(navigation.revision).toBeGreaterThan(revision);
   let step = steps.next();
   while (!step.done) step = steps.next();
   const fresh = navigation.route(path);
   expect(fresh).not.toBe(step.value);
   for (const point of fresh.points) expect(navigation.clear(point)).toBe(true);
+});
+
+// Issue #54: a new building used to make every walker re-check its whole route in the
+// same frame. Prepared paths whose own points stay clear of the change keep their
+// clearance; paths near it are checked again as before.
+it('renews the clearance of prepared paths away from a changed footprint only', () => {
+  const nav = new TownNavigation([pole(0, 0, 1), pole(0, 10, 1)]);
+  const near = nav.plan([
+    [-4, 0.07, 0],
+    [4, 0.07, 0],
+  ]);
+  const far = nav.plan([
+    [-4, 0.07, 20],
+    [4, 0.07, 20],
+  ]);
+  // A route's prepared record describes the straight samples it was planned from;
+  // its detour bends outside them, where a late footprint must still be noticed.
+  const detour = nav.route(
+    prepareRoute([
+      [-4, 10],
+      [4, 10],
+    ]),
+  );
+  const bend = detour.points.reduce((a, p) => (Math.abs(p[2] - 10) > Math.abs(a[2] - 10) ? p : a));
+  expect(Math.abs(bend[2] - 10)).toBeGreaterThan(1);
+  let revision = nav.revision;
+  nav.replaceOwner('plot:late', [{ ...pole(0, 1.6, 0.2), owner: 'plot:late' }]);
+  expect(nav.revision).toBe(revision + 1);
+  expect(far.clearance.revision).toBe(nav.revision);
+  expect(detour.clearance.revision).toBe(nav.revision);
+  expect(near.clearance.revision).toBe(revision);
+  expect(near.invalidated).toBe(true);
+  revision = nav.revision;
+  const outward = Math.sign(bend[2] - 10) * 0.35;
+  nav.replaceOwner('plot:later', [
+    { ...pole(bend[0], bend[2] + outward, 0.05), owner: 'plot:later' },
+  ]);
+  expect(detour.invalidated).toBeUndefined();
+  expect(detour.clearance.revision).toBe(revision);
+  expect(far.clearance.revision).toBe(nav.revision);
+});
+
+// Issue #54: clear() skips footprints whose bounds are already far enough away. Its
+// answers must stay those of measuring every nearby footprint.
+it('answers clear() exactly as measuring every nearby footprint', () => {
+  let seed = 7;
+  const random = () => ((seed = (seed * 16807) % 2147483647) / 2147483647) * 2 - 1;
+  const obstacles = [];
+  for (let i = 0; i < 60; i++) {
+    const x = random() * 12,
+      z = random() * 12;
+    if (i % 3 === 0) {
+      obstacles.push({ ...pole(x, z, 0.05 + Math.abs(random())), y: random() > 0 ? 0 : 2 });
+      continue;
+    }
+    const angle = random() * Math.PI,
+      w = 0.2 + Math.abs(random()) * 2,
+      d = 0.1 + Math.abs(random()) * 1.5;
+    const polygon = [
+      [-w, -d],
+      [w, -d],
+      [w, d],
+      [-w, d],
+    ].map(([px, pz]) => [
+      x + px * Math.cos(angle) - pz * Math.sin(angle),
+      z + px * Math.sin(angle) + pz * Math.cos(angle),
+    ]);
+    // Some authored footprints carry a radius that does not cover their polygon.
+    obstacles.push({ x, z, y: 0, height: 3, radius: i % 2 ? Math.hypot(w, d) : w, polygon });
+  }
+  const nav = new TownNavigation(obstacles);
+  const reference = (p, margin) =>
+    nav
+      .near(p[0], p[2])
+      .every(
+        (o) =>
+          !(p[1] + 1.65 > o.y && p[1] + 0.08 < o.y + o.height) ||
+          footprintDistance(o, p[0], p[2]) >= margin - 1e-6,
+      );
+  let blocked = 0;
+  for (let i = 0; i < 4000; i++) {
+    const p = [random() * 14, 0.07, random() * 14],
+      margin = [0.29, NPC_MARGIN, 0.6][i % 3];
+    const expected = reference(p, margin);
+    if (!expected) blocked++;
+    expect(nav.clear(p, margin)).toBe(expected);
+  }
+  expect(blocked).toBeGreaterThan(100);
 });

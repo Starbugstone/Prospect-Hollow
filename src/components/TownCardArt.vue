@@ -1,21 +1,35 @@
 <template>
   <div class="town-card-art" :style="hue === null ? null : { '--slot-hue': hue }">
-    <img src="/art/amethyst.svg" alt="" />
+    <TownCrest v-if="crest" :crest="crest" class="town-card-crest" />
+    <img v-else src="/art/amethyst.svg" alt="" />
     <span v-if="label" class="town-card-era">{{ label }}</span>
     <slot />
   </div>
 </template>
 <script setup>
+import TownCrest from './town/TownCrest.vue';
 import { computed } from 'vue';
 import { eraHue, eraName } from './account/accountContext';
 
 // The era landscape shared by the player's own town cards and shared-town cards: a
 // header on wide screens, a square tile beside the details on phones.
-const props = defineProps({ era: { type: String, default: '' } });
+const props = defineProps({ crest: Object, era: { type: String, default: '' } });
 const hue = computed(() => eraHue(props.era));
 const label = computed(() => eraName(props.era));
 </script>
 <style>
+.town-card-crest {
+  width: 44px;
+  height: 53px;
+  margin-bottom: 16px;
+}
+@media (max-width: 560px) {
+  .town-card-crest {
+    width: 34px;
+    height: 42px;
+    margin: 0;
+  }
+}
 .town-card-art {
   --slot-hue: 90;
   position: relative;

@@ -4,6 +4,7 @@
     stroke-linecap="round"
     :data-form="form"
     :data-cozy-style="appearance.style"
+    :data-structure-level="stages.structureLevel"
   >
     <ellipse cy="9" :rx="landmark ? 132 : 100" ry="20" :fill="p.shell" />
     <template v-if="form === 'homes'">
@@ -22,6 +23,15 @@
             stroke-width="5"
           />
         </g>
+        <TownTowerGallery
+          :kind="kind"
+          :style-id="appearance.style"
+          :palette="p"
+          :stages="stages"
+          :x="x"
+          :radius="r"
+          :height="h"
+        />
         <TownCozyRoof :x="x" :y="-h" :radius="r * 1.25" v-bind="roof" />
       </g>
     </template>
@@ -134,6 +144,15 @@
         >
           <path :d="drum(0, -y, r, h)" :fill="p.glass" :stroke="p.shell" stroke-width="2" />
           <ellipse :cy="-y - h" :rx="r + 8" ry="8" :fill="p.green" />
+          <TownTowerGallery
+            :kind="kind"
+            :style-id="appearance.style"
+            :palette="p"
+            :stages="stages"
+            :radius="r"
+            :height="h"
+            :base-y="y"
+          />
         </g>
       </template>
       <TownCozyRoof v-if="form === 'skyterraces'" :y="-255" :radius="38" v-bind="roof" />
@@ -150,13 +169,21 @@
       />
     </template>
     <template v-else-if="form === 'atelier'">
+      <path d="M-132 0a71 78 0 0 1 142 0Z" :fill="p.glass" :stroke="p.timber" stroke-width="4" />
       <path
-        d="M-132 0a71 78 0 0 1 142 0Zm118 0a71 78 0 0 1 142 0Z"
+        v-if="stages.structureLevel >= 2"
+        d="M-14 0a71 78 0 0 1 142 0Z"
         :fill="p.glass"
         :stroke="p.timber"
         stroke-width="4"
       />
-      <path d="M-108-58v58m31-76v76m155-76v76m31-58v58" :stroke="p.timber" stroke-width="2" />
+      <path d="M-108-58v58m31-76v76" :stroke="p.timber" stroke-width="2" />
+      <path
+        v-if="stages.structureLevel >= 2"
+        d="M78-76v76m31-58v58"
+        :stroke="p.timber"
+        stroke-width="2"
+      />
       <path :d="drum(0, 0, 49, 107)" :fill="p.shell" />
       <path
         d="M-66-69Q-73-111-34-150L-8-177H8l26 27q39 39 32 81Z"
@@ -188,14 +215,14 @@
           [0, -40],
           [-86, 0],
           [86, 0],
-        ].slice(0, level >= 2 ? 3 : 2)"
+        ].slice(0, stages.structureLevel >= 2 ? 3 : 2)"
         :key="n"
       >
         <path :d="drum(x, y, 36, 53)" :fill="p.shell" />
         <TownCozyRoof :x="x" :y="y - 55" :radius="47" v-bind="roof" />
         <path :d="`M${x - 8} ${y}v-29q8-11 16 0v29Z`" :fill="p.flower" />
       </g>
-      <g v-if="level >= 3">
+      <g v-if="stages.structureLevel >= 3" transform="translate(45 0)">
         <path d="M0 9v-46" :stroke="p.timber" stroke-width="7" />
         <circle cy="-47" r="24" :fill="p.green" />
         <circle v-for="x in [-14, 14]" :key="x" :cx="x" cy="-47" r="6" :fill="p.flower" />
@@ -206,7 +233,7 @@
       <TownCozyRoof :x="-15" :y="-73" :radius="93" v-bind="roof" />
       <path d="M-68-67v-62h20v61" :fill="p.shell" :stroke="p.timber" stroke-width="3" />
       <path
-        v-if="level >= 2"
+        v-if="stages.structureLevel >= 2"
         d="M58 0v-12a36 40 0 0 1 72 0V0Z"
         :fill="p.glass"
         :stroke="p.timber"
@@ -224,7 +251,7 @@
     <template v-else-if="form === 'springs'">
       <path d="M-105 0v-42q105-51 210 0V0Z" :fill="p.shell" />
       <ellipse cy="-42" rx="92" ry="31" :fill="p.glass" :stroke="p.shell" stroke-width="7" />
-      <g v-if="level >= 2">
+      <g v-if="stages.structureLevel >= 2">
         <path d="M-77-46v-48q58-40 116 0v48Z" :fill="p.shell" />
         <ellipse
           cx="-19"
@@ -240,7 +267,7 @@
       <path :d="drum(78, -24, 34, 91)" :fill="p.shell" />
       <TownCozyRoof :x="78" :y="-119" :radius="45" v-bind="roof" />
       <ellipse
-        v-if="level >= 3"
+        v-if="stages.structureLevel >= 3"
         cy="7"
         rx="66"
         ry="20"
@@ -250,17 +277,29 @@
       />
     </template>
     <template v-else-if="form === 'pavilion'">
-      <ellipse cy="-2" rx="128" ry="27" :fill="p.shell" />
+      <ellipse cy="-2" :rx="stages.structureLevel >= 2 ? 128 : 110" ry="27" :fill="p.shell" />
       <path
-        v-for="x in [-96, -58, 58, 96]"
+        v-for="x in stages.structureLevel >= 2 ? [-96, -58, -28, 28, 58, 96] : [-82, -50, 50, 82]"
         :key="x"
         :d="`M${x} 0v-98`"
         :stroke="p.deep"
         stroke-width="8"
       />
-      <TownCozyRoof :y="-103" :radius="138" :petals="10" v-bind="roof" />
+      <TownCozyRoof
+        :y="-103"
+        :radius="stages.structureLevel >= 2 ? 138 : 119"
+        :petals="10"
+        v-bind="roof"
+      />
       <path d="M0-164 14-141 9-114H-9l-5-27Z" :fill="p.light" :stroke="p.timber" stroke-width="2" />
-      <circle v-for="x in [-95, -58, 58, 95]" :key="x" :cx="x" cy="-75" r="8" :fill="p.light" />
+      <circle
+        v-for="x in stages.structureLevel >= 2 ? [-95, -58, 58, 95] : [-82, -50, 50, 82]"
+        :key="x"
+        :cx="x"
+        cy="-75"
+        r="8"
+        :fill="p.light"
+      />
     </template>
     <template v-else-if="form === 'square'">
       <TownSquare :stage="3" :era="era" />
@@ -295,13 +334,82 @@
       :stroke="p.timber"
       stroke-width="3"
     />
-    <g v-if="level >= 2 && !['bridge', 'orchard', 'springs'].includes(form)">
+    <g v-if="stages.structureLevel >= 2 && !['bridge', 'orchard', 'springs'].includes(form)">
       <path
-        d="M-114 0v-12a26 28 0 0 1 52 0V0Z"
+        :d="form === 'greenhouse' ? 'M-114 0v-12a26 28 0 0 1 52 0V0Z' : 'M-114 0v-50h52V0Z'"
         :fill="p.glass"
         :stroke="p.timber"
         stroke-width="2"
       />
+    </g>
+    <g
+      v-if="purposeModuleVisible"
+      :transform="`translate(${purposeDrawingX} -22)`"
+      :data-purpose-finish="purpose"
+      :data-purpose-module="purpose"
+      :data-module-level="stages.moduleLevel"
+      :data-finish-level="level"
+    >
+      <path
+        v-if="kind === 'teaHouse'"
+        d="M-20 12v-57m40 57v-57m-24 0h48v4h-48Z"
+        :fill="p.timber"
+        :stroke="p.timber"
+        stroke-width="3"
+        data-module-part="structure"
+      />
+      <path
+        d="M-17-32h34v24h-34Z"
+        :fill="p.timber"
+        :stroke="p.timber"
+        stroke-width="2"
+        data-module-part="frontage"
+      />
+      <rect
+        :x="level >= 2 ? -14 : -8"
+        :width="level >= 2 ? 28 : 16"
+        :y="level >= 2 ? -29 : -25"
+        :height="level >= 2 ? 18 : 10"
+        :fill="level >= 2 ? p.glass : p.deep"
+        data-module-part="frontage"
+      />
+      <g
+        data-module-part="operation"
+        :data-roof-equipment="roofPurpose ? 'supported' : null"
+        :transform="roofPurpose ? 'translate(0 -52)' : null"
+      >
+        <rect
+          :x="level >= 3 ? -15 : -9"
+          :width="level >= 3 ? 30 : 18"
+          :y="level >= 3 ? -6 : -3"
+          :height="level >= 3 ? 12 : 6"
+          :fill="roofPurpose && level >= 2 ? p.glass : p.timber"
+        />
+        <path
+          v-if="level >= 3 && roofPurpose"
+          d="M-12-6v-12h24v12Z"
+          :fill="p.glass"
+          :stroke="p.timber"
+          stroke-width="2"
+        />
+        <path v-if="level >= 3 && roofPurpose" d="M-15-18h30v4h-30Z" :fill="p.timber" />
+        <path
+          v-if="level >= 3 && !roofPurpose"
+          d="M-12-6v-9h7v9m3 0v-11h7v11m3 0v-8h7v8"
+          :fill="['garden', 'greenhouse', 'hayloft'].includes(purpose) ? p.green : p.shell"
+          :stroke="p.timber"
+          stroke-width="1"
+        />
+      </g>
+    </g>
+    <g v-if="form === 'workshop' && level >= 3" data-roof-planter="supported">
+      <path
+        d="M3-83v12m35-12v12M-3-88h48v8H-3Z"
+        :fill="p.shell"
+        :stroke="p.timber"
+        stroke-width="3"
+      />
+      <circle v-for="x in [5, 21, 37]" :key="x" :cx="x" cy="-92" r="7" :fill="p.green" />
     </g>
     <g v-if="level >= 3 && !['bridge'].includes(form)">
       <g v-for="x in [-92, 92]" :key="x">
@@ -319,18 +427,55 @@
 <script setup>
 import { computed } from 'vue';
 import { cozyAppearance, cozyForm, COZY_LANDMARKS } from '../../data/cozyArchitecture';
+import { buildingStages } from '../../data/buildingStages';
+import { heritageUpgrade } from '../../data/heritageUpgrades';
 import { cityAppearance } from '../../data/cityAppearance';
 import TownCozyRoof from './TownCozyRoof.vue';
 import TownCityBuilding from './TownCityBuilding.vue';
 import TownLeisureBuilding from './TownLeisureBuilding.vue';
 import TownSquare from './TownSquare.vue';
+import TownTowerGallery from './TownTowerGallery.vue';
 import { t } from '../../i18n';
-const props = defineProps({ kind: String, era: String, level: Number });
+const props = defineProps({
+  kind: String,
+  era: String,
+  level: Number,
+  serviceLevel: { type: Number, default: 3 },
+});
+const stages = computed(() =>
+  buildingStages(props.kind, props.era, props.level, props.serviceLevel),
+);
+const purpose = computed(() => heritageUpgrade(props.kind));
 const appearance = computed(() => cozyAppearance(props.era));
 const p = computed(() => appearance.value.palette);
 const roof = computed(() => ({ palette: p.value, cozyStyle: appearance.value.style }));
 const form = computed(() => cozyForm(props.kind) ?? props.kind);
 const landmark = computed(() => !!COZY_LANDMARKS[props.kind]);
+const roofPurpose = computed(
+  () =>
+    props.kind === 'teaHouse' ||
+    (!landmark.value && !['square', 'garden', 'bridge', 'airport'].includes(form.value)),
+);
+const purposeModuleVisible = computed(
+  () =>
+    purpose.value &&
+    !['square', 'bridge', 'airport'].includes(form.value) &&
+    (props.kind === 'teaHouse'
+      ? stages.value.moduleLevel >= 3
+      : ['springsRetreat', 'riverlightPavilion'].includes(props.kind) ||
+        stages.value.moduleLevel >= 2),
+);
+const purposeDrawingX = computed(
+  () =>
+    ({
+      teaHouse: 68,
+      blossomAtelier: 90,
+      orchardCottages: 84,
+      glassworks: 88,
+      springsRetreat: 85,
+      riverlightPavilion: -70,
+    })[props.kind] ?? (form.value === 'garden' ? 60 : -88),
+);
 const drum = (x, base, r, h) =>
   `M${x - r} ${base}v${-h}a${r} ${r * 0.25} 0 0 1 ${r * 2} 0v${h}a${r} ${r * 0.25} 0 0 1 ${-r * 2} 0Z`;
 const homes = computed(() => {

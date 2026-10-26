@@ -16,6 +16,24 @@ export const LEGACY_INCIDENT_TARGET = Object.freeze({
   'workshop-fire': 'blacksmith',
   'storm-cleanup': 'riverPark',
 });
+// Raid sizes and losses; the server replays raids with the same rules (save-rules.json).
+export const RAID_RULES = Object.freeze({
+  // Riders by town development (the sum of building levels), largest first. A
+  // smaller town meets the smallest gang.
+  gangSizes: Object.freeze([
+    Object.freeze({ development: 70, riders: 10 }),
+    Object.freeze({ development: 50, riders: 8 }),
+    Object.freeze({ development: 30, riders: 6 }),
+    Object.freeze({ development: 16, riders: 4 }),
+  ]),
+  smallestGang: 2,
+  // A raid takes coins for each uncovered rider, never more than the cap, a tenth
+  // of the town's coins (coinShare) or the last coins it keeps.
+  lossPerRider: 5,
+  lossCap: 30,
+  coinShare: 10,
+  keepCoins: 50,
+});
 export const fireProtection = (level = 0) => [0, 2 / 3, 5 / 6, 1][Math.min(3, Math.max(0, level))];
 export const eventHeading = (event) =>
   ({

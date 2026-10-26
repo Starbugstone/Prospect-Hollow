@@ -182,8 +182,14 @@ it.each(ERAS.filter((era) => era.enabled).map((era) => era.id))(
       previous: actor.root.position.clone(),
       travel: 0,
       roadGap: Infinity,
+      doorGap: 0,
       phases: new Set(),
     }));
+    // Residents, the patrol and workers on an indoor break fade only at their door.
+    const doorOf = (actor) =>
+      actor.itinerary?.door
+        ? actor.itinerary.anchor
+        : actor.workRoutine?.door && actor.workRoutine.paths[0].points[0];
     for (let frame = 1; frame <= 1200; frame++) {
       view.elapsed = frame / 10;
       view.actors.forEach((actor) => view.animatePerson(actor, view.elapsed));
@@ -197,12 +203,18 @@ it.each(ERAS.filter((era) => era.enabled).map((era) => era.id))(
         }
         track.travel += track.actor.root.position.distanceTo(track.previous);
         track.previous.copy(track.actor.root.position);
+        const door = doorOf(track.actor);
+        if (door && track.actor.root.scale.x < 1) {
+          const { x, z } = track.actor.root.position;
+          track.doorGap = Math.max(track.doorGap, Math.hypot(x - door[0], z - door[2]));
+        }
         if (track.actor.workRoutine) track.phases.add(track.actor.workRoutine.phase);
       }
     }
-    for (const { actor, travel, phases, roadGap } of tracks) {
+    for (const { actor, travel, phases, roadGap, doorGap } of tracks) {
       const label = `${actor.root.name || actor.work || 'walker'} ${actor.seed}`;
       expect.soft(travel, label).toBeGreaterThan(1);
+      expect(doorGap, `${label} faded away from its door`).toBeLessThan(0.6);
       if (actor.work) {
         expect(roadGap, `${label} in carriageway`).toBeGreaterThanOrEqual(
           0.65 + (actor.radius ?? 0.29) + 0.049,
@@ -454,4 +466,47 @@ it('keeps the mine solid until the rail depot opens its tunnel, then restores it
   expect(hillside().signature).toBe(false);
   expect(hillside().group).not.toBe(tunnel);
   expect(tunnel.parent).toBeNull();
+});
+
+it('changes the crest and mine badge without rebuilding plots, navigation or animal life', () => {
+  const { view, town, labels } = fixture();
+  view.update(town, labels);
+  const plots = new Map([...view.plotCache].map(([id, entry]) => [id, entry.group]));
+  const animals = [...view.animals];
+  const navigation = vi.spyOn(view.navigation, 'replaceOwner');
+  const repair = vi.spyOn(view, 'repairAnimalLife');
+  const updated = {
+    ...town,
+    personalisation: {
+      ...town.personalisation,
+      crest: {
+        shape: 'shield',
+        pattern: 'plain',
+        emblem: 'fox',
+        primary: '#123456',
+        secondary: '#abcdef',
+      },
+      plaques: { mine: 'player-alpha' },
+    },
+    displayDistinctions: { 'player-alpha': { at: 1 } },
+  };
+  view.changeTown(updated, labels, 0, null);
+  for (const [id, group] of plots) expect(view.plotCache.get(id).group).toBe(group);
+  expect(view.animals).toEqual(animals);
+  expect(navigation).not.toHaveBeenCalled();
+  expect(repair).not.toHaveBeenCalled();
+  const banner = view.staticScenery.entries.get('town-banner').group;
+  const plaque = view.staticScenery.entries.get('mine-plaque').group;
+  expect(banner).toBeTruthy();
+  expect(plaque?.userData.distinction).toBe('player-alpha');
+  view.changeTown(
+    { ...updated, personalisation: { ...updated.personalisation, crest: null, plaques: {} } },
+    labels,
+    0,
+    null,
+  );
+  expect(banner.parent).toBeNull();
+  expect(plaque.parent).toBeNull();
+  expect(navigation).not.toHaveBeenCalled();
+  expect(repair).not.toHaveBeenCalled();
 });

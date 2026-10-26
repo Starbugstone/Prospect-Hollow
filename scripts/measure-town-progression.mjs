@@ -1,11 +1,12 @@
 // Feed this the JSON from scripts/measure-campaign.mjs. Simulates construction,
 // normal rewards, chapter gifts, saved progression and targeted chest strategies.
-// node scripts/measure-town-progression.mjs measurements.json ordinary 1
+// node scripts/measure-town-progression.mjs measurements.json ordinary 1 [maxRuns=480]
 // Strategies: ordinary, optimized-one-chest, optimized-two-chests, lower-payout.
 import { readFileSync } from 'node:fs';
 import { createServer } from 'vite';
 import { createPinia, setActivePinia } from 'pinia';
-const [input, strategy = 'ordinary', seedText = '1'] = process.argv.slice(2);
+const [input, strategy = 'ordinary', seedText = '1', maxRunsText = '480'] = process.argv.slice(2);
+const maxRuns = Number(maxRunsText);
 if (
   !input ||
   !['ordinary', 'optimized-one-chest', 'optimized-two-chests', 'lower-payout'].includes(strategy)
@@ -89,7 +90,7 @@ try {
   };
   visit();
   // Past the supplied campaign, explicitly replay its final level at observed payout.
-  for (let index = 0; index < 480 && !completeAt; index++) {
+  for (let index = 0; index < maxRuns && !completeAt; index++) {
     const run = runs[Math.min(index, runs.length - 1)];
     const payout = Math.floor(run.coins * factor);
     const runId = c.beginRun('normal', run.id);

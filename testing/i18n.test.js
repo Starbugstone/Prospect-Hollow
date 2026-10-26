@@ -1,3 +1,6 @@
+import { TOWN_PRESENTATIONS } from '../src/data/townPresentations';
+import { LANDMARK_OPTIONS, PERSONAL_AREAS } from '../src/data/townLandmarks';
+import { CREST_EMBLEMS } from '../src/data/townCrests';
 import { CITY_DESCRIPTIONS } from '../src/data/city';
 import { afterEach, describe, expect, it } from 'vitest';
 import { browserLocale, locale, setLocale, t, number } from '../src/i18n';
@@ -10,6 +13,7 @@ import { FUSION_STYLES } from '../src/game/engine/BonusFusion';
 import { BUILDINGS, INITIAL_STORY } from '../src/data/town';
 import { OBSTACLES } from '../src/data/obstacles';
 import { ERAS } from '../src/data/eras';
+import { latestUpdates } from '../src/data/updates';
 import { MOTOR_AGE_VARIANTS } from '../src/data/motorAge';
 import { INDUSTRIAL_VARIANTS } from '../src/data/industrial';
 import { RIVER_RAIL_VARIANTS } from '../src/data/riverRail';
@@ -74,6 +78,10 @@ describe('One browser language across the game and town', () => {
   });
   it('keeps a translated catalog for all levels, chapters, rewards, and town content', () => {
     const messages = [
+      ...latestUpdates(Infinity).flatMap((update) => [update.title, update.text]),
+      ...LANDMARK_OPTIONS.flatMap((o) => [o.label, o.detail]),
+      ...PERSONAL_AREAS.map((a) => a.label),
+      ...CREST_EMBLEMS.map((e) => e.label),
       ...LEVEL_NAMES,
       ...Object.values(CITY_DESCRIPTIONS).flat(),
       ...generateLevelConfigs().map((level) => level.tip),
@@ -89,6 +97,16 @@ describe('One browser language across the game and town', () => {
       ...CHEST_DROPS.map((drop) => drop.label),
       ...Object.values(FUSION_STYLES).flatMap((style) => [style.label, style.detail]),
       ...incidentMessages(),
+      ...Object.values(TOWN_PRESENTATIONS).flatMap((definition) => [
+        definition.title,
+        ...definition.chapters.map((chapter) => chapter.text),
+      ]),
+      'Something is happening on the Moon',
+      'Something is happening in the valley',
+      'Moon event waiting',
+      'Valley event waiting',
+      'Watch',
+      'Later',
     ];
     for (const building of BUILDINGS)
       messages.push(

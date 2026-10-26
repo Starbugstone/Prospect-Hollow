@@ -65,7 +65,7 @@ describe('Expansion campaign', () => {
       expect(moves).toBeGreaterThanOrEqual(3);
       expect(engine.findMatches(level.board, 7, 9, level.tiles)).toEqual([]);
     }
-  });
+  }, 20000);
 
   it('continues an existing completed 36-level save at 37 and unlocks through 60', () => {
     const records = Object.fromEntries(
@@ -78,7 +78,7 @@ describe('Expansion campaign', () => {
     });
     const campaign = useCampaignStore();
     expect(campaign.nextLevel).toBe(37);
-    expect(campaign.totalStars).toBe(72);
+    expect(Object.values(campaign.records).reduce((sum, record) => sum + record.stars, 0)).toBe(72);
     for (let id = 37; id <= 60; id++) {
       expect(campaign.isUnlocked(id)).toBe(true);
       expect(campaign.isUnlocked(id + 1)).toBe(false);

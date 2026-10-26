@@ -1,4 +1,5 @@
 import { renderBuilding } from './BuildingRenderer';
+import { VALLEY_LOT, VALLEY_WELL_LOT } from '../TownParcels';
 
 // Frontier-era building parts shared by several buildings and the construction lots.
 export const TRIM = '#e8d3a7';
@@ -13,8 +14,10 @@ export function addCactus(d, parent, x, z) {
 // The fenced lot of an unbuilt or rising building: `wins` counts finished puzzles
 // toward it (-1 shows only its marker sign).
 export function addConstructionPlot(d, parent, id, wins, label) {
-  const w = id === 'well' ? 2.1 : 3.05,
-    depth = id === 'well' ? 2.1 : 2.7;
+  // The lot's size is the valley parcel contract's, so its fence, glow and tap agree.
+  const lot = id === 'well' ? VALLEY_WELL_LOT : VALLEY_LOT;
+  const w = lot.halfWidth * 2,
+    depth = lot.halfDepth * 2;
   for (const x of [-w / 2, w / 2])
     for (const z of [-depth / 2, depth / 2]) d.box(parent, 0.12, 0.6, 0.12, x, 0.3, z, '#a58a57');
   for (const z of [-depth / 2, depth / 2])
@@ -93,6 +96,7 @@ export function addWell(d, parent, phase = 'done') {
         n % 3 ? '#c8b597' : '#ad9b7e',
         true,
       );
+      stone.name = 'Well wall';
       stone.rotation.y = -angle;
     }
   if (phase === 'foundation') return;
@@ -103,8 +107,9 @@ export function addWell(d, parent, phase = 'done') {
     [0, 0.2, 0],
     phase === 'done' ? '#6bacae' : '#77684d',
   );
-  for (const x of [-0.86, 0.86]) d.box(parent, 0.14, 2.0, 0.14, x, 1.05, 0, '#ac8551');
-  d.rod(parent, [-0.95, 1.7, 0], [0.95, 1.7, 0], 0.07, '#86613d');
+  for (const x of [-0.86, 0.86])
+    d.box(parent, 0.14, 2.0, 0.14, x, 1.05, 0, '#ac8551').name = 'Well frame';
+  d.rod(parent, [-0.95, 1.7, 0], [0.95, 1.7, 0], 0.07, '#86613d').name = 'Well frame';
   for (const side of [-1, 1]) {
     const roof = d.box(
       parent,
@@ -116,6 +121,7 @@ export function addWell(d, parent, phase = 'done') {
       0,
       phase === 'done' ? '#5f8a89' : '#b69a6c',
     );
+    roof.name = 'Well roof';
     roof.rotation.z = -side * 0.4;
   }
   if (phase !== 'done') return;

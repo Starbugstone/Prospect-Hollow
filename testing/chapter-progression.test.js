@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { CHAPTERS } from '../src/data/campaign';
+import { chapterSlotOf } from '../src/data/chapters';
 import { generateLevelConfigs } from '../src/game/engine/LevelGenerator';
 import { useGameStore } from '../src/stores/gameStore';
 import { useCampaignStore } from '../src/stores/campaignStore';
@@ -38,21 +39,26 @@ it('allows players to keep matching beyond pacing targets and finish without sco
 
 it('changes dimensions and color count only at chapter boundaries and rotates two-level seams', () => {
   const levels = generateLevelConfigs();
+  // A chapter may name single levels that add one color to their seam's palette.
+  const palette = (level) => {
+    const extra = CHAPTERS[level.chapter].extraColors?.[chapterSlotOf(level.id)];
+    return level.boardLayout.gemTypes.filter((type) => type !== extra);
+  };
   expect(new Set(CHAPTERS.map((chapter) => chapter.theme)).size).toBe(CHAPTERS.length);
   for (const [index, level] of levels.entries()) {
     const chapter = CHAPTERS[level.chapter];
+    const extra = chapter.extraColors?.[chapterSlotOf(level.id)];
     expect([level.boardCols, level.boardRows, level.boardLayout.gemTypeCount]).toEqual([
       chapter.cols,
       chapter.rows,
-      chapter.gemTypeCount,
+      chapter.gemTypeCount + (extra ? 1 : 0),
     ]);
-    expect(new Set(level.boardLayout.gemTypes).size).toBe(chapter.gemTypeCount);
+    expect(new Set(level.boardLayout.gemTypes).size).toBe(level.boardLayout.gemTypeCount);
+    if (extra) expect(level.boardLayout.gemTypes.at(-1)).toBe(extra);
     if (index % 6) expect(level.theme).toBe(levels[index - 1].theme);
-    if (index % 2)
-      expect(level.boardLayout.gemTypes).toEqual(levels[index - 1].boardLayout.gemTypes);
-    else if (index % 6)
-      expect(level.boardLayout.gemTypes).not.toEqual(levels[index - 1].boardLayout.gemTypes);
-    if (index && level.boardLayout.gemTypeCount !== levels[index - 1].boardLayout.gemTypeCount) {
+    if (index % 2) expect(palette(level)).toEqual(palette(levels[index - 1]));
+    else if (index % 6) expect(palette(level)).not.toEqual(palette(levels[index - 1]));
+    if (index && chapter.gemTypeCount !== CHAPTERS[levels[index - 1].chapter].gemTypeCount) {
       expect(index % 6).toBe(0);
       expect(level.boardCols * level.boardRows).toBeGreaterThan(levels[index - 1].board.length);
     }

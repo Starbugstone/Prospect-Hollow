@@ -1,7 +1,16 @@
+import { advancePuzzleProduction } from '../../data/puzzleProduction';
+import { normalizeMoonstones, rewardMoonBuilding } from '../../data/moonstones';
+import { normalizePersonalisation } from '../../data/townPersonalisation';
+import { PERSONAL_AREAS, areaUnlocked, monumentWork } from '../../data/townLandmarks';
+import { CREST_EMBLEM_IDS } from '../../data/townCrests';
 import { normalizePresentations } from '../../data/townPresentations';
 import { normalizeGuestVip } from '../../data/guestVip';
-import { RIVER_RAIL_LEVEL_PRICES } from '../../data/economy';
-import { hasShortProgression } from '../../data/buildingProgression';
+import {
+  LEGACY_MAX_LEVEL,
+  MAX_SERVICE_LEVEL,
+  keepsLegacyLevels,
+  serviceLevel,
+} from '../../data/buildingProgression';
 import { t } from '../../i18n';
 import { miningDepthBonus } from '../../data/economy';
 import { isMajorCityBuilding } from '../../data/city';
@@ -13,10 +22,12 @@ import {
   civicIncident,
   INCIDENT_TARGETS,
   LEGACY_INCIDENT_TARGET,
+  RAID_RULES,
 } from '../../data/townEvents';
-import { forgeProductionRuns } from '../../data/eras';
+import { FRONTIER_ERA, eraEvolution, forgeProductionRuns } from '../../data/eras';
 import { needProviders, townNeeds, townSupply } from './TownNeeds';
-import { plotInEra, modernization, normalizeEraState, eraGate } from './TownEras';
+import { plotInEra, modernization, normalizeEraState, eraGate, eraIndex } from './TownEras';
+import { SPACE_HELMET } from '../../data/townAnimals';
 import { BUILDINGS, BUILDING_BY_ID, INTRO_ORDER, BANDIT_EVENT, createTown } from '../../data/town';
 import {
   COMBO_COIN_STEP,
@@ -62,7 +73,7 @@ function normalizeRaidEvent(event, town) {
     !intIn(event.id, 1) ||
     !intIn(event.atRun, 0, town.completedRuns) ||
     ![2, 4, 6, 8, 10].includes(event.gangSize) ||
-    !intIn(event.sheriffLevel, 0, BUILDING_BY_ID.sheriff.upgrades.length)
+    !intIn(event.sheriffLevel, 0, MAX_SERVICE_LEVEL)
   )
     return null;
   const receipt = {
@@ -70,7 +81,7 @@ function normalizeRaidEvent(event, town) {
     atRun: event.atRun,
     gangSize: event.gangSize,
     sheriffLevel: event.sheriffLevel,
-    bankLevel: intIn(event.bankLevel, 0, BUILDING_BY_ID.bank.upgrades.length) ? event.bankLevel : 0,
+    bankLevel: intIn(event.bankLevel, 0, MAX_SERVICE_LEVEL) ? event.bankLevel : 0,
     outcome: event.outcome,
     loss: event.loss,
     seen: event.seen === true,
@@ -95,7 +106,8 @@ export function normalizeTown(saved) {
     const at = saved?.lastCollections?.[id];
     if (intIn(at, 0)) town.lastCollections[id] = at;
   }
-  if (intIn(saved?.saloonVisitAt, 1)) town.saloonVisitAt = saved.saloonVisitAt;
+  for (const key of ['saloonVisitAt', 'helmetRun', 'helmetVisitAt'])
+    if (intIn(saved?.[key], 1)) town[key] = saved[key];
   town.guestVip = normalizeGuestVip(saved?.guestVip);
   // Missing or malformed additions leave existing v3 receipts intact.
   const forge = saved?.forge;
@@ -105,11 +117,13 @@ export function normalizeTown(saved) {
   if (intIn(saved?.coins, 0)) town.coins = saved.coins;
   for (const building of BUILDINGS) {
     const stage = saved?.buildings?.[building.id];
-    const highest =
-      hasShortProgression(building.id) && !saved?.progressionVersion ? 5 : building.upgrades.length;
+    const highest = keepsLegacyLevels(building.id, saved?.progressionVersion)
+      ? LEGACY_MAX_LEVEL
+      : building.upgrades.length;
     if (intIn(stage, 0, highest))
       town.buildings[building.id] = Math.min(stage, building.upgrades.length);
   }
+  Object.assign(town, normalizeMoonstones(saved, town));
   normalizeEraState(town, saved);
   if (intIn(saved?.completedRuns, 0)) town.completedRuns = saved.completedRuns;
   if (intIn(saved?.nextRaidRun, 0)) town.nextRaidRun = saved.nextRaidRun;
@@ -124,13 +138,18 @@ export function normalizeTown(saved) {
   if (raid) town.events[BANDIT_EVENT] = raid;
   for (const { id, upgrades } of BUILDINGS) {
     let project = saved?.projects?.[id];
-    if (!saved?.progressionVersion && hasShortProgression(id)) {
-      if (project?.type === 'modernization')
-        project = { ...project, stage: Math.min(project.stage, upgrades.length) };
-      else if (
+    if (keepsLegacyLevels(id, saved?.progressionVersion)) {
+      // A modernization starts from the finished building, so it moves down with it.
+      if (project?.type === 'modernization') {
+        const level = saved.buildings?.[id];
+        project = {
+          ...project,
+          stage: project.stage - (intIn(level, 0) ? Math.max(0, level - upgrades.length) : 0),
+        };
+      } else if (
         project?.id === id &&
         project.stage > upgrades.length &&
-        project.stage <= 5 &&
+        project.stage <= LEGACY_MAX_LEVEL &&
         project.stage === saved.buildings[id] + 1 &&
         project.required === 1 &&
         intIn(project.wins, 0, 1)
@@ -190,15 +209,18 @@ export function normalizeTown(saved) {
       };
     }
   }
+  town.personalisation = normalizePersonalisation(saved?.personalisation, CREST_EMBLEM_IDS);
   town.tourSeen = saved?.tourSeen === true;
   town.presentations = normalizePresentations(saved?.presentations, town);
   return settleForgeProduction(town);
 }
 
+// No construction waits for more than this many completed puzzles.
+export const MAX_CONSTRUCTION_RUNS = 2;
 export const projectRuns = (id, stage) =>
-  Math.min(2, BUILDING_BY_ID[id]?.upgrades[stage - 1]?.runs ?? 1);
+  Math.min(MAX_CONSTRUCTION_RUNS, BUILDING_BY_ID[id]?.upgrades[stage - 1]?.runs ?? 1);
 export const constructionRuns = (project) =>
-  Math.min(2, project.required ?? projectRuns(project.id, project.stage));
+  Math.min(MAX_CONSTRUCTION_RUNS, project.required ?? projectRuns(project.id, project.stage));
 export const constructionVisual = (project) =>
   project ? Math.min(2, Math.ceil((project.wins / constructionRuns(project)) * 3)) : null;
 
@@ -241,7 +263,7 @@ function withProject(town, id, project) {
   return completeStage(town, id, {
     stage: modernizing ? town.buildings[id] : project.stage,
     era: project.targetEra ?? town.era,
-    eraLevel: modernizing ? (project.eraLevel ?? 1) : town.era !== 'frontier' ? project.stage : 0,
+    eraLevel: modernizing ? (project.eraLevel ?? 1) : town.era !== FRONTIER_ERA ? project.stage : 0,
   });
 }
 // The town once every project under construction has finished.
@@ -252,12 +274,16 @@ const townWithProjects = (town) =>
   );
 // A modernization keeps the building's level and records its new era appearance.
 function completeStage(town, id, { stage, era, eraLevel }) {
-  return {
-    ...town,
-    buildings: { ...town.buildings, [id]: stage },
-    buildingEraLevels: { ...town.buildingEraLevels, [id]: eraLevel },
-    buildingEras: { ...town.buildingEras, [id]: era },
-  };
+  return rewardMoonBuilding(
+    town,
+    {
+      ...town,
+      buildings: { ...town.buildings, [id]: stage },
+      buildingEraLevels: { ...town.buildingEraLevels, [id]: eraLevel },
+      buildingEras: { ...town.buildingEras, [id]: era },
+    },
+    id,
+  );
 }
 
 // The town as it will be once an offer is finished, for previews and guidance.
@@ -266,7 +292,7 @@ function townAfterOffer(town, id, offer) {
   return completeStage(town, id, {
     stage: modernizing ? town.buildings[id] : offer.stage + 1,
     era: offer.targetEra ?? town.era,
-    eraLevel: modernizing ? offer.eraLevel : town.era !== 'frontier' ? offer.stage + 1 : 0,
+    eraLevel: modernizing ? offer.eraLevel : town.era !== FRONTIER_ERA ? offer.stage + 1 : 0,
   });
 }
 
@@ -278,7 +304,7 @@ export function settleForgeProduction(town) {
   if (
     !town.buildings.blacksmith ||
     town.forge.charge ||
-    town.forge.progress < forgeProductionRuns(town.buildings.blacksmith)
+    town.forge.progress < forgeProductionRuns(serviceLevel(town, 'blacksmith'))
   )
     return town;
   return { ...town, forge: { progress: 0, charge: 1 } };
@@ -287,7 +313,10 @@ export function advanceForge(town) {
   if (!town.buildings.blacksmith || town.forge.charge) return town;
   return settleForgeProduction({
     ...town,
-    forge: { progress: town.forge.progress + 1, charge: 0 },
+    forge: advancePuzzleProduction(
+      town.forge,
+      forgeProductionRuns(serviceLevel(town, 'blacksmith')),
+    ),
   });
 }
 export const residentPopulation = (town) => townNeeds(town).residents;
@@ -317,16 +346,36 @@ export function collectionCooldownRemaining(town, id, now = Date.now()) {
     Math.max(0, COLLECTION_COOLDOWN_MS - (now - collectedAt)),
   );
 }
-export const saloonHappinessBonus = (town) => 1.25 * happiness(town);
+// The saloon's hourly takings; the server replays them with the same numbers.
+export const SALOON_INCOME = Object.freeze({
+  // Coins per saloon service level and townsperson, before happiness.
+  rate: 2.25,
+  // Each happiness point adds this many percent.
+  happinessPercent: 1.25,
+  // Each diner level adds this share.
+  dinerBonus: 0.05,
+});
+export const saloonHappinessBonus = (town) => SALOON_INCOME.happinessPercent * happiness(town);
 export const saloonIncomeRate = (town) =>
   Math.floor(
-    (2.25 *
-      town.buildings.saloon *
+    (SALOON_INCOME.rate *
+      serviceLevel(town, 'saloon') *
       population(town) *
       (100 + saloonHappinessBonus(town)) *
-      (1 + (town.buildings.diner ?? 0) * 0.05)) /
+      (1 + (town.buildings.diner ?? 0) * SALOON_INCOME.dinerBonus)) /
       100,
   );
+// The space helmet is out from its debut era on. Finding its wearer pays saloon takings
+// (`SPACE_HELMET.rewardHours`), once each time a completed puzzle moves the helmet.
+export const spaceHelmetOut = (town) => {
+  const index = eraIndex(town?.era);
+  return index >= 0 && index >= eraIndex(SPACE_HELMET.debut);
+};
+export const spaceHelmetFindable = (town) =>
+  spaceHelmetOut(town) && town.completedRuns > town.helmetRun;
+// The coins a find pays this town, for the owner's own find or a find while visiting.
+export const spaceHelmetReward = (town, finder) =>
+  Math.floor(saloonIncomeRate(town) * SPACE_HELMET.rewardHours[finder]);
 // Remainder is stored as coin-milliseconds, avoiding rounding loss between visits.
 // Settle BEFORE changing buildings, so their new rates never apply to old time.
 export function settleSaloonIncome(town, now) {
@@ -365,11 +414,10 @@ export function upgradeOffer(town, id, firstProject = isFirstProject(town)) {
   const upgrade = building.upgrades[stage] ?? modernization(town, id);
   if (!upgrade) return null;
   const needsPower = upgrade.requiresPower && !hasElectricity(town);
+  const evolution = eraEvolution(town.era);
   const eraCost =
-    town.era === 'river-rail'
-      ? upgrade.type === 'modernization'
-        ? upgrade.cost
-        : (RIVER_RAIL_LEVEL_PRICES[stage] ?? upgrade.cost)
+    evolution.repricesEarlierPlots && upgrade.type !== 'modernization'
+      ? (evolution.newBuildingPrices[stage] ?? upgrade.cost)
       : upgrade.cost;
   const cost = firstProject && plotUnlocked(town, id) ? 0 : eraCost;
   return {
@@ -377,7 +425,7 @@ export function upgradeOffer(town, id, firstProject = isFirstProject(town)) {
     targetEra: town.era,
     cost,
     stage: upgrade.stage ?? stage,
-    runs: Math.min(2, upgrade.runs ?? projectRuns(id, stage + 1)),
+    runs: Math.min(MAX_CONSTRUCTION_RUNS, upgrade.runs ?? projectRuns(id, stage + 1)),
     available: plotUnlocked(town, id) && !town.projects[id] && !needsPower,
     reason: !plotInEra(town, id)
       ? 'Available in the next era.'
@@ -424,15 +472,24 @@ export function buildingIndicators(
     )
       indicators[id] = 'tnt';
   }
+  // A finished monument level waits for its unveiling, like a finished building.
+  for (const area of PERSONAL_AREAS)
+    if (areaUnlocked(town, area) && monumentWork(town, area)?.ready) indicators[area.id] = 'ready';
   if (eraGate(town).available) indicators.square = 'era';
   if (canRingTownBell(town) && !constructionReady(town.projects.square)) indicators.square = 'bell';
   return indicators;
 }
 
-// Every building whose next offer could start now, cheapest first.
-export function openOffers(town) {
+// Every building's next offer by id, computed once per town state: the open offers, the
+// needs report and the next goal all read this one map (the campaign store's getters).
+export function townOffers(town) {
   const firstProject = isFirstProject(town);
-  return BUILDINGS.map((place) => ({ ...place, offer: upgradeOffer(town, place.id, firstProject) }))
+  return new Map(BUILDINGS.map(({ id }) => [id, upgradeOffer(town, id, firstProject)]));
+}
+
+// Every building whose next offer could start now, cheapest first.
+export function openOffers(town, offers = townOffers(town)) {
+  return BUILDINGS.map((place) => ({ ...place, offer: offers.get(place.id) }))
     .filter(({ offer }) => offer?.available)
     .sort((a, b) => a.offer.cost - b.offer.cost);
 }
@@ -442,12 +499,21 @@ export function openOffers(town) {
 export const availablePurchases = (town, builderHammers = 0, offers = openOffers(town)) =>
   offers.filter(({ offer }) => town.coins >= offer.cost || builderHammers > 0);
 
-export const availableParcels = (town, builderHammers = 0) => [
+export const availableParcels = (town, builderHammers = 0, offers = openOffers(town)) => [
   ...BUILDINGS.filter(({ id }) => plotInEra(town, id) && constructionReady(town.projects[id])).map(
     (place) => ({ ...place, ready: true }),
   ),
-  ...availablePurchases(town, builderHammers),
+  ...availablePurchases(town, builderHammers, offers),
 ];
+
+// What a Build row's tap does, as the row shows it: finish a ready construction, buy
+// with coins, or build with a builder hammer when coins run short. Null when the place
+// has nothing to start.
+export function parcelAction(town, id, offer = upgradeOffer(town, id)) {
+  if (constructionReady(town.projects[id])) return 'finish';
+  if (!offer?.available) return null;
+  return town.coins >= offer.cost ? 'buy' : 'hammer';
+}
 
 // Available offers that raise a need (water, food, housing, visitors or comfort),
 // fewest coins per person supplied first, so small tweaks do not crowd out real
@@ -471,9 +537,8 @@ export const CONTENT_HAPPINESS = 70;
 
 // What the village shows for its needs: supplies against demand, whether each runs
 // short, and the cheapest available building that would raise it.
-export function needsReport(town) {
+export function needsReport(town, offers = townOffers(town)) {
   const needs = townNeeds(town);
-  const offers = new Map(BUILDINGS.map(({ id }) => [id, upgradeOffer(town, id)]));
   const fix = (stat) => needFixes(town, stat, offers)[0]?.id ?? null;
   return {
     ...needs,
@@ -491,8 +556,53 @@ export function needsReport(town) {
   };
 }
 
-export function nextGoal(town) {
-  const offers = new Map(BUILDINGS.map(({ id }) => [id, upgradeOffer(town, id)]));
+// The town's supplies as chips: water, food, people and happiness against everyone the
+// town can hold, each naming the building that would raise it (its fix, or a default).
+// The map shows the `map` chips while the town has people; the Build tab shows each
+// relevant one.
+export function needChips(report) {
+  const { demand } = report;
+  const supply = (stat, icon, name, fallback, label) => ({
+    stat,
+    icon,
+    name,
+    map: true,
+    id: report.fixes[stat] ?? fallback,
+    relevant: report[stat] > 0 || demand > 0,
+    value: demand ? `${report[stat]}/${demand}` : report[stat],
+    short: report.short[stat],
+    fixable: report.short[stat] && !!report.fixes[stat],
+    label: t(label, { capacity: report[stat], demand }),
+  });
+  return [
+    supply('water', 'water', 'Water', 'well', 'Water: {capacity}/{demand}'),
+    supply('food', 'food', 'Food', 'farm', 'Food: {capacity}/{demand}'),
+    {
+      stat: 'housing',
+      icon: 'people',
+      name: 'People',
+      map: false,
+      id: report.fixes.housing ?? 'home',
+      relevant: demand > 0,
+      value: report.population,
+      label: t('{count} people', { count: report.population }),
+    },
+    {
+      stat: 'comfort',
+      icon: 'happiness',
+      name: 'Happiness',
+      map: true,
+      id: report.fixes.comfort ?? 'square',
+      relevant: demand > 0,
+      value: `${report.happiness}%`,
+      short: report.short.comfort,
+      fixable: report.short.comfort && !!report.fixes.comfort,
+      label: t('Happiness: {value}%', { value: report.happiness }),
+    },
+  ];
+}
+
+export function nextGoal(town, offers = townOffers(town)) {
   const available = BUILDINGS.filter((b) => offers.get(b.id)?.available);
   const cheapest = (choices) =>
     choices.toSorted((a, b) => offers.get(a.id).cost - offers.get(b.id).cost)[0]?.id;
@@ -507,8 +617,10 @@ export function nextGoal(town) {
   // Put essential services and balanced defenses ahead of optional expansion.
   // An active project already covers its need; suggest another useful project.
   const defense = ['sheriff', 'bank']
-    .filter((id) => available.some((b) => b.id === id) && town.buildings[id] * 2 < gangSize(town))
-    .sort((a, b) => town.buildings[a] - town.buildings[b])[0];
+    .filter(
+      (id) => available.some((b) => b.id === id) && serviceLevel(town, id) * 2 < gangSize(town),
+    )
+    .sort((a, b) => serviceLevel(town, a) - serviceLevel(town, b))[0];
   const id =
     INTRO_ORDER.find((key) => available.some((b) => b.id === key) && !town.buildings[key]) ??
     (need ? needFixes(town, need, offers)[0]?.id : null) ??
@@ -523,9 +635,9 @@ export function nextGoal(town) {
     available.some((b) => b.id === 'fireStation')
       ? 'fireStation'
       : null) ??
-    (town.era === 'frontier' ? essential : null) ??
+    (town.era === FRONTIER_ERA ? essential : null) ??
     (unhappy ? needFixes(town, 'comfort', offers)[0]?.id : null) ??
-    (town.era !== 'frontier'
+    (town.era !== FRONTIER_ERA
       ? (available.find((b) => b.id === 'bridge' && b.introducedEra === town.era)?.id ??
         cheapest(available.filter((b) => b.introducedEra === town.era)))
       : null) ??
@@ -570,22 +682,26 @@ export function purchase(town, id, expectedStage) {
         },
       },
     };
-  return {
-    ...town,
-    coins: town.coins - offer.cost,
-    buildings: offer.runs === 0 ? { ...town.buildings, [id]: expectedStage + 1 } : town.buildings,
-    buildingEras: offer.runs === 0 ? { ...town.buildingEras, [id]: town.era } : town.buildingEras,
-    projects:
-      offer.runs === 0
-        ? town.projects
-        : {
-            ...town.projects,
-            [id]: { id, stage: expectedStage + 1, wins: 0, required: offer.runs },
-          },
-  };
+  return rewardMoonBuilding(
+    town,
+    {
+      ...town,
+      coins: town.coins - offer.cost,
+      buildings: offer.runs === 0 ? { ...town.buildings, [id]: expectedStage + 1 } : town.buildings,
+      buildingEras: offer.runs === 0 ? { ...town.buildingEras, [id]: town.era } : town.buildingEras,
+      projects:
+        offer.runs === 0
+          ? town.projects
+          : {
+              ...town.projects,
+              [id]: { id, stage: expectedStage + 1, wins: 0, required: offer.runs },
+            },
+    },
+    id,
+  );
 }
 
-export const raidIntervalRange = (town) => (town.era === 'frontier' ? [3, 7] : [6, 14]);
+export const raidIntervalRange = (town) => (town.era === FRONTIER_ERA ? [3, 7] : [6, 14]);
 export function scheduleRaid(town, random = Math.random) {
   if (town.nextRaidRun !== null || population(town) <= 0) return town;
   const [min, max] = raidIntervalRange(town);
@@ -594,13 +710,19 @@ export function scheduleRaid(town, random = Math.random) {
 }
 export const gangSize = (town) => {
   const size = development(town);
-  return size >= 70 ? 10 : size >= 50 ? 8 : size >= 30 ? 6 : size >= 16 ? 4 : 2;
+  return (
+    RAID_RULES.gangSizes.find((step) => size >= step.development)?.riders ?? RAID_RULES.smallestGang
+  );
+};
+// An era with an incident gate waits until one of those plots is built.
+const incidentGateOpen = (town) => {
+  const gate = eraEvolution(town.era).incidentGate;
+  return !gate || gate.some((id) => town.buildings[id] > 0);
 };
 export function raidReady(town) {
   const previous = town.events[BANDIT_EVENT];
   return (
-    (town.era !== 'river-rail' || town.buildings.railDepot > 0 || town.buildings.riverPort > 0) &&
-    (town.era !== 'industrial' || town.buildings.powerHouse > 0 || town.buildings.mill > 0) &&
+    incidentGateOpen(town) &&
     population(town) > 0 &&
     Number.isSafeInteger(town.nextRaidRun) &&
     town.completedRuns >= town.nextRaidRun &&
@@ -612,17 +734,18 @@ export const raidBounty = (event) =>
   !civicIncident(eventKind(event)) && event?.outcome === 'protected' && event.loss === 0
     ? Math.min(event.gangSize, event.sheriffLevel * 2) * CAPTURE_BOUNTY
     : 0;
+// Each sheriff or bank service level covers two riders; raid receipts keep these levels.
+const banditProtection = (riders, sheriff, bank) =>
+  (Math.min(riders, sheriff * 2) + Math.min(riders, bank * 2)) / (riders * 2);
 export const raidProtection = (town, riders = gangSize(town), kind = eraEventKind(town.era)) =>
   civicIncident(kind)
     ? fireProtection(town.buildings.fireStation)
-    : (Math.min(riders, town.buildings.sheriff * 2) +
-        Math.min(riders, (town.buildings.bank ?? 0) * 2)) /
-      (riders * 2);
+    : banditProtection(riders, serviceLevel(town, 'sheriff'), serviceLevel(town, 'bank'));
 
 export function canRingTownBell(town) {
   const event = town.events[BANDIT_EVENT];
   return !!(
-    town.buildings.square >= 4 &&
+    serviceLevel(town, 'square') >= 4 &&
     event &&
     !event.seen &&
     !event.bellRung &&
@@ -646,18 +769,18 @@ export function ringTownBell(town, raidId) {
 export function banditEncounter(town, random = Math.random) {
   if (!raidReady(town)) return null;
   const riders = gangSize(town),
-    sheriffLevel = town.buildings.sheriff;
-  const bankLevel = town.buildings.bank ?? 0;
+    sheriffLevel = serviceLevel(town, 'sheriff');
+  const bankLevel = serviceLevel(town, 'bank');
   const kind = eraEventKind(town.era);
   const protection = raidProtection(town, riders, kind);
   const protectedTown = protection === 1;
   const loss = protectedTown
     ? 0
     : Math.min(
-        30,
-        Math.ceil(5 * riders * (1 - protection)),
-        Math.floor(town.coins / 10),
-        Math.max(0, town.coins - 50),
+        RAID_RULES.lossCap,
+        Math.ceil(RAID_RULES.lossPerRider * riders * (1 - protection)),
+        Math.floor(town.coins / RAID_RULES.coinShare),
+        Math.max(0, town.coins - RAID_RULES.keepCoins),
       );
   const target = INCIDENT_TARGETS[kind].find((id) => town.buildings[id]);
   const event = {
@@ -688,7 +811,7 @@ const raidOutcome = (protection, loss) =>
 // Refund the part of a saved loss that stronger defenses now prevent. A rung bell
 // still halves what remains.
 function reviseRaid(town, event, protection, changes) {
-  const remaining = Math.ceil(5 * event.gangSize * (1 - protection));
+  const remaining = Math.ceil(RAID_RULES.lossPerRider * event.gangSize * (1 - protection));
   const loss = Math.min(event.loss, event.bellRung ? Math.floor(remaining / 2) : remaining);
   return {
     ...town,
@@ -709,13 +832,10 @@ export function reinforceRaid(town) {
     if (level === event.fireStationLevel) return town;
     return reviseRaid(town, event, fireProtection(level), { fireStationLevel: level });
   }
-  const sheriffLevel = Math.max(event.sheriffLevel, town.buildings.sheriff);
-  const bankLevel = Math.max(event.bankLevel ?? 0, town.buildings.bank);
+  const sheriffLevel = Math.max(event.sheriffLevel, serviceLevel(town, 'sheriff'));
+  const bankLevel = Math.max(event.bankLevel ?? 0, serviceLevel(town, 'bank'));
   if (sheriffLevel === event.sheriffLevel && bankLevel === (event.bankLevel ?? 0)) return town;
-  const protection = raidProtection(
-    { buildings: { sheriff: sheriffLevel, bank: bankLevel } },
-    event.gangSize,
-  );
+  const protection = banditProtection(event.gangSize, sheriffLevel, bankLevel);
   return reviseRaid(town, event, protection, { sheriffLevel, bankLevel });
 }
 
@@ -732,6 +852,6 @@ export function buildWithHammer(town, id, expectedStage) {
   return completeStage(town, id, {
     stage: offer.type === 'modernization' ? town.buildings[id] : expectedStage + 1,
     era: town.era,
-    eraLevel: offer.eraLevel ?? (town.era !== 'frontier' ? expectedStage + 1 : 0),
+    eraLevel: offer.eraLevel ?? (town.era !== FRONTIER_ERA ? expectedStage + 1 : 0),
   });
 }

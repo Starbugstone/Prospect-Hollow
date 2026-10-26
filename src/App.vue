@@ -308,10 +308,9 @@ import { useCampaignStore } from './stores/campaignStore';
 import { useSettingsStore } from './stores/settingsStore';
 import { useAudio } from './composables/useAudio';
 import { LEVEL_NAMES } from './data/levelNames';
-import { obstaclesInLevel } from './data/obstacles';
+import { obstacleSeenKey, obstaclesInLevel, unseenObstacles } from './data/obstacles';
 import { mineThemeAppearance } from './data/mineThemes';
 import ObstacleGuide from './components/ObstacleGuide.vue';
-import { TESTING_TOWN_CHANGED } from './services/testingTools';
 import { isPlayRoute, navigate, syncTownParam } from './services/appRoute';
 
 const game = useGameStore();
@@ -384,7 +383,7 @@ const openGuide = () => {
   guideOpen.value = true;
 };
 const closeGuide = () => {
-  if (guideIntro.value) campaign.markObstaclesSeen(guideItems.value.map((item) => item.id));
+  if (guideIntro.value) campaign.markObstaclesSeen(guideItems.value.map(obstacleSeenKey));
   guideOpen.value = false;
 };
 watch(
@@ -393,10 +392,8 @@ watch(
     guideOpen.value = false;
     if (!game.sessionActive) return;
     levelObstacles.value = obstaclesInLevel(game.tiles, currentConfig.value?.theme);
-    const unseen = levelObstacles.value.filter(
-      (item) =>
-        !campaign.seenObstacles.includes(item.id) &&
-        !(game.currentLevelId === 1 && item.id === 'ice'),
+    const unseen = unseenObstacles(levelObstacles.value, campaign.seenObstacles).filter(
+      (item) => !(game.currentLevelId === 1 && item.id === 'ice'),
     );
     if (unseen.length) {
       guideItems.value = unseen;
@@ -483,7 +480,6 @@ onMounted(() => {
   clockInterval = setInterval(() => game.syncRunClock(), 100);
   game.setAudioManager(audio);
   document.addEventListener('visibilitychange', visibilityChanged);
-  window.addEventListener(TESTING_TOWN_CHANGED, resumeImportedVillage);
   window.addEventListener('popstate', followRoute);
 });
 watch(
@@ -502,7 +498,6 @@ onBeforeUnmount(() => {
   clearInterval(incomeInterval);
   campaign.accrueSaloonIncome();
   document.removeEventListener('visibilitychange', visibilityChanged);
-  window.removeEventListener(TESTING_TOWN_CHANGED, resumeImportedVillage);
   window.removeEventListener('popstate', followRoute);
   game.exitLevel();
   game.setAudioManager(null);

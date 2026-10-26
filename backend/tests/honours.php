@@ -89,7 +89,16 @@ function replayed(array $values = []): array
 {
     return canonical(
         array_replace(
-            ['gems' => [], 'mine' => [], 'fusions' => [], 'forge' => 0, 'guardian' => 0],
+            [
+                'gems' => [],
+                'mine' => [],
+                'fusions' => [],
+                'forge' => 0,
+                'guardian' => 0,
+                'continuousGems' => 0,
+                'continuousBest' => 0,
+                'continuousLevels' => [],
+            ],
             $values,
         ),
     );
@@ -155,7 +164,7 @@ $adminAudit = 'honours-test-' . bin2hex(random_bytes(4));
 try {
     // ---------- Shared definitions ----------
     check(
-        $schema['honours']['version'] === 1 &&
+        $schema['honours']['version'] === 5 &&
             $schema['honours']['showcaseSlots'] === 3 &&
             $schema['honours']['counters'] === [
                 'gems' => 'map',
@@ -163,15 +172,38 @@ try {
                 'fusions' => 'map',
                 'forge' => 'number',
                 'guardian' => 'number',
+                'continuousGems' => 'number',
+                'continuousBest' => 'number',
+                'continuousLevels' => 'map',
                 'visitors' => 'number',
                 'travels' => 'number',
             ],
         'the public schema exports the honours constants and counters from the registry',
     );
-    $kinds = ['stars', 'score', 'era', 'count', 'distinct', 'powers', 'social'];
+    $kinds = [
+        'stars',
+        'score',
+        'era',
+        'count',
+        'distinct',
+        'powers',
+        'social',
+        'landmark',
+        'buildingLevels',
+        'resource',
+        'landmarks',
+    ];
     foreach ($definitions as $id => $definition) {
         check(
-            array_keys($definition) === ['family', 'rank', 'metal', 'tab', 'goal', 'measure'] &&
+            array_keys($definition) === [
+                'family',
+                'rank',
+                'metal',
+                'tab',
+                'goal',
+                'version',
+                'measure',
+            ] &&
                 str_starts_with($id, $definition['family'] . '-') &&
                 in_array($definition['measure']['kind'], $kinds, true) &&
                 (is_int($definition['goal']) || is_float($definition['goal'])),
@@ -197,6 +229,8 @@ try {
             'topaz',
             'amethyst',
             'moonstone',
+            'peridot',
+            'starmetal',
         ] &&
             in_array('rainbow+rainbow', $rules['honours']['fusions'], true) &&
             count($elements) > 100 &&
@@ -207,6 +241,161 @@ try {
             ),
         'save rules export claimable keys and each level’s mine elements ' .
             json_encode(array_slice($elements, 0, 3, true)),
+    );
+
+    // The paid-landmark replay is the proof, not an uploaded honour claim.
+    $monumentFlow = flow('optional landmark monument: construction and upgrades');
+    $monumentClock = $monumentFlow->after->integrity->clientAt;
+    $monumentBase = $validator->accept(
+        $monumentFlow->before,
+        null,
+        $monumentClock,
+        false,
+        [],
+        'monument-town',
+    );
+    $monumentBase = $catalog->keep($monumentBase, null, $noSocial);
+    check(
+        !in_array('monument-gold', $monumentBase->honours->verified, true),
+        'no monument, no distinction',
+    );
+    $monumentSaved = $validator->accept(
+        $monumentFlow->after,
+        $monumentBase,
+        $monumentClock,
+        false,
+        [],
+        'monument-town',
+    );
+    $monumentSaved = $catalog->keep($monumentSaved, $monumentBase, $noSocial);
+    check(
+        in_array('monument-gold', $monumentSaved->honours->verified, true),
+        'a paid monument verifies the single monument distinction',
+    );
+    $monumentAgain = $validator->accept(
+        $monumentFlow->after,
+        $monumentSaved,
+        $monumentClock,
+        false,
+        [],
+        'monument-town',
+    );
+    $monumentAgain = $catalog->keep($monumentAgain, $monumentSaved, $noSocial);
+    check(
+        $monumentAgain->honours->earned->{'monument-gold'} ==
+            $monumentSaved->honours->earned->{'monument-gold'},
+        'receipt retries keep the first award',
+    );
+    $monumentPublic = published($monumentSaved);
+    check(
+        isset($monumentPublic['earned']['monument-gold']),
+        'visitors see the verified monument distinction',
+    );
+
+    foreach ($schema['personalisation']['areas'] as $area) {
+        $f = flow('optional landmark ' . $area['id'] . ': construction and upgrades');
+        $base = $validator->accept(
+            $f->before,
+            null,
+            $f->serverNow,
+            false,
+            [],
+            'site-' . $area['id'],
+        );
+        $saved = $validator->accept(
+            $f->after,
+            $base,
+            $f->serverNow,
+            false,
+            [],
+            'site-' . $area['id'],
+        );
+        $saved = $catalog->keep($saved, null, $noSocial);
+        check(
+            in_array('landmark-patron-bronze', $saved->honours->verified, true),
+            'a validated purchase at ' . $area['id'] . ' verifies the shared site measure',
+        );
+        if ($area['id'] === 'earthrise-plaza') {
+            check(
+                in_array('new-hollow-gold', $saved->honours->verified, true) &&
+                    in_array('saucer-welcome-bronze', $saved->honours->verified, true),
+                'completed Moon buildings and the optional pad verify from the validated town',
+            );
+        }
+        if ($area['currency'] === 'moonstones') {
+            check(
+                in_array('moonstone-reserve-gold', $saved->honours->verified, true),
+                'moonstone spending retains lifetime resource proof at ' . $area['id'],
+            );
+        }
+    }
+    $continuousFlow = flow('continuous honours grow beyond the coin allowance without a victory');
+    $continuousBase = $validator->accept(
+        $continuousFlow->before,
+        null,
+        $continuousFlow->serverNow,
+        false,
+        [],
+        'continuous-honours',
+    );
+    $continuousSaved = $validator->accept(
+        $continuousFlow->after,
+        $continuousBase,
+        $continuousFlow->serverNow,
+        false,
+        [],
+        'continuous-honours',
+    );
+    $continuousSaved = $catalog->keep($continuousSaved, null, $noSocial);
+    check(
+        counters($continuousSaved)['gems'] === ['ruby' => 2600] &&
+            counters($continuousSaved)['mine'] === ['relics' => 2] &&
+            counters($continuousSaved)['continuousGems'] === 2600,
+        'cumulative continuous claims credit only growth, including beyond the coin allowance',
+    );
+    check(
+        $continuousSaved->town->moonstoneProduction->stored === 3 &&
+            $continuousSaved->continuousRecords->{'249'}->moonstoneGems === 900 &&
+            $continuousSaved->integrity->context->run->moonstoneJewels === 2600,
+        'the same unchanged jewels produce bounded workshop stock alongside uncapped honours collection',
+    );
+    check(
+        !array_diff(
+            ['gem-ruby-bronze', 'fusion-bronze', 'endless-seam-bronze', 'continuous-score-silver'],
+            $continuousSaved->honours->verified,
+        ),
+        'the server verifies version-2 mastery and new continuous ranks from its own counters',
+    );
+    check(
+        $continuousSaved->town->completedRuns === $continuousBase->town->completedRuns &&
+            $continuousSaved->records == $continuousBase->records &&
+            !in_array('score-bronze', $continuousSaved->honours->verified, true),
+        'continuous play cannot complete puzzles, award normal score ranks or advance eras',
+    );
+    $retry = $validator->accept(
+        $continuousFlow->after,
+        $continuousSaved,
+        $continuousFlow->serverNow,
+        false,
+        [],
+        'continuous-honours',
+    );
+    check(
+        counters($retry) === counters($continuousSaved),
+        'retrying continuous receipts never credits twice',
+    );
+    $seams = array_fill_keys(array_map(fn($n) => 'level-' . $n, range(1, 546)), 1);
+    check(
+        count(Honours::counts(asObject(['continuousLevels' => $seams]))['continuousLevels']) ===
+            546,
+        'continuous seam history retains the full fixed range rather than the ordinary 64-key counter bound',
+    );
+    $legacyAward = asObject(asArray($continuousSaved));
+    $legacyAward->honours->earned->{'gem-ruby-bronze'}->version = 1;
+    check(
+        $catalog->keep($legacyAward, null, $noSocial)->honours->earned->{'gem-ruby-bronze'}
+            ->version === 1,
+        'the approved version-2 measure never rewrites a legacy earned requirement version',
     );
 
     // ---------- Storage bounds ----------
@@ -223,6 +412,9 @@ try {
             'fusions' => (object) [],
             'forge' => 0,
             'guardian' => 0,
+            'continuousGems' => 0,
+            'continuousBest' => 0,
+            'continuousLevels' => (object) [],
             'visitors' => 0,
             'travels' => 0,
         ],
@@ -256,6 +448,9 @@ try {
             'fusions' => ['bomb+cross' => 2],
             'forge' => 2,
             'guardian' => 1,
+            'continuousGems' => 0,
+            'continuousBest' => 0,
+            'continuousLevels' => (object) [],
             'visitors' => 2,
             'travels' => 4,
         ],
@@ -341,6 +536,9 @@ try {
                 'fusions' => ['bomb+cross' => 3],
                 'forge' => 0,
                 'guardian' => 0,
+                'continuousGems' => 0,
+                'continuousBest' => 0,
+                'continuousLevels' => [],
                 'visitors' => 0,
                 'travels' => 0,
             ],
@@ -380,7 +578,8 @@ try {
         'bounding an already bounded block changes nothing',
     );
     check(
-        kept([], ['honours' => ['earned' => []]])['seenGeneration'] === 1,
+        kept([], ['honours' => ['earned' => []]])['seenGeneration'] ===
+            $schema['honours']['version'],
         'a block from before generations has seen the current generation, as on the client',
     );
 
@@ -441,6 +640,9 @@ try {
             'fusions' => ['bomb+cross' => 3, 'cross+cross' => 2],
             'forge' => 3,
             'guardian' => 0,
+            'continuousGems' => 0,
+            'continuousBest' => 0,
+            'continuousLevels' => [],
             'visitors' => 4,
             'travels' => 6,
         ],
@@ -499,6 +701,9 @@ try {
         'fusions' => ['bomb+cross' => 1, 'cross+cross' => 2],
         'forge' => 1,
         'guardian' => 1,
+        'continuousGems' => 0,
+        'continuousBest' => 0,
+        'continuousLevels' => [],
     ]);
     $enrolled = $validator->accept($offline->before, null, $clock, false, [], 'offline-town');
     check(
@@ -597,6 +802,9 @@ try {
         'fusions' => ['cross+cross' => 2],
         'forge' => 1,
         'guardian' => 1,
+        'continuousGems' => 0,
+        'continuousBest' => 0,
+        'continuousLevels' => [],
     ]);
     foreach (
         [
@@ -856,7 +1064,7 @@ try {
         check(
             str_contains(
                 $public->projection($odd, 'Odd', 'honours'),
-                '"honours":{"version":1,"earned":{},"showcase":[]}',
+                '"honours":{"version":5,"earned":{},"showcase":[]}',
             ),
             'garbage still projects an empty object',
         );
@@ -950,10 +1158,32 @@ try {
             'origin_town_id' => $origin,
             'town_name' => $origin === null ? null : 'Somewhere',
             'era' => 'frontier',
+            // Live presence marks every visit made while signed in.
+            'signed_in' => $name !== '' || $origin !== null ? 1 : 0,
             'arrived_at' => 1000 + $visitNumber,
             'last_seen_at' => 1000 + $visitNumber,
             'departed_at' => 1000 + $visitNumber,
         ]);
+        // Presence records a travel for a home town visiting another player's village.
+        $owner = fn($town) => $db
+            ->get()
+            ->fetchOne('SELECT player_id FROM towns WHERE id=?', [$town]);
+        if (
+            $origin !== null &&
+            $owner($host) !== $owner($origin) &&
+            !$db
+                ->get()
+                ->fetchOne(
+                    'SELECT host_town_id FROM town_travels WHERE origin_town_id=? AND host_town_id=?',
+                    [$origin, $host],
+                )
+        ) {
+            $db->get()->insert('town_travels', [
+                'origin_town_id' => $origin,
+                'host_town_id' => $host,
+                'visited_at' => 1000 + $visitNumber,
+            ]);
+        }
     };
     $hostProfile = tracked();
     $hostProfile->honours = asObject([
@@ -1050,15 +1280,15 @@ try {
         'social ranks verify at save time from the server counts ' .
             json_encode($hostSave['profile']['honours']['verified']),
     );
-    // The visitors and one visited village disappear; verified honours stay published.
+    // The visitors and one visited village disappear; verified honours stay published and
+    // the village keeps counting, since travels belong to the visiting town.
     $db->get()->executeStatement('DELETE FROM visitor_visits WHERE town_id=?', [$hostId]);
     $db->get()->executeStatement('DELETE FROM towns WHERE id=?', [$others[1]]);
     check(
         status(200, callApi('GET', 'towns/' . $hostId . '/visitors', null, $owner), 'later')[
             'townsVisited'
-        ] ===
-            $travelGoal - 1,
-        'a deleted village no longer counts as visited',
+        ] === $travelGoal,
+        'a deleted village still counts as visited',
     );
     $visit = status(200, callApi('GET', 'villages/' . $hostPublic), 'visit host');
     check(

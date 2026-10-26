@@ -40,7 +40,7 @@ function ownedMesh(parent, positions, color) {
   geometry.computeVertexNormals();
   geometry.userData.owned = true;
   const mesh = new THREE.Mesh(geometry, terrainMaterial({ color, side: THREE.DoubleSide }));
-  mesh.receiveShadow = true;
+  mesh.castShadow = mesh.receiveShadow = true;
   parent.add(mesh);
   return mesh;
 }

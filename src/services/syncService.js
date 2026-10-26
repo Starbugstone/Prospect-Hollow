@@ -2,17 +2,22 @@ import { recoveryStore } from './recoveryStore';
 import { acknowledgeIntegrity, prepareIntegritySnapshot } from './saveIntegrity';
 import { jsonCopy } from './jsonCopy';
 import { keepHonours } from '../data/honours';
+import { progressKey } from './townStorage';
+const applicationKey = (profile) => progressKey(profile, { includeIncomeCheckpoint: true });
 const queues = new WeakMap();
 const CHANGED_SINCE_REVIEW = 'Your save changed. Review it before confirming another overwrite.';
 const LEAVE_MINE_TO_REVIEW = 'Return to the village to review your preserved save.';
 const WRONG_TOWN = 'The server returned a different town.';
+// Formats the server will never accept: it records no comparison support could approve.
+const UNSUPPORTED = [
+  'save_format_unsupported',
+  'save_rules_unsupported',
+  'save_integrity_unsupported',
+];
 // A rejected upload waits for new progress, except a format the server will never accept.
 export const uploadBlocked = (meta) =>
   !!meta?.uploadError &&
-  (['save_format_unsupported', 'save_rules_unsupported', 'save_integrity_unsupported'].includes(
-    meta.uploadError.code,
-  ) ||
-    meta.uploadError.sequence === meta.sequence);
+  (UNSUPPORTED.includes(meta.uploadError.code) || meta.uploadError.sequence === meta.sequence);
 // Recovery copies used to live inline in the town record; they move to the recovery store.
 export const legacyRecovery = (recovery, owner, townId) => ({
   ...recovery,
@@ -55,6 +60,7 @@ export function createSyncService({
   account,
   canApply = () => true,
   applied = () => {},
+  integrityApplied = () => {},
   eligible = () => true,
   targets = (owner) => storage.records(owner),
   run = (id, owner, operation) => serialize(storage, `${owner}:${id}`, operation),
@@ -62,9 +68,9 @@ export function createSyncService({
   let running;
   const current = (owner) => account()?.id === owner;
   // A failed browser backup pauses uploads for this sequence and is reported to the player.
-  const backupFailed = (townId, owner, error) => {
+  const backupFailed = async (townId, owner, error) => {
     if (current(owner))
-      storage.mutate(townId, owner, (r) => {
+      await storage.mutate(townId, owner, (r) => {
         r.meta.uploadError = {
           message: error.message,
           code: 'local_backup_failed',
@@ -72,8 +78,8 @@ export function createSyncService({
         };
       });
   };
-  const entry = (id, owner) =>
-    storage.get?.(id, owner) ?? storage.records(owner).find((r) => r.meta.id === id);
+  const entry = async (id, owner) =>
+    storage.get ? storage.get(id, owner) : storage.records(owner).find((r) => r.meta.id === id);
   async function preserve(record, reason) {
     const owner = record.meta.owner,
       townId = record.meta.id;
@@ -90,7 +96,7 @@ export function createSyncService({
     try {
       await recoveries.put(saved);
     } catch (error) {
-      backupFailed(townId, owner, error);
+      await backupFailed(townId, owner, error);
       throw error;
     }
     const { profile, ...descriptor } = saved;
@@ -123,12 +129,16 @@ export function createSyncService({
         );
     }
     let replaced = false,
-      recovery;
-    const before = entry(id, owner);
+      recovery,
+      acceptedProfile;
+    const before = await entry(id, owner);
+    let gameplayChanged = false;
     if (pending?.replace && before?.meta.sequence === sequence && canApply(id))
       recovery = await preserve(before, 'replacement');
     if (!current(owner)) return;
-    storage.mutate(id, owner, (r) => {
+    const committed = await storage.mutate(id, owner, (r) => {
+      replaced = false;
+      acceptedProfile = null;
       if (result.revision < r.meta.baseRevision) return false;
       if (pending && r.meta.pending?.body.uploadId !== pending.body.uploadId) return false;
       if (pending?.replace) {
@@ -149,6 +159,8 @@ export function createSyncService({
         r.profile = keepHonours(result.profile, r.profile);
         replaced = true;
       }
+      acceptedProfile = replaced ? r.profile : null;
+      gameplayChanged = replaced && applicationKey(r.profile) !== applicationKey(before.profile);
       if (ack && !replaced && r.profile.integrity)
         r.profile.integrity = acknowledgeIntegrity(r.profile.integrity, ack);
       if (replaced || (pending?.restoreIntent && pending.restoreIntent === r.meta.restoreIntent))
@@ -164,17 +176,23 @@ export function createSyncService({
         uploadError: null,
       };
     });
-    if (replaced) applied(id);
+    if (committed && replaced && gameplayChanged) applied(id, acceptedProfile);
+    else if (committed && replaced) integrityApplied(id, acceptedProfile?.integrity);
   }
   async function conflict(id, owner, cloud, pending = null) {
     if (cloud.townId !== id) throw new Error(WRONG_TOWN);
     let replaced = false,
-      recovery;
-    const before = entry(id, owner);
+      recovery,
+      acceptedProfile;
+    const before = await entry(id, owner);
+    let gameplayChanged = false;
     if (current(owner) && before?.meta.dirty && eligible(id, owner) && canApply(id))
       recovery = await preserve(before, 'desync');
+    let committed = false;
     if (current(owner))
-      storage.mutate(id, owner, (r) => {
+      committed = await storage.mutate(id, owner, (r) => {
+        replaced = false;
+        acceptedProfile = null;
         if (cloud.revision < Math.max(r.meta.baseRevision, r.meta.conflict?.revision ?? 0))
           return false;
         if (pending && r.meta.pending?.body.uploadId !== pending.body.uploadId) return false;
@@ -187,6 +205,7 @@ export function createSyncService({
           return;
         if (r.meta.dirty) r.meta.recovery = recovery;
         // The server copy wins, but the town never loses an earned honour.
+        const previousProfile = r.profile;
         r.profile = keepHonours(cloud.profile, r.profile);
         delete r.meta.restoreIntent;
         r.meta = {
@@ -194,12 +213,20 @@ export function createSyncService({
           ...cloudMeta(cloud),
           dirty: r.profile !== cloud.profile,
           conflict: null,
+          // The cloud save replaced the progress the server had rejected.
+          uploadError: null,
           sequence: r.meta.sequence + 1,
-          desyncNotice: r.meta.recovery?.reason === 'desync',
+          // Support edited this save after a blocked sync: load it, without a choice.
+          desyncNotice: cloud.adminReset ? 'support' : r.meta.recovery?.reason === 'desync',
         };
         replaced = true;
+        acceptedProfile = r.profile;
+        gameplayChanged = applicationKey(r.profile) !== applicationKey(previousProfile);
       });
-    if (replaced) applied(id);
+    if (before?.meta.pending?.snapshot && !(await entry(id, owner))?.meta.pending)
+      await recoveries.removeUpload(before.meta.pending.body.uploadId, owner, id).catch(() => {});
+    if (committed && replaced && gameplayChanged) applied(id, acceptedProfile);
+    else if (committed && replaced) integrityApplied(id, acceptedProfile?.integrity);
   }
   async function stage(id, owner, pending) {
     pending = {
@@ -214,20 +241,20 @@ export function createSyncService({
         profile: pending.body.profile,
       });
     } catch (error) {
-      backupFailed(id, owner, error);
+      await backupFailed(id, owner, error);
       throw error;
     }
     if (!current(owner) || !eligible(id, owner)) return null;
     if (
       pending.replace &&
-      (!canApply(id) || entry(id, owner)?.meta.sequence !== pending.sequence)
+      (!canApply(id) || (await entry(id, owner))?.meta.sequence !== pending.sequence)
     ) {
       await recoveries.removeUpload(pending.body.uploadId, owner, id);
       throw new Error(CHANGED_SINCE_REVIEW);
     }
     const { profile, ...body } = pending.body;
     const durable = { ...pending, body, snapshot: true };
-    const saved = storage.mutate(id, owner, (r) => {
+    const saved = await storage.mutate(id, owner, (r) => {
       if (r.meta.pending) return false;
       r.meta.pending = durable;
     });
@@ -239,10 +266,13 @@ export function createSyncService({
       let body = pending.body;
       if (pending.snapshot) {
         const snapshot = await recoveries.getUpload(body.uploadId, owner, id);
-        if (!current(owner) || entry(id, owner)?.meta.pending?.body.uploadId !== body.uploadId)
+        if (
+          !current(owner) ||
+          (await entry(id, owner))?.meta.pending?.body.uploadId !== body.uploadId
+        )
           return;
         if (!snapshot) {
-          storage.mutate(id, owner, (r) => {
+          await storage.mutate(id, owner, (r) => {
             r.meta.pending = null;
             r.meta.dirty = true;
             r.meta.uploadError = {
@@ -266,15 +296,20 @@ export function createSyncService({
             { cause: error },
           );
       } else if (error.status === 404 && current(owner))
-        storage.mutate(id, owner, (r) => {
+        await storage.mutate(id, owner, (r) => {
           if (r.meta.pending?.body.uploadId !== pending.body.uploadId) return false;
           r.meta.missing = true;
         });
       else {
         if ([413, 422].includes(error.status) && current(owner))
-          storage.mutate(id, owner, (r) => {
+          await storage.mutate(id, owner, (r) => {
             if (r.meta.pending?.body.uploadId !== pending.body.uploadId) return false;
-            r.meta.pending = null;
+            // Keep the immutable rejected upload for an exact retry after support
+            // approves it. Restaging would change clientAt and invalidate that approval.
+            // An unsupported format cannot be approved, so a retry prepares a fresh copy.
+            if (error.status === 422 && !UNSUPPORTED.includes(error.data?.code))
+              r.meta.pending.rejected = true;
+            else r.meta.pending = null;
             r.meta.uploadError = {
               message: error.message,
               status: error.status,
@@ -288,34 +323,57 @@ export function createSyncService({
       if (
         pending.snapshot &&
         current(owner) &&
-        entry(id, owner)?.meta.pending?.body.uploadId !== pending.body.uploadId
+        (await entry(id, owner))?.meta.pending?.body.uploadId !== pending.body.uploadId
       )
         await recoveries.removeUpload(pending.body.uploadId, owner, id).catch(() => {});
     }
   }
+  // The cloud copy, or null once the server no longer has the town.
+  async function readCloud(id, owner) {
+    try {
+      return await request(`towns/${id}`);
+    } catch (error) {
+      if (error.status !== 404) throw error;
+      if (current(owner))
+        await storage.mutate(id, owner, (r) => {
+          r.meta.missing = true;
+        });
+      return null;
+    }
+  }
+  async function replaceBlocked(id, owner) {
+    const remote = await readCloud(id, owner);
+    const local = await entry(id, owner);
+    if (!remote || !current(owner) || !local || !eligible(id, owner) || !uploadBlocked(local.meta))
+      return;
+    if (remote.townId !== id) throw new Error(WRONG_TOWN);
+    if (remote.revision > local.meta.baseRevision) await conflict(id, owner, remote);
+  }
   async function syncTown(id, owner, pull) {
-    let local = entry(id, owner);
+    let local = await entry(id, owner);
     if (!local || local.meta.missing || !current(owner) || !eligible(id, owner)) return;
-    if (uploadBlocked(local.meta)) return;
+    // A rejected upload waits, but a newer cloud save (support's reset, another device)
+    // still replaces the progress the server would not take.
+    if (uploadBlocked(local.meta)) return pull && replaceBlocked(id, owner);
+    // New progress gets its own review; only an unchanged explicit retry reuses the
+    // rejected snapshot. The blocked check above still prevents automatic retry loops.
+    if (local.meta.pending?.rejected && local.meta.pending.sequence !== local.meta.sequence) {
+      const discarded = local.meta.pending;
+      await storage.mutate(id, owner, (r) => {
+        if (r.meta.pending?.body.uploadId !== discarded.body.uploadId) return false;
+        r.meta.pending = null;
+      });
+      await recoveries.removeUpload(discarded.body.uploadId, owner, id).catch(() => {});
+      local = await entry(id, owner);
+      if (!local || !current(owner) || !eligible(id, owner)) return;
+    }
     if (local.meta.pending)
       return upload(id, owner, local.meta.pending, local.meta.pending.resolve);
     if (local.meta.conflict && !canApply(id)) return;
     if (!local.meta.conflict && !pull && !local.meta.dirty) return;
-    let remote;
-    try {
-      remote = await request(`towns/${id}`);
-    } catch (error) {
-      if (error.status === 404) {
-        if (current(owner))
-          storage.mutate(id, owner, (r) => {
-            r.meta.missing = true;
-          });
-        return;
-      }
-      throw error;
-    }
-    if (!current(owner)) return;
-    local = entry(id, owner);
+    const remote = await readCloud(id, owner);
+    if (!remote || !current(owner)) return;
+    local = await entry(id, owner);
     if (!local || !eligible(id, owner)) return;
     // A separate worker may have staged a durable retry while the GET waited.
     if (local.meta.pending)
@@ -328,7 +386,7 @@ export function createSyncService({
       remote.isPublic !== local.meta.isPublic ||
       remote.publicId !== local.meta.publicId
     )
-      storage.mutate(id, owner, (r) => {
+      await storage.mutate(id, owner, (r) => {
         r.meta.name = remote.name;
         r.meta.isPublic = remote.isPublic;
         r.meta.publicId = remote.publicId;
@@ -356,7 +414,7 @@ export function createSyncService({
       const owner = account()?.id;
       if (!owner) return Promise.resolve();
       running = (async () => {
-        for (const r of targets(owner)) {
+        for (const r of await targets(owner)) {
           if (!current(owner)) break;
           if (eligible(r.meta.id, owner))
             await run(r.meta.id, owner, () => syncTown(r.meta.id, owner, pull));
@@ -372,7 +430,7 @@ export function createSyncService({
         if (!current(owner) || !eligible(id, owner)) throw new Error('Review this town again.');
         if (!canApply(id)) throw new Error(LEAVE_MINE_TO_REVIEW);
         await syncTown(id, owner, true);
-        const local = entry(id, owner);
+        const local = await entry(id, owner);
         if (!current(owner) || !eligible(id, owner) || !canApply(id))
           throw new Error(LEAVE_MINE_TO_REVIEW);
         if (
@@ -400,7 +458,7 @@ export function createSyncService({
     overwriteRecovery(id, review) {
       const owner = account()?.id;
       return run(id, owner, async () => {
-        const local = entry(id, owner);
+        const local = await entry(id, owner);
         if (
           !current(owner) ||
           !eligible(id, owner) ||
@@ -423,7 +481,7 @@ export function createSyncService({
             : await recoveries.get(review.recovery.id, owner, id);
         if (
           !recovery ||
-          entry(id, owner)?.meta.sequence !== review.sequence ||
+          (await entry(id, owner))?.meta.sequence !== review.sequence ||
           !current(owner) ||
           !canApply(id)
         )
@@ -445,7 +503,7 @@ export function createSyncService({
     restore(id, profile) {
       const owner = account()?.id;
       return run(id, owner, async () => {
-        const local = entry(id, owner);
+        const local = await entry(id, owner);
         if (!current(owner) || !eligible(id, owner) || !local || !canApply(id))
           throw new Error('Leave the mine before restoring a save.');
         if (local.meta.dirty || local.meta.pending || local.meta.conflict)

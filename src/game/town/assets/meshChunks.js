@@ -1,3 +1,5 @@
+import { readAsset } from './assetFiles.js';
+
 // Binary mesh chunks written by scripts/split-mesh-catalogs.mjs. Geometry is stored
 // as little-endian Float32 positions and normals (exactly what the GPU receives) and
 // Uint16/Uint32 indices, behind a small JSON header with names, joints and colors.
@@ -58,17 +60,6 @@ export function decodeMeshChunk(buffer) {
   return { models, ...(header.footprints ? { footprints: header.footprints } : {}) };
 }
 
-async function readBytes(url) {
-  if (url.protocol === 'file:') {
-    // Node (tests, footprint generation) reads the file; browsers fetch the asset.
-    const fs = 'node:fs/promises';
-    const data = await (await import(/* @vite-ignore */ fs)).readFile(url);
-    return new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
-  }
-  const response = await fetch(url);
-  if (!response.ok) throw new Error(`Mesh chunk unavailable: ${response.status}`);
-  return new Uint8Array(await response.arrayBuffer());
-}
 const gzipped = (bytes) => bytes[0] === 0x1f && bytes[1] === 0x8b;
 async function inflate(bytes) {
   const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
@@ -83,9 +74,9 @@ async function inflate(bytes) {
 export async function loadMeshChunk(packed, plain) {
   let bytes;
   if (typeof DecompressionStream === 'function') {
-    bytes = await readBytes(packed);
+    bytes = await readAsset(packed);
     if (gzipped(bytes)) bytes = await inflate(bytes);
-  } else bytes = await readBytes(plain);
+  } else bytes = await readAsset(plain);
   const buffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
   return { default: decodeMeshChunk(buffer) };
 }

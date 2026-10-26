@@ -263,7 +263,7 @@ describe('Profile and reward integrity', () => {
     const reloaded = useCampaignStore();
     expect(reloaded.nextLevel).toBe(2);
     expect(reloaded.town.coins).toBe(27);
-    expect(JSON.parse(saved.get(SAVE_KEY)).schemaVersion).toBe(2);
+    expect(JSON.parse(saved.get(SAVE_KEY)).schemaVersion).toBe(4);
   });
   it('saves coins, chests, progress and settlement together; duplicate calls and reloads never pay twice', () => {
     const campaign = useCampaignStore();
@@ -291,7 +291,7 @@ describe('Profile and reward integrity', () => {
     campaign.recordVictory(victory(currentId));
     expect(campaign.upgradeBuilding('well', 0)).toBe(true);
     expect(campaign.upgradeBuilding('well', 0)).toBe(false);
-    campaign.awardReward({ id: 'tnt', kind: 'power', label: 'Hammer', quantity: 1 });
+    chestRewards.grantReward(campaign, { id: 'tnt', kind: 'power', label: 'Hammer', quantity: 1 });
     const hammerBefore = campaign.powers.find((power) => power.id === 'tnt').quantity;
     useInventoryStore().consumeItem('tnt');
     setActivePinia(createPinia());

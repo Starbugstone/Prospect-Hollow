@@ -17,6 +17,7 @@
         <select v-model="query.filter">
           <option value="live">All towns</option>
           <option value="public">Shared towns</option>
+          <option value="blocked">Sync blocked</option>
           <option value="deleted">Deleted (kept 30 days)</option>
         </select>
       </label>
@@ -33,6 +34,7 @@
           <th scope="col" class="number">Unique visitors</th>
           <th scope="col">Last save</th>
           <th scope="col">State</th>
+          <th scope="col">Sync approval</th>
         </tr>
       </thead>
       <tbody>
@@ -44,6 +46,7 @@
         >
           <td>
             <a :href="`#/towns/${town.id}`" @click.stop>{{ town.name }}</a>
+            <SyncBlocked :town="town" />
           </td>
           <td>
             <a :href="`#/players/${town.owner.id}`" @click.stop>{{
@@ -56,15 +59,34 @@
           <td class="number">{{ whole(town.uniqueVisitors) }}</td>
           <td :title="dateTime(town.savedAt)">{{ relativeTime(town.savedAt) }}</td>
           <td><TownState :town="town" /></td>
+          <td @click.stop>
+            <a :href="`#/towns/${town.id}`">{{
+              town.syncApproval ? 'View approval' : 'Review sync'
+            }}</a>
+            <p v-if="town.syncApproval" class="admin-muted">
+              {{
+                town.forceSync && town.forceSyncUntil * 1000 > Date.now()
+                  ? 'Approved until'
+                  : 'Inactive; expiry'
+              }}
+              {{ dateTime(town.forceSyncUntil) }}
+            </p>
+          </td>
         </tr>
         <tr v-if="!result.towns.length">
-          <td colspan="8" class="admin-empty">No towns match.</td>
+          <td colspan="9" class="admin-empty">No towns match.</td>
         </tr>
       </tbody>
     </table>
     <p class="admin-muted">
       Unique visitors counts each signed-in visitor once across recorded visits. Owner visits and
       anonymous guests are excluded.
+    </p>
+    <p class="admin-muted">
+      Sync blocked marks a town whose last upload the save protection rejected; its page compares
+      the saves. An admin can approve a specific rejected upload for 24 hours. Only an unchanged
+      retry at the same cloud revision can use that approval, once. The player can press Retry cloud
+      saving in the game.
     </p>
     <Pager
       v-if="result"
@@ -82,6 +104,7 @@ import { dateTime, relativeTime, whole } from '../format';
 import { eraLabel } from '../labels';
 import Pager from '../components/Pager.vue';
 import TownState from '../components/TownState.vue';
+import SyncBlocked from '../components/SyncBlocked.vue';
 const result = ref(null),
   error = ref('');
 let generation = 0,

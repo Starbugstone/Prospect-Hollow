@@ -5,6 +5,7 @@ import { eventKind } from '../../data/townEvents';
 import { PLOTS } from './TownLayout';
 import { keepCameraAboveTerrain } from './TownLandscape';
 import { smooth01 } from './TownMath';
+import { syncTownControls } from './TownControls';
 
 const direction = new Vector3(0.28, 0.72, 0.64).normalize();
 // Content selects subjects; framing, rendering and cleanup stay shared across eras.
@@ -121,9 +122,9 @@ export function restoreEventCamera(d) {
     d.controls.target.copy(d.eventCamera.target);
     d.overview = d.eventCamera.overview;
     d.eventCamera = null;
-    d.controls.enabled = !d.paused && !d.cinematic;
+    syncTownControls(d);
     d.camera.lookAt(d.controls.target);
-    d.frameCache.valid = false;
+    if (d.frameCache) d.frameCache.valid = false;
     return;
   }
   Object.assign(d.eventCamera, {
@@ -143,8 +144,8 @@ export function updateEventCamera(d) {
     d.controls.target.lerpVectors(shot.fromTarget, shot.target, t);
     if (t === 1) {
       d.overview = shot.overview;
-      d.controls.enabled = !d.paused && !d.cinematic;
       d.eventCamera = null;
+      syncTownControls(d);
     }
   } else if (d.raid) {
     const definition = INCIDENT_SHOTS[eventKind(d.raid.event)];
@@ -180,7 +181,7 @@ export function updateEventCamera(d) {
   shot.previous = d.elapsed;
   if (!shot.lastPosition.equals(d.camera.position) || !shot.lastTarget.equals(d.controls.target)) {
     d.camera.lookAt(d.controls.target);
-    d.frameCache.valid = false;
+    if (d.frameCache) d.frameCache.valid = false;
     shot.lastPosition.copy(d.camera.position);
     shot.lastTarget.copy(d.controls.target);
     return true;

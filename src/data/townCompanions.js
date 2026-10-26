@@ -67,6 +67,15 @@ export const COMPANION_NEIGHBORHOODS = [
       'orchardCottages',
       'riverlightPavilion',
       'springsRetreat',
+      // The same Willowkin neighbor follows the town across the railway.
+      'cloudOrchard',
+      'windsongLofts',
+      'skyHarbour',
+      'greatTelescope',
+      'dewlightGardens',
+      'starlightTerraces',
+      'moonpost',
+      'missionHomesteads',
     ],
   },
 ];

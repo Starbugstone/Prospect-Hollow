@@ -2,14 +2,16 @@ import { neighborsOf, isAnchored } from './TileRules.js';
 import { GEM_TYPES } from './GemFactory.js';
 import { isPlayableCell } from './BoardTopology.js';
 
-// Floor markers never anchor gems or obstruct gravity. Survey markers light in
-// numbered order; ordinary lanterns can be lit in any order. Both accept blasts.
+// Floor markers never anchor gems or obstruct gravity. A lantern lights only when a
+// match or blast clears its own cell. Survey markers light in numbered order, from a
+// match or blast on or beside them; ordinary lanterns can be lit in any order.
 export function signalTargets(tiles, impacted, cols, rows, ordinaryIndices = impacted) {
   const survey = tiles.reduce(
     (next, tile) =>
       tile.signalHealth && tile.surveyOrder ? Math.min(next, tile.surveyOrder) : next,
     Infinity,
   );
+  const hit = new Set(impacted);
   const touched = new Set(impacted);
   for (const index of impacted)
     for (const neighbor of neighborsOf(index, cols, rows)) touched.add(neighbor);
@@ -20,6 +22,7 @@ export function signalTargets(tiles, impacted, cols, rows, ordinaryIndices = imp
     (index) =>
       isPlayableCell(tiles[index]) &&
       tiles[index]?.signalHealth > 0 &&
+      (tiles[index].signal !== 'lantern' || hit.has(index)) &&
       (tiles[index].signal !== 'spore' || sporeTouched.has(index)) &&
       (!tiles[index].surveyOrder || tiles[index].surveyOrder === survey),
   );

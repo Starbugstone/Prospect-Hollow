@@ -107,7 +107,7 @@
           <path d="M0 348Q169 245 320 310T700 296V590H0Z" fill="url(#frontier-ground)" />
           <path d="M295 278Q386 330 328 373T443 590" stroke="#f1dfb3" stroke-width="33" />
           <path d="M91 426Q248 377 524 420" stroke="#f1dfb3" stroke-width="20" />
-          <g transform="translate(344 294) scale(.48)"><TownMine decorative /></g>
+          <g transform="translate(344 294) scale(.48)"><TownMine /></g>
           <g transform="translate(192 410) scale(.87)"><TownBuilding id="home" :stage="1" /></g>
           <g transform="translate(485 396) scale(.8)"><TownBuilding id="farm" :stage="1" /></g>
           <g transform="translate(335 457) scale(.62)"><TownBuilding id="well" :stage="1" /></g>
@@ -157,7 +157,8 @@
     </section>
     <footer class="landing-footer">
       <span>PROSPECT HOLLOW</span
-      ><span>{{ t(campaign.saveWarning || 'Your adventure is saved on this device.') }}</span>
+      ><span>{{ t(campaign.saveWarning || 'Your adventure is saved on this device.') }}</span
+      ><a :href="privacyUrl()">{{ t('Privacy') }}</a>
     </footer>
   </main>
 </template>
@@ -167,6 +168,7 @@ import { t, locale } from '../i18n';
 import { latestUpdates } from '../data/updates';
 import { useCampaignStore } from '../stores/campaignStore';
 import { cloud } from '../services/cloudProfile';
+import { privacyUrl } from '../services/appRoute';
 import TownBuilding from './town/TownBuilding.vue';
 import TownMine from './town/TownMine.vue';
 import TownIcon from './town/TownIcon.vue';

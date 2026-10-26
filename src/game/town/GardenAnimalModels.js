@@ -87,6 +87,71 @@ function hedgehog(d, root) {
   return { root, body, head, legs, wings: [], tail };
 }
 
+function hare(d, root) {
+  const coat = '#ae9273',
+    light = '#e9ddc6';
+  const body = d.group(root);
+  d.ball(body, 0, 0.32, -0.04, [0.18, 0.24, 0.28], coat);
+  const head = d.group(body, 0, 0.52, 0.2);
+  d.ball(head, 0, 0, 0, [0.12, 0.14, 0.14], coat);
+  for (const side of [-1, 1]) {
+    const ear = d.group(head, side * 0.065, 0.13, -0.02);
+    ear.rotation.z = -side * 0.16;
+    d.ball(ear, 0, 0.17, 0, [0.045, 0.23, 0.04], coat);
+    d.ball(ear, 0, 0.17, 0.033, [0.022, 0.17, 0.012], '#cba796');
+    d.ball(head, side * 0.045, -0.045, 0.115, [0.052, 0.04, 0.04], light);
+    d.ball(body, side * 0.13, 0.2, -0.17, [0.11, 0.16, 0.15], coat);
+  }
+  eyes(d, head, 0.097, 0.025, 0.082);
+  d.ball(head, 0, -0.025, 0.157, [0.025, 0.02, 0.019], '#71544c');
+  const legs = quadruped(d, body, 0.16, 0.12, 0.17, coat, light);
+  const tail = d.group(body, 0, 0.32, -0.3);
+  d.ball(tail, 0, 0, 0, 0.09, light);
+  return { root, body, head, legs, wings: [], tail };
+}
+
+function squirrel(d, root) {
+  const coat = '#b77442',
+    light = '#e8cfaa';
+  const body = d.group(root);
+  d.ball(body, 0, 0.26, 0, [0.13, 0.19, 0.24], coat);
+  d.ball(body, 0, 0.29, 0.18, [0.09, 0.12, 0.07], light);
+  const head = d.group(body, 0, 0.44, 0.19);
+  d.ball(head, 0, 0, 0, [0.11, 0.12, 0.12], coat);
+  for (const side of [-1, 1]) {
+    d.mesh(head, 'cone', [0.045, 0.13, 0.04], [side * 0.075, 0.13, -0.025], coat);
+    d.ball(head, side * 0.045, -0.04, 0.09, [0.045, 0.035, 0.05], light);
+  }
+  eyes(d, head, 0.08, 0.02, 0.085);
+  d.ball(head, 0, -0.01, 0.14, 0.022, '#463b30');
+  const legs = quadruped(d, body, 0.13, 0.1, 0.15, coat, '#775034');
+  const tail = d.group(body, 0, 0.25, -0.2);
+  d.ball(tail, 0, 0.18, -0.15, [0.13, 0.27, 0.15], coat);
+  d.ball(tail, 0, 0.43, -0.13, [0.14, 0.18, 0.13], coat);
+  d.ball(tail, 0, 0.51, -0.035, [0.11, 0.09, 0.12], light);
+  return { root, body, head, legs, wings: [], tail };
+}
+
+function badger(d, root) {
+  const coat = '#87867d',
+    light = '#eee4ce',
+    dark = '#454740';
+  const body = d.group(root);
+  d.ball(body, 0, 0.3, -0.07, [0.25, 0.23, 0.36], coat);
+  const head = d.group(body, 0, 0.34, 0.29);
+  d.ball(head, 0, 0, 0, [0.17, 0.14, 0.22], light);
+  for (const side of [-1, 1]) {
+    d.ball(head, side * 0.105, 0.03, 0.055, [0.045, 0.115, 0.17], dark);
+    d.ball(head, side * 0.14, 0.105, -0.09, [0.05, 0.055, 0.04], light);
+    d.ball(head, side * 0.137, 0.025, 0.12, 0.018, '#191f1b');
+  }
+  d.ball(head, 0, -0.035, 0.21, [0.045, 0.03, 0.035], dark);
+  const legs = quadruped(d, body, 0.16, 0.17, 0.22, dark, dark);
+  const tail = d.group(body, 0, 0.28, -0.4);
+  d.ball(tail, 0, -0.015, -0.055, [0.065, 0.06, 0.12], light);
+  return { root, body, head, legs, wings: [], tail };
+}
+
 function willowkin(d, root) {
   const wood = '#dfc99e',
     leaf = '#8da572',
@@ -190,5 +255,5 @@ function willowkinResident(d, root) {
   return { root, body, head, legs, arms, wings: [], tail };
 }
 
-const MODELS = { deer, otter, hedgehog, willowkin, willowkinResident };
+const MODELS = { deer, otter, hedgehog, hare, squirrel, badger, willowkin, willowkinResident };
 export const gardenAnimalModel = (d, species, root) => MODELS[species](d, root);

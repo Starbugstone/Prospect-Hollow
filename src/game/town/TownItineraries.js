@@ -1,15 +1,19 @@
 import { ERA_BY_ID, FRONTIER_ERA } from '../../data/eras';
 import { PLOTS, plotStreet, routeGraph, routeOnGraph } from './TownLayout';
 import { walkPath } from './TownNavigation';
+import { finishWork } from '../PresentationWork';
 import { BRIDGE, crossesRiver, overWater, streetHeight } from './TownRiver';
 import { villagerRandom, villagerIdentity } from '../../data/villagers';
 import { hasVisitorTransport } from '../../data/visitorArrivals';
+import { HOME_SETTLEMENT } from '../../data/settlements';
 import { canVipSpend, vipVisitBuildings, vipVisitCount } from '../../data/vipVisits';
 
 export { streetHeight } from './TownRiver';
 const gap = (a, b) => Math.hypot(a[0] - b[0], a[2] - b[2]);
 // Off-route walkers step straight back onto a route only from sidewalk distance.
 const REJOIN_DISTANCE = 3;
+// A resident this close to its own door at the end of a journey goes in.
+const DOORSTEP = 0.6;
 const dry = (points, from = 0) =>
   points.every((p, i) => i <= from || !crossesRiver(points[i - 1], p));
 
@@ -45,6 +49,19 @@ function nearestJoin(joins, heading, usable = () => true) {
   );
 }
 
+// A street walk planned around the footprints, in resumable steps. A plan paused while
+// footprints changed is planned again, so a leg is never certified against stale ones.
+function* planWalk(navigation, points) {
+  if (!navigation) return walkPath(points);
+  if (navigation.planSteps)
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const revision = navigation.revision;
+      const path = yield* navigation.planSteps(points, 0.29);
+      if (navigation.revision === revision) return path;
+    }
+  return navigation.plan(points, 0.29) ?? walkPath(points);
+}
+
 // One graph and memoized legs per town snapshot. Compilation is driven by the
 // staged population generator, never by the animation loop or a coin update.
 export class TownItineraries {
@@ -58,7 +75,7 @@ export class TownItineraries {
         !d.town.projects?.[id] &&
         this.graph.nodes.has(plotStreet(id).join(',')),
     );
-    this.shops = new Set(vipVisitBuildings(d.town));
+    this.shops = new Set(vipVisitBuildings(d.town, HOME_SETTLEMENT));
     this.legs = new Map();
     this.detours = new Map();
     this.bridgeLane =
@@ -106,8 +123,13 @@ export class TownItineraries {
   }
 
   leg(from, to) {
+    return finishWork(this.legSteps(from, to));
+  }
+  // The same leg in resumable steps: its detour searches yield, so scheduled
+  // population and route repair can spread one long street plan over several frames.
+  *legSteps(from, to) {
     const key = `${from.join(',')}:${to.join(',')}`;
-    const direct = this.directLeg(from, to);
+    const direct = yield* this.directLegSteps(from, to);
     if (direct) return direct;
     if (this.detours.has(key)) return this.detours.get(key);
     // A dense junction can leave opposite sidewalks connected through a nearby
@@ -119,9 +141,9 @@ export class TownItineraries {
       .filter((p) => gap(p, from) > 1 && gap(p, to) > 1)
       .sort((a, b) => gap(from, a) + gap(a, to) - gap(from, b) - gap(b, to));
     for (const hub of hubs.slice(0, 6)) {
-      const a = this.directLeg(from, hub);
+      const a = yield* this.directLegSteps(from, hub);
       if (!a) continue;
-      const b = this.directLeg(hub, to);
+      const b = yield* this.directLegSteps(hub, to);
       if (!b) continue;
       const path = walkPath([...a.points, ...b.points.slice(1)]);
       this.d.navigation?.track?.(path, 0.29);
@@ -132,6 +154,9 @@ export class TownItineraries {
     return null;
   }
   directLeg(from, to) {
+    return finishWork(this.directLegSteps(from, to));
+  }
+  *directLegSteps(from, to) {
     const key = `${from.join(',')}:${to.join(',')}`;
     if (this.legs.has(key)) return this.legs.get(key);
     const start = this.nearest(from),
@@ -172,7 +197,7 @@ export class TownItineraries {
         points.at(-1)[1] = Math.max(points.at(-1)[1], to[1]);
       }
       points.push(to);
-      const path = this.d.navigation?.plan(points, 0.29) ?? walkPath(points);
+      const path = yield* planWalk(this.d.navigation, points);
       // Planning may return a prefix. Never call its endpoint a doorway.
       if (
         path.total > 0 &&
@@ -223,33 +248,117 @@ export class TownItineraries {
   }
   // End the current journey on `path` from where the walker stands, then rest.
   // `laps` is the route limit on `path` itself if no dry way back is found.
+  // A resident then walks on to its own door, to go in there.
   finish(actor, path, laps) {
-    const route = actor.motion && path?.total ? this.resume(actor, path) : null;
+    let route = actor.motion && path?.total ? this.resume(actor, path) : null;
     if (!route) {
       finishItinerary(actor, path, laps);
       return;
+    }
+    const { door, anchor } = actor.itinerary;
+    if (door && gap(route.points.at(-1), anchor) > 0.05) {
+      const home = this.leg(route.points.at(-1), anchor);
+      if (home?.total && dry(home.points)) {
+        route = walkPath([...route.points, ...home.points.slice(1)]);
+        this.d.navigation?.track?.(route, route.clearance?.margin ?? 0.29);
+      }
     }
     actor.walkPath = route;
     finishItinerary(actor, route, route.total);
     actor.motion.path = route;
     actor.motion.routeDistance = 0;
   }
+  // A patrol beat: out of the door, once round the patrol's own prepared route and
+  // back in. Replanned with each preparation, so a new building is walked around.
+  *beat(actor, anchor) {
+    const round = actor.routePath;
+    if (!round?.closed || !this.d.navigation?.planSteps) return [];
+    const start = round.points[0];
+    const out =
+      gap(anchor, start) < 0.05 ? walkPath([anchor]) : yield* this.legSteps(anchor, start);
+    if (!out?.points.length) return [];
+    const loop = yield* this.d.navigation.planSteps(round.points, 0.29);
+    if (
+      loop.total < round.total / 2 ||
+      gap(loop.points[0], start) > 0.05 ||
+      gap(loop.points.at(-1), start) > 0.05
+    )
+      return [];
+    const path = walkPath([
+      ...out.points,
+      ...loop.points.slice(1),
+      ...out.points.slice(0, -1).reverse(),
+    ]);
+    this.d.navigation.track?.(path, 0.29);
+    return [{ path, stops: [] }];
+  }
   *prepare(actor) {
     if (actor.work || (actor.manual && !actor.transportVisitor) || !actor.walkPath?.points.length)
       return;
-    const anchor = actor.itinerary?.anchor ?? actor.walkPath.points[0];
+    // Residents leave and come back through their home's door. Without a usable
+    // door they keep their street anchor, as do visitors and passers-by.
+    const door = actor.home ? this.endpoint(actor.home, true) : null;
+    let anchor = door,
+      plans = door ? yield* this.plans(actor, door) : [];
+    if (!plans.length) {
+      anchor = actor.itinerary?.anchor ?? actor.walkPath.points[0];
+      plans = yield* this.plans(actor, anchor);
+    }
+    if (!plans.length) return;
+    const r = actor.itinerary;
+    if (r) {
+      const moved = gap(r.anchor, anchor) > 0.05;
+      Object.assign(r, { plans, anchor, door: anchor === door });
+      // Someone resting indoors steps out from the right door at the next outing.
+      if (r.inside) {
+        stayInside(this.d, actor, moved);
+        return;
+      }
+      if (r.path !== actor.walkPath || moved) {
+        const distance = actor.motion?.routeDistance ?? 0;
+        this.finish(
+          actor,
+          actor.walkPath,
+          Math.max(1, Math.ceil(distance / actor.walkPath.total)) * actor.walkPath.total,
+        );
+      }
+      return;
+    }
+    actor.itinerary = {
+      plans,
+      anchor,
+      door: anchor === door,
+      visit: 0,
+      current: -1,
+      since: null,
+      phase: 'walking',
+      stops: [],
+    };
+    // Existing actors finish their current route before adopting a new journey.
+    if (actor.motion)
+      this.finish(
+        actor,
+        actor.walkPath,
+        Math.ceil(actor.motion.routeDistance / (actor.walkPath.total || 1)) * actor.walkPath.total,
+      );
+    else if (!actor.transportVisitor) beginItinerary(this.d, actor);
+  }
+  // Round trips from `anchor`: a patrol's beat, else tours of the town's destinations.
+  *plans(actor, anchor) {
+    if (actor.patrol) {
+      const beat = yield* this.beat(actor, anchor);
+      if (beat.length) return beat;
+    }
     const plans = [];
     const seen = new Set();
-    const options = this.destinations.filter((id) => id !== actor.source);
+    const options = this.destinations.filter((id) => id !== actor.source && id !== actor.home);
     // Spread destinations across districts, including the far bank when connected.
-    const seed = actor.itinerarySeed ?? actor.seed;
-    const ordered = [...options].sort(
-      (a, b) =>
-        villagerRandom(seed + options.indexOf(a) * 719) -
-        villagerRandom(seed + options.indexOf(b) * 719),
+    const ordered = visitOrder(
+      options,
+      actor.itinerarySeed ?? actor.seed,
+      this.shops,
+      actor.visitor,
     );
-    if (actor.visitor)
-      ordered.sort((a, b) => Number(this.shops.has(b)) - Number(this.shops.has(a)));
     const farBank = ordered
       .filter(
         (id) =>
@@ -271,7 +380,7 @@ export class TownItineraries {
     );
     for (const id of overlooks.slice(0, 3)) {
       const destination = this.endpoint(id);
-      const leg = destination && this.leg(anchor, destination);
+      const leg = destination && (yield* this.legSteps(anchor, destination));
       if (leg?.total) {
         const path = walkPath([...leg.points, ...leg.points.slice(0, -1).reverse()]);
         this.d.navigation?.track?.(path, 0.29);
@@ -281,10 +390,8 @@ export class TownItineraries {
       }
       yield;
     }
-    for (let n = 0; n < Math.min(12, ordered.length) && plans.length < 5; n++) {
-      const ids = [ordered[n], ordered[(n + 1) % ordered.length]].filter(
-        (id, i, all) => all.indexOf(id) === i,
-      );
+    for (const ids of tourPairs(ordered)) {
+      if (plans.length >= TOUR_CHOICES) break;
       const points = [anchor],
         stops = [],
         visited = [];
@@ -292,7 +399,7 @@ export class TownItineraries {
       for (const id of ids) {
         const enter = id && this.shops.has(id);
         const to = id ? this.endpoint(id, enter) : anchor;
-        const leg = to && this.leg(points.at(-1), to);
+        const leg = to && (yield* this.legSteps(points.at(-1), to));
         if (!leg) continue;
         points.push(...leg.points.slice(1));
         total += leg.total;
@@ -308,43 +415,50 @@ export class TownItineraries {
       }
       yield;
     }
-    if (!plans.length) return;
-    if (actor.itinerary) {
-      actor.itinerary.plans = plans;
-      if (actor.itinerary.path !== actor.walkPath) {
-        const distance = actor.motion?.routeDistance ?? 0;
-        this.finish(
-          actor,
-          actor.walkPath,
-          Math.max(1, Math.ceil(distance / actor.walkPath.total)) * actor.walkPath.total,
-        );
-      }
-      return;
-    }
-    actor.itinerary = {
-      plans,
-      anchor,
-      visit: 0,
-      current: -1,
-      since: null,
-      phase: 'walking',
-      stops: [],
-    };
-    // Existing actors finish their current route before adopting a new journey.
-    if (actor.motion)
-      this.finish(
-        actor,
-        actor.walkPath,
-        Math.ceil(actor.motion.routeDistance / (actor.walkPath.total || 1)) * actor.walkPath.total,
-      );
-    else if (!actor.transportVisitor) beginItinerary(this.d, actor);
+    return plans;
   }
+}
+
+// A walker chooses between this many prepared tours, in every settlement.
+export const TOUR_CHOICES = 5;
+/** A tour's places: each destination with the next, in visit order (twelve at most). */
+export function* tourPairs(ordered) {
+  for (let n = 0; n < Math.min(12, ordered.length); n++)
+    yield [ordered[n], ordered[(n + 1) % ordered.length]].filter(
+      (id, i, all) => all.indexOf(id) === i,
+    );
+}
+/**
+ * The order a walker tries its destinations in, stable for its seed. Visitors try the
+ * places they may spend in first, in every settlement.
+ */
+export function visitOrder(options, seed, shops, visitor) {
+  const ordered = [...options].sort(
+    (a, b) =>
+      villagerRandom(seed + options.indexOf(a) * 719) -
+      villagerRandom(seed + options.indexOf(b) * 719),
+  );
+  if (visitor) ordered.sort((a, b) => Number(shops.has(b)) - Number(shops.has(a)));
+  return ordered;
+}
+
+// A resident indoors when its plans change keeps resting there. Unseen, it moves
+// to a door that has moved and drops a stale outing for a fresh one.
+function stayInside(d, actor, moved) {
+  const r = actor.itinerary;
+  if (r.phase !== 'rest') Object.assign(r, { phase: 'rest', since: d.elapsed, pause: 0 });
+  actor.walkPath = r.path;
+  if (!moved) return;
+  const [x, y, z] = r.anchor;
+  actor.root.position.set(x, y, z);
+  if (actor.motion)
+    Object.assign(actor.motion, { x, z, sx: x, sz: z, vx: 0, vz: 0, path: null, exitTarget: null });
 }
 
 // End the current journey on `path` with no further stops. A guest interrupted
 // while fading through a doorway walks on at full size, never shrunken.
 export function finishItinerary(actor, path, routeLimit) {
-  Object.assign(actor.itinerary, { path, stops: [], phase: 'finishing' });
+  Object.assign(actor.itinerary, { path, stops: [], phase: 'finishing', inside: false });
   actor.routeLimit = routeLimit;
   actor.root.scale.setScalar(1);
 }
@@ -373,6 +487,12 @@ export function beginItinerary(d, actor) {
   actor.routeLimit = r.stops[0]?.distance ?? plan.path.total;
   actor.root.visible = true;
   actor.root.scale.setScalar(1);
+  // A resident resting indoors steps out of its door, growing into view first.
+  if (r.inside) {
+    r.phase = 'leaving';
+    actor.routeResting = true;
+    actor.root.scale.setScalar(0);
+  }
   if (actor.motion) {
     actor.motion.path = plan.path;
     actor.motion.routeDistance = 0;
@@ -392,6 +512,12 @@ export function updateItinerary(d, actor, time) {
     r.phase = r.stops[r.stop] && r.phase !== 'finishing' ? 'entering' : 'rest';
     r.since = time;
     r.pause = 2 + villagerRandom(actor.seed + r.visit * 701) * 6;
+    // Back at its own door, a resident goes in and rests indoors.
+    const { x, z } = actor.root.position;
+    r.inside =
+      r.phase === 'rest' &&
+      r.door &&
+      gap([actor.motion?.x ?? x, 0, actor.motion?.z ?? z], r.anchor) < DOORSTEP;
   }
   actor.routeResting = r.phase !== 'walking' && r.phase !== 'finishing';
   const age = time - r.since;
@@ -417,11 +543,12 @@ export function updateItinerary(d, actor, time) {
     actor.root.scale.setScalar(Math.min(1, age / 0.35));
     if (age >= 0.35) {
       r.phase = 'walking';
+      r.inside = false;
       actor.routeResting = false;
       actor.routeLimit = r.stops[r.stop]?.distance ?? r.path.total;
     }
   } else if (r.phase === 'rest') {
-    if (actor.visitor) actor.root.scale.setScalar(Math.max(0, 1 - age / 0.5));
+    if (actor.visitor || r.inside) actor.root.scale.setScalar(Math.max(0, 1 - age / 0.5));
     if (actor.transportVisitor && age >= 0.5) {
       actor.started = undefined;
       actor.root.visible = false;

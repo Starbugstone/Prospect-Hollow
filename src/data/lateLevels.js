@@ -268,7 +268,7 @@ export const LATE_LEVELS = CHAPTER_PLANS.flatMap((plan, chapter) =>
     const instruction = survey
       ? 'Light the numbered survey markers in order. Match on or beside the next number; gems keep moving freely.'
       : lantern
-        ? 'Light every lantern by matching on or beside it. Bonuses can light them too; gems pass freely.'
+        ? 'Light every lantern by matching on it. Bonuses that hit it light it too; gems pass freely.'
         : 'Fill the pictured ore orders by collecting those gem colors. Matching and bonuses both count.';
     return {
       openExitRows: 2,

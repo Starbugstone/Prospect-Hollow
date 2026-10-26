@@ -5,7 +5,8 @@ RUN npm ci
 COPY . .
 RUN node scripts/export-public-content.mjs && node scripts/export-save-rules.mjs && npm run build
 
-FROM php:8.4-apache-bookworm AS runtime
+# The hosts run PHP 8.3, as do CI and Composer's platform (docs/backend/hosting.md).
+FROM php:8.3-apache-bookworm AS runtime
 RUN apt-get update && apt-get install -y --no-install-recommends libpq-dev libicu-dev unzip \
     && docker-php-ext-install pdo_pgsql pdo_mysql intl pcntl \
     && a2enmod rewrite headers && rm -rf /var/lib/apt/lists/*

@@ -24,6 +24,7 @@ import {
   buildWithHammer,
   availablePurchases,
 } from '../src/game/town/TownRules';
+import { serviceLevel } from '../src/data/buildingProgression';
 import { bonusCapacity } from '../src/data/rewards';
 import { rollShopStock } from '../src/data/shop';
 import { useCampaignStore } from '../src/stores/campaignStore';
@@ -133,14 +134,13 @@ describe('Substantial building stages and a growing frontier', () => {
     expect(finishConstruction(town, 'home4', 2).buildings.home4).toBe(2);
     expect(plotUnlocked(town, 'unknown')).toBe(false);
   });
-  it('caps supporting buildings at three and core services at five and preserves existing benefits during improvements', () => {
+  it('caps every Frontier building at three and preserves existing benefits during improvements', () => {
     for (const building of frontierBuildings) {
-      expect(building.upgrades).toHaveLength(
-        ['saloon', 'sheriff', 'bank', 'square', 'blacksmith'].includes(building.id) ? 5 : 3,
-      );
+      expect(building.upgrades).toHaveLength(3);
       const town = village(
         Object.fromEntries(frontierBuildings.map((b) => [b.id, b.upgrades.length])),
       );
+      expect(purchase(town, building.id, 3)).toBeNull();
       expect(purchase(town, building.id, 5)).toBeNull();
     }
     let town = village({ saloon: 1, home: 2 });
@@ -247,10 +247,11 @@ describe('Stored saloon earnings and explicit collection', () => {
   it('scales with completed saloon levels and houses; needs customers and stops at five away hours', () => {
     const town = village({ saloon: 3, home: 2, home2: 1, home3: 1, home4: 1 });
     town.projects.home4 = { id: 'home4', stage: 2, wins: 0, required: 4 };
-    expect(saloonIncomeRate(town)).toBe(40);
+    // A finished three-stage saloon earns at its old level five.
+    expect(saloonIncomeRate(town)).toBe(67);
     const start = settleSaloonIncome(town, HOUR_MS).town;
     const collected = settleSaloonIncome(start, HOUR_MS * 101);
-    expect(collected.earned).toBe(200);
+    expect(collected.earned).toBe(335);
     expect(settleSaloonIncome(collected.town, HOUR_MS * 101).earned).toBe(0);
     expect(settleSaloonIncome(collected.town, HOUR_MS * 102).earned).toBe(0);
     expect(saloonIncomeRate(village({ farm: 0, saloon: 3 }))).toBe(0);
@@ -347,22 +348,21 @@ describe('A useful square and a longer village economy', () => {
     expect(reloaded.collectSaloonIncome(HOUR_MS * 3)).toBe(20);
     expect(happiness(reloaded.town)).toBe(100);
   });
-  it('allows fourth and fifth levels without a completed-puzzle gate for either payment', () => {
-    for (const { id } of frontierBuildings.filter((b) => b.upgrades.length === 5)) {
+  it('finishes the Frontier services at stage three, serving at their old level five', () => {
+    for (const id of ['saloon', 'sheriff', 'bank', 'square', 'blacksmith']) {
       let town = {
-        ...village(Object.fromEntries(frontierBuildings.map((b) => [b.id, 3]))),
+        ...village(Object.fromEntries(frontierBuildings.map((b) => [b.id, 2]))),
         coins: 10000,
         completedRuns: 0,
       };
       expect(upgradeOffer(town, id).available).toBe(true);
-      expect(purchase(town, id, 3).projects[id]).toMatchObject({ stage: 4, required: 1 });
-      town = buildWithHammer(town, id, 3);
-      expect(town.buildings[id]).toBe(4);
+      expect(purchase(town, id, 2).projects[id]).toMatchObject({ stage: 3, required: 1 });
+      expect(serviceLevel(town, id)).toBe(2);
+      town = buildWithHammer(town, id, 2);
+      expect(town.buildings[id]).toBe(3);
       expect(town.coins).toBe(10000);
-      expect(purchase(town, id, 4).projects[id]).toMatchObject({ stage: 5, required: 1 });
-      town = buildWithHammer(town, id, 4);
-      expect(town.buildings[id]).toBe(5);
-      expect(normalizeTown(town).buildings[id]).toBe(5);
+      expect(serviceLevel(town, id)).toBe(5);
+      expect(normalizeTown(town).buildings[id]).toBe(3);
       expect(upgradeOffer(town, id)).toBeNull();
     }
   });
@@ -376,11 +376,12 @@ describe('A useful square and a longer village economy', () => {
     expect(saloonIncomeRate(town)).toBe(1468);
     expect(bonusCapacity(town)).toBe(20);
     expect(rollShopStock(5)).toHaveLength(5);
-    expect(gangSize(town)).toBe(10);
+    // A finished Frontier counts 66 building levels: the largest gang it meets has 8 riders.
+    expect(gangSize(town)).toBe(8);
     const raid = banditEncounter(town);
     expect(normalizeTown(raid).events[BANDIT_EVENT]).toMatchObject({
       outcome: 'protected',
-      gangSize: 10,
+      gangSize: 8,
       sheriffLevel: 5,
       bankLevel: 5,
     });
@@ -413,7 +414,7 @@ describe('Visible raids with a single saved outcome', () => {
     const result = banditEncounter(town);
     expect(result.events[BANDIT_EVENT]).toMatchObject({
       gangSize: riders,
-      sheriffLevel: level,
+      sheriffLevel: serviceLevel(town, 'sheriff'),
       loss: 0,
       outcome: 'protected',
     });

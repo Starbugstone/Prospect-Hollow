@@ -49,7 +49,23 @@ export default defineConfig({
   },
   build: {
     manifest: true,
-    rollupOptions: { input: { main: 'index.html', admin: 'admin.html' } },
+    // Phaser ships as one prebuilt library, larger than any game chunk should be.
+    // scripts/check-bundle-budget.mjs holds every chunk to its own budget instead.
+    chunkSizeWarningLimit: 1300,
+    rollupOptions: {
+      input: { main: 'index.html', admin: 'admin.html' },
+      output: {
+        // Libraries get their own chunks, which stay cached across game releases.
+        // Phaser and Three load with the mine and the town; the rest at startup.
+        // Rollup's CommonJS helpers join the startup chunk, so that sharing them
+        // never makes startup import Phaser.
+        manualChunks(id) {
+          if (id.includes('/node_modules/phaser/')) return 'phaser';
+          if (id.includes('/node_modules/three/')) return 'three';
+          if (id.includes('/node_modules/') || id.startsWith('\0commonjsHelpers')) return 'vendor';
+        },
+      },
+    },
   },
   server: {
     port: 5173,
@@ -57,7 +73,7 @@ export default defineConfig({
   },
   test: {
     environment: 'node',
-    setupFiles: ['testing/setup-meshes.js'],
+    setupFiles: ['testing/setup-locale.js', 'testing/setup-meshes.js'],
     include: ['testing/**/*.test.js'],
     // Whole-campaign level simulations are slow and only change with the levels: run them
     // locally with `npm run test:levels` (vitest.levels.config.js), not on every push.

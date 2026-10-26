@@ -92,8 +92,8 @@ import { unseenIds } from './honourDisplay';
 const props = defineProps({ familyId: { type: String, default: null }, links: Boolean });
 const emit = defineEmits(['close', 'inspect']);
 const INTROS = {
-  mine: 'Mine honours count the puzzles you complete. Earned ranks stay with this town.',
-  town: 'Town honours follow your eras, the forge, supplies and protected incidents.',
+  mine: 'Collection honours count normal and continuous play. Stars still require completed puzzles.',
+  town: 'Town honours follow both settlements, keepsakes, monuments and protected incidents.',
   friends: 'Friends honours count visits between shared towns.',
   player: 'Player distinctions mark special moments of the game and your time in Prospect Hollow.',
 };

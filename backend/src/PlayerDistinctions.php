@@ -35,24 +35,14 @@ final class PlayerDistinctions
         ['unit' => 'month', 'months' => 1],
         ['unit' => 'year', 'months' => 12],
     ];
-    /** @var array<string, array<string, mixed>>|null */
-    private static ?array $exported = null;
-
     /** @param array<string, mixed> $catalog ID => ['kind' => 'event'|'tenure']. */
     public function __construct(private array $catalog = []) {}
 
     /** The exported catalog (the `playerDistinctions` of the public schema's honours). */
     public static function load(): self
     {
-        if (self::$exported === null) {
-            $path = dirname(__DIR__) . '/content/public-schema.json';
-            $schema = is_file($path)
-                ? json_decode(file_get_contents($path), true, 32, JSON_THROW_ON_ERROR)
-                : [];
-            $catalog = $schema['honours']['playerDistinctions'] ?? null;
-            self::$exported = is_array($catalog) ? $catalog : [];
-        }
-        return new self(self::$exported);
+        $catalog = PublicTown::schema()['honours']['playerDistinctions'] ?? null;
+        return new self(is_array($catalog) ? $catalog : []);
     }
 
     public static function isDistinction(mixed $id): bool

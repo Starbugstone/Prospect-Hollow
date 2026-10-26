@@ -91,12 +91,24 @@ they do not access player accounts. Install Playwright separately or point
 `PLAYWRIGHT_MODULE` at an existing installation, start Vite on port 8192, then run:
 
 ```sh
+node testing/browser/connection-screens.cjs
 node testing/browser/session-expiry.cjs
 node testing/browser/save-durability.cjs
 ```
 
-`PH_TEST_ORIGIN` overrides the dev-server origin. The checks cover live puzzles
+The [Moon input check](../future-eras.md#moon-input-check) shows the Docker commands.
+A town counts as loaded once the Build tab's Next Step panel offers the next level
+(`openNextStep` in `testing/browser/helpers.cjs`). `PH_TEST_ORIGIN` overrides the
+dev-server origin. The checks cover live puzzles
 across expiry/reconnection, independent device stores, successive archived
 conflicts, reload, download, explicit overwrite, history restore, permanent
 upload rejection, and failed archive writes. The village uses the lightweight
 fallback renderer in these save tests; they do not benchmark WebGL rendering.
+
+The durability check earns coins through normal victories and opens each victory
+chest on a supply, so balances move only by the mining payout. An unopened chest
+is claimed later with its random prize, sometimes 500 coins: when the next run
+starts, or when another device loads the synced save. The check also asks for a
+sync again when the scheduler's own sync was already running. Archive writes run
+in the background worker, so its storage-failure case breaks IndexedDB in that
+worker too.

@@ -4,6 +4,8 @@ import { INCIDENT_AUDIO } from '../../data/townEvents';
 const asset = (name) => `/sound/village/${name}.mp3`;
 export const VILLAGE_AUDIO = Object.freeze({
   music: { src: asset('porch-swing'), volume: 0.45 },
+  // Played once over a monument's unveiling, in place of the village music.
+  fanfare: { src: asset('monument-unveiling'), volume: 0.45 },
   birds: { src: asset('birds'), volume: 0.5, loop: true },
   chatter: { src: asset('chatter'), volume: 0.32, loop: true },
   building: { src: asset('building'), volume: 0.32 },
@@ -48,6 +50,12 @@ export const villageSounds = (state) =>
         ...(state.stable ? ['horse', 'hooves'] : []),
       ];
 const clamp = (value) => Math.min(1, Math.max(0, Number(value) || 0));
+// The village music, softer during raids and silent under an unveiling fanfare.
+const musicLevel = (state) =>
+  clamp(state.musicVolume) *
+  VILLAGE_AUDIO.music.volume *
+  (state.raid ? 0.65 : 1) *
+  (state.fanfare ? 0 : 1);
 
 // Gentle distance attenuation from 110 units in to 13; any closer zoom plays at
 // full volume. The fallback map uses a comfortable middle distance.
@@ -111,17 +119,14 @@ export class TownSoundscape {
       this.sfx.connect(this.ctx.destination);
       this.outputsConnected = true;
     }
-    this.music.gain.setTargetAtTime(
-      clamp(state.musicVolume) * VILLAGE_AUDIO.music.volume * (state.raid ? 0.65 : 1),
-      this.ctx.currentTime,
-      0.4,
-    );
+    this.music.gain.setTargetAtTime(musicLevel(state), this.ctx.currentTime, 0.4);
     this.sfx.gain.setTargetAtTime(
       clamp(state.sfxVolume) * villageAmbienceGain(state.cameraDistance) * 0.9,
       this.ctx.currentTime,
       0.3,
     );
     this.syncMusic();
+    this.syncFanfare();
 
     if (raidChanged) {
       // Cancel pending ordinary cues as well as voices already playing.
@@ -185,11 +190,7 @@ export class TownSoundscape {
     const request = {};
     this.musicPending = request;
     this.music.gain.setValueAtTime(0, this.ctx.currentTime);
-    this.music.gain.setTargetAtTime(
-      clamp(this.state.musicVolume) * VILLAGE_AUDIO.music.volume * (this.state.raid ? 0.65 : 1),
-      this.ctx.currentTime,
-      0.5,
-    );
+    this.music.gain.setTargetAtTime(musicLevel(this.state), this.ctx.currentTime, 0.5);
     Promise.resolve(this.player.play())
       .then(() => {
         // A slow media load must not resurrect music after leaving, pausing or muting.
@@ -202,6 +203,40 @@ export class TownSoundscape {
       .finally(() => {
         if (this.musicPending === request) this.musicPending = null;
       });
+  }
+
+  // A new cue starts the fanfare from the top; it plays through once, resumes after a
+  // pause and fades out when the unveiling closes. Muted music never loads it.
+  syncFanfare() {
+    const cue = this.state.fanfare ?? null;
+    const level =
+      cue && this.running ? clamp(this.state.musicVolume) * VILLAGE_AUDIO.fanfare.volume : 0;
+    if (level && !this.fanfarePlayer) {
+      this.fanfarePlayer = this.mediaFactory();
+      this.fanfarePlayer.preload = 'auto';
+      this.fanfarePlayer.loop = false;
+      this.fanfarePlayer.src = VILLAGE_AUDIO.fanfare.src;
+      this.fanfareBus = this.ctx.createGain();
+      this.fanfareBus.gain.value = 0;
+      this.fanfareSource = this.ctx.createMediaElementSource(this.fanfarePlayer);
+      this.fanfareSource.connect(this.fanfareBus);
+      this.fanfareBus.connect(this.ctx.destination);
+    }
+    const player = this.fanfarePlayer;
+    if (!player) return;
+    if (cue !== this.fanfareCue) {
+      this.fanfareCue = cue;
+      if (cue) player.currentTime = 0;
+    }
+    const now = this.ctx.currentTime;
+    this.fanfareBus.gain.cancelScheduledValues(now);
+    this.fanfareBus.gain.setTargetAtTime(level, now, level ? 0.04 : 0.3);
+    clearTimeout(this.fanfareTimer);
+    this.fanfareTimer = null;
+    if (level) {
+      if (player.paused && !player.ended) Promise.resolve(player.play()).catch(() => {});
+    } else if (!player.paused)
+      this.fanfareTimer = setTimeout(() => player.pause(), this.running ? 1500 : 0);
   }
 
   canPlay(kind) {
@@ -329,6 +364,10 @@ export class TownSoundscape {
     this.pending.clear();
     this.player?.pause();
     this.musicPending = null;
+    clearTimeout(this.fanfareTimer);
+    this.fanfareTimer = null;
+    this.fanfarePlayer?.pause();
+    this.fanfareBus?.gain.setValueAtTime(0, this.ctx.currentTime);
     // Gate the output too: releasing or delayed voices must never bleed into the mine.
     for (const bus of [this.music, this.sfx]) {
       bus?.gain.cancelScheduledValues(this.ctx.currentTime);
@@ -346,11 +385,14 @@ export class TownSoundscape {
     this.abort.abort();
     this.buffers.clear();
     this.retryAfter.clear();
-    if (this.player) {
-      this.player.removeAttribute('src');
-      this.player.load();
+    for (const player of [this.player, this.fanfarePlayer]) {
+      if (!player) continue;
+      player.removeAttribute('src');
+      player.load();
     }
     this.musicSource?.disconnect();
+    this.fanfareSource?.disconnect();
+    this.fanfareBus?.disconnect();
     this.music?.disconnect();
     this.sfx?.disconnect();
     this.ctx?.close().catch(() => {});

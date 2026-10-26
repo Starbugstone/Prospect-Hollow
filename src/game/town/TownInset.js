@@ -117,7 +117,12 @@ export function drawCameraInset(d, shot, rect, label, passive = false, details =
         const previous = renderer.getRenderTarget();
         renderer.setRenderTarget(cache.target);
         renderer.autoClear = true;
+        // The sky Moon hangs in the main camera's sky; the inset looks elsewhere.
+        const moon = d.skyMoon?.sprite,
+          moonShown = moon?.visible;
+        if (moon) moon.visible = false;
         renderer.render(d.scene, shot.insetCamera);
+        if (moon) moon.visible = moonShown;
         renderer.setRenderTarget(previous);
         cache.renderedAt = now;
         cache.shot = shot;

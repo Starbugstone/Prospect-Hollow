@@ -1,12 +1,12 @@
 // Run against Vite or its production preview inside the Playwright Docker image.
-const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
+const { chromium, preparePage, testOrigin } = require('./helpers.cjs');
 
 (async () => {
   const browser = await chromium.launch({ args: ['--enable-unsafe-swiftshader'] });
   try {
-    const origin = process.env.PH_TEST_ORIGIN || 'http://127.0.0.1:5194';
+    const origin = testOrigin();
     const apiCalls = [],
       errors = [],
       failures = [];
@@ -191,12 +191,7 @@ const fs = require('node:fs');
 
     // WebGL failure remains visible and never offers a gameplay escape from admin.
     const noGraphics = await context.newPage();
-    await noGraphics.addInitScript(() => {
-      const original = HTMLCanvasElement.prototype.getContext;
-      HTMLCanvasElement.prototype.getContext = function (kind, ...args) {
-        return /webgl/i.test(kind) ? null : original.call(this, kind, ...args);
-      };
-    });
+    await noGraphics.addInitScript(preparePage, { webgl: false });
     await noGraphics.goto(`${origin}/admin.html#/towns/private`);
     await noGraphics.getByRole('button', { name: 'Connect to town', exact: true }).click();
     await noGraphics

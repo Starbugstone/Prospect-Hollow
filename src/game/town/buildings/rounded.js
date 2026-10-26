@@ -4,6 +4,10 @@ import { ROUNDED_PALETTE as P, roundedForm } from '../../../data/roundedArchitec
 import { addFishingDock } from './river';
 import { leisureModel } from '../LeisureAssets';
 import { motorVehicle, parkedVehicle } from '../TownVehicles';
+import { buildingStages } from '../../../data/buildingStages';
+import { heritageUpgrade } from '../../../data/heritageUpgrades';
+import { SphereGeometry } from 'three';
+import { purposeModule, modulePart, addModuleOperation } from './CityBuildingDetails';
 
 // Rounded city architecture: domes, drums, vaults and pods from the shared sphere and
 // cylinder primitives. Nothing here allocates geometry; the plot batch merges every
@@ -37,7 +41,9 @@ const doorway = (d, g, x, z, width = 0.7, height = 1.15) =>
   d.box(g, width, height, 0.14, x, height / 2 + 0.05, z, P.deep, true);
 const lamp = (d, g, x, z, height = 1.5) => {
   d.rod(g, [x, 0.05, z], [x, height, z], 0.045, P.accent);
-  pod(d, g, 0.15, 0.1, 0.15, x, height + 0.05, z, P.light);
+  // Tiny globes keep the same outline and bounds with fewer latitude rings.
+  d.geometries['rounded-lamp-globe'] ??= new SphereGeometry(1, 10, 4);
+  d.mesh(g, 'rounded-lamp-globe', [0.15, 0.1, 0.15], [x, height + 0.05, z], P.light);
 };
 const shrub = (d, g, x, z, size = 0.3) => {
   disc(d, g, size + 0.08, 0.14, x, z, P.shell, 0.2);
@@ -404,6 +410,130 @@ export function addRoundedLounge(d, parent, x, floor, z) {
   pod(d, parent, 0.45, 0.3, 0.45, x, floor + 1.5, z, P.light);
 }
 
+// Purpose-selected completions stay attached to the existing rounded volume.
+// They replace the old disc that cut through every building at an arbitrary height.
+function addRoundedFinish(d, root, style, crown, form, level, moduleLevel) {
+  const feature = heritageUpgrade(style.kind);
+  const finish = purposeModule(d, root, feature, moduleLevel, level, 'lounge');
+  finish.name = `Rounded ${feature ?? 'service'} completion`;
+  const structure = modulePart(d, finish, 'structure');
+  const wing = root.children.find((child) => child.userData.buildingPart === 'sideWing');
+  if (wing) structure.add(wing);
+  const frontage = modulePart(d, finish, 'frontage');
+  // Thin roof capsules need fewer vertical rings than occupied dome bodies.
+  // Keep the same ten-sided outline and cache the geometry for the whole town.
+  const roofPod = (rx, ry, rz, x, y, z) => {
+    d.geometries['rounded-finish-roof'] ??= new SphereGeometry(1, 10, 4);
+    return d.mesh(structure, 'rounded-finish-roof', [rx, ry, rz], [x, y, z], P.shell);
+  };
+  let operation;
+  if ((form === 'tower' && style.height >= 4) || form === 'spire') {
+    const x = crown.x ?? 0,
+      z = crown.z ?? -0.1;
+    const r =
+      form === 'spire' ? 1.3 : style.identity === 'pods' ? 1.2 : Math.min(crown.radius, 1.25);
+    const y = Math.max(1.8, crown.top * 0.5);
+    const height = 0.72;
+    drum(d, structure, r + 0.1, height, x, y - height / 2, z, P.shell, r * 0.85 + 0.08);
+    disc(d, structure, r + 0.18, y - height / 2 - 0.04, x, z, P.shell, 0.12, r * 0.85 + 0.16);
+    disc(d, structure, r + 0.18, y + height / 2 + 0.04, x, z, P.green, 0.12, r * 0.85 + 0.16);
+    const glassHeight = level >= 2 ? 0.56 : 0.3;
+    drum(
+      d,
+      frontage,
+      r + 0.11,
+      glassHeight,
+      x,
+      y - glassHeight / 2,
+      z,
+      level >= 2 ? P.glass : P.accent,
+      r * 0.85 + 0.09,
+    );
+    operation = { x, y: y + 0.46, z, width: 0.85, depth: 0.8 };
+  } else if (form === 'greenhouse') {
+    // A low glazed connector grows from the dome bases; it leaves the front
+    // doorway/approach clear and adds no freestanding ground furniture.
+    const height = 0.65;
+    d.box(structure, 1.3, height, 0.6, 0.3, 0.1 + height / 2, 0.55, P.shell, true);
+    roofPod(0.8, 0.18, 0.48, 0.3, height + 0.17, 0.55);
+    d.box(
+      frontage,
+      level >= 2 ? 1.05 : 0.75,
+      level >= 2 ? 0.42 : 0.28,
+      0.1,
+      0.3,
+      0.46,
+      0.87,
+      level >= 2 ? P.glass : P.accent,
+    );
+    operation = { x: 0.3, y: 0.9, z: 0.55, width: 0.75, depth: 0.65 };
+  } else {
+    const width = Math.min(style.width * 0.72, 3.4),
+      y = 2.3;
+    // Canopy posts stand beside the entrance, within the existing sign/terrace
+    // envelope. The centre remains a straight, unobstructed approach.
+    roofPod(width / 2, 0.18, 0.5, 0, y, 1.3);
+    const postX = Math.max(0.46, width * 0.33);
+    for (const x of [-postX, postX]) d.rod(structure, [x, 0, 1.5], [x, y, 1.5], 0.055, P.accent);
+    d.box(
+      frontage,
+      width * (level >= 2 ? 0.65 : 0.45),
+      level >= 2 ? 0.4 : 0.26,
+      0.12,
+      0,
+      2.06,
+      1.3,
+      level >= 2 ? P.glass : P.accent,
+    );
+    if (feature === 'computers' || feature === 'research') {
+      for (const x of [-0.55, 0.55]) {
+        d.box(frontage, 0.42, 0.35, 0.04, x, 0.95, 1.32, P.deep);
+        d.box(frontage, 0.34, 0.25, 0.025, x, 0.95, 1.35, level >= 2 ? P.glass : P.accent);
+      }
+    }
+    operation = { x: 0, y: 2.4, z: 1.3, width: 0.85, depth: 0.8 };
+  }
+  const o = operation;
+  d.box(structure, o.width + 0.1, 0.08, o.depth + 0.1, o.x, o.y, o.z, P.shell);
+  for (const side of [-1, 1])
+    d.box(
+      structure,
+      0.07,
+      0.4,
+      o.depth,
+      o.x + side * (o.width / 2 - 0.035),
+      o.y + 0.24,
+      o.z,
+      P.accent,
+    );
+  roofPod((o.width + 0.2) / 2, 0.12, (o.depth + 0.2) / 2, o.x, o.y + 0.48, o.z);
+  if (level >= 3)
+    d.box(
+      finish,
+      o.width + 0.1,
+      0.16,
+      o.depth + 0.1,
+      o.x,
+      o.y + 0.56,
+      o.z,
+      P.shell,
+    ).userData.modulePart = 'operation';
+  addModuleOperation(
+    d,
+    finish,
+    feature,
+    o.x,
+    level >= 3 ? o.y + 0.64 : o.y + 0.04,
+    o.z,
+    o.width,
+    o.depth,
+    P.accent,
+    P.shell,
+    level,
+  );
+  return finish;
+}
+
 /**
  * Render a city building in the rounded architecture. Returns false for kinds whose
  * shared renderer already fits every architecture (airport, square, bridge).
@@ -424,20 +554,28 @@ export function renderRoundedBuilding(d, parent, kind, label, level, era, servic
   const root = d.group(parent);
   root.name = `${era} rounded ${kind} level ${level}`;
   root.userData.eraLevel = level;
-  const crown = FORMS[form](d, root, style);
+  const main = d.group(root);
+  main.userData.buildingPart = 'main';
+  const crown = FORMS[form](d, main, style);
   const w = style.width ?? 3.6;
-  if (level >= 2 && crown) {
+  const {
+    structureLevel,
+    finishLevel,
+    moduleLevel = structureLevel,
+  } = buildingStages(kind, era, level, serviceLevel);
+  if (structureLevel >= 2 && crown) {
     // A glazed capsule wing tucked behind the main volume.
     const x = -w / 2 + 0.15;
-    pod(d, root, 0.75, 0.62, 0.95, x, 0.62, -0.75, P.shell);
-    pod(d, root, 0.62, 0.22, 0.8, x, 0.95, -0.7, P.glass);
+    const wing = d.group(root);
+    wing.userData.buildingPart = 'sideWing';
+    pod(d, wing, 0.75, 0.62, 0.95, x, 0.62, -0.75, P.shell);
+    pod(d, wing, 0.62, 0.22, 0.8, x, 0.95, -0.7, P.glass);
   }
-  if (level >= 3 && crown) {
-    const x = crown.x ?? 0,
-      z = crown.z ?? (form === 'tower' ? -0.1 : 0);
-    disc(d, root, crown.radius + 0.3, crown.top * 0.62, x, z, P.green, 0.1);
+  if (moduleLevel >= 2 && crown)
+    addRoundedFinish(d, root, style, crown, form, finishLevel, moduleLevel);
+  if (finishLevel >= 3 && crown) {
     for (const side of [-1, 1]) lamp(d, root, side * Math.min(w / 2, 2), 1.75);
-    shrub(d, root, w / 2 - 0.1, -1.2, 0.28);
+    root.userData.forecourtLighting = true;
   }
   if (kind === 'busDepot') {
     const vehicle = motorVehicle(d, d.group(root, 0, 0, 2.5), true, era);
