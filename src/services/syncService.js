@@ -160,8 +160,9 @@ export function createSyncService({
         replaced = true;
       }
       if (corrected) {
-        // Newer progress or a running puzzle: the corrected save loads on return.
-        if (r.meta.sequence !== sequence || !canApply(id)) {
+        // Newer progress, a running puzzle, or a backup not taken because a puzzle was
+        // running a moment ago: the corrected save loads later, backing up first.
+        if (r.meta.sequence !== sequence || !canApply(id) || !recovery) {
           const { profile, ...summary } = result;
           r.meta.conflict = summary;
           r.meta.pending = null;

@@ -337,6 +337,36 @@ foreach (['missing', 'epoch'] as $check) {
     );
 }
 
+// Action data is the upload's own: a deeply nested value is summarized in its finding,
+// and a stored record too deep to read never hides the rest of the sync log.
+$deep = 1;
+for ($i = 0; $i < 35; $i++) {
+    $deep = [$deep];
+}
+$nested = asArray($cloud);
+$nested['integrity']['actions'] = [
+    action(1, 'building-finish', ['buildingId' => 'well', 'expectedStage' => $deep, 'at' => $now]),
+];
+$shallow = new SaveIntegrity();
+$shallow->reconcile(asObject($nested), $cloud, $now, '', null);
+check(
+    $shallow->findings()[0]['check'] === 'stage' &&
+        $shallow->findings()[0]['client'] === ['summary' => '1 entries'] &&
+        json_decode(json_encode($shallow->findings()), true, 32) !== null,
+    'a deeply nested action value is summarized in its finding',
+);
+$unreadable = SyncRejections::summary([
+    'id' => 'x',
+    'rejected_at' => 1000,
+    'revision' => 1,
+    'code' => 'save_corrected',
+    'field' => null,
+    'message' => 'm',
+    'findings' => str_repeat('[', 70) . str_repeat(']', 70),
+    'expected' => null,
+]);
+check($unreadable['findings'] === [], 'an unreadable stored finding list reads as empty');
+
 // The build stays within its 64-character event column.
 check(
     SaveIntegrity::clientBuild(

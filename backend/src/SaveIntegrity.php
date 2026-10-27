@@ -1712,13 +1712,17 @@ final class SaveIntegrity
             'client' => self::shown($actual),
         ]);
     }
-    /** A value small enough to keep in a finding; a large one is only summarized. */
+    /**
+     * A value small and shallow enough to keep in a finding; anything larger or deeper
+     * (an upload controls action data) is only summarized, so the log always decodes.
+     */
     private static function shown(mixed $value): mixed
     {
         if (!is_array($value)) {
             return is_string($value) ? mb_substr($value, 0, 120) : $value;
         }
-        return strlen(json_encode($value, JSON_THROW_ON_ERROR)) <= 400
+        $json = json_encode($value, 0, 8);
+        return $json !== false && strlen($json) <= 400
             ? $value
             : ['summary' => count($value) . ' entries'];
     }

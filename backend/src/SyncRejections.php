@@ -187,13 +187,23 @@ final class SyncRejections
             'code' => $row['code'],
             'field' => $row['field'],
             'message' => $row['message'],
-            'findings' => json_decode($row['findings'] ?? '[]', true, 32, JSON_THROW_ON_ERROR),
+            'findings' => self::findings($row['findings'] ?? null),
             'clientBuild' => $build,
             // False when an older game with other save rules sent it; null when unknown.
             'sameRules' => SaveIntegrity::sameRules($build),
             'favourable' => (bool) ($row['favourable'] ?? false),
             'replayed' => (bool) ($row['replayed'] ?? $row['expected'] !== null),
         ];
+    }
+    /** Stored findings; a record that cannot be read never hides the rest of the log. */
+    private static function findings(?string $json): array
+    {
+        try {
+            $findings = json_decode($json ?? '[]', true, 64, JSON_THROW_ON_ERROR);
+        } catch (\JsonException) {
+            return [];
+        }
+        return is_array($findings) ? $findings : [];
     }
     /**
      * The town revision an admin can still reset from this event: a rejection's own

@@ -268,6 +268,37 @@ it('waits to load a correction until the game can apply it', async () => {
   expect(local.meta.conflict).toBeNull();
 });
 
+it('never loads a correction without its backup when a puzzle ends mid-reply', async () => {
+  // A puzzle is running when the backup would be taken and has ended when the reply
+  // is applied: the correction waits for the next sync, which backs up first.
+  let checks = 0;
+  service = createSyncService({
+    storage,
+    request,
+    account: () => owner,
+    canApply: () => checks++ > 0,
+    recoveries: {
+      put: async (value) => preserved.set(value.id, copy(value)),
+      putUpload: async (value) => uploads.set(value.id, copy(value)),
+      getUpload: async (id) => copy(uploads.get(id)),
+      removeUpload: async (id) => uploads.delete(id),
+    },
+  });
+  advance();
+  request.mockImplementation(async (_path, body) => {
+    if (body) remote = corrected(body, 7);
+    return copy(remote);
+  });
+  await service.sync();
+  expect(storage.active().profile.town.coins).toBe(11);
+  expect(preserved.size).toBe(0);
+  await service.sync();
+  const local = storage.active();
+  expect(local.profile.town.coins).toBe(7);
+  expect(local.meta.desyncNotice).toBe('correction');
+  expect([...preserved.values()].map((saved) => saved.profile.town.coins)).toEqual([11]);
+});
+
 it('marks a blocked town missing once the cloud no longer has it, without failing the sync', async () => {
   advance();
   request.mockImplementation(async (_path, body) => {
