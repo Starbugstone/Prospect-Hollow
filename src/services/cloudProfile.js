@@ -152,9 +152,10 @@ export const latestVillage = (id) =>
 // Any visitor may collect a shared town's saloon for its owner, once per hour per town.
 export const tapSaloon = (id) =>
   request(`villages/${encodeURIComponent(id)}/saloon`, {}, 'POST', true);
-// A signed-in visitor found the space helmet; `townId` is their own town to reward.
+// Direct share links do not initialize account sync. The visit profile supplies CSRF;
+// the server checks the session and that `townId` belongs to the finder.
 export const tapHelmet = (id, townId) =>
-  request(`villages/${encodeURIComponent(id)}/helmet`, { townId }, 'POST');
+  request(`villages/${encodeURIComponent(id)}/helmet`, { townId }, 'POST', true);
 export function refreshAccount() {
   const generation = townStorage.auth().generation;
   if (accountRefresh?.generation === generation) return accountRefresh.promise;

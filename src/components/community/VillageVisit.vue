@@ -46,6 +46,11 @@
         ><template v-if="helmetMessage"> · {{ helmetMessage }}</template>
       </p>
       <p v-if="findError" class="village-find-error" role="status">{{ t(findError) }}</p>
+      <TownVisitorNotice
+        class="village-helmet-notice"
+        :notice="helmetNotice"
+        @dismiss="helmetNotice = null"
+      />
       <TownScene
         ref="townScene"
         :key="current.villageId"
@@ -163,6 +168,7 @@ import { ERA_BY_ID } from '../../data/eras';
 import { t } from '../../i18n';
 import TownScene from '../town/TownScene.vue';
 import TownResourceCollection from '../town/TownResourceCollection.vue';
+import TownVisitorNotice from '../town/TownVisitorNotice.vue';
 import GameIcon from '../GameIcon.vue';
 import TownDialog from '../town/TownDialog.vue';
 import TownBuildingDetails from '../town/TownBuildingDetails.vue';
@@ -266,6 +272,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   clearInterval(clock);
   clearTimeout(zoomTimer);
+  clearTimeout(helmetNoticeTimer);
   poller.stop();
   document.removeEventListener('visibilitychange', resume);
   document.removeEventListener('keydown', leaveFullscreen);
@@ -296,15 +303,23 @@ const homeTown = ref(null),
   helmetBusy = ref(false),
   helmetNote = ref(null),
   helmetBurst = ref(null),
+  helmetNotice = shallowRef(null),
   // An animal tapped from too far away asks to zoom in for a moment.
   helmetZoom = ref(false);
 let burstSerial = 0,
-  zoomTimer = 0;
+  zoomTimer = 0,
+  helmetNoticeTimer = 0;
 // The coins a find brings the town visited as, counted from its copy in this browser; that
 // town redeems it later from its own takings. Null when this browser holds no copy.
 function helmetCoins(townId) {
-  const saved = cloud.account && townStorage.get(townId, cloud.account.id)?.profile?.town;
-  return saved ? spaceHelmetReward(normalizeTown(saved), 'visitor') : null;
+  try {
+    const account = cloud.account ?? townStorage.auth().account;
+    const saved = account && townStorage.get(townId, account.id)?.profile?.town;
+    return saved ? spaceHelmetReward(normalizeTown(saved), 'visitor') : null;
+  } catch {
+    // An optional local estimate must never hide a find the server already accepted.
+    return null;
+  }
 }
 const hasHelmet = computed(() => spaceHelmetOut(town.value));
 const helmetMessage = computed(() => {
@@ -336,6 +351,12 @@ function zoomForHelmet() {
   helmetZoom.value = true;
   clearTimeout(zoomTimer);
   zoomTimer = setTimeout(() => (helmetZoom.value = false), 6000);
+  notifyHelmet();
+}
+function notifyHelmet() {
+  helmetNotice.value = { kind: 'helmet-visit', message: helmetMessage.value };
+  clearTimeout(helmetNoticeTimer);
+  helmetNoticeTimer = setTimeout(() => (helmetNotice.value = null), 6000);
 }
 async function findHelmet(origin) {
   helmetZoom.value = false;
@@ -344,19 +365,21 @@ async function findHelmet(origin) {
   if (helmetBusy.value) return;
   if (homeTown.value?.own) {
     helmetNote.value = { kind: 'own' };
-    return;
+    return notifyHelmet();
   }
   // Another visitor found this town's helmet; a find of this visitor's own stays thanked.
   if (townHelmetReadyAt.value > now.value) {
     if (helmetNote.value?.kind !== 'found') helmetNote.value = null;
-    return;
+    return notifyHelmet();
   }
-  if (!cloud.account || !homeTown.value) {
+  // VisitPresence gets the signed-in town from the server, including on share links
+  // where the game's cloud account and sync service have never initialized.
+  if (!homeTown.value) {
     helmetNote.value = { kind: 'signed-out' };
-    return;
+    return notifyHelmet();
   }
   helmetNote.value = null;
-  if (helmetReadyAt.value > now.value) return;
+  if (helmetReadyAt.value > now.value) return notifyHelmet();
   helmetBusy.value = true;
   try {
     const town = homeTown.value;
@@ -370,6 +393,7 @@ async function findHelmet(origin) {
     else helmetNote.value = { kind: 'error', message: e.message };
   } finally {
     helmetBusy.value = false;
+    notifyHelmet();
   }
 }
 async function collectSaloon() {
@@ -419,6 +443,10 @@ async function collectSaloon() {
   bottom: max(16px, env(safe-area-inset-bottom));
   left: 16px;
   right: 16px;
+}
+.town-fullscreen .village-helmet-notice {
+  top: auto;
+  bottom: max(88px, calc(env(safe-area-inset-bottom) + 88px));
 }
 .town-dialog.village-level-dialog {
   width: min(920px, calc(100vw - 32px));
