@@ -28,6 +28,7 @@ scripts run with `blender --background --python <script>`.
 | `prepare-village-audio.mjs`, `prepare-raid-audio.mjs`, `prepare-incident-audio.mjs`, `prepare-monument-music.mjs` | Rebuild the licensed village, raid and incident recordings and the monument unveiling music listed in `public/sound/village/credits.html`; need `FFMPEG`. |
 | `blender_assets.py`, `city_primitives.py`, `city_identity.py`                                                     | Shared Blender helpers for the asset packs below.                                                                                                         |
 | `create-city-assets.py`, `create-future-assets.py`, `create-leisure-assets.py`                                    | Author and export the city, aviation-to-connected and leisure meshes.                                                                                     |
+| `create-monument-assets.py`                                                                                       | Author Monument Square's five sculptures, mechanism pivots, runtime meshes and matching card portraits.                                                   |
 
 ## Balance measurements
 

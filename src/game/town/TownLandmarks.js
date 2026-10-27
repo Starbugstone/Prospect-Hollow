@@ -3,6 +3,7 @@ import { buildMoonLandmark, LUNAR_LANDMARK_FORMS } from './moon/MoonLandmarks';
 import { landmarkMotion } from './TownLandmarkMotion';
 import { LANDMARK_BY_ID, LANDMARK_PROGRESSION } from '../../data/townLandmarks';
 import { futureShape } from './buildings/futureShapes';
+import { buildMonumentSculpture } from './TownMonumentSculptures';
 
 const STONE = '#ddd1b5',
   DARK = '#655343',
@@ -92,13 +93,14 @@ export function buildLandmark(d, parent, choice, stage = 1, timeless = false, st
   const colour = o.colour,
     height = [4.5, 5.8, 7.2, 8.6, 10][tier - 1];
   const wall = tier >= 4 ? '#f4ead5' : STONE;
-  if (timeless) g.scale.y = 1.15;
-  else if (['diner', 'screen', 'springs', 'aurora', 'globes'].includes(o.form))
+  if (!timeless && ['diner', 'screen', 'springs', 'aurora', 'globes'].includes(o.form))
     g.scale.y = [1, 1.1, 1.2, 1.35, 1.5][tier - 1];
   pedestal(d, g, timeless ? 7.5 : 5.8);
   const lunar = LUNAR_LANDMARK_FORMS.includes(o.form);
   const mineral = MOONSTONE_LANDMARK_FORMS.includes(o.form);
-  if (mineral) buildMoonstoneLandmark(d, g, o, tier, move);
+  if (timeless && buildMonumentSculpture(d, g, choice, move)) {
+    // The authored proportions apply equally in the map and unveiling close-ups.
+  } else if (mineral) buildMoonstoneLandmark(d, g, o, tier, move);
   else if (lunar) buildMoonLandmark(d, g, o, tier, move);
   else if (o.form === 'arch') {
     for (const x of [-4, 4]) {

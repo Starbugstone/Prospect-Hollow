@@ -184,6 +184,24 @@ it through honours generation 2 catch-up. The server verifies ownership from the
 paid landmark replay before publishing this distinction. Saves that replaced their
 monument before replacements were removed keep the monument they own now.
 
+Monument Square's five sculptures are authored in Blender rather than assembled
+from the town's coarse rock primitives. `scripts/create-monument-assets.py` writes
+the editable `art/monuments/monuments.blend`, GLB interchange export, source review
+sheet, indexed runtime meshes and transparent choice-card portraits. Run Blender
+in background mode with the script and the repository directory after `--`.
+The `monuments` family loads only for towns that own a Monument Square choice,
+including one under construction. Static surfaces use the existing scenery batch;
+named wing, sun, mote, pendant and orbital joints use the shared motion and actor
+pipeline. The three merged brass orbits each cost one animated draw. Missing mesh
+downloads retain the procedural fallback. Prices, saved choice IDs, construction,
+honours and unlimited puzzle moves are unchanged.
+
+`testing/monument-sculptures.test.js` checks imports, normals, indices, caching,
+animation bounds, construction poses, portraits and unavailable downloads.
+`testing/browser/monument-sculptures.cjs` captures front and back views in the
+actual Three.js renderer with valley lighting; run it through the same Docker
+Playwright setup as the [Moon input check](future-eras.md#moon-input-check).
+
 `areas` stores one selected ID per site and `areaLevels` its purchased stage.
 Commands include expected previous choice/stage, preventing duplicate or stale
 purchases. The campaign store atomically commits the debit and journal receipt.
