@@ -21,6 +21,9 @@ final class SaveIntegrity
     private array $findings = [];
     // Whether the upload claimed more than the replay in any resource (a review signal).
     private bool $favourable = false;
+    // Whether reconcile() saved other protected values than the upload's: the game must
+    // load them. Kept apart from the findings, which are capped.
+    private bool $changed = false;
     /** Findings kept per upload; the first ones explain a desync, the rest repeat it. */
     public const MAX_FINDINGS = 40;
     /** Protected save fields compared whole, at the top of the save and in its town. */
@@ -862,12 +865,13 @@ final class SaveIntegrity
     }
     /**
      * The game build that queued an upload ("1.2.1+3f2a9c1b0d4e": its version and the
-     * start of its save-rules digest), or null for an older game that did not say.
+     * start of its save-rules digest), or null for an older game that did not say. At
+     * most 64 characters, the width of its sync event column.
      */
     public static function clientBuild(mixed $profile): ?string
     {
         $build = $profile instanceof \stdClass ? $profile->integrity->clientBuild ?? null : null;
-        return is_string($build) && preg_match('/^[0-9A-Za-z._-]{1,32}\+[a-f0-9]{8,64}$/D', $build)
+        return is_string($build) && preg_match('/^[0-9A-Za-z._-]{1,32}\+[a-f0-9]{8,31}$/D', $build)
             ? $build
             : null;
     }
@@ -1247,6 +1251,7 @@ final class SaveIntegrity
         $this->tolerant = true;
         $this->findings = [];
         $this->favourable = false;
+        $this->changed = false;
         $this->expected = null;
         try {
             return $this->accept($profile, $previous, $now, false, [], $townId, $previousServerAt);
@@ -1258,6 +1263,11 @@ final class SaveIntegrity
     public function findings(): array
     {
         return $this->findings;
+    }
+    /** Whether the last reconciled upload was saved with other protected values than it sent. */
+    public function changed(): bool
+    {
+        return $this->changed;
     }
     /** Whether the last reconciled upload claimed more than the replay in any resource. */
     public function favourable(): bool
@@ -1498,50 +1508,8 @@ final class SaveIntegrity
             self::mismatch('integrity.sequence');
         }
         $target = $this->normalized($incoming);
-        if ($target['town']['moonstoneVersion'] === 2) {
-            $this->migrateMoonstoneStock($state['town']);
-        }
-        // Continuous best scores are statistics. Once credited coins stop changing,
-        // the frontend saves improvements without generating redundant coin actions.
-        // A first score that earned no coins has no command either, and a later run
-        // can reach the same upload, so it is accepted for any level open to replay.
-        foreach ($target['continuousRecords'] as $level => $record) {
-            if (
-                isset($state['continuousRecords'][$level]) &&
-                $record['coins'] === $state['continuousRecords'][$level]['coins'] &&
-                ($record['score'] ?? 0) >= ($state['continuousRecords'][$level]['score'] ?? 0)
-            ) {
-                $state['continuousRecords'][$level]['score'] = $record['score'];
-            } elseif (
-                !isset($state['continuousRecords'][$level]) &&
-                $record['coins'] === 0 &&
-                $state['town']['buildings']['museum'] &&
-                $this->unlocked($state, (int) $level)
-            ) {
-                $state['continuousRecords'][$level] = array_diff_key($record, [
-                    'moonstoneGems' => true,
-                ]);
-            }
-        }
-        // UI accrual is deliberately not journaled on every frame. Recalculate the
-        // final reserve at its checkpoint, within the trusted server clock envelope.
-        $at = $target['town']['income']['at'] ?? null;
-        if ($at !== null && $at !== ($state['town']['income']['at'] ?? null)) {
-            $this->accrue($state, $context, $at, $now);
-        }
-        $actual = $this->protected($target);
-        $expected = $this->protected($state);
-        $changed = false;
-        foreach ($expected as $field => $value) {
-            if (!self::same($actual[$field], $value)) {
-                $this->expected = array_diff_key($state, ['integrity' => true]);
-                if (!$this->tolerant) {
-                    self::mismatch(self::difference($value, $actual[$field], $field));
-                }
-                $this->differences($value, $actual[$field], $field);
-                $changed = true;
-            }
-        }
+        $this->settle($state, $context, $target, $now);
+        $changed = $this->compare($state, $target);
         if ($this->findings && $this->expected === null) {
             // Only skipped actions without effect: still show what the replay reached.
             $this->expected = array_diff_key($state, ['integrity' => true]);
@@ -1583,24 +1551,16 @@ final class SaveIntegrity
         array $finding,
     ): object {
         $this->note($finding);
+        $this->changed = true;
         $state = $this->normalized($old);
         $target = $this->normalized($incoming);
+        $context = $anchor['context'] ?? [];
+        $this->settle($state, $context, $target, $now);
+        $this->compare($state, $target);
         $this->expected = array_diff_key($state, ['integrity' => true]);
-        $actual = $this->protected($target);
-        foreach ($this->protected($state) as $field => $value) {
-            if (!self::same($actual[$field], $value)) {
-                $this->differences($value, $actual[$field], $field);
-            }
-        }
         $this->favourable = $this->claimsMore($target, $state);
         $context = $this->honourCounters(
-            $this->moneyContext(
-                $anchor['context'] ?? [],
-                $anchor['context'] ?? [],
-                $now,
-                $previousServerAt,
-                [],
-            ),
+            $this->moneyContext($context, $anchor['context'] ?? [], $now, $previousServerAt, []),
             $state['town'],
             $anchor['context'] ?? [],
         );
@@ -1612,6 +1572,66 @@ final class SaveIntegrity
             'tracked',
             $this->townId,
         );
+    }
+    /**
+     * What a replayed state settles to before it is compared with an upload: a newer
+     * game's Moonstone stock, continuous best scores that earn no coins, and the
+     * unjournaled income reserve at the upload's checkpoint.
+     */
+    private function settle(array &$state, array &$context, array $target, int $now): void
+    {
+        if ($target['town']['moonstoneVersion'] === 2) {
+            $this->migrateMoonstoneStock($state['town']);
+        }
+        // Continuous best scores are statistics. Once credited coins stop changing,
+        // the frontend saves improvements without generating redundant coin actions.
+        // A first score that earned no coins has no command either, and a later run
+        // can reach the same upload, so it is accepted for any level open to replay.
+        foreach ($target['continuousRecords'] as $level => $record) {
+            if (
+                isset($state['continuousRecords'][$level]) &&
+                $record['coins'] === $state['continuousRecords'][$level]['coins'] &&
+                ($record['score'] ?? 0) >= ($state['continuousRecords'][$level]['score'] ?? 0)
+            ) {
+                $state['continuousRecords'][$level]['score'] = $record['score'];
+            } elseif (
+                !isset($state['continuousRecords'][$level]) &&
+                $record['coins'] === 0 &&
+                $state['town']['buildings']['museum'] &&
+                $this->unlocked($state, (int) $level)
+            ) {
+                $state['continuousRecords'][$level] = array_diff_key($record, [
+                    'moonstoneGems' => true,
+                ]);
+            }
+        }
+        // UI accrual is deliberately not journaled on every frame. Recalculate the
+        // final reserve at its checkpoint, within the trusted server clock envelope.
+        $at = $target['town']['income']['at'] ?? null;
+        if ($at !== null && $at !== ($state['town']['income']['at'] ?? null)) {
+            $this->accrue($state, $context, $at, $now);
+        }
+    }
+    /**
+     * Whether the upload's protected values differ from the replay. A strict replay
+     * refuses the first difference; a tolerant one notes each and corrects them all.
+     */
+    private function compare(array $state, array $target): bool
+    {
+        $actual = $this->protected($target);
+        $changed = false;
+        foreach ($this->protected($state) as $field => $value) {
+            if (!self::same($actual[$field], $value)) {
+                $this->expected = array_diff_key($state, ['integrity' => true]);
+                if (!$this->tolerant) {
+                    self::mismatch(self::difference($value, $actual[$field], $field));
+                }
+                $this->differences($value, $actual[$field], $field);
+                $changed = true;
+            }
+        }
+        $this->changed = $this->changed || $changed;
+        return $changed;
     }
     /** The finding for an action whose check failed, or null when it is not a replay check. */
     private static function actionFinding(array $action, ApiError $error): ?array

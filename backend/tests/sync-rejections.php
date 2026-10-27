@@ -155,6 +155,25 @@ try {
             ) === (int) $loggedRow['revision'],
         'a rejection lists its cause and build and resets at its own revision',
     );
+    // A correction right after a refusal at the same revision is still recorded: it is
+    // the only event support can restore the corrected upload from.
+    SyncRejections::record(
+        $db->get(),
+        $loggedRow,
+        $second,
+        ['coins' => 1],
+        SyncRejections::correction(
+            [['kind' => 'value', 'field' => 'town.coins', 'server' => 1, 'client' => 2]],
+            false,
+            null,
+        ),
+    );
+    $both = array_column(SyncRejections::list($db->get(), $logged['townId']), 'id', 'outcome');
+    check(
+        count($both) === 2 && isset($both['corrected'], $both['rejected']),
+        'a correction is recorded within the refusal throttle window',
+    );
+    $db->get()->delete('town_sync_rejections', ['id' => $both['corrected']]);
     // Corrections in the player's favour flag a town for review once they repeat.
     $review = fn() => (int) $db
         ->get()

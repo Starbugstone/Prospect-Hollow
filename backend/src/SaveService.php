@@ -342,19 +342,6 @@ final class SaveService
             return $this->ownerView($db, $row, $a['id']);
         });
     }
-    /**
-     * Whether a reconciled upload's findings changed what it saved: a replayed value
-     * or a journal resumed from the cloud. Skipped actions alone change nothing.
-     */
-    public static function changedValues(array $findings): bool
-    {
-        foreach ($findings as $finding) {
-            if (in_array($finding['kind'] ?? null, ['value', 'journal'], true)) {
-                return true;
-            }
-        }
-        return false;
-    }
     public static function archive(Connection $db, array $row): void
     {
         $db->insert('town_history', [
@@ -505,7 +492,7 @@ final class SaveService
                 'upload_hash' => $hash,
                 // The owner's game adopts a correction that changed its values; a lost
                 // reply's retry or a pull reads it from here. The next save clears it.
-                'sync_correction' => self::changedValues($findings)
+                'sync_correction' => $integrity->changed()
                     ? json_encode(['findings' => $findings], JSON_THROW_ON_ERROR)
                     : null,
             ];

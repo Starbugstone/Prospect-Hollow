@@ -1650,7 +1650,7 @@
                   'clientBuild':
                     {
                       'type': 'string',
-                      'pattern': '^[0-9A-Za-z._-]{1,32}\\+[a-f0-9]{8,64}$',
+                      'pattern': '^[0-9A-Za-z._-]{1,32}\\+[a-f0-9]{8,31}$',
                       'description': 'The game build that queued the upload: its version and the start of its save-rules digest. Kept with a sync event so support can tell an older game apart; never used to accept or refuse an upload.',
                     },
                   'actions':

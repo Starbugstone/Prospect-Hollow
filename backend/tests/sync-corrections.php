@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 require dirname(__DIR__) . '/vendor/autoload.php';
-use App\{ApiError, SaveIntegrity, SaveService, SyncRejections};
+use App\{ApiError, SaveIntegrity, SyncRejections};
 $_ENV['APP_SECRET'] = str_repeat('correction-test-secret-', 3);
 
 // An ordinary save is reconciled: a failing action is skipped, a journal gap resumes from
@@ -148,7 +148,7 @@ check(
     'the whole journal is acknowledged, so the skipped action never comes back',
 );
 check(
-    $reconciler->favourable() && SaveService::changedValues($findings),
+    $reconciler->favourable() && $reconciler->changed(),
     'a claimed building level is in the player’s favour and changes the save',
 );
 check(
@@ -241,7 +241,7 @@ foreach (
             $resumed['town']['coins'] === $cloud->town->coins &&
             $resumed['seenTips'] === ['kept'] &&
             $resumed['integrity']['epoch'] === uuidFor(1) &&
-            SaveService::changedValues($resumer->findings()),
+            $resumer->changed(),
         'a ' . $check . ' journal resumes from the cloud checkpoint',
     );
     refused(
@@ -283,8 +283,74 @@ $noop['integrity']['actions'] = [
 $quiet = new SaveIntegrity();
 $quiet->reconcile(asObject($noop), $cloud, $now, '', null);
 check(
-    count($quiet->findings()) === 1 && !SaveService::changedValues($quiet->findings()),
+    count($quiet->findings()) === 1 && !$quiet->changed(),
     'a skipped action without effect is noted but changes nothing',
+);
+
+// The findings are capped, but a correction is still announced: forty skipped actions
+// followed by an injected balance still make the game load the server's values.
+$flood = asArray($cloud);
+$flood['town']['coins'] += 100;
+$flood['integrity']['actions'] = array_map(
+    fn($n) => action($n, 'building-finish', [
+        'buildingId' => 'well',
+        'expectedStage' => 1,
+        'at' => $now,
+    ]),
+    range(1, SaveIntegrity::MAX_FINDINGS + 1),
+);
+$capped = new SaveIntegrity();
+$cappedSave = asArray($capped->reconcile(asObject($flood), $cloud, $now, '', null));
+check(
+    count($capped->findings()) === SaveIntegrity::MAX_FINDINGS &&
+        $capped->changed() &&
+        $cappedSave['town']['coins'] === $cloud->town->coins,
+    'a correction past the findings cap is still one the game must load',
+);
+
+// A journal gap on an older Moonstone checkpoint resumes with the same migration as a
+// replay, so a newer game's save is not refused.
+$moonOld = asArray($cloud);
+$moonOld['schemaVersion'] = 3;
+$moonOld['town']['moonstoneVersion'] = 1;
+$moonOld['town']['moonstoneProduction'] = ['progress' => 1, 'charge' => 0];
+$moonCloud = $validator->accept(asObject($moonOld), null, $now);
+foreach (['missing', 'epoch'] as $check) {
+    $moonNew = asArray($moonCloud);
+    $moonNew['schemaVersion'] = 4;
+    $moonNew['town']['moonstoneVersion'] = 2;
+    $moonNew['town']['moonstoneProduction'] = ['progress' => 1, 'stored' => 0];
+    $moonNew['town']['coins'] += 3;
+    if ($check === 'missing') {
+        unset($moonNew['integrity']);
+    } else {
+        $moonNew['integrity']['epoch'] = uuidFor(8);
+    }
+    $moonResumer = new SaveIntegrity();
+    $moonResumed = asArray($moonResumer->reconcile(asObject($moonNew), $moonCloud, $now, '', null));
+    check(
+        $moonResumed['town']['moonstoneVersion'] === 2 &&
+            $moonResumed['town']['moonstoneProduction'] === ['progress' => 1, 'stored' => 0] &&
+            $moonResumed['town']['coins'] === $moonCloud->town->coins &&
+            $moonResumer->findings()[0]['check'] === $check,
+        'a ' . $check . ' journal on a Moonstone version 1 checkpoint resumes migrated',
+    );
+}
+
+// The build stays within its 64-character event column.
+check(
+    SaveIntegrity::clientBuild(
+        asObject(['integrity' => ['clientBuild' => '1.2.1+' . str_repeat('a', 31)]]),
+    ) !== null &&
+        SaveIntegrity::clientBuild(
+            asObject(['integrity' => ['clientBuild' => '1.2.1+' . str_repeat('a', 32)]]),
+        ) === null &&
+        SaveIntegrity::clientBuild(
+            asObject([
+                'integrity' => ['clientBuild' => str_repeat('9', 32) . '+' . str_repeat('a', 31)],
+            ]),
+        ) !== null,
+    'the longest accepted build is 64 characters',
 );
 
 // Structural problems are still refused: a device clock far ahead of the server.

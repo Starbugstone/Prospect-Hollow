@@ -101,13 +101,17 @@ final class SyncRejections
                 return;
             }
             $now = (int) floor(microtime(true) * 1000);
+            // Retries of a refused upload are throttled. A correction is an accepted save
+            // at its own revision (bounded by the save rate limit and KEPT): always kept,
+            // since it is the only way support can restore that upload.
             $recent = $db->fetchAssociative(
-                'SELECT COUNT(*) AS captures, COALESCE(SUM(CASE WHEN revision=? THEN 1 ELSE 0 END),0) AS same FROM town_sync_rejections WHERE town_id=? AND rejected_at>?',
+                "SELECT COUNT(*) AS captures, COALESCE(SUM(CASE WHEN revision=? THEN 1 ELSE 0 END),0) AS same FROM town_sync_rejections WHERE town_id=? AND rejected_at>? AND outcome='rejected'",
                 [(int) $row['revision'], $row['id'], $now - self::THROTTLE_MS],
             );
             if (
-                (int) ($recent['same'] ?? 0) > 0 ||
-                (int) ($recent['captures'] ?? 0) >= self::WINDOW_CAPTURES
+                $event['outcome'] === self::REJECTED &&
+                ((int) ($recent['same'] ?? 0) > 0 ||
+                    (int) ($recent['captures'] ?? 0) >= self::WINDOW_CAPTURES)
             ) {
                 // Keep the original reason with its original upload and expectation:
                 // an admin may inspect or restore that exact comparison later.
