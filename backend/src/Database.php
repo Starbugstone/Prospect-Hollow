@@ -40,6 +40,9 @@ final class Database
         22 => '/schema-helmet-host',
         // Expiring approvals bound to a reviewed rejected upload; retire boolean overrides.
         23 => '/schema-sync-approval',
+        // Sync events: corrected uploads beside rejected ones, with their findings and the
+        // client build, and the correction the owner's game adopts from the cloud save.
+        24 => '/schema-sync-corrections',
     ];
     /** Tries of one outermost transaction, the first included, before a deadlock surfaces. */
     public const DEADLOCK_ATTEMPTS = 4;

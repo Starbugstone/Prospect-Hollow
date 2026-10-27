@@ -1,11 +1,23 @@
 import { configDefaults, defineConfig } from 'vitest/config';
 import vue from '@vitejs/plugin-vue';
 import path from 'path';
+import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+// The game build stamped on each cloud upload: its version and the start of the save-rules
+// digest it plays by, so support sees when an older game sent a disputed save.
+function clientBuild() {
+  try {
+    const read = (file) => JSON.parse(readFileSync(path.join(__dirname, file), 'utf8'));
+    return `${read('package.json').version}+${read('backend/content/save-rules.json').contentDigest.slice(0, 12)}`;
+  } catch {
+    return null;
+  }
+}
 
 export default defineConfig({
+  define: { __CLIENT_BUILD__: JSON.stringify(clientBuild()) },
   plugins: [
     vue(),
     {

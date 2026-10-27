@@ -209,10 +209,16 @@ try {
         $rejectedRow,
         json_encode(profile(999)),
         ['town' => ['coins' => 25]],
-        new App\ApiError(422, 'The uploaded coins do not match.', [
-            'code' => 'save_integrity_mismatch',
-            'field' => 'town.coins',
-        ]),
+        App\SyncRejections::rejection(
+            new App\ApiError(422, 'The uploaded coins do not match.', [
+                'code' => 'save_integrity_mismatch',
+                'field' => 'town.coins',
+                'check' => 'coins',
+                'server' => 25,
+                'client' => 999,
+            ]),
+            '1.2.1+0123456789ab',
+        ),
     );
     $db->get()->update(
         'towns',
@@ -233,6 +239,11 @@ try {
             $refused[0]['code'] === 'save_integrity_mismatch' &&
             $refused[0]['field'] === 'town.coins' &&
             $refused[0]['reason'] === 'The uploaded coins do not match.' &&
+            $refused[0]['outcome'] === 'rejected' &&
+            $refused[0]['gameBuild'] === '1.2.1+0123456789ab' &&
+            $refused[0]['findings'] === [
+                ['field' => 'town.coins', 'check' => 'coins', 'server' => 25, 'client' => 999],
+            ] &&
             $refused[0]['upload']['town']['coins'] === 999 &&
             $refused[0]['cloud']['town']['coins'] === 25 &&
             $refused[0]['expected']['town']['coins'] === 25 &&
@@ -267,7 +278,7 @@ try {
         $deletedRow,
         json_encode(profile(500)),
         null,
-        new App\ApiError(422, 'No replay available.'),
+        App\SyncRejections::rejection(new App\ApiError(422, 'No replay available.'), null),
     );
     App\SaveService::tombstone($db->get(), $privateHome['townId']);
     $deletedExport = status(

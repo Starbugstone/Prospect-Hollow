@@ -1,5 +1,5 @@
 // The admin sync comparison: every value where the cloud save, the state the server
-// replayed from it and the rejected upload differ, with the rejected field first.
+// replayed from it and the upload differ, with the rejected field first.
 const container = (value) => value !== null && typeof value === 'object';
 const empty = (value) => container(value) && !Object.keys(value).length;
 // PHP sends an empty map as [], and a save may omit an empty one: all count as the same.
@@ -13,12 +13,6 @@ function typedValue(text) {
   } catch {
     return text;
   }
-}
-function leaves(value, path, found) {
-  if (container(value) && !empty(value))
-    for (const [key, entry] of Object.entries(value)) leaves(entry, [...path, key], found);
-  else if (path.length) found.set(JSON.stringify(path), value);
-  return found;
 }
 // The replay compares town landmarks under another name than the save stores them.
 const SAVED_PATHS = [
@@ -35,34 +29,38 @@ export function savedField(field) {
 const valueAt = (tree, path) =>
   path.reduce((value, key) => (container(value) ? value[key] : undefined), tree);
 const within = (label, field) => !!field && (label === field || label.startsWith(`${field}.`));
-// The journal is server-owned and never edited, so it is not compared.
-export function compareRows({ cloud, expected, upload, field }) {
-  const trees = expected ? { cloud, expected, upload } : { cloud, upload };
-  const keys = new Set();
-  for (const tree of Object.values(trees))
-    for (const key of leaves(tree, [], new Map()).keys()) keys.add(key);
-  // An empty map on one side is shown through the entries the other side has in it.
-  const parents = new Set();
-  for (const key of keys) {
-    const path = JSON.parse(key);
-    for (let end = 1; end < path.length; end++) parents.add(JSON.stringify(path.slice(0, end)));
+// The journal and Town Honours are the server's own: never compared or edited here.
+const SERVER_OWNED = ['integrity', 'honours'];
+// One row per differing value. An object present on only some sides (a project one save
+// has and the other lacks) is one row holding the whole object, not one row per field.
+function collect(trees, path, found) {
+  const values = trees.map((tree) => valueAt(tree, path));
+  if (path.length && !values.every((value) => container(value) && !empty(value))) {
+    if (!values.every(blank)) found.push(path);
+    return;
   }
+  for (const key of new Set(values.flatMap((value) => Object.keys(value))))
+    if (path.length || !SERVER_OWNED.includes(key)) collect(trees, [...path, key], found);
+  return found;
+}
+export function compareRows({ cloud, expected, upload, field }) {
+  const trees = expected ? [cloud, expected, upload] : [cloud, upload];
   const rejected = savedField(field);
   const rows = [];
-  for (const key of keys) {
-    const path = JSON.parse(key);
-    if (path[0] === 'integrity' || parents.has(key)) continue;
+  for (const path of collect(trees, [], [])) {
+    const label = path.join('.');
     const row = {
-      key,
+      key: JSON.stringify(path),
       path,
-      label: path.join('.'),
+      label,
       cloud: valueAt(cloud, path),
       expected: expected ? valueAt(expected, path) : undefined,
       upload: valueAt(upload, path),
     };
     const reference = expected ? row.expected : row.cloud;
     row.mismatch = !sameValue(reference, row.upload);
-    row.rejected = within(row.label, rejected);
+    // A whole object holding the rejected field counts as rejected too.
+    row.rejected = within(label, rejected) || within(rejected, label);
     if (row.rejected || row.mismatch || !sameValue(row.cloud, row.upload)) rows.push(row);
   }
   const rank = (row) => (row.rejected ? 0 : row.mismatch ? 1 : 2);

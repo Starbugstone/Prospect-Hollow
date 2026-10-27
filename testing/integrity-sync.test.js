@@ -196,6 +196,78 @@ it('loads a support reset over a blocked upload without asking, keeping a backup
   expect([...preserved.values()].map((saved) => saved.profile.town.coins)).toEqual([11]);
 });
 
+// The server's correction of an upload: its own replayed values with a fresh receipt.
+function corrected(body, coins) {
+  const reply = accepted(body);
+  reply.profile.town = { ...reply.profile.town, coins };
+  reply.correction = { findings: [{ kind: 'value', field: 'town.coins', server: coins }] };
+  // A journal gap resumes on the cloud's own history.
+  reply.integrity = { ...reply.integrity, epoch: 'cloud-epoch' };
+  reply.profile.integrity = { ...reply.profile.integrity, epoch: 'cloud-epoch' };
+  return reply;
+}
+
+it('loads the server correction of an upload without asking, keeping a backup', async () => {
+  advance();
+  request.mockImplementation(async (_path, body) => {
+    if (body) remote = corrected(body, 7);
+    return copy(remote);
+  });
+  await service.sync();
+  const local = storage.active();
+  expect(local.profile.town.coins).toBe(7);
+  expect(local.profile.integrity.epoch).toBe('cloud-epoch');
+  expect(local.profile.integrity.actions).toEqual([]);
+  expect(local.meta.baseRevision).toBe(2);
+  expect(local.meta.desyncNotice).toBe('correction');
+  expect(local.meta.pending).toBeNull();
+  expect(local.meta.uploadError).toBeNull();
+  expect(uploads.size).toBe(0);
+  expect([...preserved.values()].map((saved) => [saved.reason, saved.profile.town.coins])).toEqual([
+    ['correction', 11],
+  ]);
+  // The adopted save syncs normally afterwards.
+  request.mockImplementation(async (_path, body) => {
+    if (body) remote = accepted(body);
+    return copy(remote);
+  });
+  advance();
+  await service.sync();
+  expect(storage.active().meta.baseRevision).toBe(3);
+  expect(storage.active().profile.town.coins).toBe(8);
+});
+
+it('waits to load a correction until the game can apply it', async () => {
+  let applicable = false;
+  service = createSyncService({
+    storage,
+    request,
+    account: () => owner,
+    canApply: () => applicable,
+    recoveries: {
+      put: async (value) => preserved.set(value.id, copy(value)),
+      putUpload: async (value) => uploads.set(value.id, copy(value)),
+      getUpload: async (id) => copy(uploads.get(id)),
+      removeUpload: async (id) => uploads.delete(id),
+    },
+  });
+  advance();
+  request.mockImplementation(async (_path, body) => {
+    if (body) remote = corrected(body, 7);
+    return copy(remote);
+  });
+  await service.sync();
+  // A puzzle is running: the town keeps its progress and remembers the newer cloud save.
+  expect(storage.active().profile.town.coins).toBe(11);
+  expect(storage.active().meta.conflict.revision).toBe(2);
+  applicable = true;
+  await service.sync();
+  const local = storage.active();
+  expect(local.profile.town.coins).toBe(7);
+  expect(local.meta.desyncNotice).toBe('correction');
+  expect(local.meta.conflict).toBeNull();
+});
+
 it('marks a blocked town missing once the cloud no longer has it, without failing the sync', async () => {
   advance();
   request.mockImplementation(async (_path, body) => {

@@ -205,56 +205,73 @@
 
         <h2>Cloud sync <SyncBlocked :town="town" /></h2>
         <p class="admin-muted">
-          Uploads the save protection rejected, newest first (the latest five, kept 30 days).
-          Retries at the same cloud revision keep one unchanged comparison per minute. Compare one
-          to see the cloud save, what the server expected and what the game sent. Approve that exact
-          upload for 24 hours for a false desync, or edit the values and reset the player’s game to
-          that save. An approval only accepts an unchanged retry at this revision; if the player has
-          continued playing, compare their new rejected upload instead.
+          Uploads the server corrected or rejected, newest first (the latest five, kept 30 days). An
+          ordinary save is never refused over a disagreement: the server skips an action that fails
+          its check, takes every disputed value from its own replay and saves that, and the player’s
+          game loads it. Only an unreadable save, unknown rules or a device clock ahead of the
+          server is rejected. Compare an event to see the cloud save, the server’s state and the
+          game’s upload; to undo a wrong correction or unblock a rejection, start from the upload
+          and save it.
         </p>
-        <ForceSyncToggle
-          v-if="!town.deletedAt"
-          class="admin-check"
-          :town="town"
-          :rejection="data.syncRejections.find((item) => item.id === comparing)"
-          @updated="Object.assign(town, $event)"
-          @error="error = $event"
-        />
         <table v-if="data.syncRejections.length" class="admin-table">
           <thead>
             <tr>
-              <th scope="col">Rejected</th>
+              <th scope="col">When</th>
               <th scope="col" class="number">Revision</th>
-              <th scope="col">Reason</th>
-              <th scope="col">Field</th>
+              <th scope="col">Outcome</th>
+              <th scope="col">Cause</th>
+              <th scope="col">Game build</th>
               <th scope="col"><span class="visually-hidden">Action</span></th>
             </tr>
           </thead>
           <tbody>
             <tr
-              v-for="rejection in data.syncRejections"
-              :key="rejection.id"
-              :class="{ 'admin-current': rejection.id === comparing }"
+              v-for="event in data.syncRejections"
+              :key="event.id"
+              :class="{ 'admin-current': event.id === comparing }"
             >
-              <td :title="dateTime(rejection.at)">{{ relativeTime(rejection.at) }}</td>
-              <td class="number">{{ rejection.revision }}</td>
-              <td :title="rejection.message">{{ codeLabel(rejection.code) }}</td>
+              <td :title="dateTime(event.at)">{{ relativeTime(event.at) }}</td>
+              <td class="number">{{ event.revision }}</td>
               <td>
-                <code v-if="rejection.field">{{ rejection.field }}</code>
+                <span
+                  :class="['admin-badge', event.outcome === 'corrected' ? 'corrected' : 'blocked']"
+                >
+                  {{ event.outcome === 'corrected' ? 'Corrected' : 'Rejected' }}
+                </span>
+                <span
+                  v-if="event.favourable"
+                  class="admin-muted"
+                  title="The game claimed more than the server's replay in a resource"
+                >
+                  in the player’s favour</span
+                >
+              </td>
+              <td :title="event.message">
+                {{ eventCause(event) }}
+                <span v-if="event.findings.length > 1" class="admin-muted">
+                  (+{{ event.findings.length - 1 }} more)</span
+                >
+              </td>
+              <td>
+                <code v-if="event.clientBuild">{{ event.clientBuild }}</code>
+                <span v-else class="admin-muted">not reported</span>
+                <span v-if="event.sameRules === false" class="admin-badge blocked"
+                  >older rules</span
+                >
               </td>
               <td>
                 <button
                   type="button"
                   class="admin-button quiet"
-                  @click="comparing = comparing === rejection.id ? '' : rejection.id"
+                  @click="comparing = comparing === event.id ? '' : event.id"
                 >
-                  {{ comparing === rejection.id ? 'Hide' : 'Compare' }}
+                  {{ comparing === event.id ? 'Hide' : 'Compare' }}
                 </button>
               </td>
             </tr>
           </tbody>
         </table>
-        <p v-else class="admin-muted">No rejected uploads.</p>
+        <p v-else class="admin-muted">No corrected or rejected uploads.</p>
         <p v-if="syncNotice" class="admin-notice" role="status">{{ syncNotice }}</p>
         <SyncCompare
           v-if="comparing"
@@ -359,7 +376,8 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { adminApi } from '../api';
 import { go, shownEmail } from '../state';
-import { codeLabel, dateTime, isOnline, relativeTime, whole } from '../format';
+import { dateTime, isOnline, relativeTime, whole } from '../format';
+import { eventCause } from '../syncFindings';
 import { downloadJson } from '../download';
 import { BUILDINGS, LEVEL_COUNT, buildingLabel, eraLabel, powerLabel } from '../labels';
 import ConfirmAction from '../components/ConfirmAction.vue';
@@ -368,7 +386,6 @@ import TownPreview from '../components/TownPreview.vue';
 import TownHonours from '../components/TownHonours.vue';
 import SyncBlocked from '../components/SyncBlocked.vue';
 import SyncCompare from '../components/SyncCompare.vue';
-import ForceSyncToggle from '../components/ForceSyncToggle.vue';
 import EditableFact from '../components/EditableFact.vue';
 import OnlineWarning from '../components/OnlineWarning.vue';
 import { correctionBody, editingRisk, inventoryFields, STATUS_POLL_MS } from '../inventory';

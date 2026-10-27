@@ -1647,6 +1647,12 @@
                       'minimum': 0,
                       'description': 'Device Unix milliseconds captured once when the upload enters its immutable retry queue. Only the first baseline establishes a clock offset, which is never negative: server time is always allowed.',
                     },
+                  'clientBuild':
+                    {
+                      'type': 'string',
+                      'pattern': '^[0-9A-Za-z._-]{1,32}\\+[a-f0-9]{8,64}$',
+                      'description': 'The game build that queued the upload: its version and the start of its save-rules digest. Kept with a sync event so support can tell an older game apart; never used to accept or refuse an upload.',
+                    },
                   'actions':
                     {
                       'type': 'array',
@@ -1763,6 +1769,39 @@
                       'type': 'boolean',
                       'const': true,
                       'description': 'Present while the current revision is one an admin saved from a sync comparison or an inventory correction: the owner game loads it without asking, keeping its own copy as a recovery backup.',
+                    },
+                  'correction':
+                    {
+                      'type': 'object',
+                      'description': 'Present while the current revision is an ordinary upload the server saved with its own replayed values (a skipped action, a corrected value or a journal resumed from the cloud checkpoint). The owner game loads this profile without asking, keeping its own copy as a recovery backup. The next accepted save clears it.',
+                      'properties':
+                        {
+                          'findings':
+                            {
+                              'type': 'array',
+                              'maxItems': 40,
+                              'items':
+                                {
+                                  'type': 'object',
+                                  'required': ['kind'],
+                                  'properties':
+                                    {
+                                      'kind':
+                                        {
+                                          'type': 'string',
+                                          'description': 'An action kind, value or journal.',
+                                        },
+                                      'sequence': { 'type': 'integer' },
+                                      'subject': { 'type': ['string', 'integer'] },
+                                      'check': { 'type': 'string' },
+                                      'field': { 'type': 'string' },
+                                      'server': {},
+                                      'client': {},
+                                      'at': { 'type': 'integer' },
+                                    },
+                                },
+                            },
+                        },
                     },
                   'profile': { '$ref': '#/components/schemas/Profile' },
                   'integrity': { '$ref': '#/components/schemas/IntegrityReceipt' },

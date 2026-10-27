@@ -102,8 +102,9 @@ final class AdminService
                 $row['sync_blocked_at'] === null
                     ? null
                     : intdiv((int) $row['sync_blocked_at'], 1000),
+            // Repeated corrections in the player's favour: worth a look, never a penalty.
+            'syncReview' => (bool) ($row['sync_review'] ?? false),
         ] +
-            SyncApproval::view($db, $row) +
             (isset($row['email'])
                 ? ['owner' => ['id' => $row['player_id'], 'email' => $row['email']]]
                 : []) +
@@ -304,9 +305,11 @@ final class AdminService
             'towns' => array_map(
                 fn($t) => self::town($db, $t),
                 $db->fetchAllAssociative(
-                    'SELECT t.id,t.player_id,t.name,t.revision,t.saved_at,t.listed,t.public_id,t.deleted_at,t.sync_approval,' .
+                    'SELECT t.id,t.player_id,t.name,t.revision,t.saved_at,t.listed,t.public_id,t.deleted_at,' .
                         SyncRejections::BLOCKED_AT .
-                        ' AS sync_blocked_at,t.profile FROM towns t WHERE t.player_id=? ORDER BY (t.deleted_at IS NOT NULL),t.name,t.id',
+                        ' AS sync_blocked_at,' .
+                        SyncRejections::REVIEW .
+                        ' AS sync_review,t.profile FROM towns t WHERE t.player_id=? ORDER BY (t.deleted_at IS NOT NULL),t.name,t.id',
                     [$id],
                 ),
             ),
@@ -396,6 +399,7 @@ final class AdminService
                 'blocked' => 't.deleted_at IS NULL AND ' .
                     SyncRejections::BLOCKED_AT .
                     ' IS NOT NULL',
+                'review' => 't.deleted_at IS NULL AND ' . SyncRejections::REVIEW . '=1',
                 default => throw new ApiError(422, 'Invalid filter.'),
             },
         ];
@@ -407,9 +411,11 @@ final class AdminService
         $from = 'FROM towns t JOIN players p ON p.id=t.player_id WHERE ' . implode(' AND ', $where);
         $total = (int) $db->fetchOne('SELECT COUNT(*) ' . $from, $params);
         $rows = $db->fetchAllAssociative(
-            'SELECT t.id,t.name,t.player_id,p.email,t.revision,t.saved_at,t.listed,t.public_id,t.deleted_at,t.sync_approval,' .
+            'SELECT t.id,t.name,t.player_id,p.email,t.revision,t.saved_at,t.listed,t.public_id,t.deleted_at,' .
                 SyncRejections::BLOCKED_AT .
-                ' AS sync_blocked_at,t.profile ' .
+                ' AS sync_blocked_at,' .
+                SyncRejections::REVIEW .
+                ' AS sync_review,t.profile ' .
                 $from .
                 ' ORDER BY t.saved_at DESC,t.id LIMIT ' .
                 self::PAGE .
@@ -434,7 +440,9 @@ final class AdminService
         $row = $db->fetchAssociative(
             'SELECT t.*,' .
                 SyncRejections::BLOCKED_AT .
-                ' AS sync_blocked_at,p.email,a.seen_at AS owner_seen_at,s.collected_at AS saloon_at,g.name AS guest_name,g.visited_at AS guest_at FROM towns t JOIN players p ON p.id=t.player_id LEFT JOIN player_activity a ON a.player_id=t.player_id LEFT JOIN saloon_collections s ON s.town_id=t.id LEFT JOIN town_guests g ON g.town_id=t.id WHERE t.id=?',
+                ' AS sync_blocked_at,' .
+                SyncRejections::REVIEW .
+                ' AS sync_review,p.email,a.seen_at AS owner_seen_at,s.collected_at AS saloon_at,g.name AS guest_name,g.visited_at AS guest_at FROM towns t JOIN players p ON p.id=t.player_id LEFT JOIN player_activity a ON a.player_id=t.player_id LEFT JOIN saloon_collections s ON s.town_id=t.id LEFT JOIN town_guests g ON g.town_id=t.id WHERE t.id=?',
             [$id],
         );
         if (!$row) {
@@ -585,47 +593,10 @@ final class AdminService
         });
         return $this->townDetail($id);
     }
-    // Approve only a specific rejected profile, at the cloud revision the admin reviewed.
-    public function setForceSync(string $actor, string $id, array $body): array
-    {
-        SaveService::keys($body, ['forceSync', 'rejectionId']);
-        if (!is_bool($body['forceSync'] ?? null)) {
-            throw new ApiError(422, 'Choose whether to approve this rejected upload.');
-        }
-        return $this->locked($id, function ($db, $row) use ($actor, $body) {
-            $changes = SyncApproval::clear();
-            $detail = $row['name'];
-            if ($body['forceSync']) {
-                if (
-                    !is_string($body['rejectionId'] ?? null) ||
-                    !preg_match('/^[a-f0-9]{32}$/D', $body['rejectionId'])
-                ) {
-                    throw new ApiError(422, 'Compare and select the rejected upload to approve.');
-                }
-                $rejection = SyncRejections::find($db, $row['id'], $body['rejectionId']);
-                $approval = SyncApproval::issue($row, $rejection);
-                $changes['sync_approval'] = json_encode($approval, JSON_THROW_ON_ERROR);
-                $detail = sprintf(
-                    'rejection %s, revision %d, profile SHA-256 %s, expires %d',
-                    $approval['rejectionId'],
-                    $approval['revision'],
-                    $approval['profileHash'],
-                    $approval['expiresAt'],
-                );
-            }
-            $db->update('towns', $changes, ['id' => $row['id']]);
-            $this->admins->audit(
-                $actor,
-                $body['forceSync'] ? 'town_sync_forced' : 'town_sync_force_cleared',
-                $row['id'],
-                $detail,
-            );
-            return SyncApproval::view($db, array_merge($row, $changes));
-        });
-    }
     /**
-     * One rejected upload beside the cloud save it was compared with and the state the
-     * server replayed from it, all in the replay's comparable form (powers by ID).
+     * One sync event (a rejected or corrected upload) beside the cloud save it was
+     * compared with and the state the server replayed from it, all in the replay's
+     * comparable form (powers by ID), with its findings.
      */
     public function syncRejection(string $id, string $rejection): array
     {
@@ -640,17 +611,19 @@ final class AdminService
             : null;
         return [
             'rejection' => SyncRejections::summary($row),
-            // Edits apply only while the town is still at the rejected revision.
-            'current' => $revision !== false && (int) $revision === (int) $row['revision'],
+            // Edits apply only while the town is still at the rejected or corrected revision.
+            'current' =>
+                $revision !== false && (int) $revision === SyncRejections::resettable($row),
             'cloud' => $comparable($row['cloud']),
             'upload' => $comparable($row['upload']),
             'expected' => $row['expected'] === null ? null : self::decode($row['expected']),
         ];
     }
     /**
-     * After comparing a blocked upload: saves the cloud save or the upload, with the admin's
-     * edits, as a new revision. The owner's game loads it on its next sync without asking,
-     * keeping its own copy as a recovery backup, then syncs from it normally.
+     * After comparing a blocked or corrected upload: saves the cloud save it was compared
+     * with or the upload, with the admin's edits, as a new revision. The owner's game loads
+     * it on its next sync without asking, keeping its own copy as a recovery backup, then
+     * syncs from it normally. Restoring a corrected upload undoes a wrong correction.
      */
     public function resetTown(string $actor, string $id, string $rejection, array $body): array
     {
@@ -660,14 +633,16 @@ final class AdminService
         }
         $this->locked($id, function ($db, $row) use ($actor, $rejection, $body) {
             $rejected = SyncRejections::find($db, $row['id'], $rejection);
-            if ((int) $rejected['revision'] !== (int) $row['revision']) {
+            if (SyncRejections::resettable($rejected) !== (int) $row['revision']) {
                 throw new ApiError(
                     409,
-                    'This town saved again since this rejection. Compare its latest one.',
+                    'This town saved again since this sync event. Compare its latest one.',
                 );
             }
             $integrity = new SaveIntegrity();
-            $base = self::decode($body['base'] === 'cloud' ? $row['profile'] : $rejected['upload']);
+            $base = self::decode(
+                $body['base'] === 'cloud' ? $rejected['cloud'] : $rejected['upload'],
+            );
             $state = $base instanceof \stdClass ? $integrity->comparable($base) : null;
             if ($state === null) {
                 throw new ApiError(422, 'This save cannot be read for editing.');
@@ -814,7 +789,8 @@ final class AdminService
     ): int {
         $profile = json_encode($saved, JSON_THROW_ON_ERROR);
         SaveService::archive($db, $row);
-        $changes += SyncApproval::clear();
+        // An admin's save is not a correction the game must announce.
+        $changes += ['sync_correction' => null];
         $changes += [
             'profile' => $profile,
             'revision' => (int) $row['revision'] + 1,

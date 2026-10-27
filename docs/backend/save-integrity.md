@@ -4,7 +4,8 @@ The game records resource-changing actions locally and sends them with the exist
 background save upload. The backend recalculates those actions from the accepted
 cloud checkpoint and compares the resulting money, inventory and progression with
 the submitted snapshot. Editing a tracked snapshot's balance, items or building
-levels without corresponding valid actions cannot replace the cloud save.
+levels without corresponding valid actions changes nothing: the server saves its own
+replayed values instead (see [corrections](#corrections)).
 
 This protects accounting, not proof of human play. Puzzle scores, collected gems,
 completion assertions, chest rolls and simulated VIP visits originate in the
@@ -20,13 +21,16 @@ Historical earnings cannot be proven and are not retrospectively removed. Once a
 town has a tracked checkpoint, an ordinary save cannot erase its journal or reset
 its epoch to establish another baseline.
 
-Validation failure preserves the device copy and the last accepted cloud save.
-The existing save status explains the synchronization problem. A rejected immutable
-upload is released, while the current profile and queued actions remain intact;
-the unchanged rejected snapshot is not repeatedly sent. There are no bans, save
-wipes, automatic deductions, move budgets or puzzle time limits. Optional score
-and speed rewards retain their existing rules, and a player
-can keep matching after the speed target and beyond 100 moves.
+The server never credits an action it cannot verify, and it never removes verified
+progress. There are no bans, save wipes, move budgets or puzzle time limits. Optional
+score and speed rewards retain their existing rules, and a player can keep matching
+after the speed target and beyond 100 moves.
+
+A refused upload (only the structural problems listed under
+[corrections](#corrections)) preserves the device copy and the last accepted cloud
+save. The existing save status explains the synchronization problem. A rejected
+immutable upload is released, while the current profile and queued actions remain
+intact; the unchanged rejected snapshot is not repeatedly sent.
 
 Transient failures retain the exact upload, including its timestamp and action IDs,
 for retry. An acknowledgment removes only the uploaded prefix of the journal.
@@ -45,6 +49,46 @@ the device clock. Cloud collection
 checks preserve genuine offline elapsed time and the existing reserve capacity.
 Clock discrepancies are recoverable save problems, never evidence for banning a
 player, and never stop an active puzzle.
+
+## Corrections
+
+An ordinary save is reconciled (`SaveIntegrity::reconcile`), never refused over a
+disagreement. A crash that rolls back the device journal, an older game build or a
+rules bug on either side must not stop a player from syncing:
+
+- An action whose check fails (a finish with too few wins, a purchase without the
+  coins, a hammer that is not there) is skipped with no partial effect. The rest of the
+  journal replays normally, and the whole journal is acknowledged, so the skipped action
+  never comes back.
+- A journal that cannot continue from the cloud checkpoint (missing, from another epoch,
+  starting after or ending before it) replays nothing. The protected values resume from
+  the cloud save and the corrected save carries the checkpoint's own epoch.
+- Every protected value the upload disagrees with is taken from the replay. Everything
+  the replay does not own (presentation flags, cosmetics, extra record fields) stays as
+  the game sent it.
+
+Each skip and correction is a finding: the action kind, sequence and subject with the
+failed check and both values, or the corrected field with both values. When a finding
+changed what was saved, the reply carries `correction.findings` and the owner's game
+loads the corrected profile without asking, keeping its own copy as a recovery backup,
+and shows a short notice. A puzzle in progress is never interrupted; the save loads on
+return to the village. The next accepted save clears the marker. A skipped action
+with no effect is only recorded.
+
+A cheater gains nothing: forged values are overwritten by the replay, and repeated
+corrections in the player's favour flag the town for an admin to review, never for a
+penalty. A legitimate player keeps syncing; at worst an action the server could not
+verify is undone, and support can restore the device's upload from the admin sync log.
+
+Only structural problems are still refused: an unreadable or out-of-range save, an
+unsupported schema, rules or journal version, a device clock ahead of the server, and,
+in `hold` mode, earnings above the money estimate. A restore the player chose keeps the
+strict replay (`SaveIntegrity::accept`). A refusal names the action it stopped at.
+
+The game stamps its build on each staged upload (`integrity.clientBuild`: its version
+and the start of its save-rules digest). It is kept with the sync event so support can
+tell an older game apart; it never decides whether an upload is accepted, so a native
+app waiting for a store update keeps syncing.
 
 ## Server-time money estimate
 
@@ -115,13 +159,12 @@ old development or preprod save is treated like any other receipt the game rules
 not know: every server refuses that upload as `save_rules_unsupported`, and the local
 copy and the last cloud save stay as they were.
 
-An admin can approve an exact reviewed rejected upload after a false desync, or for
-such an old save. It is accepted as a new unverified baseline, like enrollment: it keeps
-the latest clock offset, run in progress, Town Honours counters and money budget, and
-later uploads are replayed normally again. Approval expires after 24 hours, binds the
-full canonical profile and cloud revision, and is consumed by any accepted save. An
-admin can also save an edited copy that the owner's game loads without asking. Rejected uploads are kept for that comparison; see
-[blocked syncs](admin.md#blocked-syncs). Nothing in the client can set either.
+An admin can save an edited copy of a corrected or rejected upload (or the upload
+itself, to undo a wrong correction) that the owner's game loads without asking. It is
+sealed as a new unverified baseline, like enrollment, keeping the latest checkpoint's
+Town Honours counters and money budget, and later uploads are replayed normally again.
+Sync events are kept for that comparison; see [sync events](admin.md#sync-events).
+Nothing in the client can set either.
 
 These JavaScript checks deter straightforward console changes, not a player who
 modifies browser code. Local-only saves and first-enrollment history remain
@@ -132,7 +175,7 @@ tracked cloud snapshots and the time-based money review.
 ## Journal contract
 
 `profile.integrity` contains `version: 1`, a UUID `epoch`, `baseSequence`, an optional
-upload `clientAt`, and `actions`. Each action has a unique UUID `id`, a contiguous
+upload `clientAt` and `clientBuild`, and `actions`. Each action has a unique UUID `id`, a contiguous
 `sequence`, a `kind` and semantic `data`. Client-provided prices or arbitrary
 balance deltas are not authoritative. The existing upload ID and revision check
 still serialize whole snapshots and make acknowledgment-loss retries idempotent.

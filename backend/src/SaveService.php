@@ -128,6 +128,15 @@ final class SaveService
         if (str_starts_with((string) ($row['upload_id'] ?? ''), self::ADMIN_RESET)) {
             $result['adminReset'] = true;
         }
+        // The server corrected the upload that saved this revision: the game adopts it.
+        if ($profile && is_string($row['sync_correction'] ?? null)) {
+            $result['correction'] = json_decode(
+                $row['sync_correction'],
+                true,
+                32,
+                JSON_THROW_ON_ERROR,
+            );
+        }
         $save = json_decode($row['profile'], false, 64, JSON_THROW_ON_ERROR);
         $integrity = SaveIntegrity::receipt($save);
         if ($profile && $integrity !== null) {
@@ -333,6 +342,19 @@ final class SaveService
             return $this->ownerView($db, $row, $a['id']);
         });
     }
+    /**
+     * Whether a reconciled upload's findings changed what it saved: a replayed value
+     * or a journal resumed from the cloud. Skipped actions alone change nothing.
+     */
+    public static function changedValues(array $findings): bool
+    {
+        foreach ($findings as $finding) {
+            if (in_array($finding['kind'] ?? null, ['value', 'journal'], true)) {
+                return true;
+            }
+        }
+        return false;
+    }
     public static function archive(Connection $db, array $row): void
     {
         $db->insert('town_history', [
@@ -363,7 +385,10 @@ final class SaveService
                         $rejected[0],
                         $json,
                         $rejected[1],
-                        $e,
+                        SyncRejections::rejection(
+                            $e,
+                            SaveIntegrity::clientBuild($body['profile'] ?? null),
+                        ),
                     );
                 } catch (\Throwable $failure) {
                     error_log(
@@ -428,26 +453,27 @@ final class SaveService
                 $previous,
             );
             $previousAt = (int) $row['saved_at'] * 1000;
-            // Only the exact reviewed profile may skip replay, at its original revision.
-            $forced = SyncApproval::matches($db, $row, $json);
+            // An ordinary save is reconciled: a disagreement is corrected, never refused.
+            // A restore the player chose keeps the strict replay and its own review.
             try {
-                $accepted = $forced
-                    ? $integrity->acceptOverride($incoming, $previous, $now, $id, $previousAt)
-                    : $integrity->accept(
+                $accepted = $resolve
+                    ? $integrity->accept(
                         $incoming,
                         $previous,
                         $now,
-                        $resolve,
+                        true,
                         $history,
                         $id,
                         $previousAt,
-                    );
+                    )
+                    : $integrity->reconcile($incoming, $previous, $now, $id, $previousAt);
             } catch (ApiError $e) {
                 if ($e->status === 422) {
                     $rejected = [$row, $integrity->expected()];
                 }
                 throw $e;
             }
+            $upload = $json;
             $json = json_encode(
                 Honours::load(fn() => $integrity)->keep(
                     $accepted,
@@ -456,6 +482,20 @@ final class SaveService
                 ),
                 JSON_THROW_ON_ERROR,
             );
+            $findings = $integrity->findings();
+            if ($findings) {
+                SyncRejections::record(
+                    $db,
+                    $row,
+                    $upload,
+                    $integrity->expected(),
+                    SyncRejections::correction(
+                        $findings,
+                        $integrity->favourable(),
+                        SaveIntegrity::clientBuild($body['profile']),
+                    ),
+                );
+            }
             self::archive($db, $row);
             $changes = [
                 'profile' => $json,
@@ -463,9 +503,12 @@ final class SaveService
                 'saved_at' => intdiv($now, 1000),
                 'upload_id' => $body['uploadId'],
                 'upload_hash' => $hash,
+                // The owner's game adopts a correction that changed its values; a lost
+                // reply's retry or a pull reads it from here. The next save clears it.
+                'sync_correction' => self::changedValues($findings)
+                    ? json_encode(['findings' => $findings], JSON_THROW_ON_ERROR)
+                    : null,
             ];
-            // Any accepted save ends the exception, including normal recovery on another device.
-            $changes += SyncApproval::clear();
             if ($row['listed']) {
                 $changes['appearance'] = $this->public->projection(
                     json_decode($json),

@@ -48,6 +48,11 @@ describe('Player-facing save state', () => {
     });
   });
 
+  it('asks for no choice after support’s reset or the server’s correction', () => {
+    for (const desyncNotice of ['support', 'correction'])
+      expect(account('saved', { desyncNotice })).toMatchObject({ tone: 'saved', action: null });
+  });
+
   it('never claims an unknown status is safely backed up', () => {
     expect(account('Something new')).toMatchObject({ tone: 'pending', action: 'retry' });
   });

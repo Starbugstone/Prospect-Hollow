@@ -13,8 +13,51 @@ final class SaveIntegrity
     private array $rules;
     // The town being replayed: a space-helmet receipt is only valid for its own town.
     private string $townId = '';
-    // The replayed state a rejected upload was compared with, for the admin sync log.
+    // The replayed state a rejected or corrected upload was compared with, for the admin sync log.
     private ?array $expected = null;
+    // reconcile() skips a failing action and takes disputed values from the replay.
+    private bool $tolerant = false;
+    /** @var list<array<string, mixed>> What reconcile() skipped or corrected, oldest first. */
+    private array $findings = [];
+    // Whether the upload claimed more than the replay in any resource (a review signal).
+    private bool $favourable = false;
+    /** Findings kept per upload; the first ones explain a desync, the rest repeat it. */
+    public const MAX_FINDINGS = 40;
+    /** Protected save fields compared whole, at the top of the save and in its town. */
+    private const PROTECTED_TOP = [
+        'records',
+        'continuousRecords',
+        'builderHammers',
+        'chestsWithoutBuilderHammer',
+        'issuedRun',
+        'settledRun',
+        'shopVisit',
+        'vipReceipts',
+    ];
+    private const PROTECTED_TOWN = [
+        'coins',
+        'moonstoneVersion',
+        'moonstones',
+        'moonstonesEarned',
+        'moonstoneProduction',
+        'era',
+        'buildings',
+        'buildingEras',
+        'buildingEraLevels',
+        'projects',
+        'completedRuns',
+        'forge',
+        'saloonVisitAt',
+        'helmetRun',
+        'helmetVisitAt',
+        'income',
+        'lastCollections',
+        'events',
+        'nextRaidRun',
+    ];
+    // Record fields the replay owns; any other field a record holds is the client's.
+    private const RECORD_FIELDS = ['score', 'stars', 'bestTimeMs'];
+    private const CONTINUOUS_FIELDS = ['score', 'coins', 'moonstoneGems'];
     private const CLOCK_SKEW_MS = 300000;
     // The exported catalog is large: decode it once per request, not once per instance.
     private static ?array $catalog = null;
@@ -62,12 +105,30 @@ final class SaveIntegrity
             ['code' => 'save_rules_unsupported'],
         );
     }
-    private static function mismatch(string $field): never
-    {
+    /**
+     * The replay disagrees with the upload. `$check` names the failed condition and the
+     * two values show what the server had and what the upload asked for, so an admin
+     * reads the cause instead of comparing whole saves.
+     */
+    private static function mismatch(
+        string $field,
+        ?string $check = null,
+        mixed $server = null,
+        mixed $client = null,
+    ): never {
         throw new ApiError(
             422,
             'This progress could not be reconciled with its cloud checkpoint. Your local copy and the last cloud save are safe.',
-            ['code' => 'save_integrity_mismatch', 'field' => $field],
+            array_filter(
+                [
+                    'code' => 'save_integrity_mismatch',
+                    'field' => $field,
+                    'check' => $check,
+                    'server' => $server,
+                    'client' => $client,
+                ],
+                fn($value) => $value !== null,
+            ),
         );
     }
     private function ready(): void
@@ -706,26 +767,16 @@ final class SaveIntegrity
     }
     private function protected(array $p): array
     {
-        $top = [
-            'records',
-            'continuousRecords',
-            'builderHammers',
-            'chestsWithoutBuilderHammer',
-            'issuedRun',
-            'settledRun',
-            'shopVisit',
-            'vipReceipts',
-        ];
         $result = [];
-        foreach ($top as $key) {
+        foreach (self::PROTECTED_TOP as $key) {
             $result[$key] = $p[$key];
         }
         $result['powers'] = $p['powers'];
         foreach ($result['records'] as &$record) {
-            $record = array_intersect_key($record, array_flip(['score', 'stars', 'bestTimeMs']));
+            $record = array_intersect_key($record, array_flip(self::RECORD_FIELDS));
         }
         foreach ($result['continuousRecords'] as &$record) {
-            $record = array_intersect_key($record, array_flip(['score', 'coins', 'moonstoneGems']));
+            $record = array_intersect_key($record, array_flip(self::CONTINUOUS_FIELDS));
         }
         unset($record);
         foreach ($result['continuousRecords'] as &$record) {
@@ -748,30 +799,7 @@ final class SaveIntegrity
             ],
             $p['pendingChests'],
         );
-        foreach (
-            [
-                'coins',
-                'moonstoneVersion',
-                'moonstones',
-                'moonstonesEarned',
-                'moonstoneProduction',
-                'era',
-                'buildings',
-                'buildingEras',
-                'buildingEraLevels',
-                'projects',
-                'completedRuns',
-                'forge',
-                'saloonVisitAt',
-                'helmetRun',
-                'helmetVisitAt',
-                'income',
-                'lastCollections',
-                'events',
-                'nextRaidRun',
-            ]
-            as $key
-        ) {
+        foreach (self::PROTECTED_TOWN as $key) {
             $result['town'][$key] = $p['town'][$key];
         }
         $result['town']['landmarks'] = [
@@ -831,6 +859,26 @@ final class SaveIntegrity
             $ids[$action['id']] = true;
         }
         return $value;
+    }
+    /**
+     * The game build that queued an upload ("1.2.1+3f2a9c1b0d4e": its version and the
+     * start of its save-rules digest), or null for an older game that did not say.
+     */
+    public static function clientBuild(mixed $profile): ?string
+    {
+        $build = $profile instanceof \stdClass ? $profile->integrity->clientBuild ?? null : null;
+        return is_string($build) && preg_match('/^[0-9A-Za-z._-]{1,32}\+[a-f0-9]{8,64}$/D', $build)
+            ? $build
+            : null;
+    }
+    /** Whether a client build replays with this server's save rules; null when unknown. */
+    public static function sameRules(?string $build): ?bool
+    {
+        $digest = self::catalog()['contentDigest'] ?? null;
+        if ($build === null || !is_string($digest)) {
+            return null;
+        }
+        return str_starts_with($digest, explode('+', $build)[1]);
     }
     public static function receipt(object $profile): ?array
     {
@@ -1063,11 +1111,7 @@ final class SaveIntegrity
         ?int $previousServerAt = null,
     ): object {
         $this->ready();
-        $state['powers'] = array_map(
-            fn($id, $quantity) => ['id' => $id, 'quantity' => $quantity],
-            array_keys($state['powers']),
-            array_values($state['powers']),
-        );
+        $state = self::profileOf($state);
         $anchor = $this->journal(self::arrayOf($latest)['integrity'] ?? null);
         unset($state['integrity']);
         $profile = json_decode(
@@ -1184,6 +1228,42 @@ final class SaveIntegrity
         );
     }
     /** The caller holds the account transaction lock before comparing checkpoints. */
+    /**
+     * An ordinary save: replays like accept(), but never refuses the upload over a
+     * disagreement. An action that fails its check is skipped, a gap in the journal
+     * resumes from the cloud checkpoint, and every protected value is taken from the
+     * replay. Each skip or correction is a finding. With findings, the saved profile is
+     * the upload with the replay's protected values, which the owner's game adopts.
+     * Structural problems (an unreadable save or journal, unknown rules, a device clock
+     * ahead of the server) are still refused.
+     */
+    public function reconcile(
+        object $profile,
+        ?object $previous,
+        int $now,
+        string $townId = '',
+        ?int $previousServerAt = null,
+    ): object {
+        $this->tolerant = true;
+        $this->findings = [];
+        $this->favourable = false;
+        $this->expected = null;
+        try {
+            return $this->accept($profile, $previous, $now, false, [], $townId, $previousServerAt);
+        } finally {
+            $this->tolerant = false;
+        }
+    }
+    /** @return list<array<string, mixed>> What the last reconcile() skipped or corrected. */
+    public function findings(): array
+    {
+        return $this->findings;
+    }
+    /** Whether the last reconciled upload claimed more than the replay in any resource. */
+    public function favourable(): bool
+    {
+        return $this->favourable;
+    }
     public function accept(
         object $profile,
         ?object $previous,
@@ -1255,6 +1335,13 @@ final class SaveIntegrity
                     }
                 }
             }
+            if ($this->tolerant) {
+                return $this->resume($incoming, $old, $anchor, $now, $previousServerAt, [
+                    'kind' => 'journal',
+                    'check' => 'missing',
+                    'server' => $anchor['baseSequence'],
+                ]);
+            }
             self::mismatch('integrity');
         }
         $candidate = $old;
@@ -1286,6 +1373,14 @@ final class SaveIntegrity
             $journal['epoch'] !== $anchor['epoch'] ||
             $journal['baseSequence'] > $anchor['baseSequence']
         ) {
+            if ($this->tolerant) {
+                return $this->resume($incoming, $old, $anchor, $now, $previousServerAt, [
+                    'kind' => 'journal',
+                    'check' => $journal['epoch'] !== $anchor['epoch'] ? 'epoch' : 'ahead',
+                    'server' => $anchor['baseSequence'],
+                    'client' => $journal['baseSequence'],
+                ]);
+            }
             if (!$resolve) {
                 self::mismatch('integrity.epoch');
             }
@@ -1349,6 +1444,17 @@ final class SaveIntegrity
                 }
             }
         }
+        if (
+            $this->tolerant &&
+            $journal['baseSequence'] + count($journal['actions']) < $anchor['baseSequence']
+        ) {
+            return $this->resume($incoming, $old, $anchor, $now, $previousServerAt, [
+                'kind' => 'journal',
+                'check' => 'behind',
+                'server' => $anchor['baseSequence'],
+                'client' => $journal['baseSequence'] + count($journal['actions']),
+            ]);
+        }
         $state = $signedState ?? $this->normalized($candidate);
         // Every town tracked before Town Honours starts its counters from its checkpoint.
         $context = $this->honourCounters($checkpoint['context'] ?? [], $state['town']);
@@ -1364,14 +1470,25 @@ final class SaveIntegrity
             if ($action['sequence'] !== $ack + 1) {
                 self::mismatch('integrity.sequence');
             }
-            $this->applyAccounted(
-                $state,
-                $context,
-                $action['kind'],
-                $action['data'],
-                $now,
-                $sources,
-            );
+            // A failed check leaves no partial effect: a skipped action changes nothing.
+            $before = [$state, $context, $sources];
+            try {
+                $this->applyAccounted(
+                    $state,
+                    $context,
+                    $action['kind'],
+                    $action['data'],
+                    $now,
+                    $sources,
+                );
+            } catch (ApiError $error) {
+                $finding = self::actionFinding($action, $error);
+                if (!$this->tolerant || $finding === null) {
+                    throw $finding === null ? $error : self::described($error, $finding);
+                }
+                [$state, $context, $sources] = $before;
+                $this->note($finding);
+            }
             $ack = $action['sequence'];
         }
         if (
@@ -1414,11 +1531,23 @@ final class SaveIntegrity
         }
         $actual = $this->protected($target);
         $expected = $this->protected($state);
+        $changed = false;
         foreach ($expected as $field => $value) {
             if (!self::same($actual[$field], $value)) {
                 $this->expected = array_diff_key($state, ['integrity' => true]);
-                self::mismatch(self::difference($value, $actual[$field], $field));
+                if (!$this->tolerant) {
+                    self::mismatch(self::difference($value, $actual[$field], $field));
+                }
+                $this->differences($value, $actual[$field], $field);
+                $changed = true;
             }
+        }
+        if ($this->findings && $this->expected === null) {
+            // Only skipped actions without effect: still show what the replay reached.
+            $this->expected = array_diff_key($state, ['integrity' => true]);
+        }
+        if ($changed) {
+            $this->favourable = $this->claimsMore($target, $state);
         }
         $context = $this->honourCounters(
             $this->moneyContext(
@@ -1432,13 +1561,219 @@ final class SaveIntegrity
             $anchor['context'] ?? [],
         );
         return $this->seal(
-            $incoming,
+            $changed ? $this->corrected($target, $state) : $incoming,
             $context,
             $journal['epoch'],
             $historical ? $ack : max($anchor['baseSequence'], $ack),
             'tracked',
             $townId,
         );
+    }
+    /**
+     * A journal that cannot continue from the cloud checkpoint (missing, from another
+     * epoch, or starting after or ending before it) replays nothing: the protected
+     * values resume from the cloud save, the upload keeps the rest.
+     */
+    private function resume(
+        array $incoming,
+        array $old,
+        array $anchor,
+        int $now,
+        ?int $previousServerAt,
+        array $finding,
+    ): object {
+        $this->note($finding);
+        $state = $this->normalized($old);
+        $target = $this->normalized($incoming);
+        $this->expected = array_diff_key($state, ['integrity' => true]);
+        $actual = $this->protected($target);
+        foreach ($this->protected($state) as $field => $value) {
+            if (!self::same($actual[$field], $value)) {
+                $this->differences($value, $actual[$field], $field);
+            }
+        }
+        $this->favourable = $this->claimsMore($target, $state);
+        $context = $this->honourCounters(
+            $this->moneyContext(
+                $anchor['context'] ?? [],
+                $anchor['context'] ?? [],
+                $now,
+                $previousServerAt,
+                [],
+            ),
+            $state['town'],
+            $anchor['context'] ?? [],
+        );
+        return $this->seal(
+            $this->corrected($target, $state),
+            $context,
+            $anchor['epoch'],
+            $anchor['baseSequence'],
+            'tracked',
+            $this->townId,
+        );
+    }
+    /** The finding for an action whose check failed, or null when it is not a replay check. */
+    private static function actionFinding(array $action, ApiError $error): ?array
+    {
+        if (
+            $error->status !== 422 ||
+            !in_array(
+                $error->details['code'] ?? null,
+                ['save_integrity_mismatch', 'save_integrity_invalid'],
+                true,
+            )
+        ) {
+            return null;
+        }
+        $data = $action['data'];
+        $subject = null;
+        foreach (['buildingId', 'levelId', 'itemId', 'chestId', 'key', 'expectedEra'] as $key) {
+            if (is_string($data[$key] ?? null) || is_int($data[$key] ?? null)) {
+                $subject = is_string($data[$key]) ? mb_substr($data[$key], 0, 64) : $data[$key];
+                break;
+            }
+        }
+        return array_filter(
+            [
+                'kind' => mb_substr($action['kind'], 0, 64),
+                'sequence' => $action['sequence'],
+                'subject' => $subject,
+                'check' => $error->details['check'] ?? null,
+                'field' => $error->details['field'] ?? null,
+                'server' => self::shown($error->details['server'] ?? null),
+                'client' => self::shown($error->details['client'] ?? null),
+                'at' => self::integer($data['at'] ?? null) ? $data['at'] : null,
+            ],
+            fn($value) => $value !== null,
+        );
+    }
+    /** The refusal of a strict replay, naming the action it stopped at. */
+    private static function described(ApiError $error, array $finding): ApiError
+    {
+        return new ApiError(
+            $error->status,
+            $error->getMessage(),
+            $error->details + ['finding' => $finding],
+        );
+    }
+    private function note(array $finding): void
+    {
+        if (count($this->findings) < self::MAX_FINDINGS) {
+            $this->findings[] = $finding;
+        }
+    }
+    /** Every protected value the upload disagrees with, as findings (bounded). */
+    private function differences(mixed $expected, mixed $actual, string $path): void
+    {
+        if (count($this->findings) >= self::MAX_FINDINGS) {
+            return;
+        }
+        // A map on both sides is compared entry by entry; anything else is one value.
+        if (
+            is_array($expected) &&
+            is_array($actual) &&
+            !array_is_list($expected) &&
+            !array_is_list($actual)
+        ) {
+            foreach (array_unique([...array_keys($expected), ...array_keys($actual)]) as $key) {
+                $server = $expected[$key] ?? null;
+                $client = $actual[$key] ?? null;
+                if (!self::same($server, $client)) {
+                    $this->differences($server, $client, $path . '.' . $key);
+                }
+            }
+            return;
+        }
+        $this->note([
+            'kind' => 'value',
+            'field' => $path,
+            'server' => self::shown($expected),
+            'client' => self::shown($actual),
+        ]);
+    }
+    /** A value small enough to keep in a finding; a large one is only summarized. */
+    private static function shown(mixed $value): mixed
+    {
+        if (!is_array($value)) {
+            return is_string($value) ? mb_substr($value, 0, 120) : $value;
+        }
+        return strlen(json_encode($value, JSON_THROW_ON_ERROR)) <= 400
+            ? $value
+            : ['summary' => count($value) . ' entries'];
+    }
+    /**
+     * The upload with the replay's protected values. Fields the replay does not own
+     * (cosmetics, presentation flags, extra record fields) stay as the game sent them.
+     */
+    private function corrected(array $target, array $state): array
+    {
+        foreach ([...self::PROTECTED_TOP, 'powers', 'shopStock', 'pendingChests'] as $key) {
+            $target[$key] = $state[$key];
+        }
+        foreach (
+            ['records' => self::RECORD_FIELDS, 'continuousRecords' => self::CONTINUOUS_FIELDS]
+            as $key => $fields
+        ) {
+            $merged = [];
+            foreach ($state[$key] as $level => $record) {
+                $merged[$level] = array_replace(
+                    array_diff_key($target[$key][$level] ?? [], array_flip($fields)),
+                    $record,
+                );
+            }
+            $target[$key] = $merged;
+        }
+        foreach (self::PROTECTED_TOWN as $key) {
+            $target['town'][$key] = $state['town'][$key];
+        }
+        foreach (['areas', 'areaLevels'] as $key) {
+            $value = $state['town']['personalisation'][$key] ?? [];
+            if ($value !== [] || isset($target['town']['personalisation'])) {
+                $target['town']['personalisation'][$key] = $value;
+            }
+        }
+        $target = self::profileOf($target);
+        $this->validate(
+            json_decode(
+                json_encode(self::wire($target), JSON_THROW_ON_ERROR),
+                false,
+                64,
+                JSON_THROW_ON_ERROR,
+            ),
+        );
+        return $target;
+    }
+    /** A normalized state with its bonuses listed again, as a save stores them. */
+    private static function profileOf(array $state): array
+    {
+        $state['powers'] = array_map(
+            fn($id, $quantity) => ['id' => $id, 'quantity' => $quantity],
+            array_keys($state['powers']),
+            array_values($state['powers']),
+        );
+        return $state;
+    }
+    /**
+     * Whether the upload claimed more than the replay in any resource: money, moonstones,
+     * hammers, bonuses, stars or building levels. Repeated, it flags a town for review.
+     */
+    private function claimsMore(array $target, array $state): bool
+    {
+        $totals = fn(array $p) => [
+            $p['town']['coins'],
+            $p['town']['moonstones'] ?? 0,
+            $p['builderHammers'],
+            array_sum($p['powers']),
+            array_sum(array_map(fn($record) => $record['stars'] ?? 0, $p['records'])),
+            array_sum(array_map('intval', $p['town']['buildings'])),
+        ];
+        foreach (array_map(null, $totals($target), $totals($state)) as [$client, $server]) {
+            if ($client > $server) {
+                return true;
+            }
+        }
+        return false;
     }
     /**
      * Accepts one upload an admin let through after a false desync: the town is
@@ -2009,8 +2344,11 @@ final class SaveIntegrity
                 break;
             case 'power-spend':
                 $id = $d['itemId'] ?? '';
-                if (!isset($s['powers'][$id]) || $s['powers'][$id] < 1) {
-                    self::mismatch('power-spend');
+                if (!isset($s['powers'][$id])) {
+                    self::mismatch('power-spend', 'unknown_item', null, $id);
+                }
+                if ($s['powers'][$id] < 1) {
+                    self::mismatch('power-spend', 'none_left', $s['powers'][$id], 1);
                 }
                 $s['powers'][$id]--;
                 break;
@@ -2023,16 +2361,25 @@ final class SaveIntegrity
                     }
                 }
                 $offer = array_search($id, array_column($s['shopStock'], 'id'), true);
-                if (
-                    !$item ||
-                    !$s['town']['buildings']['shop'] ||
-                    $s['shopVisit'] !== ($d['visit'] ?? null) ||
-                    $offer === false ||
-                    $s['shopStock'][$offer]['sold'] ||
-                    $s['town']['coins'] < $item['price'] ||
-                    $s['powers'][$id] >= $this->powerCapacity($s['town'])
-                ) {
-                    self::mismatch('shop-buy');
+                if (!$item || !$s['town']['buildings']['shop']) {
+                    self::mismatch('shop-buy', 'no_offer', null, $id);
+                }
+                if ($s['shopVisit'] !== ($d['visit'] ?? null)) {
+                    self::mismatch('shop-buy', 'visit', $s['shopVisit'], $d['visit'] ?? null);
+                }
+                if ($offer === false || $s['shopStock'][$offer]['sold']) {
+                    self::mismatch('shop-buy', 'sold_out');
+                }
+                if ($s['town']['coins'] < $item['price']) {
+                    self::mismatch('shop-buy', 'coins', $s['town']['coins'], $item['price']);
+                }
+                if ($s['powers'][$id] >= $this->powerCapacity($s['town'])) {
+                    self::mismatch(
+                        'shop-buy',
+                        'full',
+                        $s['powers'][$id],
+                        $this->powerCapacity($s['town']),
+                    );
                 }
                 $s['town']['coins'] -= $item['price'];
                 $this->grant($s, $item);
@@ -2048,7 +2395,7 @@ final class SaveIntegrity
                     true,
                 );
                 if ($index === false) {
-                    self::mismatch('chest-claim');
+                    self::mismatch('chest-claim', 'chest_missing');
                 }
                 $chest = $s['pendingChests'][$index];
                 $selection = $d['selection'] ?? null;
@@ -2131,14 +2478,14 @@ final class SaveIntegrity
                     !$s['town']['buildings']['saloon'] ||
                     $this->cooldown($s['town'], 'saloon', $d['at'])
                 ) {
-                    self::mismatch('saloon-collect');
+                    self::mismatch('saloon-collect', 'cooldown');
                 }
                 $coins = min(
                     $s['town']['income']['stored'],
                     JsonNumber::MAX_SAFE_INTEGER - $s['town']['coins'],
                 );
                 if (!$coins) {
-                    self::mismatch('saloon-collect');
+                    self::mismatch('saloon-collect', 'nothing_stored', 0);
                 }
                 $s['town']['income']['stored'] -= $coins;
                 $this->addCoins($s, $coins);
@@ -2796,7 +3143,7 @@ final class SaveIntegrity
     {
         $id = $d['buildingId'] ?? '';
         if (!isset($this->rules['buildings'][$id])) {
-            self::mismatch('building');
+            self::mismatch('building', 'unknown_building', null, $id);
         }
         $this->accrue($s, $context, $d['at'] ?? null, $now);
         $town = &$s['town'];
@@ -2804,12 +3151,20 @@ final class SaveIntegrity
         $moonLevel = $town['buildings'][$id] ?? 0;
         if ($kind === 'building-finish') {
             $project = $town['projects'][$id] ?? null;
-            if (
-                !$project ||
-                $project['stage'] !== ($d['expectedStage'] ?? null) ||
-                $project['wins'] < min($this->rules['maxConstructionRuns'], $project['required'])
-            ) {
-                self::mismatch('building-finish');
+            if (!$project) {
+                self::mismatch('building-finish', 'project_missing');
+            }
+            if ($project['stage'] !== ($d['expectedStage'] ?? null)) {
+                self::mismatch(
+                    'building-finish',
+                    'stage',
+                    $project['stage'],
+                    $d['expectedStage'] ?? null,
+                );
+            }
+            $needed = min($this->rules['maxConstructionRuns'], $project['required']);
+            if ($project['wins'] < $needed) {
+                self::mismatch('building-finish', 'wins', $project['wins'], $needed);
             }
             if (($project['type'] ?? null) === 'modernization') {
                 $town['buildingEras'][$id] = $project['targetEra'];
@@ -2829,13 +3184,16 @@ final class SaveIntegrity
             return;
         }
         $offer = $this->offer($town, $id);
-        if (!$offer || $offer['stage'] !== ($d['expectedStage'] ?? null)) {
-            self::mismatch($kind);
+        if (!$offer) {
+            self::mismatch($kind, 'no_offer');
+        }
+        if ($offer['stage'] !== ($d['expectedStage'] ?? null)) {
+            self::mismatch($kind, 'stage', $offer['stage'], $d['expectedStage'] ?? null);
         }
         $modern = ($offer['type'] ?? null) === 'modernization';
         if ($kind === 'building-hammer') {
             if ($s['builderHammers'] < 1) {
-                self::mismatch($kind);
+                self::mismatch($kind, 'no_hammer', $s['builderHammers'], 1);
             }
             $s['builderHammers']--;
             $town['buildings'][$id] = $modern ? $town['buildings'][$id] : $offer['stage'] + 1;
@@ -2847,7 +3205,7 @@ final class SaveIntegrity
             $this->settleForge($town);
         } else {
             if ($town['coins'] < $offer['cost']) {
-                self::mismatch($kind);
+                self::mismatch($kind, 'coins', $town['coins'], $offer['cost']);
             }
             $town['coins'] -= $offer['cost'];
             if ($modern) {

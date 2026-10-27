@@ -13,6 +13,7 @@ import {
 } from '../src/admin/format';
 import { parseRoute } from '../src/admin/routes';
 import { compareRows, editedValues, savedField } from '../src/admin/syncCompare';
+import { eventCause, findingText } from '../src/admin/syncFindings';
 import { buildingLabel, eraLabel, LEVEL_COUNT, powerLabel } from '../src/admin/labels';
 import {
   correctionBody,
@@ -196,13 +197,15 @@ describe('sync comparison', () => {
 
   it('puts the rejected value first, then what the server would not take', () => {
     const rows = compareRows({ cloud, expected, upload, field: 'town.coins' });
-    expect(rows.map((row) => row.label)).toEqual([
-      'town.coins',
-      'town.projects.well.stage',
-      'powers.tnt',
-    ]);
+    expect(rows.map((row) => row.label)).toEqual(['town.coins', 'town.projects', 'powers.tnt']);
     expect(rows[0]).toMatchObject({ rejected: true, cloud: 10, expected: 12, upload: 512 });
-    expect(rows[1]).toMatchObject({ rejected: false, mismatch: true, cloud: undefined });
+    // A project only one save has is one row holding the whole object.
+    expect(rows[1]).toMatchObject({
+      rejected: false,
+      mismatch: true,
+      expected: [],
+      upload: { well: { stage: 2 } },
+    });
     expect(rows[2]).toMatchObject({ rejected: false, mismatch: false, cloud: 1, upload: 2 });
   });
 
@@ -234,9 +237,70 @@ describe('sync comparison', () => {
     expect(
       editedValues(rows, 'cloud', { [coins.key]: '777', [stage.key]: '', [tnt.key]: '1' }),
     ).toEqual([{ path: ['town', 'coins'], value: 777 }]);
-    expect(editedValues(rows, 'upload', { [stage.key]: 'built' })).toEqual([
-      { path: ['town', 'projects', 'well', 'stage'], value: 'built' },
+    expect(editedValues(rows, 'upload', { [stage.key]: '{}' })).toEqual([
+      { path: ['town', 'projects'], value: {} },
     ]);
+  });
+
+  it('keeps the reported desync to the values that tell its story', () => {
+    const project = (id, wins) => ({ id, type: 'modernization', stage: 3, wins, required: 2 });
+    const honours = (verified) => ({ counts: { continuousGems: 0 }, verified });
+    const rows = compareRows({
+      cloud: {
+        builderHammers: 2,
+        town: {
+          coins: 26505,
+          projects: { square: project('square', 2), watermill: project('watermill', 2) },
+        },
+        honours: honours(['stars-bronze', 'score-bronze']),
+      },
+      expected: null,
+      upload: {
+        builderHammers: 0,
+        town: {
+          coins: 2505,
+          projects: { post: project('post', 0), warehouse: project('warehouse', 0) },
+        },
+        honours: { counts: {} },
+      },
+      field: 'building-finish',
+    });
+    // Honours are the server's own; each project is one row, not nine.
+    expect(rows.map((row) => row.label)).toEqual([
+      'builderHammers',
+      'town.coins',
+      'town.projects.square',
+      'town.projects.watermill',
+      'town.projects.post',
+      'town.projects.warehouse',
+    ]);
+    expect(rows[2]).toMatchObject({ cloud: project('square', 2), upload: undefined });
+  });
+
+  it('explains findings in plain sentences, including kinds added later', () => {
+    expect(
+      findingText({
+        kind: 'building-finish',
+        sequence: 1843,
+        subject: 'square',
+        check: 'wins',
+        server: 1,
+        client: 2,
+      }),
+    ).toBe(
+      `#1843 Finish ${buildingLabel('square')}: skipped because the project had 1 of the 2 puzzle wins it needs.`,
+    );
+    expect(findingText({ kind: 'value', field: 'town.coins', server: 2505, client: 26505 })).toBe(
+      'town.coins: the server kept 2505, the game had 26505.',
+    );
+    expect(findingText({ kind: 'journal', check: 'behind', server: 40, client: 38 })).toBe(
+      'The upload’s journal ends at action 38, before the cloud checkpoint (40), so nothing in it was replayed and the protected values came from the cloud save.',
+    );
+    expect(findingText({ kind: 'future-kind', sequence: 3, check: 'new_check' })).toBe(
+      '#3 future kind: skipped because check new_check failed.',
+    );
+    expect(eventCause({ findings: [], message: 'Clock ahead.' })).toBe('Clock ahead.');
+    expect(codeLabel('save_corrected')).toBe('Saved with the server’s replayed values');
   });
 
   it('names rejection reasons, including ones added later', () => {

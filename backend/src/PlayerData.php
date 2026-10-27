@@ -341,9 +341,13 @@ final class PlayerData
                         'town' => $rejection['name'],
                         'refusedAt' => $time(intdiv((int) $rejection['rejected_at'], 1000)),
                         'revision' => (int) $rejection['revision'],
+                        // Refused, or saved with the server's own values.
+                        'outcome' => $rejection['outcome'] ?? 'rejected',
                         'code' => $rejection['code'],
                         'field' => $rejection['field'],
                         'reason' => $rejection['message'],
+                        'findings' => JsonExport::stored($rejection['findings'] ?? null),
+                        'gameBuild' => $rejection['client_build'] ?? null,
                         'upload' => JsonExport::stored($rejection['upload']),
                         'cloud' => JsonExport::stored($rejection['cloud']),
                         'expected' => JsonExport::stored($rejection['expected']),

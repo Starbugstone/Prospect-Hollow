@@ -17,8 +17,9 @@ the user icon in My towns).
 
 ## Account export
 
-The account export includes every retained refused-sync comparison, including its full
-upload, cloud save and optional replay expectation, even for a soft-deleted town or a
+The account export includes every retained refused or corrected sync comparison, including
+its full upload, cloud save, optional replay expectation, findings and the game build that
+sent it, even for a soft-deleted town or a
 revision no longer in history. The player transaction authorizes and builds the complete
 JSON document before response headers are sent. `JsonExport` writes to an automatically
 deleted temporary file; keyset queries read large save rows one at a time and preserve

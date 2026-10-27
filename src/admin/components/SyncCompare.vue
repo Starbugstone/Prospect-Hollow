@@ -4,17 +4,28 @@
     <template v-if="data">
       <header class="admin-sync-compare-heading">
         <h3>
-          Rejected {{ dateTime(data.rejection.at) }} against revision {{ data.rejection.revision }}
+          {{ corrected ? 'Corrected' : 'Rejected' }} {{ dateTime(data.rejection.at) }} against
+          revision {{ data.rejection.revision }}
         </h3>
         <button type="button" class="admin-button quiet" @click="$emit('close')">Close</button>
       </header>
-      <p class="admin-sync-reason" role="status">
-        <span aria-hidden="true">⚠</span>
-        {{ codeLabel(data.rejection.code)
-        }}<template v-if="data.rejection.field">
-          at <code>{{ data.rejection.field }}</code></template
-        >. {{ data.rejection.message }}
+      <p :class="['admin-sync-reason', { corrected }]" role="status">
+        <span aria-hidden="true">{{ corrected ? '✎' : '⚠' }}</span>
+        {{ codeLabel(data.rejection.code) }}. {{ data.rejection.message }}
+        <template v-if="data.rejection.clientBuild">
+          Sent by game build <code>{{ data.rejection.clientBuild }}</code
+          >{{ data.rejection.sameRules === false ? ', which plays by older save rules' : '' }}.
+        </template>
+        <template v-else>The game did not report its build (an older game).</template>
       </p>
+      <section v-if="data.rejection.findings.length" aria-label="Findings">
+        <h4>What the server found</h4>
+        <ol class="admin-sync-findings">
+          <li v-for="(finding, index) in data.rejection.findings" :key="index">
+            {{ findingText(finding) }}
+          </li>
+        </ol>
+      </section>
       <p v-if="!data.expected" class="admin-muted">
         The server stopped before replaying this upload, so there is no expected state. The cloud
         save and the upload are compared directly.
@@ -35,7 +46,7 @@
           Start from
           <select v-model="base" :disabled="!data.current">
             <option value="cloud">Cloud save</option>
-            <option value="upload">Rejected upload</option>
+            <option value="upload">{{ uploadLabel }}</option>
           </select>
         </label>
         <label>
@@ -48,8 +59,10 @@
           <tr>
             <th scope="col">Value</th>
             <th scope="col">Cloud save</th>
-            <th v-if="data.expected" scope="col">Server expected</th>
-            <th scope="col">Rejected upload</th>
+            <th v-if="data.expected" scope="col">
+              {{ corrected ? 'Server saved' : 'Server expected' }}
+            </th>
+            <th scope="col">{{ uploadLabel }}</th>
             <th scope="col">New value</th>
           </tr>
         </thead>
@@ -67,7 +80,7 @@
               <span
                 v-if="row.rejected"
                 class="admin-sync-flag"
-                title="The server rejected this value"
+                :title="`The server ${corrected ? 'corrected' : 'rejected'} this value`"
                 >⚠</span
               >
               <code>{{ row.label }}</code>
@@ -114,15 +127,23 @@
       <p class="admin-muted">
         Click a value to copy it into New value, or type one (JSON: numbers, true, "text"). The
         server checks the edited save before saving it.
+        <template v-if="corrected">
+          The town already holds the server’s values. To undo a wrong correction, start from the
+          game upload and save it.
+        </template>
       </p>
       <p v-if="!data.current" class="admin-notice" role="status">
-        The town saved again since this rejection, so it cannot be reset from here.
+        The town saved again since this sync event, so it cannot be reset from here.
       </p>
       <div v-else class="admin-actions">
         <ConfirmAction
-          label="Save and reset the player’s game"
+          :label="
+            corrected && base === 'upload'
+              ? 'Restore the game’s upload'
+              : 'Save and reset the player’s game'
+          "
           title="Reset the player’s game to this save?"
-          :message="`The ${base === 'cloud' ? 'cloud save' : 'rejected upload'} with ${changes.length} edited value(s) is saved as revision ${data.rejection.revision + 1}. The owner’s game loads it on its next sync without asking and keeps its own copy as a backup.`"
+          :message="`The ${base === 'cloud' ? 'cloud save' : uploadLabel.toLowerCase()} with ${changes.length} edited value(s) is saved as the next revision. The owner’s game loads it on its next sync without asking and keeps its own copy as a backup.`"
           :run="reset"
         />
       </div>
@@ -133,6 +154,7 @@
 import { computed, reactive, ref, watch } from 'vue';
 import { adminApi } from '../api';
 import { codeLabel, dateTime } from '../format';
+import { findingText } from '../syncFindings';
 import { downloadJson } from '../download';
 import { compareRows, editedValues, isEdited, shownValue } from '../syncCompare';
 import ConfirmAction from './ConfirmAction.vue';
@@ -140,10 +162,12 @@ const props = defineProps({ townId: String, townName: String, rejectionId: Strin
 const emit = defineEmits(['close', 'reset']);
 const downloads = [
   { id: 'cloud', label: 'cloud save' },
-  { id: 'expected', label: 'server expected' },
-  { id: 'upload', label: 'rejected upload' },
+  { id: 'expected', label: 'server state' },
+  { id: 'upload', label: 'game upload' },
 ];
 const data = ref(null),
+  corrected = computed(() => data.value?.rejection.outcome === 'corrected'),
+  uploadLabel = computed(() => (corrected.value ? 'Game upload' : 'Rejected upload')),
   error = ref(''),
   base = ref('cloud'),
   everything = ref(false),
