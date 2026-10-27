@@ -43,13 +43,15 @@
             ? 'You played {town} on another device. That save will load when you return to the village.'
             : activeMeta.desyncNotice === 'support'
               ? 'Support updated {town} in the cloud, so we loaded that save. Your previous progress is kept as a backup.'
-              : 'You played {town} on another device, so we loaded that save.',
+              : activeMeta.desyncNotice === 'correction'
+                ? 'Some recent progress in {town} could not be verified, so we loaded the corrected cloud save. Your previous copy is kept as a backup.'
+                : 'You played {town} on another device, so we loaded that save.',
           { town: townName },
         )
       }}
     </p>
     <button
-      v-if="!activeMeta.conflict && activeMeta.desyncNotice !== 'support'"
+      v-if="!activeMeta.conflict && !UNCHOSEN_LOADS.includes(activeMeta.desyncNotice)"
       class="save-recovery-compare"
       @click="recoveryOpen = true"
     >
@@ -194,7 +196,7 @@ import { createTownHandoff } from '../services/townHandoff';
 import { createSyncScheduler } from '../services/syncScheduler';
 import { deferSync } from '../services/syncIdle';
 import { describeSaveState } from '../services/saveStatus';
-import { uploadBlocked } from '../services/syncService';
+import { UNCHOSEN_LOADS, uploadBlocked } from '../services/syncService';
 import { syncTownParam } from '../services/appRoute';
 import { receivedDistinctions } from '../data/playerDistinctions';
 import GameIcon from './GameIcon.vue';

@@ -10,6 +10,7 @@ import {
   loadIntegrity,
   mergeIntegrity,
   prepareIntegritySnapshot,
+  CLIENT_BUILD,
 } from '../src/services/saveIntegrity';
 import { useCampaignStore, SAVE_KEY } from '../src/stores/campaignStore';
 import { useInventoryStore } from '../src/stores/inventoryStore';
@@ -163,6 +164,16 @@ it('anchors client time when an upload is staged without changing gameplay or it
   expect(profile.integrity.clientAt).not.toBe(12345);
   const newer = { integrity: { version: 5 } };
   expect(prepareIntegritySnapshot(newer, 12345)).toBe(newer);
+});
+
+it('stamps the game build on a staged upload so support can tell an older game apart', () => {
+  const profile = { integrity: createIntegrity() };
+  expect(CLIENT_BUILD).toMatch(/^[0-9A-Za-z._-]+\+[a-f0-9]{12}$/);
+  expect(prepareIntegritySnapshot(profile, 1).integrity.clientBuild).toBe(CLIENT_BUILD);
+  expect(prepareIntegritySnapshot(profile, 1, '1.1.0+abcdef012345').integrity.clientBuild).toBe(
+    '1.1.0+abcdef012345',
+  );
+  expect(prepareIntegritySnapshot(profile, 1, null).integrity).not.toHaveProperty('clientBuild');
 });
 
 it('journals a long successful puzzle and chest claim with exact existing earnings and no API', () => {

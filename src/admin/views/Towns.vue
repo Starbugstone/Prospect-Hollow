@@ -18,6 +18,7 @@
           <option value="live">All towns</option>
           <option value="public">Shared towns</option>
           <option value="blocked">Sync blocked</option>
+          <option value="review">Review sync</option>
           <option value="deleted">Deleted (kept 30 days)</option>
         </select>
       </label>
@@ -34,7 +35,7 @@
           <th scope="col" class="number">Unique visitors</th>
           <th scope="col">Last save</th>
           <th scope="col">State</th>
-          <th scope="col">Sync approval</th>
+          <th scope="col"><span class="visually-hidden">Sync</span></th>
         </tr>
       </thead>
       <tbody>
@@ -60,17 +61,7 @@
           <td :title="dateTime(town.savedAt)">{{ relativeTime(town.savedAt) }}</td>
           <td><TownState :town="town" /></td>
           <td @click.stop>
-            <a :href="`#/towns/${town.id}`">{{
-              town.syncApproval ? 'View approval' : 'Review sync'
-            }}</a>
-            <p v-if="town.syncApproval" class="admin-muted">
-              {{
-                town.forceSync && town.forceSyncUntil * 1000 > Date.now()
-                  ? 'Approved until'
-                  : 'Inactive; expiry'
-              }}
-              {{ dateTime(town.forceSyncUntil) }}
-            </p>
+            <a :href="`#/towns/${town.id}`">Review sync</a>
           </td>
         </tr>
         <tr v-if="!result.towns.length">
@@ -83,10 +74,9 @@
       anonymous guests are excluded.
     </p>
     <p class="admin-muted">
-      Sync blocked marks a town whose last upload the save protection rejected; its page compares
-      the saves. An admin can approve a specific rejected upload for 24 hours. Only an unchanged
-      retry at the same cloud revision can use that approval, once. The player can press Retry cloud
-      saving in the game.
+      Sync blocked marks a town whose last upload was rejected (an unreadable save, unknown rules or
+      a clock ahead of the server). Review sync marks a town whose recent uploads were corrected in
+      the player’s favour several times. Both pages explain the cause and compare the saves.
     </p>
     <Pager
       v-if="result"

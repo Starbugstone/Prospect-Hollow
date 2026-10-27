@@ -68,5 +68,6 @@ export function requiredFamilies(town) {
     }
   }
   if (town.buildings?.park || town.buildings?.horseField) result.add('leisure');
+  if (town.personalisation?.areas?.monument?.some(Boolean)) result.add('monuments');
   return [...result];
 }

@@ -109,9 +109,13 @@ export function compactGuestIntegrity(integrity, profile) {
   });
 }
 
+// The build Vite stamps (vite.config.js): version and save-rules digest, or null elsewhere.
+export const CLIENT_BUILD = typeof __CLIENT_BUILD__ === 'string' ? __CLIENT_BUILD__ : null;
 // Stamp the upload envelope once, when it enters the existing durable retry queue.
 // The first server baseline uses this to allow for a device clock ahead of the server.
-export function prepareIntegritySnapshot(profile, now = Date.now()) {
+// The build tells support which game sent a disputed upload; the server stores nothing else.
+export function prepareIntegritySnapshot(profile, now = Date.now(), build = CLIENT_BUILD) {
   if (!journal(profile?.integrity)) return profile;
-  return { ...profile, integrity: plain({ ...toRaw(profile.integrity), clientAt: now }) };
+  const stamp = build ? { clientAt: now, clientBuild: build } : { clientAt: now };
+  return { ...profile, integrity: plain({ ...toRaw(profile.integrity), ...stamp }) };
 }

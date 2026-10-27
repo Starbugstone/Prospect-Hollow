@@ -234,31 +234,76 @@ try {
     $forgedProfile = json_decode(json_encode($trackedProfile));
     $forgedProfile->integrity = json_decode(json_encode($tracked['profile']['integrity']));
     $forgedProfile->town->coins = 50000;
-    $forgedUpload = ['baseRevision' => 1, 'uploadId' => uuid(), 'profile' => $forgedProfile];
-    $trackedDenied = status(
-        422,
-        callApi('PUT', 'towns/' . $trackedId, $forgedUpload, $trackedAccount),
+    // Injected money is corrected, never kept: the server saves its own replayed values,
+    // in a separate town so this file's revisions stay as they were.
+    // Its own address keeps the shared 127.0.0.1 sign-in limit for the later suites.
+    $injectedAccount = account([
+        'REMOTE_ADDR' =>
+            '127.' . random_int(1, 254) . '.' . random_int(1, 254) . '.' . random_int(1, 254),
+    ]);
+    $injectedBody = townBody('Injected Hollow');
+    $injectedBody['profile'] = $trackedProfile;
+    $injectedTown = status(
+        200,
+        callApi('POST', 'towns', $injectedBody, $injectedAccount),
+        'second tracked baseline',
+    );
+    $injectedProfile = json_decode(json_encode($forgedProfile));
+    $injectedProfile->integrity = json_decode(json_encode($injectedTown['profile']['integrity']));
+    $injectedProfile->integrity->clientBuild = '1.1.0+0123456789ab';
+    $injectedUpload = ['baseRevision' => 1, 'uploadId' => uuid(), 'profile' => $injectedProfile];
+    $corrected = status(
+        200,
+        callApi('PUT', 'towns/' . $injectedTown['townId'], $injectedUpload, $injectedAccount),
         'tracked money injection',
     );
     check(
-        ($trackedDenied['code'] ?? null) === 'save_integrity_mismatch',
-        'tracked totals need replayed actions ' . json_encode($trackedDenied),
+        $corrected['revision'] === 2 &&
+            $corrected['profile']['town']['coins'] === 0 &&
+            $corrected['correction']['findings'] === [
+                ['kind' => 'value', 'field' => 'town.coins', 'server' => 0, 'client' => 50000],
+            ],
+        'tracked totals need replayed actions: the injection is corrected ' .
+            json_encode($corrected['correction'] ?? null),
+    );
+    $event = $db
+        ->get()
+        ->fetchAssociative('SELECT * FROM town_sync_rejections WHERE town_id=?', [
+            $injectedTown['townId'],
+        ]);
+    check(
+        $event['outcome'] === 'corrected' &&
+            (int) $event['favourable'] === 1 &&
+            (int) $event['revision'] === 1 &&
+            $event['client_build'] === '1.1.0+0123456789ab' &&
+            $event['field'] === 'town.coins',
+        'the correction is logged with its findings, build and review signal',
     );
     check(
         status(
             200,
-            callApi('GET', 'towns/' . $trackedId, null, $trackedAccount),
-            'tracked after failed injection',
-        ) === $tracked,
-        'rejected upload leaves last accepted town unchanged',
+            callApi('PUT', 'towns/' . $injectedTown['townId'], $injectedUpload, $injectedAccount),
+            'corrected lost response retry',
+        ) === $corrected,
+        'a retried corrected upload gets the same correction to adopt',
+    );
+    $adopted = json_decode(json_encode($corrected['profile']));
+    // The test client decodes replies as PHP arrays; the game reads these maps as objects.
+    $adopted->records = (object) [];
+    $adopted->continuousRecords = (object) [];
+    $next = status(
+        200,
+        callApi(
+            'PUT',
+            'towns/' . $injectedTown['townId'],
+            ['baseRevision' => 2, 'uploadId' => uuid(), 'profile' => $adopted],
+            $injectedAccount,
+        ),
+        'adopted correction syncs',
     );
     check(
-        status(
-            200,
-            callApi('GET', 'towns/' . $trackedId . '/history', null, $trackedAccount),
-            'tracked history after failed injection',
-        )['revisions'] === [],
-        'rejected upload does not archive or revise town',
+        $next['revision'] === 3 && !isset($next['correction']),
+        'the next ordinary save clears the correction',
     );
     $forgedProfile->integrity->epoch = uuid();
     check(
@@ -350,17 +395,25 @@ try {
     );
     $injectedBatch = json_decode(json_encode($batch));
     $injectedBatch->town->coins = 1;
+    // Checked against the cloud save directly, so the town keeps its revisions below.
+    $batchCloud = json_decode(
+        json_encode(
+            status(200, callApi('GET', 'towns/' . $trackedId, null, $trackedAccount), 'batch base')[
+                'profile'
+            ],
+        ),
+    );
+    $batchCheck = new App\SaveIntegrity();
+    $batchCorrected = $batchCheck->reconcile(
+        $injectedBatch,
+        $batchCloud,
+        (int) floor(microtime(true) * 1000),
+        $trackedId,
+    );
     check(
-        status(
-            422,
-            callApi(
-                'PUT',
-                'towns/' . $trackedId,
-                ['baseRevision' => 3, 'uploadId' => uuid(), 'profile' => $injectedBatch],
-                $trackedAccount,
-            ),
-            'large journal extra money',
-        )['code'] === 'save_integrity_mismatch',
+        $batchCorrected->town->coins === 0 &&
+            $batchCorrected->issuedRun === 8000 &&
+            array_column($batchCheck->findings(), 'field') === ['town.coins'],
         'large valid journal cannot conceal an injected balance',
     );
     $batchUpload = ['baseRevision' => 3, 'uploadId' => uuid(), 'profile' => $batch];

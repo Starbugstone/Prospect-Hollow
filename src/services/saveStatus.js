@@ -1,5 +1,5 @@
 import { locale, t } from '../i18n';
-import { uploadBlocked } from './syncService';
+import { UNCHOSEN_LOADS, uploadBlocked } from './syncService';
 
 // One player-facing description of the save state, shared by the village pill,
 // the settings drawer and My towns. Messages are English keys for t().
@@ -63,8 +63,9 @@ export function describeSaveState({ signedIn, accountTown, status, meta, session
       detail: 'Cloud saving is paused. Your progress is saved on this device.',
       action: 'retry',
     };
-  // Support's reset loads without a choice; its notice is the village toast.
-  if (meta?.desyncNotice && meta.desyncNotice !== 'support')
+  // Support's reset and a server correction load without a choice; their notice is the
+  // village toast.
+  if (meta?.desyncNotice && !UNCHOSEN_LOADS.includes(meta.desyncNotice))
     return {
       tone: 'alert',
       label: 'Choose a save',

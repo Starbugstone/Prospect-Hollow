@@ -52,7 +52,8 @@ export default [
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
-      globals: { ...globals.browser, ...globals.node },
+      // __CLIENT_BUILD__ is the build Vite stamps on cloud uploads (vite.config.js).
+      globals: { ...globals.browser, ...globals.node, __CLIENT_BUILD__: 'readonly' },
     },
     rules: {
       // Callbacks keep their full signatures; `{ omit, ...rest }` drops fields on purpose.

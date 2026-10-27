@@ -410,6 +410,14 @@ td.admin-actions {
   background: color-mix(in srgb, var(--warn) 22%, transparent);
   color: var(--ink);
 }
+.admin-badge.corrected {
+  background: color-mix(in srgb, var(--series) 18%, transparent);
+  color: var(--ink);
+}
+.admin-badge.review {
+  background: color-mix(in srgb, var(--danger) 18%, transparent);
+  color: var(--ink);
+}
 
 /* Sync log and comparison */
 .admin-check {
@@ -438,6 +446,15 @@ td.admin-actions {
   border-radius: 8px;
   background: color-mix(in srgb, var(--danger) 12%, transparent);
   border-left: 4px solid var(--danger);
+}
+.admin-sync-reason.corrected {
+  background: color-mix(in srgb, var(--series) 12%, transparent);
+  border-left-color: var(--series);
+}
+.admin-sync-findings {
+  margin: 0.4rem 0 0.9rem;
+  padding-left: 1.4rem;
+  line-height: 1.6;
 }
 .admin-sync-table {
   table-layout: fixed;

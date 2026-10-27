@@ -26,12 +26,18 @@
     >
       <path d="M9 110V82h26v28M125 110V82h26v28M6 78h32v5H6ZM122 78h32v5h-32Z" />
     </g>
+    <image
+      v-if="timeless"
+      :href="`/art/monuments/${choice}.png`"
+      x="7"
+      y="-5"
+      width="146"
+      height="126"
+      preserveAspectRatio="xMidYMid meet"
+    />
     <g
-      :transform="
-        timeless
-          ? undefined
-          : `translate(80 112) scale(${0.76 + level * 0.048}) translate(-80 -112)`
-      "
+      v-else
+      :transform="`translate(80 112) scale(${0.76 + level * 0.048}) translate(-80 -112)`"
       :class="{ 'landmark-active': active }"
       :fill="option.colour"
       :stroke="trim"
@@ -125,54 +131,6 @@
         <circle cx="80" cy="54" r="10" fill="#e5e8e7" />
         <circle cx="118" cy="34" r="5" />
         <path d="m75 19 5-17 5 17Z" fill="#eacb80" />
-      </template>
-      <template v-else-if="form === 'arch'">
-        <path d="M35 109V48h20v61ZM105 109V48h20v61Z" />
-        <path d="M47 50a33 33 0 0 1 66 0H99a19 19 0 0 0-38 0Z" />
-        <circle class="landmark-glint" cx="80" cy="17" r="8" :fill="accent" />
-      </template>
-      <template v-else-if="form === 'crystal'">
-        <path
-          d="m70 109-7-72 17-27 17 27-7 72ZM39 109 27 65 40 48 53 69 58 114ZM103 111l-2-57 16-17 15 24-10 48Z"
-        />
-        <path
-          class="landmark-glint"
-          d="M80 10v101M40 48l8 64M117 37l-5 73"
-          fill="none"
-          stroke="#ded4f0"
-        />
-      </template>
-      <template v-else-if="form === 'guardian'">
-        <path class="landmark-wing" d="M59 100 25 47l10-13 30 21M101 100l34-53-10-13-30 21" />
-        <path d="M58 95 51 46 54 22l20 15h12l20-15 3 24-7 49Z" />
-        <circle cx="66" cy="53" r="12" fill="#f4ead5" />
-        <circle cx="94" cy="53" r="12" fill="#f4ead5" />
-        <circle cx="66" cy="53" r="5" fill="#655343" />
-        <circle cx="94" cy="53" r="5" fill="#655343" />
-        <path d="m74 65 6 12 6-12Z" fill="#655343" />
-        <path d="M55 113V96h50v17" fill="#91785e" />
-      </template>
-      <template v-else-if="form === 'tree'">
-        <path
-          d="M74 113V61L42 40m38 41 36-31M80 62V24"
-          fill="none"
-          stroke="#b77839"
-          stroke-width="9"
-        />
-        <ellipse class="landmark-bough" cx="45" cy="41" rx="30" ry="20" />
-        <ellipse class="landmark-bough" cx="111" cy="44" rx="29" ry="23" />
-        <ellipse cx="80" cy="25" rx="30" ry="21" />
-        <path d="M39 115h82" stroke="#cc954f" stroke-width="5" />
-      </template>
-      <template v-else-if="form === 'orrery'">
-        <path d="M54 112V86h52v26" :fill="walls" />
-        <circle cx="80" cy="54" r="18" />
-        <g class="landmark-orbits" fill="none" stroke="#cc954f" stroke-width="4">
-          <ellipse cx="80" cy="54" rx="51" ry="19" transform="rotate(-28 80 54)" />
-          <ellipse cx="80" cy="54" rx="21" ry="49" transform="rotate(-25 80 54)" />
-          <ellipse cx="80" cy="54" rx="48" ry="30" transform="rotate(33 80 54)" />
-        </g>
-        <circle cx="127" cy="36" r="6" :fill="accent" />
       </template>
       <template v-else-if="form === 'headframe'">
         <path d="M20 110V82h30v28Z" :fill="walls" />
@@ -395,15 +353,27 @@
       />
     </g>
     <g v-if="active && !lunar" class="landmark-fountain">
-      <ellipse cx="80" cy="119" :rx="timeless ? 20 : 13" ry="5" fill="#ddd1b5" stroke="#91785e" />
-      <ellipse cx="80" cy="117" :rx="timeless ? 17 : 10" ry="3" fill="#a0ccc4" />
-      <path
-        class="landmark-water"
-        d="M72 115q-3-20 8-22 11 2 8 22M80 116V90"
-        fill="none"
-        stroke="#80bebd"
-        stroke-width="2"
-      />
+      <g :transform="timeless ? undefined : 'translate(80 118) scale(.7) translate(-80 -118)'">
+        <path d="M59 114q21-8 42 0v5q-21 13-42 0Z" fill="#d9ceb4" stroke="#a08c6b" />
+        <ellipse cx="80" cy="114" rx="20" ry="6" fill="#eee4cd" stroke="#b6a58b" />
+        <ellipse cx="80" cy="114" rx="16" ry="4" fill="#5aabae" />
+        <path d="M76 113q4-9 1-15h6q-3 6 1 15Z" fill="#d9ceb4" />
+        <path d="M70 96q10 3 20 0l-3 5q-7 4-14 0Z" fill="#eee4cd" stroke="#b6a58b" />
+        <ellipse cx="80" cy="96" rx="10" ry="3" fill="#5aabae" />
+        <path
+          d="M73 96q-5-13-8 16m22-16q5-13 8 16M80 95q-6-17-9 15m9-15q6-17 9 15"
+          fill="none"
+          stroke="#9bd9d7"
+          stroke-width="1.4"
+          stroke-linecap="round"
+        />
+        <g class="landmark-water" fill="#e0f5ed">
+          <circle cx="66" cy="102" r="1" />
+          <circle cx="92" cy="99" r="1" />
+          <ellipse cx="66" cy="114" rx="3" ry="1" fill="none" stroke="#c3eae1" />
+          <ellipse cx="94" cy="114" rx="3" ry="1" fill="none" stroke="#c3eae1" />
+        </g>
+      </g>
     </g>
     <path
       v-if="!timeless && !lunar && !mineral && level >= 5"
@@ -449,7 +419,6 @@ const lunar = computed(() => settlement.value.art === 'moon');
 // monument shares.
 const walls = computed(() => props.paint?.walls || settlement.value.monumentStone);
 const trim = computed(() => props.paint?.trim || '#655343');
-const accent = computed(() => props.paint?.accent || '#cc954f');
 const timeless = computed(
   () => PERSONAL_AREAS.find((area) => area.choices.includes(props.choice))?.timeless,
 );
@@ -465,30 +434,15 @@ const gradient = useId();
   transform-origin: 80px 54px;
   animation: monument-orbit 18s linear infinite;
 }
-.landmark-active .landmark-wing {
-  transform-origin: 80px 55px;
-  animation: monument-sway 5s ease-in-out infinite alternate;
-}
-.landmark-active .landmark-bough {
-  transform-box: fill-box;
-  transform-origin: bottom center;
-  animation: monument-sway 4s ease-in-out infinite alternate;
-}
 .landmark-active .landmark-glint {
   animation: monument-glint 3s ease-in-out infinite alternate;
 }
 .landmark-water {
-  transform-origin: 80px 117px;
-  animation: monument-water 2.4s ease-in-out infinite alternate;
+  animation: monument-water 1.5s ease-in-out infinite alternate;
 }
 @keyframes monument-orbit {
   to {
     transform: rotate(360deg);
-  }
-}
-@keyframes monument-sway {
-  to {
-    transform: rotate(5deg);
   }
 }
 @keyframes monument-glint {
@@ -498,7 +452,7 @@ const gradient = useId();
 }
 @keyframes monument-water {
   to {
-    transform: scaleY(0.65);
+    opacity: 0.45;
   }
 }
 @media (prefers-reduced-motion: reduce) {

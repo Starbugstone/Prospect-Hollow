@@ -24,7 +24,7 @@ const { outputFiles } = await build({
 const { default: eras } = await import(
   `data:text/javascript;base64,${Buffer.from(outputFiles[0].text).toString('base64')}`
 );
-for (const source of ['city', 'future', 'leisure']) {
+for (const source of ['city', 'future', 'leisure', 'monuments']) {
   const catalog = JSON.parse(
     await readFile(new URL(`../src/assets/${source}-meshes.json`, import.meta.url)),
   );

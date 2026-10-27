@@ -876,7 +876,7 @@ try {
     );
     unset($_ENV['SAVE_MONEY_GUARD_MODE']);
 
-    // A blocked sync: the log, the compare, accept next sync and an admin reset.
+    // Sync events: a corrected upload, a rejected one, the compare and admin resets.
     $syncPlayer = account();
     $syncProfile = json_decode(file_get_contents(dirname(__DIR__) . '/content/save-rules.json'))
         ->defaultProfile;
@@ -909,31 +909,39 @@ try {
         'id',
     )[$syncId] ?? null;
     check(
-        $listed()['forceSync'] === false &&
-            $listed()['syncBlockedAt'] === null &&
-            $listed('blocked') === null,
+        $listed()['syncBlockedAt'] === null &&
+            $listed()['syncReview'] === false &&
+            $listed('blocked') === null &&
+            $listed('review') === null,
         'a syncing town is not flagged',
     );
+    $corrected = status(200, callApi('PUT', 'towns/' . $syncId, $upload(1), $syncPlayer), 'desync');
     check(
-        status(422, callApi('PUT', 'towns/' . $syncId, $upload(1), $syncPlayer), 'desync')[
-            'code'
-        ] === 'save_integrity_mismatch',
-        'a desync blocks the upload',
+        $corrected['revision'] === 2 &&
+            $corrected['profile']['town']['coins'] === $syncProfile->town->coins &&
+            $corrected['correction']['findings'][0]['field'] === 'town.coins',
+        'a desync is corrected, not blocked',
     );
-    check(
-        is_int($listed()['syncBlockedAt']) && $listed('blocked')['id'] === $syncId,
-        'the town list flags the blocked town and filters by it',
-    );
-    $detail = status(200, adminCall('GET', 'towns/' . $syncId, null, $s), 'blocked detail');
+    check($listed()['syncBlockedAt'] === null, 'a corrected town is not blocked');
+    $detail = status(200, adminCall('GET', 'towns/' . $syncId, null, $s), 'corrected detail');
     $log = $detail['syncRejections'];
     check(
         count($log) === 1 &&
-            $log[0]['code'] === 'save_integrity_mismatch' &&
+            $log[0]['outcome'] === 'corrected' &&
+            $log[0]['code'] === 'save_corrected' &&
             $log[0]['field'] === 'town.coins' &&
             $log[0]['revision'] === 1 &&
             $log[0]['replayed'] === true &&
-            $detail['town']['syncBlockedAt'] === $log[0]['at'],
-        'the sync log names the rejected field ' . json_encode($log),
+            $log[0]['favourable'] === true &&
+            $log[0]['findings'] === [
+                [
+                    'kind' => 'value',
+                    'field' => 'town.coins',
+                    'server' => $syncProfile->town->coins,
+                    'client' => $desynced->town->coins,
+                ],
+            ],
+        'the sync log explains the correction ' . json_encode($log),
     );
     $compare = status(
         200,
@@ -946,12 +954,92 @@ try {
             $compare['expected']['town']['coins'] === $syncProfile->town->coins &&
             $compare['cloud']['town']['coins'] === $syncProfile->town->coins &&
             !isset($compare['expected']['integrity']),
-        'the compare shows the cloud save, the replayed expectation and the upload',
+        'the compare shows the cloud save, the server state and the upload',
     );
     status(
         404,
         adminCall('GET', 'towns/' . $syncId . '/sync/' . str_repeat('0', 32), null, $s),
-        'unknown rejection',
+        'unknown sync event',
+    );
+    // A wrong correction is undone by restoring the game's upload.
+    $undone = status(
+        200,
+        adminCall(
+            'POST',
+            'towns/' . $syncId . '/sync/' . $log[0]['id'] . '/reset',
+            ['base' => 'upload', 'changes' => []],
+            $s,
+        ),
+        'restore the corrected upload',
+    );
+    check(
+        $undone['town']['revision'] === 3 &&
+            $undone['profile']['town']['coins'] === $desynced->town->coins &&
+            $undone['profile']['integrity']['status'] === 'baseline',
+        'restoring a corrected upload saves the game’s values as a new revision',
+    );
+    status(
+        409,
+        adminCall(
+            'POST',
+            'towns/' . $syncId . '/sync/' . $log[0]['id'] . '/reset',
+            ['base' => 'upload', 'changes' => []],
+            $s,
+        ),
+        'a sync event cannot reset the town twice',
+    );
+    $owned = json_decode(
+        callApi('GET', 'towns/' . $syncId, null, $syncPlayer)['response']->getContent(),
+    );
+    check(
+        $owned->adminReset === true && !isset($owned->correction),
+        'the owner game loads the restored upload as support’s save',
+    );
+    status(
+        200,
+        callApi(
+            'PUT',
+            'towns/' . $syncId,
+            ['baseRevision' => 3, 'uploadId' => uuid(), 'profile' => $owned->profile],
+            $syncPlayer,
+        ),
+        'the game syncs on from the restored upload',
+    );
+
+    // A structural problem is still refused: an action stamped far past the server clock.
+    $ahead = json_decode(json_encode($owned->profile));
+    $ahead->integrity->actions = [
+        (object) [
+            'sequence' => $ahead->integrity->baseSequence + 1,
+            'id' => uuid(),
+            'kind' => 'building-finish',
+            'data' => (object) [
+                'buildingId' => 'well',
+                'expectedStage' => 1,
+                'at' => (time() + 86400) * 1000,
+            ],
+        ],
+    ];
+    $clockUpload = fn() => ['baseRevision' => 4, 'uploadId' => uuid(), 'profile' => $ahead];
+    check(
+        status(422, callApi('PUT', 'towns/' . $syncId, $clockUpload(), $syncPlayer), 'clock')[
+            'code'
+        ] === 'save_clock_mismatch',
+        'a device clock ahead of the server is refused',
+    );
+    check(
+        is_int($listed()['syncBlockedAt']) && $listed('blocked')['id'] === $syncId,
+        'the town list flags the blocked town and filters by it',
+    );
+    $rejection = status(200, adminCall('GET', 'towns/' . $syncId, null, $s), 'blocked')[
+        'syncRejections'
+    ][0];
+    check(
+        $rejection['outcome'] === 'rejected' &&
+            $rejection['code'] === 'save_clock_mismatch' &&
+            $rejection['revision'] === 4 &&
+            $rejection['replayed'] === false,
+        'the newest event is the rejection, listed first',
     );
     // A retry burst keeps one immutable comparison. Later windows fill the log.
     for ($i = 0; $i < App\SyncRejections::KEPT; $i++) {
@@ -959,116 +1047,15 @@ try {
             'UPDATE town_sync_rejections SET rejected_at=? WHERE town_id=?',
             [time() * 1000 - App\SyncRejections::THROTTLE_MS - ($i + 1) * 1000, $syncId],
         );
-        status(422, callApi('PUT', 'towns/' . $syncId, $upload(1), $syncPlayer), 'desync retry');
+        status(422, callApi('PUT', 'towns/' . $syncId, $clockUpload(), $syncPlayer), 'retry');
     }
-    check(
-        count(
-            status(200, adminCall('GET', 'towns/' . $syncId, null, $s), 'capped log')[
-                'syncRejections'
-            ],
-        ) === App\SyncRejections::KEPT,
-        'the sync log keeps the latest rejections only',
-    );
-
-    // Approval names the exact reviewed rejection, not an arbitrary next upload.
-    $approvalBody = fn() => [
-        'forceSync' => true,
-        'rejectionId' => App\SyncRejections::list($db->get(), $syncId)[0]['id'],
+    $events = status(200, adminCall('GET', 'towns/' . $syncId, null, $s), 'capped log')[
+        'syncRejections'
     ];
-    status(
-        422,
-        adminCall('PATCH', 'towns/' . $syncId . '/sync', ['forceSync' => 1], $s),
-        'accept next sync needs a boolean',
-    );
-    status(
-        422,
-        adminCall('PATCH', 'towns/' . $syncId . '/sync', ['forceSync' => true, 'name' => 'x'], $s),
-        'accept next sync takes no other field',
-    );
-    status(
-        422,
-        adminCall('PATCH', 'towns/' . $syncId . '/sync', ['forceSync' => true], $s),
-        'approval requires a reviewed rejection',
-    );
-    check(
-        status(
-            200,
-            adminCall('PATCH', 'towns/' . $syncId . '/sync', $approvalBody(), $s),
-            'set accept next sync',
-        )['forceSync'] === true && $listed()['forceSync'] === true,
-        'an admin approves the selected rejected upload',
-    );
-    status(
-        409,
-        callApi('PUT', 'towns/' . $syncId, $upload(0), $syncPlayer),
-        'a stale revision still asks which save to keep',
-    );
-    check($listed()['forceSync'] === true, 'a rejected upload does not use up accept next sync');
-    $forcedReply = callApi('PUT', 'towns/' . $syncId, $upload(1), $syncPlayer);
-    $forced = status(200, $forcedReply, 'forced upload');
-    check(
-        $forced['revision'] === 2 &&
-            $forced['profile']['town']['coins'] === $desynced->town->coins &&
-            $forced['integrity']['status'] === 'baseline' &&
-            $listed()['forceSync'] === false &&
-            $listed()['syncBlockedAt'] === null,
-        'the next upload is re-baselined, accept next sync clears itself and so does the flag',
-    );
-    status(
-        200,
-        callApi(
-            'PUT',
-            'towns/' . $syncId,
-            [
-                'baseRevision' => 2,
-                'uploadId' => uuid(),
-                'profile' => json_decode($forcedReply['response']->getContent())->profile,
-            ],
-            $syncPlayer,
-        ),
-        'the re-baselined town keeps syncing normally',
-    );
-    $desynced->integrity = json_decode(json_encode($forced['profile']['integrity']));
-    $desynced->town->coins += 500;
-    check(
-        status(422, callApi('PUT', 'towns/' . $syncId, $upload(3), $syncPlayer), 'desync again')[
-            'code'
-        ] === 'save_integrity_mismatch',
-        'only one upload skips the desync check',
-    );
-    status(
-        200,
-        adminCall('PATCH', 'towns/' . $syncId . '/sync', $approvalBody(), $s),
-        'set accept next sync again',
-    );
-    check(
-        status(
-            200,
-            adminCall('PATCH', 'towns/' . $syncId . '/sync', ['forceSync' => false], $s),
-            'clear accept next sync',
-        )['forceSync'] === false && $listed()['forceSync'] === false,
-        'an admin clears accept next sync before it is used',
-    );
+    check(count($events) === App\SyncRejections::KEPT, 'the sync log keeps the latest events only');
 
     // An admin edits the compared save and the owner's game loads it.
-    $latest = status(200, adminCall('GET', 'towns/' . $syncId, null, $s), 'blocked again')[
-        'syncRejections'
-    ][0];
-    check($latest['revision'] === 3, 'the newest rejection is listed first');
-    $resetPath = 'towns/' . $syncId . '/sync/' . $latest['id'] . '/reset';
-    $stale = status(200, adminCall('GET', 'towns/' . $syncId, null, $s), 'older rejection')[
-        'syncRejections'
-    ];
-    status(
-        409,
-        adminCall(
-            'POST',
-            'towns/' . $syncId . '/sync/' . end($stale)['id'] . '/reset',
-            ['base' => 'cloud', 'changes' => []],
-            $s,
-        ),
-        'a rejection from an older revision cannot reset the town',
-    );
+    $resetPath = 'towns/' . $syncId . '/sync/' . $events[0]['id'] . '/reset';
     status(422, adminCall('POST', $resetPath, ['base' => 'x', 'changes' => []], $s), 'reset base');
     foreach (
         [
@@ -1101,7 +1088,7 @@ try {
             'POST',
             $resetPath,
             [
-                'base' => 'upload',
+                'base' => 'cloud',
                 'changes' => [
                     ['path' => ['town', 'coins'], 'value' => 777],
                     ['path' => ['powers', 'tnt'], 'value' => 3],
@@ -1112,11 +1099,10 @@ try {
         'admin reset',
     );
     check(
-        $reset['town']['revision'] === 4 &&
+        $reset['town']['revision'] === 5 &&
             $reset['profile']['town']['coins'] === 777 &&
             $reset['profile']['integrity']['status'] === 'baseline' &&
             $reset['town']['syncBlockedAt'] === null &&
-            !$reset['town']['forceSync'] &&
             in_array(
                 ['id' => 'tnt', 'quantity' => 3],
                 array_map(
@@ -1127,9 +1113,14 @@ try {
             ),
         'the edited save is a new sealed revision and clears the flag',
     );
+    status(
+        409,
+        adminCall('POST', $resetPath, ['base' => 'cloud', 'changes' => []], $s),
+        'a rejection from an older revision cannot reset the town',
+    );
     $conflict = status(
         409,
-        callApi('PUT', 'towns/' . $syncId, $upload(3), $syncPlayer),
+        callApi('PUT', 'towns/' . $syncId, $clockUpload(), $syncPlayer),
         'the blocked game meets the reset',
     );
     check(
@@ -1146,7 +1137,7 @@ try {
         callApi(
             'PUT',
             'towns/' . $syncId,
-            ['baseRevision' => 4, 'uploadId' => uuid(), 'profile' => $owned->profile],
+            ['baseRevision' => 5, 'uploadId' => uuid(), 'profile' => $owned->profile],
             $syncPlayer,
         ),
         'the game syncs from the reset',
@@ -1158,6 +1149,11 @@ try {
             ],
         ),
         'the reset notice ends with the next accepted save',
+    );
+    status(
+        404,
+        adminCall('PATCH', 'towns/' . $syncId . '/sync', ['forceSync' => true], $s),
+        'there is no approval to skip the replay any more',
     );
 
     // Support corrects coins, stored bonuses and builder hammers after a bug.
@@ -1292,11 +1288,6 @@ try {
         409,
         adminCall('PATCH', 'towns/' . $town['townId'], ['name' => 'Back Again'], $s),
         'deleted town is read-only',
-    );
-    status(
-        409,
-        adminCall('PATCH', 'towns/' . $town['townId'] . '/sync', ['forceSync' => true], $s),
-        'a deleted town cannot accept a sync',
     );
     check(
         status(
@@ -1453,8 +1444,6 @@ try {
             'town_renamed',
             'town_unshared',
             'town_restored',
-            'town_sync_forced',
-            'town_sync_force_cleared',
             'town_sync_reset',
             'town_corrected',
             'town_deleted',

@@ -14,6 +14,9 @@ const UNSUPPORTED = [
   'save_rules_unsupported',
   'save_integrity_unsupported',
 ];
+// Saves the game loads without asking: support's reset and the server's correction of an
+// upload. Their toast has no Compare button.
+export const UNCHOSEN_LOADS = ['support', 'correction'];
 // A rejected upload waits for new progress, except a format the server will never accept.
 export const uploadBlocked = (meta) =>
   !!meta?.uploadError &&
@@ -113,8 +116,11 @@ export function createSyncService({
   ) {
     if (!current(owner)) return;
     if (result.townId !== id) throw new Error(WRONG_TOWN);
+    // The server saved this upload with its own replayed values: load them, like
+    // support's reset. The corrected profile carries its own receipt.
+    const corrected = !!(pending && result.correction && !pending.replace);
     const ack = result.integrity;
-    if (ack && pending) {
+    if (ack && pending && !corrected) {
       const submittedSequence =
         submittedIntegrity?.actions?.at(-1)?.sequence ?? submittedIntegrity?.baseSequence;
       if (
@@ -133,8 +139,8 @@ export function createSyncService({
       acceptedProfile;
     const before = await entry(id, owner);
     let gameplayChanged = false;
-    if (pending?.replace && before?.meta.sequence === sequence && canApply(id))
-      recovery = await preserve(before, 'replacement');
+    if ((pending?.replace || corrected) && before?.meta.sequence === sequence && canApply(id))
+      recovery = await preserve(before, corrected ? 'correction' : 'replacement');
     if (!current(owner)) return;
     const committed = await storage.mutate(id, owner, (r) => {
       replaced = false;
@@ -150,6 +156,20 @@ export function createSyncService({
         }
         r.meta.recovery = recovery;
         r.meta.desyncNotice = false;
+        r.profile = keepHonours(result.profile, r.profile);
+        replaced = true;
+      }
+      if (corrected) {
+        // Newer progress, a running puzzle, or a backup not taken because a puzzle was
+        // running a moment ago: the corrected save loads later, backing up first.
+        if (r.meta.sequence !== sequence || !canApply(id) || !recovery) {
+          const { profile, ...summary } = result;
+          r.meta.conflict = summary;
+          r.meta.pending = null;
+          return;
+        }
+        r.meta.recovery = recovery;
+        r.meta.desyncNotice = 'correction';
         r.profile = keepHonours(result.profile, r.profile);
         replaced = true;
       }
@@ -216,8 +236,13 @@ export function createSyncService({
           // The cloud save replaced the progress the server had rejected.
           uploadError: null,
           sequence: r.meta.sequence + 1,
-          // Support edited this save after a blocked sync: load it, without a choice.
-          desyncNotice: cloud.adminReset ? 'support' : r.meta.recovery?.reason === 'desync',
+          // Support edited this save after a blocked sync, or the server corrected an
+          // upload: load it, without a choice.
+          desyncNotice: cloud.adminReset
+            ? 'support'
+            : cloud.correction
+              ? 'correction'
+              : r.meta.recovery?.reason === 'desync',
         };
         replaced = true;
         acceptedProfile = r.profile;

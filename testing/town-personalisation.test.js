@@ -600,6 +600,8 @@ describe('Personalisation rendering', () => {
       town.personalisation.areas[area.id] = [area.choices.at(-1)];
       town.personalisation.areaLevels[area.id] = area.timeless ? 1 : 5;
     }
+    // Keep a busy primitive mechanism beside the merged Blender armillary.
+    town.personalisation.areas.meadow = ['windgarden'];
     const d = fixture(town),
       scenery = new TownScenery();
     scenery.update(d, town);
@@ -617,8 +619,15 @@ describe('Personalisation rendering', () => {
     expect(parts(scenery.entries.get('mine-works').group).length).toBeGreaterThan(0);
     expect(new Set(instanced())).toEqual(new Set(moving()));
     expect(instanced()).toHaveLength(moving().length);
-    // Dozens of parts share their primitive shapes: a handful of draw calls in all.
-    expect(scenery.movingParts.buckets.length).toBeLessThanOrEqual(8);
+    // Primitive draws retain their budget; each merged brass orbit adds one draw.
+    const sculptureGeometries = new Set();
+    monuments.getObjectByName('Blender celestial-sphere').traverse((mesh) => {
+      if (mesh.isMesh) sculptureGeometries.add(mesh.geometry);
+    });
+    const buckets = scenery.movingParts.buckets;
+    const sculpted = buckets.filter((bucket) => sculptureGeometries.has(bucket.mesh.geometry));
+    expect(sculpted).toHaveLength(3);
+    expect(buckets.length - sculpted.length).toBeLessThanOrEqual(8);
     for (const mesh of moving()) expect(mesh.layers.mask).toBe(1 << 1);
     // A changed monument replaces its instances instead of drawing the old parts.
     const old = parts(monuments);

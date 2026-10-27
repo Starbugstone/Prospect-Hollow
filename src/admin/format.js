@@ -93,12 +93,14 @@ const ACTIONS = {
   town_restored: 'Restored town revision',
   town_sync_forced: 'Approved rejected upload',
   town_sync_force_cleared: 'Cleared sync approval',
-  town_sync_reset: 'Reset town after a blocked sync',
+  town_sync_reset: 'Reset town after a sync event',
   town_corrected: 'Corrected town coins or inventory',
 };
 export const actionLabel = (action) => ACTIONS[action] ?? action.replaceAll('_', ' ');
-// Why the save protection rejected an upload, from its error code.
+// What the save protection did with an upload, from its event code. Approval actions above
+// stay labelled for older activity log entries.
 const CODES = {
+  save_corrected: 'Saved with the server’s replayed values',
   save_integrity_mismatch: 'Progress did not match the replayed actions',
   save_integrity_invalid: 'The save is out of range or malformed',
   save_clock_mismatch: 'The device clock was ahead of the cloud checkpoint',
