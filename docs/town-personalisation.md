@@ -202,6 +202,17 @@ animation bounds, construction poses, portraits and unavailable downloads.
 actual Three.js renderer with valley lighting; run it through the same Docker
 Playwright setup as the [Moon input check](future-eras.md#moon-input-check).
 
+All monument fountain courts use `TownMonumentFountain`: a continuous carved bowl,
+recessed pool, turned pedestal and raised cup, with six curved translucent streams.
+The geometry is authored directly as cached lathe and tube meshes; it needs no
+separate asset download. Droplets follow the stream paths and landing ripples
+expand into the pool through `createLandmarkMotion.update`, so construction and
+reduced motion hold the same deterministic pose as other monument mechanisms.
+Streams share one transparent mesh per court; droplets and ripples share actor
+instances. `testing/monument-fountains.test.js` covers every eligible design and
+milestone, flow containment, construction holds and geometry disposal. The browser
+review also captures close-ups of the main and smaller era fountains.
+
 `areas` stores one selected ID per site and `areaLevels` its purchased stage.
 Commands include expected previous choice/stage, preventing duplicate or stale
 purchases. The campaign store atomically commits the debit and journal receipt.

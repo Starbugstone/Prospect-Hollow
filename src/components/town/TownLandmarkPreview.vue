@@ -353,15 +353,27 @@
       />
     </g>
     <g v-if="active && !lunar" class="landmark-fountain">
-      <ellipse cx="80" cy="119" :rx="timeless ? 20 : 13" ry="5" fill="#ddd1b5" stroke="#91785e" />
-      <ellipse cx="80" cy="117" :rx="timeless ? 17 : 10" ry="3" fill="#a0ccc4" />
-      <path
-        class="landmark-water"
-        d="M72 115q-3-20 8-22 11 2 8 22M80 116V90"
-        fill="none"
-        stroke="#80bebd"
-        stroke-width="2"
-      />
+      <g :transform="timeless ? undefined : 'translate(80 118) scale(.7) translate(-80 -118)'">
+        <path d="M59 114q21-8 42 0v5q-21 13-42 0Z" fill="#d9ceb4" stroke="#a08c6b" />
+        <ellipse cx="80" cy="114" rx="20" ry="6" fill="#eee4cd" stroke="#b6a58b" />
+        <ellipse cx="80" cy="114" rx="16" ry="4" fill="#5aabae" />
+        <path d="M76 113q4-9 1-15h6q-3 6 1 15Z" fill="#d9ceb4" />
+        <path d="M70 96q10 3 20 0l-3 5q-7 4-14 0Z" fill="#eee4cd" stroke="#b6a58b" />
+        <ellipse cx="80" cy="96" rx="10" ry="3" fill="#5aabae" />
+        <path
+          d="M73 96q-5-13-8 16m22-16q5-13 8 16M80 95q-6-17-9 15m9-15q6-17 9 15"
+          fill="none"
+          stroke="#9bd9d7"
+          stroke-width="1.4"
+          stroke-linecap="round"
+        />
+        <g class="landmark-water" fill="#e0f5ed">
+          <circle cx="66" cy="102" r="1" />
+          <circle cx="92" cy="99" r="1" />
+          <ellipse cx="66" cy="114" rx="3" ry="1" fill="none" stroke="#c3eae1" />
+          <ellipse cx="94" cy="114" rx="3" ry="1" fill="none" stroke="#c3eae1" />
+        </g>
+      </g>
     </g>
     <path
       v-if="!timeless && !lunar && !mineral && level >= 5"
@@ -426,8 +438,7 @@ const gradient = useId();
   animation: monument-glint 3s ease-in-out infinite alternate;
 }
 .landmark-water {
-  transform-origin: 80px 117px;
-  animation: monument-water 2.4s ease-in-out infinite alternate;
+  animation: monument-water 1.5s ease-in-out infinite alternate;
 }
 @keyframes monument-orbit {
   to {
@@ -441,7 +452,7 @@ const gradient = useId();
 }
 @keyframes monument-water {
   to {
-    transform: scaleY(0.65);
+    opacity: 0.45;
   }
 }
 @media (prefers-reduced-motion: reduce) {

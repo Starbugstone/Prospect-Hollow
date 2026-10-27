@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { chromium, SOFTWARE_WEBGL, fixturePage, openFixture, pageErrors } = require('./helpers.cjs');
 
-const directory = path.resolve('output/monuments');
+const directory = path.resolve(process.env.PH_MONUMENT_OUTPUT || 'output/monuments');
 fs.mkdirSync(directory, { recursive: true });
 const html = fixturePage({
   style: 'body{margin:0;background:#e2dfc8}canvas{width:100vw;height:100vh;display:block}',
@@ -41,10 +41,10 @@ d.mesh(scene,'cylinder',[40,.1,40],[0,-.1,0],'#c6cbac');
 const statics = new TownStatics(scene);
 const actors = new TownActors(scene);
 let root;
-window.showMonument = (choice,angle=0,time=0) => {
+window.showMonument = (choice,angle=0,time=0,stage=1,timeless=true) => {
   d.clearGroup(root);
-  root=buildLandmark(d,scene,choice,1,true);
-  if (!root.getObjectByName('Blender '+choice)) throw new Error('Missing sculpture '+choice);
+  root=buildLandmark(d,scene,choice,stage,timeless);
+  if (timeless && !root.getObjectByName('Blender '+choice)) throw new Error('Missing sculpture '+choice);
   root.userData.sceneryUpdate(time);
   statics.sync([root]);
   actors.rebuild(root.userData.movingParts);
@@ -58,6 +58,15 @@ window.showMonument = (choice,angle=0,time=0) => {
   return {choice,triangles:renderer.info.render.triangles,draws:renderer.info.render.calls,
     movingDraws:actors.buckets.length,staticDraws:statics.meshes.length,
     bounds:[bounds.min.toArray(),bounds.max.toArray()],substitute:!!root.userData.substitute};
+};
+window.showFountain = (choice='guardian',stage=1,timeless=true,time=0) => {
+  window.showMonument(choice,0,time,stage,timeless);
+  if(!root.getObjectByName('Carved fountain basin')) throw new Error('Missing shared fountain '+choice);
+  camera.position.set(3.5,3.5,timeless?10.3:9.4);
+  camera.lookAt(0,1.6,timeless?5.7:4.8);
+  scene.updateMatrixWorld(true);
+  actors.update(scene,[camera]);
+  renderer.render(scene,camera);
 };
 window.ready=true;
 `,
@@ -132,6 +141,17 @@ window.frameMonument=()=>{
         );
         await page.screenshot({ path: path.join(directory, choice + '-' + view + '.png') });
       }
+    }
+    for (const [choice, stage, timeless] of [
+      ['guardian', 1, true],
+      ['headframe', 3, false],
+      ['lotus-forum', 5, false],
+    ]) {
+      await page.evaluate(
+        ({ choice, stage, timeless }) => window.showFountain(choice, stage, timeless, 0.8),
+        { choice, stage, timeless },
+      );
+      await page.screenshot({ path: path.join(directory, choice + '-fountain.png') });
     }
     await openFixture(page, 'monument-town-map', townMap);
     await page.waitForFunction(() => window.mapReady?.(), null, { timeout: 90000 });
