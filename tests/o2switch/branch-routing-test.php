@@ -39,7 +39,7 @@ class RoutingFixtureDeployer extends HostingDeployer
         mkdir($this->config['root'] . "/releases/$id", 0700);
     }
     protected function prepare(string $id): void {}
-    protected function healthy(string $id): bool
+    protected function healthy(string $id, ?string $previous = null): bool
     {
         return true;
     }

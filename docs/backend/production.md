@@ -58,6 +58,20 @@ The old Azure workflow was disabled in GitHub when inspected, and its workflow f
 
 ## Maintenance and regression checks
 
+The stale-release grace applies to the exact release active before a switch,
+including a cached HTTP 503 after migrations. It defaults to 150 seconds and only
+ends successfully when the new release ID returns HTTP 200 and `{"status":"ok"}`.
+Unhealthy new code and unidentified or unrelated releases retain the short failure
+window. See [the preprod readiness contract](preprod.md#build-and-verification).
+
+Install controller updates separately on preprod and production: disable polling
+for the target, wait for any running deployment to finish, update that target's
+checkout to a reviewed commit containing the fix, then rerun its matching
+`install-preprod.sh` or `install-production.sh` with the existing root and PHP path.
+Use the target's `check` and `status` commands before re-enabling polling. The
+installers preserve configuration, secrets and release history. Normal game
+deployments leave the installed `control/` files in place.
+
 Use the shared controller's `disable`, `status`, `retry` and `rollback RELEASE_ID` commands with the **production** config path. Rollback disables polling for that target. Its releases, locks, state and logs are independent of preprod. Database migrations are not reversed by code rollback; because they are [additive](hosting.md), the earlier release passes its health check on the migrated database. Maintain independent database backups.
 
 CI runs the existing controller/readiness tests, both target installers and `tests/o2switch/branch-routing-test.php`. The routing test checks both directions with identical SHAs, rejects unrelated branches and invalid CI, and verifies successful activation stays inside the selected target's releases. Installer tests cover isolated paths/checkouts, disabled initial polling, secret/configuration preservation and rejection before any control replacement when an installer is pointed at the other target.

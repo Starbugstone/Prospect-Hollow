@@ -17,6 +17,7 @@ class FixtureDeployer extends HostingDeployer
     public bool $health = true;
     public bool $stale = false;
     public int $builds = 0;
+    public array $healthCalls = [];
     protected function preflight(): void {}
     protected function head(): string
     {
@@ -38,8 +39,9 @@ class FixtureDeployer extends HostingDeployer
         }
     }
     protected function prepare(string $id): void {}
-    protected function healthy(string $id): bool
+    protected function healthy(string $id, ?string $previous = null): bool
     {
+        $this->healthCalls[] = [$id, $previous];
         return $this->health;
     }
 }
@@ -83,6 +85,10 @@ try {
     $deployer->ci = true;
     $deployer->command('poll');
     $first = $current();
+    verify(
+        $deployer->healthCalls[0] === [basename($first), null],
+        'The first deployment must have no previous release',
+    );
     $deployer->command('poll');
     verify($deployer->builds === 1, 'Repeated poll must be idempotent');
     $deployer->sha = str_repeat('b', 40);
@@ -101,6 +107,10 @@ try {
     $deployer->command('retry');
     $second = $current();
     verify($second !== $first, 'Explicit retry must build same commit');
+    verify(
+        end($deployer->healthCalls) === [basename($second), basename($first)],
+        'Health grace must identify the release active before the switch',
+    );
     $deployer->sha = str_repeat('c', 40);
     $deployer->health = false;
     try {
@@ -126,7 +136,12 @@ try {
         count($releases) === 3 && count(glob("$root/releases/*")) === 3,
         'Retention must keep exactly three successful builds',
     );
+    $beforeRollback = basename($current());
     $deployer->command('rollback', $releases[1]);
+    verify(
+        end($deployer->healthCalls) === [$releases[1], $beforeRollback],
+        'Rollback grace must identify the source release, not the rollback target',
+    );
     verify(
         basename($current()) === $releases[1] && !is_file("$root/state/enabled"),
         'Rollback must pause automatic deploys',

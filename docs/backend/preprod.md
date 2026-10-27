@@ -9,7 +9,7 @@ A successful **push** run of `.github/workflows/quality.yml` for the current `pr
 
 The [production setup guide](production.md) configures the second target. Each site requires its own installation and cron entry; merging this code alone does not activate production.
 
-This uses the [verified test-auto-deploy template](https://github.com/Starbugstone/test-auto-deploy/tree/a5270a76b4acfdf5c89f5c63321468f8bec5229d). Its controller is copied unchanged, with application-specific build/preparation hooks. The host fetches/builds the exact checked commit, verifies PHP/database readiness and its release identity, activates it through `current`, and retains three successful versions. Failed readiness restores the previous code; database migrations are not reversed by code rollback.
+This uses the [verified test-auto-deploy template](https://github.com/Starbugstone/test-auto-deploy/tree/9e94f204b7fcaa68313c09590bd01f1dac22b74c). Its controller uses the template's behavior with this project's PHP formatting and application-specific build/preparation hooks. The host fetches/builds the exact checked commit, verifies PHP/database readiness and its release identity, activates it through `current`, and retains three successful versions. Failed readiness restores the previous code; database migrations are not reversed by code rollback.
 
 ## One-time hosting setup
 
@@ -56,7 +56,19 @@ These repository instructions do not verify or change the installed host configu
 
 CI tests controller rollback/retention/CI eligibility, readiness identity and outage behavior, installer preservation, plus a real build/preparation of these hooks against PostgreSQL. Both database jobs check the release-health protocol. The packaged application check verifies actual `/api/health` routing.
 
-For maintenance, disable polling, wait for running work, back up the database and follow the [template maintenance guide](https://github.com/Starbugstone/test-auto-deploy/blob/a5270a76b4acfdf5c89f5c63321468f8bec5229d/docs/o2switch-setup.md#8-maintenance-retry-and-rollback). Retained code releases do not replace database backups. Production uses the [separate main-branch installation](production.md), including a separate Git checkout so concurrent fetches cannot share `FETCH_HEAD`.
+After switching `current`, the controller grants responses from the exact previous
+release up to `health_stale_timeout_seconds` (150 seconds by default) to clear.
+This includes HTTP 503 from cached old PHP after migrations. Activation requires
+the expected new release ID, HTTP 200 and `{"status":"ok"}`. An unhealthy new
+release, an unrelated release ID, or a missing or invalid ID keeps the short
+five-attempt failure window. A stale previous release can never complete activation.
+
+This controller update needs a one-time installation into each host's private
+`control/` directory using the maintenance procedure below. Application deployment
+does not replace installed controller files. The update performs no account-wide
+PHP-worker restart.
+
+For maintenance, disable polling, wait for running work, back up the database and follow the [template maintenance guide](https://github.com/Starbugstone/test-auto-deploy/blob/9e94f204b7fcaa68313c09590bd01f1dac22b74c/docs/o2switch-setup.md#8-maintenance-retry-and-rollback). Retained code releases do not replace database backups. Production uses the [separate main-branch installation](production.md), including a separate Git checkout so concurrent fetches cannot share `FETCH_HEAD`.
 
 ## Placeholder shared towns in the preprod database
 

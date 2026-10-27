@@ -1,10 +1,17 @@
 # Verified o2switch controller
 
-The following files are copied unchanged from [Starbugstone/test-auto-deploy](https://github.com/Starbugstone/test-auto-deploy/tree/a5270a76b4acfdf5c89f5c63321468f8bec5229d), commit `a5270a76b4acfdf5c89f5c63321468f8bec5229d`:
+The following files are imported from [Starbugstone/test-auto-deploy](https://github.com/Starbugstone/test-auto-deploy/tree/9e94f204b7fcaa68313c09590bd01f1dac22b74c), commit `9e94f204b7fcaa68313c09590bd01f1dac22b74c`. PHP files use this project's Prettier formatting; the controller behavior and tests match the template:
 
 - `deploy.php`, `run.sh`, `install.sh`, `configure.php`
 - `config.example.json`, `app.env.example`
 - `../../tests/o2switch/deploy-test.php`, `../../tests/o2switch/health-test.php`
+
+This version waits for cached responses from the exact previous release even when
+they return HTTP 503 after migrations. The configured grace remains bounded;
+activation still requires the expected release ID and a successful health response.
+Unhealthy new releases and unidentified or unrelated releases keep the short
+failure window. The regression tests cover recovery after 125 simulated seconds,
+timeout, first deployment, disabled and custom grace, and rollback source identity.
 
 Prospect Hollow uses the template's supported `custom` profile because its frontend is at repository root and its migrations use `backend/bin/migrate.php`, rather than Doctrine Migrations commands. The application readiness endpoint follows the template's `symfony` health protocol.
 

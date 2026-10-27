@@ -15,9 +15,9 @@ class HealthFixture extends HostingDeployer
     public array $responses = [];
     public int $requests = 0;
     public float $elapsed = 0;
-    public function probe(string $id): bool
+    public function probe(string $id, ?string $previous = null): bool
     {
-        return $this->healthy($id);
+        return $this->healthy($id, $previous);
     }
     protected function healthRequest(string $path, int $limit): array
     {
@@ -54,6 +54,7 @@ $config = [
 ];
 $old = str_repeat('a', 40) . '-20260926000000-aaaaaaaa';
 $new = str_repeat('b', 40) . '-20260926000000-bbbbbbbb';
+$unrelated = str_repeat('c', 40) . '-20260926000000-cccccccc';
 $reply = fn(int $status, string|false $body, string $release = '') => compact(
     'status',
     'body',
@@ -61,6 +62,7 @@ $reply = fn(int $status, string|false $body, string $release = '') => compact(
 );
 $ready = $reply(200, '{"status":"ok"}', $new);
 $stale = $reply(200, '{"status":"ok"}', $old);
+$staleUnavailable = $reply(503, '{"status":"unavailable"}', $old);
 try {
     $test = new HealthFixture($config);
     $test->responses = [$ready];
@@ -69,25 +71,37 @@ try {
         'Expected healthy release must pass immediately',
     );
 
-    $test = new HealthFixture($config);
-    $test->responses = array_merge(array_fill(0, 25, $stale), [$ready]);
-    checkHealth(
-        $test->probe($new) && $test->elapsed === 125.0,
-        'Allow a healthy cached release to converge after the usual 120-second realpath TTL',
-    );
+    foreach (
+        ['HTTP 503' => $staleUnavailable, 'HTTP 200' => $stale]
+        as $case => $previousResponse
+    ) {
+        $test = new HealthFixture($config);
+        $test->responses = array_merge(array_fill(0, 25, $previousResponse), [$ready]);
+        checkHealth(
+            $test->probe($new, $old) && $test->elapsed === 125.0 && $test->requests === 26,
+            "Allow the known previous release ($case) to converge after the usual 120-second realpath TTL",
+        );
 
-    $test = new HealthFixture($config);
-    $test->responses = array_fill(0, 31, $stale);
-    checkHealth(
-        !$test->probe($new) && $test->elapsed === 150.0,
-        'Never accept a persistently wrong release; bound the stale wait',
-    );
+        $test = new HealthFixture($config);
+        $test->responses = array_fill(0, 31, $previousResponse);
+        checkHealth(
+            !$test->probe($new, $old) && $test->elapsed === 150.0 && $test->requests === 31,
+            "Never accept the previous release ($case); bound the stale wait",
+        );
 
-    $test = new HealthFixture(array_replace($config, ['health_stale_timeout_seconds' => 0]));
-    $test->responses = [$stale];
+        $test = new HealthFixture(array_replace($config, ['health_stale_timeout_seconds' => 0]));
+        $test->responses = [$previousResponse];
+        checkHealth(
+            !$test->probe($new, $old) && $test->elapsed === 0.0,
+            "Allow disabling the stale grace period ($case)",
+        );
+    }
+
+    $test = new HealthFixture(array_replace($config, ['health_stale_timeout_seconds' => 10]));
+    $test->responses = array_fill(0, 3, $staleUnavailable);
     checkHealth(
-        !$test->probe($new) && $test->elapsed === 0.0,
-        'Allow disabling the stale grace period',
+        !$test->probe($new, $old) && $test->elapsed === 10.0,
+        'Respect a custom stale grace period for a previous-release 503',
     );
 
     foreach (
@@ -99,16 +113,50 @@ try {
             $reply(200, 'fixture-body-do-not-log', $new),
             $reply(200, '{"status":"ok"}', 'fixture-header-do-not-log'),
             $reply(200, '{"status":"ok"}'),
+            $reply(200, '{"status":"ok"}', $unrelated),
+            $reply(503, '{"status":"unavailable"}', $unrelated),
         ]
         as $bad
     ) {
         $test = new HealthFixture($config);
         $test->responses = array_fill(0, 5, $bad);
         checkHealth(
-            !$test->probe($new) && $test->requests === 5 && $test->elapsed === 8.0,
-            'Unhealthy or unidentifiable responses must retain the short retry window',
+            !$test->probe($new, $old) && $test->requests === 5 && $test->elapsed === 8.0,
+            'Unhealthy new releases, unrelated releases and unidentifiable responses must retain the short retry window',
         );
     }
+
+    foreach ([null, '', 'not-a-release'] as $missingPrevious) {
+        foreach (
+            [$staleUnavailable, $stale, $reply(503, '{"status":"unavailable"}')]
+            as $unknownPrevious
+        ) {
+            $test = new HealthFixture($config);
+            $test->responses = array_fill(0, 5, $unknownPrevious);
+            checkHealth(
+                !$test->probe($new, $missingPrevious) && $test->elapsed === 8.0,
+                'Missing or invalid previous identities must not grant stale grace',
+            );
+        }
+    }
+
+    $test = new HealthFixture($config);
+    $test->responses = array_fill(0, 5, $reply(503, '{"status":"unavailable"}', $new));
+    checkHealth(
+        !$test->probe($new, $new) && $test->elapsed === 8.0,
+        'Rechecking the current release must not grant grace to an unhealthy expected release',
+    );
+
+    $test = new HealthFixture($config);
+    $test->responses = array_merge(
+        array_fill(0, 5, $staleUnavailable),
+        array_fill(0, 5, $reply(503, '{"status":"unavailable"}', $new)),
+        [$ready],
+    );
+    checkHealth(
+        !$test->probe($new, $old) && $test->elapsed === 33.0 && $test->requests === 10,
+        'An unhealthy new release must still fail promptly after stale previous responses',
+    );
 
     $test = new HealthFixture($config);
     $test->responses = [$reply(429, false), $ready];
@@ -119,7 +167,7 @@ try {
     $test = new HealthFixture($staticConfig);
     $test->responses = [$reply(200, $old . "\n"), $page, $reply(200, $new . "\n"), $page];
     checkHealth(
-        $test->probe($new) && $test->elapsed === 5.0,
+        $test->probe($new, $old) && $test->elapsed === 5.0,
         'Static marker and HTML must converge to the expected release',
     );
     $test = new HealthFixture($staticConfig);
@@ -140,7 +188,7 @@ try {
     $log = file_get_contents("$root/logs/control.log");
     checkHealth(
         str_contains($log, '"http":429') &&
-            str_contains($log, 'other_healthy_release') &&
+            str_contains($log, 'previous_release') &&
             str_contains($log, $old),
         'Record status and safe release identities for diagnosis',
     );
