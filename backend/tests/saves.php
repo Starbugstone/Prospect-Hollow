@@ -236,7 +236,11 @@ try {
     $forgedProfile->town->coins = 50000;
     // Injected money is corrected, never kept: the server saves its own replayed values,
     // in a separate town so this file's revisions stay as they were.
-    $injectedAccount = account();
+    // Its own address keeps the shared 127.0.0.1 sign-in limit for the later suites.
+    $injectedAccount = account([
+        'REMOTE_ADDR' =>
+            '127.' . random_int(1, 254) . '.' . random_int(1, 254) . '.' . random_int(1, 254),
+    ]);
     $injectedBody = townBody('Injected Hollow');
     $injectedBody['profile'] = $trackedProfile;
     $injectedTown = status(
