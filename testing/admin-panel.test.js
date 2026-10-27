@@ -299,6 +299,10 @@ describe('sync comparison', () => {
     expect(findingText({ kind: 'future-kind', sequence: 3, check: 'new_check' })).toBe(
       '#3 future kind: skipped because check new_check failed.',
     );
+    // A refusal outside an action has no kind, only its field and check.
+    expect(findingText({ field: 'building-finish', check: 'wins', server: 1, client: 2 })).toBe(
+      'building finish: skipped because the project had 1 of the 2 puzzle wins it needs.',
+    );
     expect(eventCause({ findings: [], message: 'Clock ahead.' })).toBe('Clock ahead.');
     expect(codeLabel('save_corrected')).toBe('Saved with the server’s replayed values');
   });

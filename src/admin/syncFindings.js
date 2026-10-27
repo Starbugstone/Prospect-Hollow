@@ -19,7 +19,10 @@ const ACTIONS = {
   'vip-spend': ['VIP visit to', buildingLabel],
   'era-advance': ['Advance from era', String],
 };
-const actionName = (kind) => ACTIONS[kind]?.[0] ?? kind.replaceAll('-', ' ');
+// A refusal outside an action names only its field and check.
+const actionName = (finding) =>
+  ACTIONS[finding.kind]?.[0] ??
+  String(finding.kind ?? finding.field ?? 'action').replaceAll('-', ' ');
 
 // Why the replay refused an action, with the server's and the game's values.
 const CHECKS = {
@@ -67,7 +70,7 @@ export function findingText(finding) {
     : finding.check
       ? `check ${finding.check} failed`
       : `the replay refused it (${finding.field ?? 'no detail'})`;
-  return `${number}${actionName(finding.kind)}${subject}: skipped because ${why}.`;
+  return `${number}${actionName(finding)}${subject}: skipped because ${why}.`;
 }
 
 // The headline of a sync event: its first finding, or the error the server gave.

@@ -367,6 +367,20 @@ $unreadable = SyncRejections::summary([
 ]);
 check($unreadable['findings'] === [], 'an unreadable stored finding list reads as empty');
 
+// A corrected map key comes from the upload (event IDs are not checked as keys); the
+// finding path stays within its 255-character column.
+$keyed = new SaveIntegrity();
+(new ReflectionMethod(SaveIntegrity::class, 'differences'))->invoke(
+    $keyed,
+    ['known' => 1],
+    ['known' => 1, str_repeat('k', 400) => 2],
+    'town.events',
+);
+check(
+    count($keyed->findings()) === 1 && mb_strlen($keyed->findings()[0]['field']) === 255,
+    'a finding path never exceeds 255 characters',
+);
+
 // The build stays within its 64-character event column.
 check(
     SaveIntegrity::clientBuild(

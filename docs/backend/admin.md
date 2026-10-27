@@ -94,24 +94,24 @@ the saved achievements and showcase.
 
 All routes are under `/api/admin/`, JSON only. Changes send `X-CSRF-Token`.
 
-| Route                                                                                                                                        | Purpose                                                           |
-| -------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| `POST login` `{username,password}`                                                                                                           | Starts a sign-in; returns `stage` and `csrf`.                     |
-| `POST login/code` `{code}`                                                                                                                   | Authenticator code (`totp` stage).                                |
-| `GET login/authenticator`, `POST login/authenticator` `{code}`                                                                               | Enrollment secret and link, then confirmation (`enroll` stage).   |
-| `POST password` `{current?,password}`                                                                                                        | Required change (`change` stage) or own change (needs `current`). |
-| `GET me`, `POST logout`                                                                                                                      | Session and CSRF after a reload; sign out.                        |
-| `GET stats`                                                                                                                                  | Overview figures.                                                 |
-| `GET players?q=&sort=seen\|created\|email&page=`                                                                                             | Player list, 25 per page.                                         |
-| `GET players/{id}`, `POST players/{id}/sign-out`, `DELETE players/{id}` `{confirmation}`                                                     | Player page and actions.                                          |
-| `GET towns?q=&filter=live\|public\|blocked\|deleted&page=`                                                                                   | Town list.                                                        |
-| `GET towns/{id}/sync/{rejectionId}`, `POST towns/{id}/sync/{rejectionId}/reset` `{base:cloud\|upload,changes:[{path,value}]}`                | Compare a rejected upload; save an edited copy as a reset.        |
-| `GET towns/{id}`, `PATCH towns/{id}` `{name?,isPublic:false?}`, `DELETE towns/{id}` `{confirmation}`, `POST towns/{id}/restore` `{revision}` | Town page and moderation.                                         |
-| `GET admins`, `POST admins` `{username}`, `POST admins/{id}/reset-password`, `POST admins/{id}/reset-authenticator`, `DELETE admins/{id}`    | Admin accounts.                                                   |
-| `GET audit?page=`                                                                                                                            | Activity log, 50 per page.                                        |
-| `PATCH audit/settings` `{retentionDays}`                                                                                                     | Keep the log 30, 90, 180, 365 or 730 days.                        |
-| `POST audit/purge` `{all}`                                                                                                                   | Purge entries past the period, or all.                            |
-| `GET settings`, `PATCH settings/privacy` `{privacyContact}`                                                                                  | Privacy contact; an empty string removes it.                      |
-| `POST`/`DELETE players/{id}/distinctions/{distinctionId}`                                                                                    | Give or remove a player distinction.                              |
+| Route                                                                                                                                        | Purpose                                                                 |
+| -------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `POST login` `{username,password}`                                                                                                           | Starts a sign-in; returns `stage` and `csrf`.                           |
+| `POST login/code` `{code}`                                                                                                                   | Authenticator code (`totp` stage).                                      |
+| `GET login/authenticator`, `POST login/authenticator` `{code}`                                                                               | Enrollment secret and link, then confirmation (`enroll` stage).         |
+| `POST password` `{current?,password}`                                                                                                        | Required change (`change` stage) or own change (needs `current`).       |
+| `GET me`, `POST logout`                                                                                                                      | Session and CSRF after a reload; sign out.                              |
+| `GET stats`                                                                                                                                  | Overview figures.                                                       |
+| `GET players?q=&sort=seen\|created\|email&page=`                                                                                             | Player list, 25 per page.                                               |
+| `GET players/{id}`, `POST players/{id}/sign-out`, `DELETE players/{id}` `{confirmation}`                                                     | Player page and actions.                                                |
+| `GET towns?q=&filter=live\|public\|blocked\|review\|deleted&page=`                                                                           | Town list.                                                              |
+| `GET towns/{id}/sync/{rejectionId}`, `POST towns/{id}/sync/{rejectionId}/reset` `{base:cloud\|upload,changes:[{path,value}]}`                | Compare a rejected or corrected upload; save an edited copy as a reset. |
+| `GET towns/{id}`, `PATCH towns/{id}` `{name?,isPublic:false?}`, `DELETE towns/{id}` `{confirmation}`, `POST towns/{id}/restore` `{revision}` | Town page and moderation.                                               |
+| `GET admins`, `POST admins` `{username}`, `POST admins/{id}/reset-password`, `POST admins/{id}/reset-authenticator`, `DELETE admins/{id}`    | Admin accounts.                                                         |
+| `GET audit?page=`                                                                                                                            | Activity log, 50 per page.                                              |
+| `PATCH audit/settings` `{retentionDays}`                                                                                                     | Keep the log 30, 90, 180, 365 or 730 days.                              |
+| `POST audit/purge` `{all}`                                                                                                                   | Purge entries past the period, or all.                                  |
+| `GET settings`, `PATCH settings/privacy` `{privacyContact}`                                                                                  | Privacy contact; an empty string removes it.                            |
+| `POST`/`DELETE players/{id}/distinctions/{distinctionId}`                                                                                    | Give or remove a player distinction.                                    |
 
 `backend/tests/admin.php` covers the sign-in stages, limits, origin and CSRF checks, activity recording, every action and the server command on PostgreSQL and MySQL; `testing/admin-panel.test.js` covers the panel's client.

@@ -1705,9 +1705,10 @@ final class SaveIntegrity
             }
             return;
         }
+        // Map keys come from the upload: keep the path within the event's field column.
         $this->note([
             'kind' => 'value',
-            'field' => $path,
+            'field' => mb_substr($path, 0, 255),
             'server' => self::shown($expected),
             'client' => self::shown($actual),
         ]);
