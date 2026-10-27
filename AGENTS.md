@@ -211,3 +211,10 @@ run the relevant Docker checks first.
 
 This applies to `preprod` only. On every other branch, commit or push only when
 the user asks, and only the changes they asked for.
+
+`preprod` always holds everything on `main` plus the work waiting for the next
+release. Whenever something lands on `main` directly (a hotfix PR, for example),
+merge `main` into `preprod` and push it in the same task, so the next release
+from `preprod` cannot undo the fix. Branch hotfixes from `main`, not `preprod`,
+so their PRs carry only the fix. Before a release, check that `main` is an
+ancestor of `preprod` (`git merge-base --is-ancestor origin/main origin/preprod`).

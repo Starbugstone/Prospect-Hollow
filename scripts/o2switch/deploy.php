@@ -556,7 +556,7 @@ class HostingDeployer
         }
     }
 
-    protected function healthy(string $id): bool
+    protected function healthy(string $id, ?string $previous = null): bool
     {
         $deadline = $this->healthNow() + $this->config['health_stale_timeout_seconds'];
         $failures = 0;
@@ -584,7 +584,7 @@ class HostingDeployer
                 $version = '';
             }
             $ready = $appOk && $version === $id;
-            $otherHealthyRelease = $appOk && $version !== '' && $version !== $id;
+            $previousRelease = $version !== '' && $version === $previous && $version !== $id;
             file_put_contents(
                 $this->log,
                 'Health probe ' .
@@ -597,8 +597,8 @@ class HostingDeployer
                             'observed_release' => $version ?: null,
                             'result' => $ready
                                 ? 'ready'
-                                : ($otherHealthyRelease
-                                    ? 'other_healthy_release'
+                                : ($previousRelease
+                                    ? 'previous_release'
                                     : 'unhealthy'),
                         ],
                         JSON_UNESCAPED_SLASHES,
@@ -609,9 +609,9 @@ class HostingDeployer
             if ($ready) {
                 return true;
             }
-            if ($otherHealthyRelease) {
-                // A worker may cache the previous symlink target. It must eventually
-                // serve the requested release; a healthy old version never counts as success.
+            if ($previousRelease) {
+                // Cached workers may still serve the previous code, including a 503
+                // after migrations. Only the requested healthy release can pass.
                 $remaining = $deadline - $this->healthNow();
                 if ($remaining <= 0) {
                     return false;
@@ -663,7 +663,7 @@ class HostingDeployer
     {
         $previous = $this->current();
         $this->switchTo($id);
-        if (!$this->healthy($id)) {
+        if (!$this->healthy($id, $previous)) {
             if ($previous !== null) {
                 $this->switchTo($previous);
             } else {
