@@ -180,7 +180,8 @@ function progressText(definition, { value, goal }, state) {
     return t(definition.popup, { goal: `${values.value} / ${values.goal}` });
   return `${values.value} / ${values.goal}`;
 }
-// A "different keys" rank (Fusion Master): which of its keys are done.
+// Fusion Master lists its small set of named combinations. Other distinct counters
+// (such as explored levels) use the progress summary, never raw counter keys.
 const keyChips = ({ counter, keys }, state) =>
   keys.map((key) => ({
     key,
@@ -295,7 +296,10 @@ export function describeFamily(
             text: progressText(next.definition, next.progress, state),
           }
         : null,
-    chips: measure?.kind === 'distinct' ? keyChips(measure, state) : null,
+    chips:
+      measure?.kind === 'distinct' && measure.counter === 'fusions'
+        ? keyChips(measure, state)
+        : null,
     checks: measure?.kind === 'powers' ? powerChecks(measure, state) : null,
     mine: next ? mine : null,
     link,

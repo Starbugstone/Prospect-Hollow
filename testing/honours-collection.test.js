@@ -124,6 +124,22 @@ function diamondCatalog() {
 afterEach(() => setLocale('en'));
 
 describe('The honours collection', () => {
+  it.each([
+    ['en', '2 / 12 continuous seams explored'],
+    ['fr', '2 / 12 filons explorés en mode continu'],
+  ])('summarises explored seams without listing internal level IDs in %s', async (locale, text) => {
+    setLocale(locale);
+    const state = townState();
+    state.honours.counts.continuousLevels = { 'level-1': 1, 'level-2': 1 };
+    const seam = card(await collection(state), 'seam-explorer');
+    expect(seam).not.toContain('honour-chips');
+    expect(seam).not.toMatch(/level-\d+/);
+    expect(seam).toContain('role="progressbar"');
+    expect(seam).toContain('aria-valuenow="2"');
+    expect(seam).toContain('aria-valuemax="12"');
+    expect(seam).toContain(text);
+  });
+
   it('frames earned families in their best metal with a rank track and their date', async () => {
     const html = await collection(townState());
     const score = card(html, 'score');
@@ -444,6 +460,15 @@ describe('The honour detail', () => {
       'Now in Connected City · next milestone: complete Riverlight Age',
     );
     expect(rungs(ages)[0]).toContain('Reach River &amp; Rail Boom.');
+  });
+
+  it('summarises explored seams in the detail instead of listing every eligible level', async () => {
+    campaign.honours.counts.continuousLevels = { 'level-1': 1, 'level-2': 1 };
+    const html = await detail('seam-explorer');
+    expect(html).not.toContain('honour-chips');
+    expect(html).not.toMatch(/level-\d+/);
+    expect(rungs(html)[0]).toContain('2 / 12 continuous seams explored');
+    expect(rungs(html)[0]).toContain('role="progressbar"');
   });
 
   it('keeps a locked honour off the showcase', async () => {
