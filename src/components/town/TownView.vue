@@ -1393,7 +1393,8 @@ const coaching = computed(
     !collectionOpen.value &&
     !props.mineEntryPending,
 );
-// The name menu never competes with tutorials, construction reveals or other panels.
+// Other panels and cinematic presentations take precedence over the name popup.
+// Construction retains the last reveal receipt; it is not an animation busy flag.
 const townMenuActive = computed(
   () =>
     props.active &&
@@ -1403,7 +1404,6 @@ const townMenuActive = computed(
     !activeRaid.value &&
     !town.value.transition?.pending &&
     !openingPresentation.value &&
-    !construction.value &&
     !firstLightsOpen.value &&
     !tourOpen.value &&
     !museumOpen.value &&

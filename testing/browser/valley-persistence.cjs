@@ -27,6 +27,19 @@ const {
     });
     await page.goto(testOrigin() + '/play');
     await openNextStep(page, 1);
+    await closeTownPanel(page);
+    const townName = page.locator('.save-pill');
+    const townMenu = page.getByRole('dialog', { name: 'Town & saves', exact: true });
+    const openTownMenu = async () => {
+      await townName.click();
+      await townMenu.waitFor({ timeout: 5000 });
+      assert.equal(await townName.getAttribute('aria-expanded'), 'true');
+      await page.keyboard.press('Escape');
+      await townMenu.waitFor({ state: 'detached' });
+    };
+    // Construction must not turn a working town-name button into a silent no-op.
+    await openTownMenu();
+    await openNextStep(page, 1);
     const state = () =>
       page.evaluate(() => {
         const campaign = window.stores().get('campaign');
@@ -41,6 +54,7 @@ const {
     await page.getByRole('button', { name: 'Build for free', exact: true }).click();
     await page.waitForFunction(() => window.stores().get('campaign').town.buildings.well === 1);
     await closeTownPanel(page);
+    await openTownMenu();
     const built = await state();
     assert.equal(built.coins, before.coins, 'Free well must not charge coins');
     assert.equal(built.next, 1, 'Building must not consume a puzzle');
@@ -58,6 +72,7 @@ const {
       0,
     );
     await closeTownPanel(page);
+    await openTownMenu();
     await nextTip.waitFor();
     await page.screenshot({ path: 'output/playwright/valley/reloaded.png' });
     assert.deepEqual(apiRequests, [], 'Signed-out construction must stay local');
@@ -67,7 +82,7 @@ const {
       JSON.stringify({ before, built, reloaded: await state(), apiRequests, errors }, null, 2),
     );
     console.log(
-      'PASS: free well built through Build tab, preserved after reload, no duplicate free build or backend requests.',
+      'PASS: free well built through Build tab, town menu works before and after construction and reload, no duplicate free build or backend requests.',
     );
   } finally {
     await browser.close();
