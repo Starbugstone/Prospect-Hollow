@@ -149,7 +149,7 @@
     :writable="ready"
     @close="accountOpen = false"
     @changed="reload"
-    @signed-in="loginLink = ''"
+    @signed-in="signedIn"
     @email-link-used="emailLink = ''"
     @recovery="
       accountOpen = false;
@@ -240,6 +240,19 @@ function openSharing() {
   accountSection.value = 'sharing';
   accountOpen.value = true;
 }
+function openCommunity() {
+  if (!cloud.account || cloud.sessionExpired) {
+    accountSection.value = 'community';
+    accountOpen.value = true;
+  } else communityOpen.value = true;
+}
+function signedIn() {
+  loginLink.value = '';
+  if (accountSection.value === 'community') {
+    communityOpen.value = true;
+    accountOpen.value = false;
+  }
+}
 const saveState = computed(() =>
   describeSaveState({
     signedIn: !!cloud.account,
@@ -291,9 +304,7 @@ provide('cloudAccount', {
   openRecovery: () => {
     if (!game.sessionActive) recoveryOpen.value = true;
   },
-  openCommunity: () => {
-    communityOpen.value = true;
-  },
+  openCommunity,
   openSharing,
 });
 watch(

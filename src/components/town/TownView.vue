@@ -13,7 +13,11 @@
       >
         <div v-if="!playingRaid" class="town-resource-bar">
           <div class="town-map-corner">
-            <SaveStatusPill v-if="cloudAccount" />
+            <SaveStatusPill
+              v-if="cloudAccount"
+              :active="townMenuActive"
+              :introduce="!tutorial && campaign.completedCount > 0"
+            />
           </div>
           <div class="town-map-status" role="group" :aria-label="t('Town savings')">
             <TownIcon name="coin" /><strong>{{ number(town.coins) }}</strong>
@@ -1383,6 +1387,23 @@ const coaching = computed(
     !activeRaid.value &&
     !town.value.transition?.pending &&
     !openingPresentation.value &&
+    !firstLightsOpen.value &&
+    !tourOpen.value &&
+    !museumOpen.value &&
+    !collectionOpen.value &&
+    !props.mineEntryPending,
+);
+// The name menu never competes with tutorials, construction reveals or other panels.
+const townMenuActive = computed(
+  () =>
+    props.active &&
+    !paused.value &&
+    !settings.isSettingsOpen &&
+    !dialogMode.value &&
+    !activeRaid.value &&
+    !town.value.transition?.pending &&
+    !openingPresentation.value &&
+    !construction.value &&
     !firstLightsOpen.value &&
     !tourOpen.value &&
     !museumOpen.value &&

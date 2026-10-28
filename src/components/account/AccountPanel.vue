@@ -123,7 +123,7 @@ watch(
 );
 const title = computed(() =>
   !cloud.account
-    ? t('Protect my progress')
+    ? t('Create an account / Sign in')
     : view.value === 'manage'
       ? active.value.meta.name
       : view.value === 'account'
@@ -137,7 +137,7 @@ function manage(section) {
 // Opened on the Mayor's Office, or on a section of the town being played, e.g. from a
 // "Share my town" button.
 if (props.section === 'office') view.value = 'account';
-else if (props.section) manage(props.section);
+else if (props.section && props.section !== 'community') manage(props.section);
 // An email change link proves the new address, on this device or any other.
 async function confirmEmail(token) {
   let email;

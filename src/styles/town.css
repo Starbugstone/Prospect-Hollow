@@ -1487,6 +1487,10 @@ html:has(.town-museum[open]) {
   inset: auto;
   pointer-events: auto;
 }
+/* The name popup must clear project badges and other sibling map controls. */
+.town-resource-bar:has(.save-pill-pop) {
+  z-index: 8;
+}
 .town-resource-bar .town-map-corner {
   min-width: 0;
   max-width: none;

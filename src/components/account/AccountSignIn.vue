@@ -20,6 +20,9 @@
           <span><GameIcon name="history" /></span
           >{{ t('Go back to an earlier save if something goes wrong') }}
         </li>
+        <li>
+          <span><GameIcon name="eye" /></span>{{ t('Visit other mayors and share your town') }}
+        </li>
       </ul>
       <form class="account-stack" @submit.prevent="act(send)">
         <label class="account-field"
@@ -38,6 +41,10 @@
       </form>
       <p class="account-hint account-center">
         {{ t('No password needed. Your town keeps playing on this device either way.') }}
+      </p>
+      <p class="account-hint account-center">
+        {{ t('New here? Your sign-in link creates your account.') }}
+        {{ t('Your town stays private until you choose to share it.') }}
       </p>
       <p class="account-hint account-center">
         {{ t('We use your email only to sign you in and never share it.') }}

@@ -37,7 +37,7 @@ const { chromium, preparePage, testOrigin, openNextStep } = require('../browser/
     await openNextStep(page, 1);
     await page.locator('.town-tab-village').click();
     await page.getByRole('button', { name: /, save status: On this device$/ }).click();
-    await page.getByRole('button', { name: 'Protect my progress', exact: true }).click();
+    await page.getByRole('button', { name: 'Save online · Sign in', exact: true }).click();
     await page.getByLabel('Email address', { exact: true }).waitFor();
     await page.getByRole('button', { name: 'Email me a sign-in link', exact: true }).waitFor();
     console.log(

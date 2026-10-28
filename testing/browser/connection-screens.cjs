@@ -62,6 +62,9 @@ const {
           return route.fulfill({
             json: { account: { id: owner, email: 'test@example.test' }, csrf: 'test' },
           });
+        if (path === 'villages' || path === 'villages/favourites')
+          return route.fulfill({ json: { entries: [], page: 1, hasNext: false } });
+        if (/^towns\/[^/]+\/history$/.test(path)) return route.fulfill({ json: { revisions: [] } });
         // The owner's guestbook poll: nobody is visiting these test towns.
         if (/^towns\/[^/]+\/visitors$/.test(path))
           return route.fulfill({
@@ -72,13 +75,37 @@ const {
         return route.fulfill({ json: town });
       });
       const page = await context.newPage();
-      page.on('pageerror', (e) => errors.push(e.message));
-      await page.goto(origin + (signedIn ? '/?play=' + ids[0] : '/play'));
+      page.on('pageerror', (e) => {
+        errors.push(e.message);
+        console.error(e.message);
+      });
+      await page.goto(origin + (signedIn ? '/?play=' + ids[0] : '/play'), { timeout: 120000 });
       await openNextStep(page, 1);
       await closeTownPanel(page);
       return { page, context };
     }
     const { page } = await device(true);
+    await page.locator('.save-pill').click();
+    const townMenu = page.getByRole('dialog', { name: 'Town & saves', exact: true });
+    await townMenu.getByRole('button', { name: /Share my town/ }).click();
+    const sharing = page.getByRole('switch', { name: /Let other players visit/ });
+    await sharing.waitFor({ timeout: 60000 }).catch(async (error) => {
+      await page.screenshot({ path: 'output/playwright/connection-sharing-failed.png' });
+      console.error(
+        JSON.stringify({
+          calls,
+          errors,
+          accountPanel: await page.locator('.account-panel').allTextContents(),
+        }),
+      );
+      throw error;
+    });
+    assert.equal(
+      await sharing.isChecked(),
+      false,
+      'Sharing opens the reviewed switch, without publishing',
+    );
+    await page.getByRole('button', { name: 'Close account settings', exact: true }).click();
     await page.evaluate(() => window.stores().get('settings').toggleSettings(true));
     await page.getByRole('button', { name: 'My towns & saves', exact: true }).click();
     const card = page.locator('.town-slot').filter({ hasText: 'Other Device Town' });
@@ -116,7 +143,7 @@ const {
     const { page: guest } = await device(false);
     assert.equal(calls.filter((c) => !c.signedIn).length, 0, 'guests do not use backend');
     await guest.getByRole('button', { name: /, save status: On this device$/ }).click();
-    await guest.getByRole('button', { name: 'Protect my progress', exact: true }).click();
+    await guest.getByRole('button', { name: /Visit towns/ }).click();
     await guest.getByLabel('Email address', { exact: true }).fill('guest@example.test');
     await guest.getByRole('button', { name: 'Email me a sign-in link', exact: true }).click();
     await guest.getByRole('heading', { name: 'Check your inbox', exact: true }).waitFor();
@@ -124,6 +151,10 @@ const {
       location.hash = 'login=' + 'a'.repeat(64);
     });
     await guest.getByRole('button', { name: 'Sign in', exact: true }).click();
+    await guest.getByRole('dialog', { name: 'Shared towns', exact: true }).waitFor();
+    await guest.getByRole('button', { name: 'Close town visits', exact: true }).click();
+    await guest.locator('.save-pill').click();
+    await guest.getByRole('button', { name: 'My towns', exact: true }).click();
     await guest.getByText('2 of 3 slots used', { exact: true }).waitFor();
     assert.deepEqual(errors, []);
     console.log(
@@ -133,6 +164,8 @@ const {
         mobileLayout: 'PASS',
         guestLocalOnly: true,
         signInWhileOpen: 'PASS',
+        visitIntentAfterSignIn: 'PASS',
+        explicitSharingOnly: 'PASS',
         pageErrors: errors,
       }),
     );

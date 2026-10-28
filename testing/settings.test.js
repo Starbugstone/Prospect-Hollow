@@ -7,6 +7,18 @@ const freshSettings = () => {
   setActivePinia(createPinia());
   return useSettingsStore();
 };
+it('remembers the town menu introduction on this device across towns and sessions', () => {
+  const saved = new Map();
+  vi.stubGlobal('localStorage', {
+    getItem: (key) => saved.get(key) ?? null,
+    setItem: (key, value) => saved.set(key, value),
+  });
+  const settings = freshSettings();
+  expect(settings.townMenuIntroduced).toBe(false);
+  settings.dismissTownMenuIntro();
+  expect(freshSettings().townMenuIntroduced).toBe(true);
+  expect([...saved.keys()]).toEqual(['crystal-cascade-town-menu-introduced']);
+});
 it('defaults village labels on and remembers either choice in a new session', () => {
   const saved = new Map();
   vi.stubGlobal('localStorage', {
@@ -33,6 +45,8 @@ it('keeps the toggle usable when preference storage is unavailable', () => {
   expect(settings.showVillageLabels).toBe(true);
   expect(() => settings.setVillageLabels(false)).not.toThrow();
   expect(settings.showVillageLabels).toBe(false);
+  expect(() => settings.dismissTownMenuIntro()).not.toThrow();
+  expect(settings.townMenuIntroduced).toBe(true);
 });
 it('mutes music and effects in one tap and restores the previous levels', () => {
   const saved = new Map();
