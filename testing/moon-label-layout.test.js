@@ -17,6 +17,23 @@ it('keeps the selected name at its building and hides a colliding routine name, 
   expect(placed[1]).toMatchObject({ x: 50, y: 50 });
 });
 
+it('separates Moon action targets below the header, through the shared layout', () => {
+  const placed = layoutMoonLabels(
+    [
+      { ...label('workshop', 50, 40), action: true },
+      { ...label('garden', 51, 40), action: true },
+    ],
+    320,
+    568,
+  );
+  const [a, b] = placed.map(({ collection }) => ({
+    x: (collection.x * 320) / 100,
+    y: (collection.y * 568) / 100,
+  }));
+  expect(Math.hypot(a.x - b.x, a.y - b.y)).toBeGreaterThanOrEqual(67.2);
+  expect(Math.min(a.y, b.y)).toBeGreaterThanOrEqual(164 + 34);
+});
+
 it('keeps a ready action available when its text label cannot fit', () => {
   const placed = layoutMoonLabels(
     [{ ...label('ready', 50, 50), action: true, width: 1000, height: 1000 }],

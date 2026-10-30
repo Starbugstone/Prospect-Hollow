@@ -16,19 +16,72 @@ function labelRect(label, width, height) {
   };
 }
 
+// The largest rendered action icon, enlarged ready icons included.
+const ACTION_TARGET = 68;
+const ACTION_SEPARATION_PASSES = 60;
+
+// A name may give way to another, but every action must stay tappable and activate its
+// own place. Overlapping targets push apart along the line between them, so they stay
+// beside their buildings and slide smoothly as the camera moves. A target that moved
+// stays inside the map; one nothing touches keeps its projected place.
+function separateActionTargets(labels, width, height, top, bottom) {
+  const targets = labels
+    .filter((label) => label.action && label.collection?.visible)
+    .sort((a, b) => String(a.id).localeCompare(String(b.id)))
+    .map((label) => ({
+      label,
+      x: (label.collection.x * width) / 100,
+      y: (label.collection.y * height) / 100,
+      moved: false,
+    }));
+  const half = ACTION_TARGET / 2;
+  const settle = (target) => {
+    target.moved = true;
+    target.x = Math.max(half, Math.min(width - half, target.x));
+    target.y = Math.max(top + half, Math.min(bottom - half, target.y));
+  };
+  for (let pass = 0; pass < ACTION_SEPARATION_PASSES; pass++) {
+    let touching = false;
+    for (const [n, a] of targets.entries()) {
+      for (const [m, b] of targets.entries()) {
+        if (m <= n) continue;
+        const distance = Math.hypot(b.x - a.x, b.y - a.y);
+        if (distance >= ACTION_TARGET) continue;
+        touching = true;
+        // Exactly coincident targets fan out in id order, the first pair sideways.
+        const fan = (n + m - 1) * 2.4;
+        const directionX = distance ? (b.x - a.x) / distance : Math.cos(fan);
+        const directionY = distance ? (b.y - a.y) / distance : Math.sin(fan);
+        const push = (ACTION_TARGET - distance) / 2;
+        a.x -= directionX * push;
+        a.y -= directionY * push;
+        b.x += directionX * push;
+        b.y += directionY * push;
+        settle(a);
+        settle(b);
+      }
+    }
+    if (!touching) break;
+  }
+  for (const { label, x, y, moved } of targets)
+    if (moved)
+      label.collection = { ...label.collection, x: (x / width) * 100, y: (y / height) * 100 };
+}
+
 // Every map keeps names attached to their projected places. Higher priority wins
 // a collision; it never pushes another name into a new slot. Map adapters supply
 // their chrome bounds and projected action points, not their own density policy.
 export function layoutTownLabels(labels, width, height, { top = 0, bottom = height } = {}) {
   const result = labels.map((label) => ({ ...label }));
+  if (width > 0 && height > 0) separateActionTargets(result, width, height, top, bottom);
   const occupied = result
     .filter((label) => label.action && label.collection?.visible)
     .map((label) => ({
       id: label.id,
       x: (label.collection.x * width) / 100,
       y: (label.collection.y * height) / 100,
-      width: 68,
-      height: 68,
+      width: ACTION_TARGET,
+      height: ACTION_TARGET,
     }));
   const ranked = [...result].sort(
     (a, b) =>
