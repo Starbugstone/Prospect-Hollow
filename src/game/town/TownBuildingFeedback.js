@@ -86,6 +86,11 @@ export function buildingStatus(
   return status;
 }
 
+// The finished building a site waits for, in the words of its locked messages.
+export const monumentOpening = ({ opens }) => ({
+  building: t(BUILDING_BY_ID[opens.building].shortName),
+  level: opens.level,
+});
 // A monument site's state, highest priority first.
 function monumentState(town, area) {
   if (!areaUnlocked(town, area)) return 'locked';
@@ -108,7 +113,10 @@ const MONUMENT = {
     timeless: () => t('Monument'),
   },
   card: {
-    locked: (town, area) => t('Opens in {era}', { era: t(ERA_BY_ID[area.era].label) }),
+    locked: (town, area) =>
+      area.opens
+        ? t('Opens at {building} level {level}', monumentOpening(area))
+        : t('Opens in {era}', { era: t(ERA_BY_ID[area.era].label) }),
     open: () => t('Open site · optional'),
     work: () => t('Under construction'),
     ready: () => t('Ready to unveil'),

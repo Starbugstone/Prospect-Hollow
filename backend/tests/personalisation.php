@@ -124,6 +124,9 @@ foreach ($schema['personalisation']['areas'] as $area) {
     $state['moonstones'] = 1000000;
     $currency = $area['currency'];
     $state['era'] = $area['era'];
+    if (isset($area['opens'])) {
+        $state['buildings'][$area['opens']['building']] = $area['opens']['level'];
+    }
     $command = [
         'monumentVersion' => $schema['personalisation']['monumentProgression']['version'],
         'id' => $area['id'],
@@ -167,6 +170,33 @@ foreach ($schema['personalisation']['areas'] as $area) {
         );
     }
 }
+// A site can also wait for a finished building level.
+foreach ($schema['personalisation']['areas'] as $area) {
+    if (!isset($area['opens'])) {
+        continue;
+    }
+    $state = json_decode(json_encode($town, JSON_THROW_ON_ERROR), true, 64, JSON_THROW_ON_ERROR);
+    $state['era'] = $area['era'];
+    $state[$area['currency']] = 1000000000;
+    $command = [
+        'monumentVersion' => $schema['personalisation']['monumentProgression']['version'],
+        'id' => $area['id'],
+        'slot' => 0,
+        'value' => $area['choices'][0],
+        'expectedChoice' => null,
+        'expectedLevel' => 0,
+    ];
+    $state['buildings'][$area['opens']['building']] = $area['opens']['level'] - 1;
+    checkPersonalisation(
+        TownPersonalisation::purchase($state, $command, $schema['eras']) === null,
+        'site waits for its building level',
+    );
+    $state['buildings'][$area['opens']['building']] = $area['opens']['level'];
+    checkPersonalisation(
+        TownPersonalisation::purchase($state, $command, $schema['eras']) !== null,
+        'site opens at its building level',
+    );
+}
 // New purchases have a fixed ceiling in the opening era; historical receipts
 // retain their old price/ceiling, so pending offline journals still verify.
 foreach ($schema['personalisation']['areas'] as $area) {
@@ -174,6 +204,9 @@ foreach ($schema['personalisation']['areas'] as $area) {
         continue;
     }
     $state = json_decode(json_encode($rules->defaultTown), true);
+    if (isset($area['opens'])) {
+        $state['buildings'][$area['opens']['building']] = $area['opens']['level'];
+    }
     $state['era'] = $area['era'];
     $state['coins'] = 10000000;
     $state['moonstones'] = 10000000;

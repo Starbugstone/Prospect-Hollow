@@ -34,7 +34,14 @@ beforeEach(() => {
 });
 afterEach(() => vi.unstubAllGlobals());
 
-const moonTown = () => ({ ...createTown(), era: 'twin-hollows', coins: 1e8, moonstones: 1e6 });
+// The finished greenhouse opens the commission site, so every Moon site is open.
+const moonTown = () => ({
+  ...createTown(),
+  era: 'twin-hollows',
+  coins: 1e8,
+  moonstones: 1e6,
+  buildings: { ...createTown().buildings, earthlightGreenhouse: 3 },
+});
 // A Moon monument whose first level waits to be unveiled.
 function readySite(area) {
   let town = moonTown();

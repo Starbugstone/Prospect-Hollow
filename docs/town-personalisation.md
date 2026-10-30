@@ -35,25 +35,31 @@ tapping the plaque names the honour or distinction above it until the next tap.
 
 ## Monument sites
 
-`townLandmarks.js` owns eleven spacious monument sites: nine in the valley and two on the Moon. Coin sites open every other era
+`townLandmarks.js` owns twelve spacious monument sites: nine in the valley and three on the Moon. Coin sites open every other era
 (Frontier, Industrial, Motor Age, Music & Television, Tomorrow City, Riverlight,
 Stargazer and Twin Hollows),
 so the town gets variety without a monument for every era. Two additional resource
 sites open in Twin Hollows for saved moonstones. Each era site offers
 three designs drawn from what that era brings to the town:
 
-| Era                 | Site             | Designs                                                       |
-| ------------------- | ---------------- | ------------------------------------------------------------- |
-| Frontier            | Founders' Meadow | Prospectors' Headframe, Wind Garden, Founders' Longhall       |
-| Motor Age           | Promenade        | Sunburst Filling Station, Chrome Diner, Terminus Clock        |
-| Music & Television  | Arts Quarter     | Music Shell, Big Screen, Signal Spire                         |
-| Tomorrow City       | Horizon Park     | Orbit House, Solar Crown, Maglev Loop                         |
-| Riverlight          | Riverlight Court | Warm Spring Terraces, Garden of Light, Lotus Pavilion         |
-| Stargazer           | Stargazers’ Lawn | Orrery Garden, Comet Arch, Aurora Dome                        |
-| Twin Hollows        | Homecoming Green | Twin-lantern Walk, Earth and Moon Garden, Family Welcome Arch |
-| Twin Hollows        | Moonstone Garden | Moonstone Fountain, Homeward Obelisk, Lunar Crystal Pavilion  |
-| Twin Hollows (Moon) | Moonrock Court   | Moonstone Henge, Earthlight Spire, Crater Amphitheatre        |
-| Twin Hollows (Moon) | Earthrise Plaza  | First Footprints, Earthrise Arch, Orbital Beacon              |
+| Era                 | Site                    | Designs                                                       |
+| ------------------- | ----------------------- | ------------------------------------------------------------- |
+| Frontier            | Founders' Meadow        | Prospectors' Headframe, Wind Garden, Founders' Longhall       |
+| Motor Age           | Promenade               | Sunburst Filling Station, Chrome Diner, Terminus Clock        |
+| Music & Television  | Arts Quarter            | Music Shell, Big Screen, Signal Spire                         |
+| Tomorrow City       | Horizon Park            | Orbit House, Solar Crown, Maglev Loop                         |
+| Riverlight          | Riverlight Court        | Warm Spring Terraces, Garden of Light, Lotus Pavilion         |
+| Stargazer           | Stargazers’ Lawn        | Orrery Garden, Comet Arch, Aurora Dome                        |
+| Twin Hollows        | Homecoming Green        | Twin-lantern Walk, Earth and Moon Garden, Family Welcome Arch |
+| Twin Hollows        | Moonstone Garden        | Moonstone Fountain, Homeward Obelisk, Lunar Crystal Pavilion  |
+| Twin Hollows (Moon) | Moonrock Court          | Moonstone Henge, Earthlight Spire, Crater Amphitheatre        |
+| Twin Hollows (Moon) | Earthrise Plaza         | First Footprints, Earthrise Arch, Orbital Beacon              |
+| Twin Hollows (Moon) | Earthlight Conservatory | Earthlight Orchard, Crystal Nursery, Earthlight Bakehouse     |
+
+The Earthlight Conservatory is a commission (`src/data/moonCommissions.js`): it opens once the
+Earthlight Greenhouse reaches level 3 (`opens`), a letter asks what to build, and the chosen
+outcome sets which residents walk its public path and how often. It stands on a raised pad with
+one door, costs five even stages of 400,000 coins and never gates an era or puzzle.
 
 Every design has its own silhouette (`form`) and card artwork; no two designs share
 one. A later era with a valley site skips at least one era after the previous valley site, and its

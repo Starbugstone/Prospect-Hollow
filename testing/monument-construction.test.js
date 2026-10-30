@@ -89,6 +89,11 @@ describe('Monument construction rules', () => {
     expect(LANDMARK_PROGRESSION.levels.map((level) => level.puzzles)).toEqual([3, 1, 1, 1, 1]);
     for (const area of PERSONAL_AREAS) {
       let town = rich(area.era);
+      if (area.opens)
+        town = {
+          ...town,
+          buildings: { ...town.buildings, [area.opens.building]: area.opens.level },
+        };
       const levels = area.timeless ? 1 : 5;
       for (let level = 1; level <= levels; level++) {
         const gate = isEraComplete(town);

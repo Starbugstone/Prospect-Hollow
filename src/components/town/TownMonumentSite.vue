@@ -13,9 +13,14 @@
     </p>
     <p v-if="!unlocked" class="monument-note">
       <TownIcon name="lock" />{{
-        t('This site opens in {era}. Monuments are optional and never block progress.', {
-          era: t(era.label),
-        })
+        area.opens
+          ? t(
+              'This site opens at {building} level {level}. Monuments are optional and never block progress.',
+              monumentOpening(area),
+            )
+          : t('This site opens in {era}. Monuments are optional and never block progress.', {
+              era: t(era.label),
+            })
       }}
     </p>
 
@@ -146,6 +151,9 @@
     </template>
 
     <template v-else>
+      <p v-if="commission" class="monument-intro" data-commission-request>
+        {{ t(commission.request) }} <small>{{ t(commission.writer) }}</small>
+      </p>
       <p class="monument-intro">
         {{
           t(
@@ -258,7 +266,8 @@ import {
   landmarkLevel,
   monumentWork,
 } from '../../data/townLandmarks';
-import { monumentStatus } from '../../game/town/TownBuildingFeedback';
+import { moonCommission } from '../../data/moonCommissions';
+import { monumentOpening, monumentStatus } from '../../game/town/TownBuildingFeedback';
 import TownIcon from './TownIcon.vue';
 import TownLandmarkPreview from './TownLandmarkPreview.vue';
 
@@ -275,6 +284,7 @@ const emit = defineEmits(['preview', 'unveil', 'replay']);
 const area = computed(() => AREA_BY_ID[props.id]);
 const era = computed(() => ERA_BY_ID[area.value.era]);
 const unlocked = computed(() => areaUnlocked(props.town, area.value));
+const commission = computed(() => moonCommission(props.id));
 const built = computed(() => areaChoice(props.town, area.value));
 const stage = computed(() => areaStage(props.town, area.value));
 const work = computed(() => monumentWork(props.town, area.value));

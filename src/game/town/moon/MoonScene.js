@@ -48,6 +48,7 @@ import {
   MOON_ROAD_LIFT,
   moonApproachHeight,
   moonApproaches,
+  moonCommissionVenues,
   MOON_PARCEL_SIDES,
   moonLotPose,
   moonParcels,
@@ -606,7 +607,9 @@ export class MoonScene extends TownPrimitives {
     // Building lots only: monument sites add labels to this.lots but draw separately.
     const levels = Object.keys(MOON_LOTS).map((id) => town?.buildings?.[id] ?? 0);
     const finishes = Object.keys(MOON_LOTS).map((id) => finishKey(town ?? {}, id));
-    const signature = finishes.join('|');
+    const venues = moonCommissionVenues(town);
+    // A commission first unveiled brings its public path and its visitors.
+    const signature = `${finishes.join('|')}|${venues.map(({ id, visits }) => [id, visits.settler, visits.willowkin])}`;
     if (signature === this.signature) return;
     // A lot finished while the Moon is open settles into place with the valley's
     // construction reveal: drawn on its own until then, outside the merged settlement.
@@ -633,7 +636,10 @@ export class MoonScene extends TownPrimitives {
       if (finished.has(id)) this.revealLot(id, lot, this.previousLevels?.[n] ?? 0);
     });
     this.access.geometry.dispose();
-    this.access.geometry = moonAccessGeometry(moonApproaches(town?.buildings ?? {}));
+    this.access.geometry = moonAccessGeometry([
+      ...moonApproaches(town?.buildings ?? {}),
+      ...venues.map(({ route }) => route),
+    ]);
     this.previousLevels = levels;
     this.refitLots();
     // The whole settlement draws as one merged mesh per palette colour.
@@ -678,7 +684,12 @@ export class MoonScene extends TownPrimitives {
     this.d.clearGroup(this.life);
     this.life = this.d.group(this.scene);
     this.walkers = [];
-    this.settlers = createMoonSettlers(this.d, this.life, town?.buildings ?? {});
+    this.settlers = createMoonSettlers(
+      this.d,
+      this.life,
+      town?.buildings ?? {},
+      moonCommissionVenues(town),
+    );
     if (town?.buildings?.roverBarn) {
       for (let n = 0; n < town.buildings.roverBarn; n++) {
         const r = moonRover(this.d, this.life);

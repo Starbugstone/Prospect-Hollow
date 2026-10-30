@@ -127,6 +127,11 @@ final class TownPersonalisation
         if ($now === false || $intro === false || $now < $intro) {
             return null;
         }
+        // Some sites also wait for a finished building level, which only ever rises.
+        $opens = $area['opens'] ?? null;
+        if ($opens && ($town['buildings'][$opens['building']] ?? 0) < $opens['level']) {
+            return null;
+        }
         $current = $town['personalisation']['areas'][$id][0] ?? null;
         $stage = $current ? $town['personalisation']['areaLevels'][$id] ?? 1 : 0;
         if (

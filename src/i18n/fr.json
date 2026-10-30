@@ -3877,5 +3877,20 @@
   "Create an account / Sign in": "Créer un compte / Se connecter",
   "Visit other mayors and share your town": "Rendez visite à d’autres maires et partagez votre ville",
   "New here? Your sign-in link creates your account.": "Vous découvrez le jeu ? Votre lien de connexion crée votre compte.",
-  "Your town stays private until you choose to share it.": "Votre ville reste privée tant que vous ne choisissez pas de la partager."
+  "Your town stays private until you choose to share it.": "Votre ville reste privée tant que vous ne choisissez pas de la partager.",
+  "Earthlight Conservatory": "Conservatoire de la Lumière de Terre",
+  "Earthlight Orchard": "Verger de la Lumière de Terre",
+  "Fruit trees under glass, tended by the Willowkin. It feeds New Hollow and gives them a home from home.": "Des arbres fruitiers sous verre, soignés par les Willowkin. Le verger nourrit New Hollow et leur offre une seconde maison.",
+  "Crystal Nursery": "Pépinière de cristaux",
+  "Moonstone crystals grown under a lattice roof, with prospectors studying every new facet.": "Des cristaux de pierre de lune cultivés sous un toit en treillis, où les prospecteurs étudient chaque nouvelle facette.",
+  "Earthlight Bakehouse": "Fournil de la Lumière de Terre",
+  "A round bakehouse and its warm dining dome, where the whole crater gathers for pie.": "Un fournil rond et sa chaleureuse salle sous dôme, où tout le cratère se retrouve autour d’une tarte.",
+  "The greenhouse keepers": "Les gardiens de la serre",
+  "The Earthlight greenhouse has outgrown its glass. The Willowkin want an orchard, the prospectors want a crystal nursery and everyone wants more pie. There is room for one. What should we build?": "La serre de la Lumière de Terre est devenue trop petite. Les Willowkin veulent un verger, les prospecteurs une pépinière de cristaux, et tout le monde veut plus de tarte. Il n’y a de place que pour un seul projet. Que devons-nous construire ?",
+  "The first Earthlight orchard is in leaf. The Willowkin hardly come home now, and the fruit grows sideways toward you.": "Le premier verger de la Lumière de Terre est en feuilles. Les Willowkin ne rentrent presque plus chez eux, et les fruits poussent de côté, vers vous.",
+  "The nursery is humming. We plant a chip of moonstone in the evening and find a crystal the next morning.": "La pépinière bourdonne. Nous plantons un éclat de pierre de lune le soir et trouvons un cristal le lendemain matin.",
+  "The bakehouse oven is lit. The whole crater smells of pie, and nobody has eaten at home since.": "Le four du fournil est allumé. Tout le cratère sent la tarte, et plus personne ne mange chez soi depuis.",
+  "Opens at {building} level {level}": "Ouvre avec {building} niveau {level}",
+  "This site opens at {building} level {level}. Monuments are optional and never block progress.": "Ce site ouvre avec {building} niveau {level}. Les monuments sont facultatifs et ne bloquent jamais la progression.",
+  "Next monument site: {site}, opening at {building} level {level}.": "Prochain site de monument : {site}, avec {building} niveau {level}."
 }

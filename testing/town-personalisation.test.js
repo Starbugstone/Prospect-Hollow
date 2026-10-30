@@ -95,6 +95,11 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+// A town that has finished whatever building a site waits for, on top of its era.
+const withOpening = (town, area) =>
+  area.opens
+    ? { ...town, buildings: { ...town.buildings, [area.opens.building]: area.opens.level } }
+    : town;
 describe('Personalisation save and progression contract', () => {
   it('keeps a legacy town visually original and normalization idempotent', () => {
     const old = createTown();
@@ -137,7 +142,7 @@ describe('Personalisation save and progression contract', () => {
   it.each(PERSONAL_AREAS)(
     'develops $id through the final era without gating progression',
     (area) => {
-      let town = createTown();
+      let town = withOpening(createTown(), area);
       town.coins = 1e9;
       town.moonstones = town.moonstonesEarned = 1e9;
       const intro = ERAS.findIndex((e) => e.id === area.era);
@@ -202,7 +207,7 @@ describe('Personalisation save and progression contract', () => {
   it.each(PERSONAL_AREAS.filter((a) => !a.timeless))(
     'keeps the first monument built on $id through every later era',
     (area) => {
-      let town = createTown();
+      let town = withOpening(createTown(), area);
       town.era = area.era;
       town.coins = 1e9;
       town.moonstones = town.moonstonesEarned = 1e9;
@@ -232,7 +237,7 @@ describe('Personalisation save and progression contract', () => {
     'offers five fixed milestones for $id immediately after its site opens',
     (area) => {
       let town = {
-        ...createTown(),
+        ...withOpening(createTown(), area),
         era: area.era,
         coins: 1e9,
         moonstones: 1e9,
@@ -519,7 +524,11 @@ describe('Personalisation rendering', () => {
     for (const area of PERSONAL_AREAS.filter((a) => !a.timeless))
       for (const choice of area.choices) {
         const stages = new Set();
-        for (let stage = 1; stage <= areaMaximum({ era: ERAS.at(-1).id }, area); stage++) {
+        for (
+          let stage = 1;
+          stage <= areaMaximum(withOpening({ era: ERAS.at(-1).id }, area), area);
+          stage++
+        ) {
           const root = buildLandmark(d, new Group(), choice, stage);
           stages.add(signature(root));
           const bounds = new Box3().setFromObject(root);
@@ -532,7 +541,7 @@ describe('Personalisation rendering', () => {
             ),
           ).toBeLessThanOrEqual(area.radius);
         }
-        expect(stages.size).toBe(areaMaximum({ era: ERAS.at(-1).id }, area));
+        expect(stages.size).toBe(areaMaximum(withOpening({ era: ERAS.at(-1).id }, area), area));
       }
   });
   it('animates every choice from level three, and timeless masterpieces immediately', () => {

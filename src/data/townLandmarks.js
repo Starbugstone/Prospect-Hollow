@@ -309,6 +309,32 @@ export const LANDMARK_OPTIONS = [
     33000,
     'A homecoming arch with banners and a bench for waiting families.',
   ),
+  // First commission: the Earthlight Conservatory, in New Hollow on the Moon. These base
+  // prices are never read; the site's explicit schedule below sets every level.
+  option(
+    'earthlight-orchard',
+    'Earthlight Orchard',
+    'orchard-dome',
+    '#7fb069',
+    400000,
+    'Fruit trees under glass, tended by the Willowkin. It feeds New Hollow and gives them a home from home.',
+  ),
+  option(
+    'crystal-nursery',
+    'Crystal Nursery',
+    'crystal-nursery',
+    '#9b91c4',
+    400000,
+    'Moonstone crystals grown under a lattice roof, with prospectors studying every new facet.',
+  ),
+  option(
+    'earthlight-bakehouse',
+    'Earthlight Bakehouse',
+    'bakehouse',
+    '#d99a5b',
+    400000,
+    'A round bakehouse and its warm dining dome, where the whole crater gathers for pie.',
+  ),
 ];
 export const LANDMARK_BY_ID = Object.fromEntries(LANDMARK_OPTIONS.map((o) => [o.id, o]));
 // The way a site's front faces, as a turn about its centre. Every monument is
@@ -323,6 +349,9 @@ export const SITE_FACINGS = Object.freeze({
 });
 // Resource rarity has its own fixed curve, shared by both keepsake sites and all designs.
 const moonstoneLevelPrices = Object.freeze([20, 30, 40, 50, 60]);
+// A commission costs what the last stretch of Twin Hollows did per puzzle, in even stages,
+// so a visible change stays a few puzzles away instead of one long save for the last level.
+const commissionLevelPrices = Object.freeze([400000, 400000, 400000, 400000, 400000]);
 // Sites without a facing, or with one this build does not know, face south.
 export const siteYaw = (area) =>
   Object.hasOwn(SITE_FACINGS, area?.facing ?? '') ? SITE_FACINGS[area.facing] : SITE_FACINGS.south;
@@ -422,9 +451,22 @@ const plots = [
     'moonstones',
     moonstoneLevelPrices,
   ],
+  // At the front of the crater, facing the view, its path curving round to the ring road.
+  [
+    'earthlight-conservatory',
+    'twin-hollows',
+    'Earthlight Conservatory',
+    [0, 33],
+    ['earthlight-orchard', 'crystal-nursery', 'earthlight-bakehouse'],
+    'south',
+    MOON_SETTLEMENT,
+    'coins',
+    commissionLevelPrices,
+    { building: 'earthlightGreenhouse', level: 3 },
+  ],
 ];
 export const PERSONAL_AREAS = plots.map(
-  ([id, era, label, position, choices, facing, settlement, currency, levelPrices]) => ({
+  ([id, era, label, position, choices, facing, settlement, currency, levelPrices, opens]) => ({
     id,
     label,
     era,
@@ -433,6 +475,7 @@ export const PERSONAL_AREAS = plots.map(
     settlement: settlement ?? HOME_SETTLEMENT,
     currency: currency ?? 'coins',
     ...(levelPrices === undefined ? {} : { levelPrices }),
+    ...(opens === undefined ? {} : { opens }),
     choices,
     radius: id === 'monument' ? 9 : 7,
     timeless: id === 'monument',
@@ -443,8 +486,11 @@ export const PERSONAL_AREAS = plots.map(
 export const areaSettlement = settlementId;
 export const areasForSettlement = (settlement = HOME_SETTLEMENT, areas = PERSONAL_AREAS) =>
   settlementPlaces(settlement, areas);
+// A site opens with its era and, when it names one, a finished building level. Building
+// levels only ever rise, so an open site stays open for every later save and replay.
 export const areaUnlocked = (town, area) =>
-  ERAS.findIndex((e) => e.id === town.era) >= ERAS.findIndex((e) => e.id === area.era);
+  ERAS.findIndex((e) => e.id === town.era) >= ERAS.findIndex((e) => e.id === area.era) &&
+  (!area.opens || (town.buildings?.[area.opens.building] ?? 0) >= area.opens.level);
 // Five permanent milestones; era growth never adds another bill. Each paid level is
 // built over `puzzles` completed puzzles (any puzzle, replays too), then unveiled with
 // a `grand` cinematic or a short `reveal`. Timeless monuments build like a foundation.

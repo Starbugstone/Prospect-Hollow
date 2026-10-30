@@ -352,7 +352,7 @@
           <h2 id="town-letters-heading">{{ t('Letters from New Hollow') }}</h2>
           <ul>
             <li v-for="letter in newHollowLetters" :key="letter.id" :data-moon-letter="letter.id">
-              <small>{{ t(BUILDING_BY_ID[letter.id].shortName) }}</small>
+              <small>{{ t(letter.from ?? BUILDING_BY_ID[letter.id].shortName) }}</small>
               <p>{{ t(letter.text) }}</p>
             </li>
           </ul>
@@ -428,10 +428,15 @@
           </div>
           <p v-if="nextMonumentSite" class="town-directory-hint">
             {{
-              t('Next monument site: {site}, opening in {era}.', {
-                site: t(nextMonumentSite.label),
-                era: t(ERA_BY_ID[nextMonumentSite.era].label),
-              })
+              nextMonumentSite.opens
+                ? t('Next monument site: {site}, opening at {building} level {level}.', {
+                    site: t(nextMonumentSite.label),
+                    ...monumentOpening(nextMonumentSite),
+                  })
+                : t('Next monument site: {site}, opening in {era}.', {
+                    site: t(nextMonumentSite.label),
+                    era: t(ERA_BY_ID[nextMonumentSite.era].label),
+                  })
             }}
           </p>
         </section>
@@ -706,7 +711,11 @@ import {
 } from '../../data/townEvents';
 import { ERA_BY_ID } from '../../data/eras';
 import { eraGate, plotInEra } from '../../game/town/TownEras';
-import { buildingStatus, monumentStatus } from '../../game/town/TownBuildingFeedback';
+import {
+  buildingStatus,
+  monumentOpening,
+  monumentStatus,
+} from '../../game/town/TownBuildingFeedback';
 import {
   availableParcels,
   parcelAction,

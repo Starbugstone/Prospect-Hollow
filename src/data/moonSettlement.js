@@ -1,5 +1,13 @@
 import { eraEvolution } from './eras';
-import { areasForSettlement, siteYaw } from './townLandmarks';
+import {
+  AREA_BY_ID,
+  areaChoice,
+  areaShownStage,
+  areasForSettlement,
+  areaUnlocked,
+  siteYaw,
+} from './townLandmarks';
+import { MOON_COMMISSIONS } from './moonCommissions';
 import { MOON_SETTLEMENT } from './settlements';
 // Read inside moonstoneKeepsakes only, after town.js (which needs moonstones.js) loads.
 import { MOONSTONE_BUILDINGS } from './town';
@@ -209,16 +217,17 @@ export function moonSegmentDistance(x, z, a, b) {
 // A short exterior arc can turn around a pad whose front faces away from the
 // ring. Select the shortest clear arc+ring connection once, rather than drawing
 // a radial spoke through a building or changing its established orientation.
-export function moonApproach(id, level = 3, lots = MOON_LOTS) {
-  const pose = moonLotPose(id, lots);
+export function moonApproach(id, level = 3, lots = MOON_LOTS, site = null) {
+  const pose = site?.pose ?? moonLotPose(id, lots);
   const local = (
+    site?.arrival ??
     MOON_ARRIVALS[id] ?? [
       [0, 1],
       [0, 6],
     ]
   ).map((point) => [...point]);
   if (id === 'willowkinDome' && level >= 2) local[0] = [0, 2.48];
-  const padRadius = moonPadRadius(id),
+  const padRadius = site?.padRadius ?? moonPadRadius(id),
     rampStart = moonPadApothem(padRadius - 0.25) - 0.05,
     rampEnd = padRadius + 0.35;
   // Turn close around the actual pad, rather than extending a uniform six-unit
@@ -316,6 +325,60 @@ export function moonPathDistance(x, z, approaches = defaultMoonApproaches()) {
   return distance;
 }
 
+// A commission's door, on its raised pad. Every finished commission keeps its door here.
+export const MOON_COMMISSION_DOOR = 3.1;
+const commissionRoutes = new Map();
+/** The public path to a commission site's door, from the same route search as a lot's. */
+export function moonCommissionRoute(area) {
+  if (!commissionRoutes.has(area.id)) {
+    const [x, z] = area.positions[0];
+    commissionRoutes.set(
+      area.id,
+      moonApproach(
+        area.id,
+        3,
+        { ...MOON_LOTS, [area.id]: [x, z] },
+        {
+          pose: { x, z, rotation: siteYaw(area) },
+          padRadius: MOON_SITE_PAD,
+          arrival: [
+            [0, MOON_COMMISSION_DOOR],
+            [0, 6],
+          ],
+        },
+      ),
+    );
+  }
+  return commissionRoutes.get(area.id);
+}
+/**
+ * Finished commissions the settlers use: the path to each, and how many of a resident's
+ * three daily trips go there. Derived from the saved choice and stage, so nothing new is
+ * saved. Scaffolding around the first stage keeps residents away until it is unveiled.
+ */
+export function moonCommissionVenues(town) {
+  return MOON_COMMISSIONS.flatMap(({ site, outcomes }) => {
+    const area = AREA_BY_ID[site],
+      outcome = area && town && outcomes[areaChoice(town, area)];
+    if (!outcome || !areaUnlocked(town, area) || areaShownStage(town, area) < 1) return [];
+    return [{ id: site, route: moonCommissionRoute(area), visits: outcome.visits }];
+  });
+}
+/** A town's commission letters: the request once its site opens, thanks once it stands. */
+function commissionLetters(town) {
+  return MOON_COMMISSIONS.flatMap(({ site, writer, request, outcomes }) => {
+    const area = AREA_BY_ID[site];
+    if (!area || !town || !areaUnlocked(town, area)) return [];
+    const outcome = outcomes[areaChoice(town, area)];
+    return [
+      { id: `${site}-request`, from: writer, text: request },
+      ...(outcome && areaShownStage(town, area) >= 1
+        ? [{ id: `${site}-thanks`, from: writer, text: outcome.thanks }]
+        : []),
+    ];
+  });
+}
+
 // Letters home from New Hollow, one for each finished Moon building. They are
 // derived from building levels, so nothing new is saved.
 const LETTERS = {
@@ -332,10 +395,12 @@ const LETTERS = {
   roverBarn: 'The rovers are ready for picnics. Bring a blanket when you visit.',
   earthriseLookout: 'From the lookout we can see the valley lights. Goodnight, Prospect Hollow.',
 };
-export const moonLetters = (town) =>
-  Object.entries(LETTERS)
+export const moonLetters = (town) => [
+  ...Object.entries(LETTERS)
     .filter(([id]) => (town?.buildings?.[id] ?? 0) > 0)
-    .map(([id, text]) => ({ id, text }));
+    .map(([id, text]) => ({ id, text })),
+  ...commissionLetters(town),
+];
 // Historical keepsake entitlement: one per finished Moon building level.
 // Retained for deterministic migration into the saved moonstone resource.
 export const moonstoneKeepsakes = (town) =>

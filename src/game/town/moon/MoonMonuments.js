@@ -1,4 +1,5 @@
 import { Box3, Vector3 } from 'three';
+import { moonCommission } from '../../../data/moonCommissions';
 import { MOON_LOTS, MOON_SITE_PAD } from '../../../data/moonSettlement';
 import {
   areasForSettlement,
@@ -52,7 +53,9 @@ export function buildMoonMonuments(d, parent, town) {
     site.userData.monumentSite = area.id;
     const choice = areaChoice(town, area),
       work = monumentWork(town, area);
-    if (work || choice) moonParcelPad(d, site, MOON_SITE_PAD, { flush: true });
+    // A commission is a place to enter: its pad is raised like a building lot's, to the
+    // level its public path and walkers reach. Other monuments build from the ground.
+    if (work || choice) moonParcelPad(d, site, MOON_SITE_PAD, { flush: !moonCommission(area.id) });
     if (work) buildMonumentWorks(d, site, choice, work, area, town.era);
     else if (choice) {
       const model = buildLandmark(d, site, choice, areaShownStage(town, area), area.timeless);

@@ -59,7 +59,14 @@ const expectParcelPad = (root, radius, label) => {
   expect(pad.scale.z, label).toBeCloseTo(radius);
   expect([pad.position.x, pad.position.z], label).toEqual([0, 0]);
 };
-const moonTown = () => ({ ...createTown(), era: 'twin-hollows', coins: 1e9, moonstones: 1e6 });
+// The finished greenhouse opens the commission site, so every Moon site is open.
+const moonTown = () => ({
+  ...createTown(),
+  era: 'twin-hollows',
+  coins: 1e9,
+  moonstones: 1e6,
+  buildings: { ...createTown().buildings, earthlightGreenhouse: 3 },
+});
 
 it('lists every Moon lot and monument site as a parcel of the one shape', () => {
   const parcels = moonParcels();
@@ -214,7 +221,10 @@ it('opens every parcel from a tap on it without moving the camera', () => {
   }
   expect(scene.picked).toEqual(moonParcels().map(({ id }) => id));
   // Sky and bare regolith answer nothing.
-  expect(scene.tap({ clientX: 50, clientY: 1 })).toBeNull();
+  scene.camera.position.set(0, 30, 0);
+  scene.camera.lookAt(0, 60, 40);
+  scene.camera.updateMatrixWorld(true);
+  expect(scene.tap({ clientX: 50, clientY: 50 })).toBeNull();
   scene.upgradeGlow.dispose();
 });
 

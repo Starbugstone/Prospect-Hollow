@@ -273,7 +273,7 @@ describe('Measures', () => {
   });
 
   it('sponsors every monument site with valid choices while preserving Monument Square’s shipped meaning', () => {
-    for (const area of PERSONAL_AREAS) {
+    for (const area of PERSONAL_AREAS.filter(({ id }) => !NON_MONUMENT_HONOURS[id])) {
       const t = town({ personalisation: { areas: { [area.id]: [area.choices[0]] } } });
       const ids = added({ town: t });
       expect(ids, area.id).toContain('landmark-patron-bronze');

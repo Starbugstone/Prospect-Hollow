@@ -73,11 +73,16 @@ export function moonSettlerBuildings(levels) {
     .sort((a, b) => HOMES.includes(b.id) - HOMES.includes(a.id));
 }
 
+// The commission a resident heads for on this trip, or none: the first `visits` trips of
+// their day go there, so what the player chose decides who comes and how often.
+const venueForTrip = (venues, kind, trip) =>
+  venues.find(({ visits }) => trip < (visits[kind] ?? 0))?.route ?? null;
+
 /**
  * One settler's looping day: home → visit → home, three times, resting indoors
  * between walks. Without any building to enter, the settler circles the ring.
  */
-export function moonSettlerPlan(levels, n, homeId = null) {
+export function moonSettlerPlan(levels, n, homeId = null, venues = [], kind = 'settler') {
   const buildings = moonSettlerBuildings(levels);
   if (!buildings.length)
     return {
@@ -104,9 +109,9 @@ export function moonSettlerPlan(levels, n, homeId = null) {
     time += duration;
   };
   for (let trip = 0; trip < 3; trip++) {
-    const visit = others.length
-      ? others[Math.floor(hash(n * 13 + trip * 7 + 1) * others.length)]
-      : home;
+    const visit =
+      venueForTrip(venues, kind, trip) ??
+      (others.length ? others[Math.floor(hash(n * 13 + trip * 7 + 1) * others.length)] : home);
     walk(home, visit);
     rest(visit, 3 + hash(n * 5 + trip) * 6);
     walk(visit, home);
@@ -205,18 +210,18 @@ function strideMoonWillowkin(model, distance) {
 }
 
 /** Completed homes add neighbors. A construction project alone never spawns them. */
-export function createMoonSettlers(d, parent, levels = {}) {
+export function createMoonSettlers(d, parent, levels = {}, venues = []) {
   const homes = HOMES.reduce((sum, id) => sum + (levels[id] ?? 0), 0);
   const suits = [p.shell, '#d9dde6', '#e8e1cf'];
   const settlers = Array.from({ length: Math.min(10, 2 + homes * 2) }, (_, n) => ({
     ...moonSuitFigure(d, { parent, suit: suits[n % suits.length] }),
-    plan: moonSettlerPlan(levels, n),
+    plan: moonSettlerPlan(levels, n, null, venues),
   }));
   const dome = levels.willowkinDome ?? 0;
   for (let n = 0; n < (dome > 0 ? Math.min(4, dome + 1) : 0); n++)
     settlers.push({
       ...animalModel(d, 'willowkinResident', 0, 'space-helmet', parent),
-      plan: moonSettlerPlan(levels, 100 + n, 'willowkinDome'),
+      plan: moonSettlerPlan(levels, 100 + n, 'willowkinDome', venues, 'willowkin'),
       stride: strideMoonWillowkin,
     });
   return settlers;

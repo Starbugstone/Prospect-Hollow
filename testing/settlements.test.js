@@ -38,6 +38,7 @@ it('places every building and site in the settlement it declares', () => {
   expect(areasForSettlement('moon').map(({ id }) => id)).toEqual([
     'earthrise-plaza',
     'moonrock-court',
+    'earthlight-conservatory',
   ]);
 });
 

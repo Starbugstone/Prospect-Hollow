@@ -122,6 +122,70 @@
         <path d="m73 57 9-2 4 6-7 3-4 7-6-6Z" fill="#89b799" stroke="none" />
         <path d="M64 110v-7h32v7" fill="#eacb80" />
       </template>
+      <template v-else-if="form === 'orchard-dome'">
+        <path d="M34 110V96h92v14Z" fill="#e5e8e7" stroke="#657481" stroke-width="2" />
+        <path d="M70 96h20v14H70Z" fill="#657481" />
+        <g fill="#8a6a4a">
+          <path d="M58 96V72h4v24Zm40 0V66h4v30Z" />
+          <path v-if="level >= 3" d="M78 96V58h4v38Z" />
+        </g>
+        <g :fill="option.colour">
+          <circle cx="60" cy="66" r="13" />
+          <circle cx="100" cy="60" r="14" />
+          <circle v-if="level >= 3" cx="80" cy="50" r="14" />
+        </g>
+        <g v-if="level >= 2" fill="#eacb80">
+          <circle cx="55" cy="70" r="3" />
+          <circle cx="105" cy="64" r="3" />
+          <circle v-if="level >= 4" cx="86" cy="54" r="3" />
+        </g>
+        <path
+          d="M34 96V78a46 50 0 0 1 92 0v18Z"
+          fill="#a4dbea"
+          fill-opacity=".28"
+          stroke="#e5e8e7"
+          stroke-width="3"
+        />
+        <path d="M80 28Q52 44 52 96M80 28q28 16 28 68" fill="none" stroke="#e5e8e7" />
+        <circle v-if="level >= 5" class="landmark-glint" cx="80" cy="22" r="5" fill="#eacb80" />
+      </template>
+      <template v-else-if="form === 'crystal-nursery'">
+        <path d="M36 110V96h88v14Z" fill="#e5e8e7" stroke="#657481" stroke-width="2" />
+        <path d="M70 96h20v14H70Z" fill="#657481" />
+        <g :fill="option.colour" stroke="#e5e8e7">
+          <path d="m54 96 5-22 5 22Zm42 0 6-28 6 28Z" />
+          <path v-if="level >= 2" d="m70 96 5-34 5 34Z" />
+          <path v-if="level >= 3" d="m84 96 4-22 4 22Z" fill="#a6cfdf" />
+          <path v-if="level >= 4" d="m44 96 4-16 4 16Zm66 0 4-14 4 14Z" fill="#a6cfdf" />
+        </g>
+        <path
+          d="M38 96 72 34h16l34 62M56 96l18-62m30 62L86 34"
+          fill="none"
+          stroke="#657481"
+          stroke-width="3"
+        />
+        <path d="m74 31 6-16 6 16Z" :fill="level >= 5 ? option.colour : '#e5e8e7'" />
+      </template>
+      <template v-else-if="form === 'bakehouse'">
+        <path d="M38 110V78h84v32Z" fill="#e5e8e7" stroke="#657481" stroke-width="2" />
+        <path d="M38 78a42 26 0 0 1 84 0Z" :fill="option.colour" stroke="#655343" />
+        <path d="M70 110V90h20v20Z" fill="#657481" />
+        <path d="M98 62V36h9v26Z" fill="#657481" />
+        <circle class="landmark-glint" cx="102.5" cy="28" r="5" fill="#eacb80" />
+        <g v-if="level >= 2" fill="#e5e8e7" stroke="#657481">
+          <ellipse cx="24" cy="104" rx="9" ry="3" />
+          <ellipse cx="136" cy="104" rx="9" ry="3" />
+        </g>
+        <path v-if="level >= 3" d="M62 88h36v-5H62Z" :fill="option.colour" />
+        <g v-if="level >= 4" fill="#eacb80">
+          <ellipse cx="24" cy="101" rx="5" ry="2" />
+          <ellipse cx="136" cy="101" rx="5" ry="2" />
+        </g>
+        <g v-if="level >= 5">
+          <ellipse cx="66" cy="50" rx="17" ry="6" fill="#eacb80" stroke="#8a6a4a" />
+          <path d="M49 50v4a17 6 0 0 0 34 0v-4" fill="#d99a5b" stroke="#8a6a4a" />
+        </g>
+      </template>
       <template v-else-if="form === 'orbital-beacon'">
         <path d="M77 110V60h6v50Z" fill="#657481" />
         <g class="landmark-orbits" fill="none" stroke-width="5">

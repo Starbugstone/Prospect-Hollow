@@ -311,9 +311,15 @@ try {
             'site-' . $area['id'],
         );
         $saved = $catalog->keep($saved, null, $noSocial);
+        // Landmark Patron's sites are fixed; a site added later earns it no credit.
         check(
-            in_array('landmark-patron-bronze', $saved->honours->verified, true),
-            'a validated purchase at ' . $area['id'] . ' verifies the shared site measure',
+            in_array('landmark-patron-bronze', $saved->honours->verified, true) ===
+                in_array(
+                    $area['id'],
+                    $definitions['landmark-patron-bronze']['measure']['areas'],
+                    true,
+                ),
+            'a validated purchase at ' . $area['id'] . ' follows the shared site measure',
         );
         if ($area['id'] === 'earthrise-plaza') {
             check(
