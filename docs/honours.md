@@ -334,7 +334,7 @@ Screenshots (a seeded mid-campaign town in the dev build, 2026-10-05):
   measure or `NON_RESOURCE_HONOURS` decision. Coins are deliberately excluded: no lifetime
   earned-coin field exists. Inventory powers remain covered by Master Quartermaster.
 - Every monument site needs a named landmark measure, a fixed-list landmarks measure or
-  `NON_MONUMENT_HONOURS` decision (currently empty).
+  `NON_MONUMENT_HONOURS` decision (currently the two commission sites).
 - Every rank must match `testing/fixtures/shipped-honour-ranks.json`.
 
 To add a rank: append it to its family with the next metal, set `since` to a raised
