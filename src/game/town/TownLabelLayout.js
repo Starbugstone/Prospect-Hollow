@@ -46,13 +46,15 @@ function separateActionTargets(labels, width, height, top, bottom) {
       for (const [m, b] of targets.entries()) {
         if (m <= n) continue;
         const distance = Math.hypot(b.x - a.x, b.y - a.y);
-        if (distance >= ACTION_TARGET) continue;
-        touching = true;
         // Exactly coincident targets fan out in id order, the first pair sideways.
         const fan = (n + m - 1) * 2.4;
         const directionX = distance ? (b.x - a.x) / distance : Math.cos(fan);
         const directionY = distance ? (b.y - a.y) / distance : Math.sin(fan);
-        const push = (ACTION_TARGET - distance) / 2;
+        // Targets are square: along this line they clear once one axis does.
+        const clear = ACTION_TARGET / Math.max(Math.abs(directionX), Math.abs(directionY));
+        if (distance >= clear) continue;
+        touching = true;
+        const push = (clear - distance) / 2;
         a.x -= directionX * push;
         a.y -= directionY * push;
         b.x += directionX * push;

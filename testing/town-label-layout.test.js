@@ -70,16 +70,28 @@ const targetCentres = (placed, width, height) =>
     y: (collection.y * height) / 100,
   }));
 
+// Square targets of this width no longer share any pixel.
+const squareGap = (a, b) => Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
+
 it('separates overlapping action targets so each one activates its own place', () => {
   // The saloon coins and forge TNT measured on a 320×568 phone.
   const input = [actionAt('saloon', 36, 48), actionAt('blacksmith', 31, 49)];
   const placed = layoutTownLabels(input, 320, 568);
   const [saloon, blacksmith] = targetCentres(placed, 320, 568);
   // Enlarged icons are 61.6 pixels wide, ready icons 67.2.
-  expect(Math.hypot(saloon.x - blacksmith.x, saloon.y - blacksmith.y)).toBeGreaterThanOrEqual(67.2);
+  expect(squareGap(saloon, blacksmith)).toBeGreaterThanOrEqual(67.2);
   expect(saloon.x).toBeGreaterThan(blacksmith.x);
   // The renderer's input keeps its projected points.
   expect(input[0].collection.x).toBe(36);
+});
+
+it('separates square action targets that overlap only at a diagonal corner', () => {
+  // 50 pixels apart on both axes: more than a target's width apart, yet their corners share.
+  const input = [actionAt('saloon', 50, 50), actionAt('blacksmith', 62.5, 56.25)];
+  const [saloon, blacksmith] = targetCentres(layoutTownLabels(input, 400, 800), 400, 800);
+  expect(squareGap(saloon, blacksmith)).toBeGreaterThanOrEqual(67.2);
+  // They stay on the line between their buildings.
+  expect(blacksmith.x - saloon.x).toBeCloseTo(blacksmith.y - saloon.y);
 });
 
 it.each([
@@ -92,8 +104,7 @@ it.each([
   for (const [n, a] of centres.entries()) {
     expect(a.x).toBeGreaterThanOrEqual(33.99);
     expect(a.x).toBeLessThanOrEqual(width - 33.99);
-    for (const b of centres.slice(n + 1))
-      expect(Math.hypot(a.x - b.x, a.y - b.y)).toBeGreaterThanOrEqual(61.6);
+    for (const b of centres.slice(n + 1)) expect(squareGap(a, b)).toBeGreaterThanOrEqual(61.6);
   }
 });
 

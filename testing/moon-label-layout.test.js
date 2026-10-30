@@ -30,7 +30,7 @@ it('separates Moon action targets below the header, through the shared layout', 
     x: (collection.x * 320) / 100,
     y: (collection.y * 568) / 100,
   }));
-  expect(Math.hypot(a.x - b.x, a.y - b.y)).toBeGreaterThanOrEqual(67.2);
+  expect(Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y))).toBeGreaterThanOrEqual(67.2);
   expect(Math.min(a.y, b.y)).toBeGreaterThanOrEqual(164 + 34);
 });
 
