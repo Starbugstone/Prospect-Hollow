@@ -21,7 +21,11 @@
     />
     <p v-if="saloonMessage" class="village-saloon" role="status">{{ saloonMessage }}</p>
     <p v-if="helmetMessage" class="village-saloon" role="status">{{ helmetMessage }}</p>
-    <div class="community-world town-map-frame" :class="{ 'town-fullscreen': fullscreen }">
+    <div
+      class="community-world town-map-frame"
+      :class="{ 'town-fullscreen': fullscreen }"
+      :style="{ '--village-footer-height': `${footerHeight}px` }"
+    >
       <button
         ref="fullscreenButton"
         class="town-fullscreen-button"
@@ -45,11 +49,10 @@
         /><template v-if="saloonMessage"> · {{ saloonMessage }}</template
         ><template v-if="helmetMessage"> · {{ helmetMessage }}</template>
       </p>
-      <p v-if="findError" class="village-find-error" role="status">{{ t(findError) }}</p>
       <TownVisitorNotice
-        class="village-helmet-notice"
-        :notice="helmetNotice"
-        @dismiss="helmetNotice = null"
+        class="village-map-notice"
+        :notice="visitNotice"
+        @dismiss="showNotice(null)"
       />
       <TownScene
         ref="townScene"
@@ -76,7 +79,11 @@
       />
     </div>
     <p class="village-hint">{{ t('Tap a building or the mine to see its details.') }}</p>
-    <div class="village-guestbook-actions" :class="{ 'village-guestbook-fullscreen': fullscreen }">
+    <div
+      ref="guestbookActions"
+      class="village-guestbook-actions"
+      :class="{ 'village-guestbook-fullscreen': fullscreen }"
+    >
       <button @click="inspected = 'guestbook'">{{ t("Mayor's guestbook") }}</button>
       <button v-if="honours" @click="inspected = 'honours'">{{ t('View town honours') }}</button>
       <button
@@ -189,8 +196,7 @@ const current = shallowRef(props.village),
   unshared = ref(false);
 const town = computed(() => villageAppearance(current.value));
 const ownVisitId = ref(null),
-  townScene = ref(null),
-  findError = ref('');
+  townScene = ref(null);
 const { snapshot: visitorSnapshot, error: visitorError } = useVillageVisitors(() =>
   unshared.value ? null : props.village.villageId,
 );
@@ -203,13 +209,19 @@ const liveVisitors = computed(() =>
 const guestbookSnapshot = computed(() =>
   visitorSnapshot.value ? { ...visitorSnapshot.value, present: liveVisitors.value } : null,
 );
+// One notice area over the map, for astronaut news and visitors who have left.
+const visitNotice = shallowRef(null);
+let noticeTimer = 0;
+function showNotice(notice) {
+  visitNotice.value = notice;
+  clearTimeout(noticeTimer);
+  if (notice) noticeTimer = setTimeout(() => (visitNotice.value = null), 6000);
+}
 async function findVisitor(id) {
   inspected.value = '';
-  findError.value = '';
+  showNotice(null);
   await nextTick();
-  if (!townScene.value?.findVisitor(id))
-    findError.value =
-      'This visitor is no longer visible. Check the guestbook for the latest visit details.';
+  if (!townScene.value?.findVisitor(id)) showNotice({ kind: 'unavailable' });
 }
 // Tolerate older public responses while client and server versions roll forward.
 const mineLevel = computed(() => current.value.appearance?.mineLevel ?? 0);
@@ -249,8 +261,17 @@ const poller = createVillagePoller({
 // Full screen works like the game's village: the map fills the viewport without the
 // Fullscreen API, the page stops scrolling, and Escape leaves unless a card is open.
 const fullscreen = ref(false),
-  fullscreenButton = ref(null);
-let previousOverflow;
+  fullscreenButton = ref(null),
+  guestbookActions = ref(null),
+  // The buttons wrap with their language and width; the notice above them must clear them.
+  footerHeight = ref(0);
+let previousOverflow, footerObserver;
+watch(guestbookActions, (footer) => {
+  footerObserver?.disconnect();
+  if (!footer) return;
+  footerObserver = new ResizeObserver(() => (footerHeight.value = footer.offsetHeight));
+  footerObserver.observe(footer);
+});
 watch(fullscreen, (open) => {
   if (open) {
     previousOverflow = document.body.style.overflow;
@@ -272,7 +293,8 @@ onMounted(() => {
 onBeforeUnmount(() => {
   clearInterval(clock);
   clearTimeout(zoomTimer);
-  clearTimeout(helmetNoticeTimer);
+  clearTimeout(noticeTimer);
+  footerObserver?.disconnect();
   poller.stop();
   document.removeEventListener('visibilitychange', resume);
   document.removeEventListener('keydown', leaveFullscreen);
@@ -303,12 +325,10 @@ const homeTown = ref(null),
   helmetBusy = ref(false),
   helmetNote = ref(null),
   helmetBurst = ref(null),
-  helmetNotice = shallowRef(null),
   // An animal tapped from too far away asks to zoom in for a moment.
   helmetZoom = ref(false);
 let burstSerial = 0,
-  zoomTimer = 0,
-  helmetNoticeTimer = 0;
+  zoomTimer = 0;
 // The coins a find brings the town visited as, counted from its copy in this browser; that
 // town redeems it later from its own takings. Null when this browser holds no copy.
 function helmetCoins(townId) {
@@ -354,9 +374,7 @@ function zoomForHelmet() {
   notifyHelmet();
 }
 function notifyHelmet() {
-  helmetNotice.value = { kind: 'helmet-visit', message: helmetMessage.value };
-  clearTimeout(helmetNoticeTimer);
-  helmetNoticeTimer = setTimeout(() => (helmetNotice.value = null), 6000);
+  showNotice({ kind: 'helmet-visit', message: helmetMessage.value });
 }
 async function findHelmet(origin) {
   helmetZoom.value = false;
@@ -443,10 +461,15 @@ async function collectSaloon() {
   bottom: max(16px, env(safe-area-inset-bottom));
   left: 16px;
   right: 16px;
+  /* The gaps between the buttons belong to the map. */
+  pointer-events: none;
 }
-.town-fullscreen .village-helmet-notice {
+.village-guestbook-fullscreen button {
+  pointer-events: auto;
+}
+.town-map-frame.town-fullscreen .village-map-notice {
   top: auto;
-  bottom: max(88px, calc(env(safe-area-inset-bottom) + 88px));
+  bottom: calc(max(16px, env(safe-area-inset-bottom)) + var(--village-footer-height) + 8px);
 }
 .town-dialog.village-level-dialog {
   width: min(920px, calc(100vw - 32px));
@@ -495,17 +518,6 @@ async function collectSaloon() {
   border-radius: 16px;
   overflow: hidden;
   position: relative;
-}
-.village-find-error {
-  position: absolute;
-  z-index: 7;
-  top: 70px;
-  left: 16px;
-  right: 16px;
-  padding: 10px;
-  background: #faf5fa;
-  color: #48364d;
-  border-radius: 10px;
 }
 /* A visit shows just the town: no building names, only the saloon coins when collectable. */
 .community-world .town-scene-labels {

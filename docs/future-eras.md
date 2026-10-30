@@ -288,10 +288,18 @@ finish icons that remain tappable with names hidden. Set `PH_SCREENSHOT_DIR` to
 save captures. `testing/browser/town-label-parity.cjs` compares computed styling
 in both real map components across sizes, languages and interaction states.
 
+`testing/browser/mobile-town-layout.cjs` uses the same setup, after `npm run demo:eras`.
+It checks both maps and the shared town at phone sizes in English and French: every
+action target reaches its own place and a coin tap leaves TNT waiting, the Build sheet
+never scrolls sideways and keeps its buttons, statistics and close button reachable, and
+visitor notices clear the town menu, Moon header, shared-town caption and footer. Run it
+after changing map overlays, notices or the Build panel.
+
 Both maps use `TownMapLabel.vue` for the complete pill: inline name/status,
 typography, colours, selection, focus, hover, press and responsive sizing.
 `TownLabelLayout.js` keeps each name at its projected building and hides lower
-priority names when they overlap or do not fit. `TownLabels.js` supplies priority,
+priority names when they overlap or do not fit. Action targets never hide: overlapping
+targets push apart just enough to be tapped separately. `TownLabels.js` supplies priority,
 distant-detail and composited DOM movement. Selection and work take precedence;
 routine names disappear at distant zoom and return when zooming in. They do not
 move into vacant slots or change into dots. The Build tab still lists every lot,

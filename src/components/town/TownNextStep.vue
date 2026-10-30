@@ -165,12 +165,15 @@ const needs = computed(() => campaign.needChips.filter((need) => need.relevant))
   background: #f4efdf;
   border-top: 1px solid #c6c3a6;
   color: #405448;
+  /* It lives in a capped sheet, so its layout follows that width and not the viewport's. */
+  container: village-next / inline-size;
 }
 .village-needs-strip {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 9px;
+  gap: 2px 9px;
   margin: -5px 0 3px;
 }
 .village-needs-strip button {
@@ -218,7 +221,8 @@ progress::-webkit-progress-value {
   background: #577856;
 }
 .village-next-action {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 12px;
   min-height: 94px;
@@ -249,7 +253,6 @@ progress::-webkit-progress-value {
   height: 64px;
 }
 .next-step-copy {
-  flex: 1;
   min-width: 0;
 }
 .next-step-copy > small {
@@ -261,6 +264,7 @@ progress::-webkit-progress-value {
   display: block;
   font-size: 19px;
   line-height: 1.15;
+  overflow-wrap: break-word;
 }
 .next-requirement {
   display: flex;
@@ -278,7 +282,8 @@ progress::-webkit-progress-value {
 }
 .next-step-buttons {
   display: flex;
-  gap: 8px;
+  flex-direction: column;
+  gap: 3px;
 }
 .next-step-buttons button {
   display: flex;
@@ -313,12 +318,10 @@ progress::-webkit-progress-value {
   border: 1px solid #bec5af;
   color: #425840;
 }
-@media (max-width: 600px) {
-  .village-next {
-    padding: 5px 10px;
-  }
+/* Too narrow for three columns: the name keeps the width and the buttons take a row. */
+@container village-next (max-width: 479px) {
   .village-needs-strip {
-    gap: 2px;
+    column-gap: 2px;
     margin-top: 0;
   }
   .village-needs-strip button {
@@ -333,6 +336,7 @@ progress::-webkit-progress-value {
     height: 21px;
   }
   .village-next-action {
+    grid-template-columns: auto minmax(0, 1fr);
     gap: 8px;
     min-height: 98px;
   }
@@ -353,24 +357,19 @@ progress::-webkit-progress-value {
     width: 45px;
   }
   .next-step-buttons {
-    flex-direction: column;
-    gap: 3px;
-    max-width: 110px;
+    grid-column: 1 / -1;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 6px;
   }
   .next-step-buttons button {
+    flex: 1 1 auto;
     font-size: 11px;
     padding: 7px 9px;
   }
 }
-@media (max-height: 500px) and (min-width: 600px) {
-  .village-next {
-    display: grid;
-    grid-template-columns: 1fr 1.2fr;
-    column-gap: 18px;
-  }
+@media (max-height: 500px) {
   .village-next-action {
-    grid-column: 2;
-    grid-row: 1 / 3;
     min-height: 90px;
   }
   .next-building-art {
@@ -379,10 +378,6 @@ progress::-webkit-progress-value {
   }
   .next-step-copy > strong {
     font-size: 15px;
-  }
-  .next-step-buttons {
-    flex-direction: column;
-    gap: 3px;
   }
   .next-step-buttons button {
     font-size: 11px;

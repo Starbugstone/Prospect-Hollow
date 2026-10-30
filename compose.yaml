@@ -13,7 +13,7 @@ services:
       MAIL_FROM: village@localhost.test
     depends_on:
       db: { condition: service_healthy }
-    restart: unless-stopped
+    restart: 'no'
   db:
     image: postgres:17-bookworm
     environment:
@@ -27,7 +27,7 @@ services:
       interval: 5s
       timeout: 3s
       retries: 20
-    restart: unless-stopped
+    restart: 'no'
   mail:
     image: axllent/mailpit:v1.27
     ports:

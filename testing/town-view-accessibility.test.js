@@ -1,4 +1,5 @@
-import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import TownView from '../src/components/town/TownView.vue';
 import { BUILDINGS, createTown } from '../src/data/town';
@@ -116,4 +117,31 @@ it.each([
   'src/components/town/TownPersonalise.vue',
 ])('gives every labelled generic element in %s a role', (path) => {
   expect(unnamed(sfc(path).template.ast)).toEqual([]);
+});
+
+describe('phone layout contracts', () => {
+  const read = (path) => readFileSync(path, 'utf8');
+  const zIndex = (css, selector) =>
+    Number(css.slice(css.indexOf(`${selector} {`)).match(/z-index:\s*(\d+)/)[1]);
+
+  it('draws the open town menu above visitor notices', () => {
+    expect(
+      zIndex(read('src/styles/town.css'), '.town-resource-bar:has(.save-pill-pop)'),
+    ).toBeGreaterThan(
+      zIndex(read('src/components/town/TownVisitorNotice.vue'), '.town-visitor-notice'),
+    );
+  });
+
+  it('lays the next step out by its sheet, not by the viewport width', () => {
+    const next = read('src/components/town/TownNextStep.vue');
+    expect(next).toContain('container: village-next / inline-size');
+    expect(next).toMatch(/@container village-next \(max-width/);
+    expect(next).not.toMatch(/@media[^{]*width/);
+  });
+
+  it('places the shared-town notice above the measured guestbook buttons', () => {
+    const visit = read('src/components/community/VillageVisit.vue');
+    expect(visit).toContain('var(--village-footer-height)');
+    expect(visit).not.toContain('village-find-error');
+  });
 });

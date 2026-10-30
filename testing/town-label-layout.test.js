@@ -56,6 +56,83 @@ it('reserves action targets even when their name is hidden by distance or a coll
   expect(townActionAnchors(placed, { ready: 'ready' }).map((lot) => lot.id)).toEqual(['ready']);
 });
 
+const actionAt = (id, x, y) => ({
+  id,
+  x,
+  y,
+  visible: false,
+  action: true,
+  collection: { x, y, visible: true },
+});
+const targetCentres = (placed, width, height) =>
+  placed.map(({ collection }) => ({
+    x: (collection.x * width) / 100,
+    y: (collection.y * height) / 100,
+  }));
+
+// Square targets of this width no longer share any pixel.
+const squareGap = (a, b) => Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
+
+it('separates overlapping action targets so each one activates its own place', () => {
+  // The saloon coins and forge TNT measured on a 320×568 phone.
+  const input = [actionAt('saloon', 36, 48), actionAt('blacksmith', 31, 49)];
+  const placed = layoutTownLabels(input, 320, 568);
+  const [saloon, blacksmith] = targetCentres(placed, 320, 568);
+  // Enlarged icons are 61.6 pixels wide, ready icons 67.2.
+  expect(squareGap(saloon, blacksmith)).toBeGreaterThanOrEqual(67.2);
+  expect(saloon.x).toBeGreaterThan(blacksmith.x);
+  // The renderer's input keeps its projected points.
+  expect(input[0].collection.x).toBe(36);
+});
+
+it('separates square action targets that overlap only at a diagonal corner', () => {
+  // 50 pixels apart on both axes: more than a target's width apart, yet their corners share.
+  const input = [actionAt('saloon', 50, 50), actionAt('blacksmith', 62.5, 56.25)];
+  const [saloon, blacksmith] = targetCentres(layoutTownLabels(input, 400, 800), 400, 800);
+  expect(squareGap(saloon, blacksmith)).toBeGreaterThanOrEqual(67.2);
+  // They stay on the line between their buildings.
+  expect(blacksmith.x - saloon.x).toBeCloseTo(blacksmith.y - saloon.y);
+});
+
+it.each([
+  [320, 568],
+  [390, 844],
+  [844, 390],
+])('keeps a crowd of action targets apart and on a %ix%i map', (width, height) => {
+  const crowd = Array.from({ length: 8 }, (_, n) => actionAt(`future-${n}`, 8, 50));
+  const centres = targetCentres(layoutTownLabels(crowd, width, height), width, height);
+  for (const [n, a] of centres.entries()) {
+    expect(a.x).toBeGreaterThanOrEqual(33.99);
+    expect(a.x).toBeLessThanOrEqual(width - 33.99);
+    for (const b of centres.slice(n + 1)) expect(squareGap(a, b)).toBeGreaterThanOrEqual(61.6);
+  }
+});
+
+it('leaves action targets that touch nothing at their projected places', () => {
+  const placed = layoutTownLabels([actionAt('a', 20, 20), actionAt('b', 80, 80)], 375, 740);
+  expect(placed.map(({ collection }) => [collection.x, collection.y])).toEqual([
+    [20, 20],
+    [80, 80],
+  ]);
+});
+
+it('settles coincident action targets the same way whatever their order', () => {
+  const a = actionAt('a', 50, 50);
+  const b = actionAt('b', 50, 50);
+  const byId = (placed) => Object.fromEntries(placed.map((lot) => [lot.id, lot.collection.x]));
+  expect(byId(layoutTownLabels([a, b], 375, 740))).toEqual(
+    byId(layoutTownLabels([b, a], 375, 740)),
+  );
+  expect(byId(layoutTownLabels([a, b], 375, 740)).a).toBeLessThan(50);
+});
+
+it('ignores action targets that are off screen when separating the rest', () => {
+  const hidden = { ...actionAt('hidden', 50, 50) };
+  hidden.collection.visible = false;
+  const placed = layoutTownLabels([hidden, actionAt('shown', 50, 50)], 375, 740);
+  expect(placed.map(({ collection }) => collection.x)).toEqual([50, 50]);
+});
+
 it('uses the same distant-detail exceptions on every viewport', () => {
   expect(townLabelDetail({ distant: true })).toBeFalsy();
   for (const state of ['essential', 'selected', 'attention'])

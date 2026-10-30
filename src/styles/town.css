@@ -1487,9 +1487,9 @@ html:has(.town-museum[open]) {
   inset: auto;
   pointer-events: auto;
 }
-/* The name popup must clear project badges and other sibling map controls. */
+/* The name popup must clear project badges, visitor notices and other sibling map controls. */
 .town-resource-bar:has(.save-pill-pop) {
-  z-index: 8;
+  z-index: 9;
 }
 .town-resource-bar .town-map-corner {
   min-width: 0;
@@ -1723,7 +1723,10 @@ html:has(.town-museum[open]) {
   font-weight: 500;
 }
 /* The next step leads the Build tab, above the available plots. */
-.town-build-next.village-next {
+/* Beats the component's own rules whichever stylesheet loads last. It sits in the sheet's
+   flow, so it scrolls under the sticky heading and its close button. */
+.town-dialog .town-build-next.village-next {
+  z-index: 0;
   margin: 0 0 14px;
   padding: 0 0 12px;
   border-top: 0;
@@ -2050,6 +2053,12 @@ html:has(.town-museum[open]) {
   gap: 8px;
   align-items: center;
   pointer-events: none;
+}
+/* A phone wraps the Moon header to two rows; the same clearance as layoutMoonLabels. */
+@media (max-width: 599px) {
+  .town-map-frame:has(.town-moon-header) .town-visitor-notice {
+    top: max(164px, calc(env(safe-area-inset-top) + 164px));
+  }
 }
 .town-moon-back,
 .town-moon-title {

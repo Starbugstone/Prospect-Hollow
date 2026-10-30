@@ -121,12 +121,12 @@ it('does not claim for signed-out visitors or owners visiting their own town', a
   await visit();
   await state.findHelmet(origin);
   expect(state.helmetNote.value).toEqual({ kind: 'signed-out' });
-  expect(state.helmetNotice.value.message).toContain('Sign in with a town of your own');
+  expect(state.visitNotice.value.message).toContain('Sign in with a town of your own');
   expect(state.helmetBurst.value).toBeNull();
   state.homeTown.value = { own: true };
   await state.findHelmet(origin);
   expect(state.helmetNote.value).toEqual({ kind: 'own' });
-  expect(state.helmetNotice.value.message).toContain('This is your own town');
+  expect(state.visitNotice.value.message).toContain('This is your own town');
   expect(fetch).toHaveBeenCalledTimes(1);
 });
 
@@ -134,16 +134,16 @@ it('announces a known cooldown on each tap without sending another claim', async
   await visit({ helmetReadyAt: 44_200 });
   await state.findHelmet(origin);
   expect(state.helmetBurst.value).toBeNull();
-  expect(state.helmetNotice.value.message).toContain('Come back in 12 h.');
+  expect(state.visitNotice.value.message).toContain('Come back in 12 h.');
   const html = await renderToString(
-    createSSRApp(TownVisitorNotice, { notice: state.helmetNotice.value }),
+    createSSRApp(TownVisitorNotice, { notice: state.visitNotice.value }),
   );
   expect(html).toContain('Come back in 12 h.');
   expect(html).toContain('role="status"');
   await vi.advanceTimersByTimeAsync(6000);
-  expect(state.helmetNotice.value).toBeNull();
+  expect(state.visitNotice.value).toBeNull();
   await state.findHelmet(origin);
-  expect(state.helmetNotice.value.message).toContain('Come back in 12 h.');
+  expect(state.visitNotice.value.message).toContain('Come back in 12 h.');
   expect(fetch).toHaveBeenCalledTimes(1);
 });
 
@@ -156,7 +156,7 @@ it.each(['helmet_taken', 'helmet_resting'])('announces a server %s cooldown', as
   });
   await state.findHelmet(origin);
   expect(state.helmetBurst.value).toBeNull();
-  expect(state.helmetNotice.value.message).toContain('12 h.');
+  expect(state.visitNotice.value.message).toContain('12 h.');
   expect(state.helmetBusy.value).toBe(false);
   await state.findHelmet(origin);
   expect(fetch).toHaveBeenCalledTimes(2);
@@ -166,7 +166,7 @@ it('announces failed claims and lets the player retry', async () => {
   await visit();
   fetch.mockRejectedValueOnce(new Error('Network unavailable.'));
   await state.findHelmet(origin);
-  expect(state.helmetNotice.value.message).toBe('Network unavailable.');
+  expect(state.visitNotice.value.message).toBe('Network unavailable.');
   expect(state.helmetBurst.value).toBeNull();
   await state.findHelmet(origin);
   expect(state.helmetNote.value.kind).toBe('found');
@@ -180,4 +180,17 @@ it('keeps the accepted coin burst if the optional local estimate cannot be read'
   await state.findHelmet(origin);
   expect(state.helmetNote.value.kind).toBe('found');
   expect(state.helmetBurst.value).toMatchObject({ amount: null, origin });
+});
+
+it('reports a visitor who has left in the dismissible map notice', async () => {
+  await visit();
+  await state.findVisitor('departed-visitor');
+  expect(state.visitNotice.value).toEqual({ kind: 'unavailable' });
+  const html = await renderToString(
+    createSSRApp(TownVisitorNotice, { notice: state.visitNotice.value }),
+  );
+  expect(html).toContain('This visitor is no longer visible.');
+  expect(html).toContain('Dismiss visitor notification');
+  await vi.advanceTimersByTimeAsync(6000);
+  expect(state.visitNotice.value).toBeNull();
 });
