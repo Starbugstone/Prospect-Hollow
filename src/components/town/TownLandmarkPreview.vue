@@ -186,6 +186,74 @@
           <path d="M49 50v4a17 6 0 0 0 34 0v-4" fill="#d99a5b" stroke="#8a6a4a" />
         </g>
       </template>
+      <template v-else-if="form === 'story-hall'">
+        <path d="M34 110V72h92v38Z" fill="#f4ead5" stroke="#655343" stroke-width="2" />
+        <path d="M28 74 80 44l52 30Z" :fill="option.colour" stroke="#655343" stroke-width="2" />
+        <path d="M70 110V86h20v24Z" fill="#655343" />
+        <path d="M44 72v38m72-38v38" stroke="#8a6a4a" stroke-width="3" />
+        <g v-if="level >= 2" fill="#edc66e">
+          <path d="M50 84h12v12H50Zm48 0h12v12H98Z" />
+        </g>
+        <template v-if="level >= 3">
+          <path d="M72 44V28h16v16Z" fill="#f4ead5" stroke="#655343" />
+          <path d="m68 28 12-10 12 10Z" :fill="option.colour" />
+          <circle class="landmark-glint" cx="80" cy="36" r="4" fill="#edc66e" />
+        </template>
+        <path v-if="level >= 4" d="M36 110h14v-5H36Zm74 0h14v-5h-14Z" fill="#8a6a4a" />
+        <path v-if="level >= 5" d="M62 70h36v8H62Z" fill="#edc66e" />
+      </template>
+      <template v-else-if="form === 'bandstand'">
+        <path d="M30 110v-8h100v8Z" fill="#f4ead5" stroke="#655343" stroke-width="2" />
+        <path d="M38 102V62m28 40V62m28 40V62m28 40V62" stroke="#f4ead5" stroke-width="5" />
+        <path d="M26 64 80 28l54 36Z" :fill="option.colour" stroke="#655343" stroke-width="2" />
+        <g v-if="level >= 2" fill="#edc66e">
+          <circle cx="38" cy="70" r="3.5" />
+          <circle cx="122" cy="70" r="3.5" />
+        </g>
+        <template v-if="level >= 3">
+          <path d="M72 102V88h16v14Z" fill="#655343" />
+          <path class="landmark-glint" d="M70 24h20v3H70Z" fill="#edc66e" />
+        </template>
+        <path v-if="level >= 4" d="m96 82 12-8v18Z" fill="#edc66e" />
+        <g v-if="level >= 5" fill="#edc66e">
+          <circle cx="16" cy="84" r="4" />
+          <circle cx="144" cy="84" r="4" />
+        </g>
+      </template>
+      <template v-else-if="form === 'wild-meadow'">
+        <ellipse cx="80" cy="104" rx="60" ry="10" :fill="option.colour" />
+        <path d="M58 104V66m44 38V58" stroke="#8a6a4a" stroke-width="5" />
+        <circle cx="58" cy="56" r="15" fill="#6f9a4d" />
+        <circle v-if="level >= 2" cx="102" cy="46" r="17" :fill="option.colour" />
+        <g fill="#e6a9b5">
+          <circle cx="44" cy="106" r="3" />
+          <circle cx="74" cy="110" r="3" />
+          <circle v-if="level >= 2" cx="110" cy="108" r="3" />
+          <circle v-if="level >= 3" cx="92" cy="100" r="3" />
+        </g>
+        <ellipse
+          v-if="level >= 3"
+          class="landmark-glint"
+          cx="118"
+          cy="104"
+          rx="10"
+          ry="3"
+          fill="#8cc4d8"
+        />
+        <path
+          v-if="level >= 4"
+          d="M80 104V76h8v28Zm-4-28 8-8 8 8Z"
+          fill="#f4ead5"
+          stroke="#8a6a4a"
+        />
+        <path
+          v-if="level >= 5"
+          d="M24 110V96h6v14m100 0V96h6v14M24 98h112"
+          fill="none"
+          stroke="#8a6a4a"
+          stroke-width="3"
+        />
+      </template>
       <template v-else-if="form === 'orbital-beacon'">
         <path d="M77 110V60h6v50Z" fill="#657481" />
         <g class="landmark-orbits" fill="none" stroke-width="5">

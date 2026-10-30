@@ -47,7 +47,7 @@ What this means:
 
 ## Prices
 
-A commission costs 2M coins over five even stages of 400k. Construction takes the shared 7
+Each commission costs 2M coins over five even stages of 400k. Construction takes the shared 7
 completed puzzles, so coins set the pace, at about the rate of Twin Hollows' final stretch.
 
 | Income | Boards per stage | One commission | Three commissions |
@@ -73,8 +73,19 @@ and both stone monuments need 400 moonstones. Check balances in step 4 before ch
 - [x] Honours decision recorded in `NON_MONUMENT_HONOURS`; family added in step 5
 - [x] Desktop browser capture of every outcome (`testing/browser/moon-commission.cjs`)
 - [x] Moon label check passes at 1440×900, 900×360 and 375×740
-- [ ] Try it on a real phone: art, path, walkers, frame rate
-- [ ] Commit and publish (see Branch below)
+- [x] Committed and pushed to `preprod`
+
+### 1b. Valley commission and a clear signal
+
+- [x] Rename the contract to `src/data/commissions.js`, shared by every settlement
+- [x] Homecoming Commons at `[66, -102]`, opening at Homecoming Hall level 3
+- [x] Three outcomes with 3D and fallback art: Story Hall, Bandstand, Wild Meadow
+- [x] The outcome sets the visitors around the valley site
+- [x] `commissionStatus()`, one source for every signal
+- [x] Light pill on the map and in the Build sheet, letter action icon over the site
+- [x] Real-game check of every signal state on desktop and phone, English and French
+      (`testing/browser/town-commission-signal.cjs`)
+- [ ] Try both commissions on a real phone: art, pill, walkers, frame rate
 
 ### 2. New boards
 
@@ -83,10 +94,9 @@ and both stone monuments need 400 moonstones. Check balances in step 4 before ch
 - [ ] Run `npm run test:levels` and star target calibration
 - [ ] Update the level counts in `docs/README.md` and `docs/town-demo.md`
 
-### 3. Two more commissions
+### 3. A third commission
 
-- [ ] Choose sites. Only the front of the crater is free inside the flat ground; the next
-      two need a layout decision (see Open questions)
+- [ ] Choose its site (see Open questions)
 - [ ] Decide whether each waits for the last one, using a new `opens` kind, so letters
       arrive one at a time. Building levels alone would let all three build together
 - [ ] Write letters, outcomes and art for each
@@ -108,6 +118,13 @@ and both stone monuments need 400 moonstones. Check balances in step 4 before ch
 
 ## Decisions
 
+- **One signal, from one status.** `commissionStatus()` reports `request`, `work`, `ready` or
+  `funding`, most pressing first. The pill reuses the town project pill's look, so it stays
+  light, and shows only while a commission is open. It has no dismiss button and saves
+  nothing new.
+- **No toast or modal.** A gold ring on the pill pulses three times for `request` and `ready`,
+  and stops under reduced motion. Screen readers get the arrival through the live region.
+
 - **Not a sixteenth era yet.** A full era re-arts the whole town and repeats the most
   repetitive part of the loop. It can become the finale if commissions land.
 - **Any completed puzzle builds a commission**, as monuments already do. Tying builds to
@@ -120,17 +137,14 @@ and both stone monuments need 400 moonstones. Check balances in step 4 before ch
 
 ## Branch
 
-Work is on `feature/beyond-new-hollow`, not `preprod`, because PR #87 is open from
-`preprod` and anything pushed there joins that release. Once #87 merges, this work can move
-to `preprod` for testing on a phone.
+Work is on `preprod`, which holds everything on `main` plus this release. PR #87 merged first,
+so nothing here has reached `main`.
 
 ## Open questions
 
-- Where do commissions 2 and 3 stand? The flat ground ends at radius 41 and the front of the
-  crater is taken. Options are a smaller site radius, moving rover traffic or widening the
-  flat floor, which changes existing terrain.
-- Should finishers get a notice when a commission opens? Today only the map label, Build tab
-  and Story letter announce it.
+- Where does the next Moon commission stand? The flat ground ends at radius 41 and the front of
+  the crater is taken. Options are a smaller site radius, moving rover traffic or widening the
+  flat floor, which changes existing terrain. The valley still has room.
 
 ## Rules that still apply
 

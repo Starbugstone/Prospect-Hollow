@@ -1,3 +1,5 @@
+import { finishedCommissions } from '../../data/commissions';
+import { HOME_SETTLEMENT } from '../../data/settlements';
 import { areasForSettlement, areaUnlocked } from '../../data/townLandmarks';
 import { MONUMENT_WILDLIFE, TOWN_ANIMALS } from '../../data/townAnimals';
 import { groundHeight } from './TownLandscape';
@@ -27,6 +29,20 @@ export function monumentCast(town, fauna) {
   if (TOWN_ANIMALS[species]?.resident)
     for (const [n, area] of areas.slice(0, 2).entries())
       cast.push({ area, species, seed: 1001 + n * 31 });
+  // A finished commission draws the visitors its outcome promises.
+  for (const { area, outcome } of finishedCommissions(town, HOME_SETTLEMENT)) {
+    const index = areasForSettlement().indexOf(area);
+    for (let n = 0; n < outcome.visits.wild; n++)
+      cast.push({
+        area,
+        species: wildlife[(index + n + 1) % wildlife.length],
+        seed: 1301 + index * 31 + n * 7,
+        wild: true,
+      });
+    if (TOWN_ANIMALS[species]?.resident)
+      for (let n = 0; n < outcome.visits.resident; n++)
+        cast.push({ area, species, seed: 1501 + index * 31 + n * 7 });
+  }
   return cast;
 }
 

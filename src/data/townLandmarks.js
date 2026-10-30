@@ -335,6 +335,31 @@ export const LANDMARK_OPTIONS = [
     400000,
     'A round bakehouse and its warm dining dome, where the whole crater gathers for pie.',
   ),
+  // Valley commission: the Homecoming Commons, on the same schedule.
+  option(
+    'story-hall',
+    'Story Hall',
+    'story-hall',
+    '#a4693f',
+    400000,
+    'A timber hall where old-timers and Moon folk trade tales of how it all began.',
+  ),
+  option(
+    'bandstand',
+    'Homecoming Bandstand',
+    'bandstand',
+    '#3f8f8a',
+    400000,
+    'An open bandstand for evening concerts, with lanterns and room to dance.',
+  ),
+  option(
+    'wild-meadow',
+    'Wild Meadow',
+    'wild-meadow',
+    '#7fa650',
+    400000,
+    'A fenced meadow of flowers and old trees that the valley’s animals soon call their own.',
+  ),
 ];
 export const LANDMARK_BY_ID = Object.fromEntries(LANDMARK_OPTIONS.map((o) => [o.id, o]));
 // The way a site's front faces, as a turn about its centre. Every monument is
@@ -463,6 +488,19 @@ const plots = [
     'coins',
     commissionLevelPrices,
     { building: 'earthlightGreenhouse', level: 3 },
+  ],
+  // Beside Moonstone Garden, once the homecoming hall needs somewhere for families to gather.
+  [
+    'homecoming-commons',
+    'twin-hollows',
+    'Homecoming Commons',
+    [66, -102],
+    ['story-hall', 'bandstand', 'wild-meadow'],
+    'south',
+    HOME_SETTLEMENT,
+    'coins',
+    commissionLevelPrices,
+    { building: 'homecomingHall', level: 3 },
   ],
 ];
 export const PERSONAL_AREAS = plots.map(

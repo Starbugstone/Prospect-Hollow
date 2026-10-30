@@ -1,13 +1,6 @@
 import { eraEvolution } from './eras';
-import {
-  AREA_BY_ID,
-  areaChoice,
-  areaShownStage,
-  areasForSettlement,
-  areaUnlocked,
-  siteYaw,
-} from './townLandmarks';
-import { MOON_COMMISSIONS } from './moonCommissions';
+import { areasForSettlement, siteYaw } from './townLandmarks';
+import { commissionLetters, finishedCommissions } from './commissions';
 import { MOON_SETTLEMENT } from './settlements';
 // Read inside moonstoneKeepsakes only, after town.js (which needs moonstones.js) loads.
 import { MOONSTONE_BUILDINGS } from './town';
@@ -356,28 +349,12 @@ export function moonCommissionRoute(area) {
  * three daily trips go there. Derived from the saved choice and stage, so nothing new is
  * saved. Scaffolding around the first stage keeps residents away until it is unveiled.
  */
-export function moonCommissionVenues(town) {
-  return MOON_COMMISSIONS.flatMap(({ site, outcomes }) => {
-    const area = AREA_BY_ID[site],
-      outcome = area && town && outcomes[areaChoice(town, area)];
-    if (!outcome || !areaUnlocked(town, area) || areaShownStage(town, area) < 1) return [];
-    return [{ id: site, route: moonCommissionRoute(area), visits: outcome.visits }];
-  });
-}
-/** A town's commission letters: the request once its site opens, thanks once it stands. */
-function commissionLetters(town) {
-  return MOON_COMMISSIONS.flatMap(({ site, writer, request, outcomes }) => {
-    const area = AREA_BY_ID[site];
-    if (!area || !town || !areaUnlocked(town, area)) return [];
-    const outcome = outcomes[areaChoice(town, area)];
-    return [
-      { id: `${site}-request`, from: writer, text: request },
-      ...(outcome && areaShownStage(town, area) >= 1
-        ? [{ id: `${site}-thanks`, from: writer, text: outcome.thanks }]
-        : []),
-    ];
-  });
-}
+export const moonCommissionVenues = (town) =>
+  finishedCommissions(town, MOON_SETTLEMENT).map(({ site, area, outcome }) => ({
+    id: site,
+    route: moonCommissionRoute(area),
+    visits: outcome.visits,
+  }));
 
 // Letters home from New Hollow, one for each finished Moon building. They are
 // derived from building levels, so nothing new is saved.
@@ -399,7 +376,7 @@ export const moonLetters = (town) => [
   ...Object.entries(LETTERS)
     .filter(([id]) => (town?.buildings?.[id] ?? 0) > 0)
     .map(([id, text]) => ({ id, text })),
-  ...commissionLetters(town),
+  ...commissionLetters(town, MOON_SETTLEMENT),
 ];
 // Historical keepsake entitlement: one per finished Moon building level.
 // Retained for deterministic migration into the saved moonstone resource.

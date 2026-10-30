@@ -35,7 +35,7 @@ tapping the plaque names the honour or distinction above it until the next tap.
 
 ## Monument sites
 
-`townLandmarks.js` owns twelve spacious monument sites: nine in the valley and three on the Moon. Coin sites open every other era
+`townLandmarks.js` owns thirteen spacious monument sites: ten in the valley and three on the Moon. Coin sites open every other era
 (Frontier, Industrial, Motor Age, Music & Television, Tomorrow City, Riverlight,
 Stargazer and Twin Hollows),
 so the town gets variety without a monument for every era. Two additional resource
@@ -55,11 +55,16 @@ three designs drawn from what that era brings to the town:
 | Twin Hollows (Moon) | Moonrock Court          | Moonstone Henge, Earthlight Spire, Crater Amphitheatre        |
 | Twin Hollows (Moon) | Earthrise Plaza         | First Footprints, Earthrise Arch, Orbital Beacon              |
 | Twin Hollows (Moon) | Earthlight Conservatory | Earthlight Orchard, Crystal Nursery, Earthlight Bakehouse     |
+| Twin Hollows        | Homecoming Commons      | Story Hall, Homecoming Bandstand, Wild Meadow                 |
 
-The Earthlight Conservatory is a commission (`src/data/moonCommissions.js`): it opens once the
-Earthlight Greenhouse reaches level 3 (`opens`), a letter asks what to build, and the chosen
-outcome sets which residents walk its public path and how often. It stands on a raised pad with
-one door, costs five even stages of 400,000 coins and never gates an era or puzzle.
+The Earthlight Conservatory and the Homecoming Commons are commissions
+(`src/data/commissions.js`). Each opens with a finished building level (`opens`), a letter asks
+what to build, and the permanent outcome sets who visits: the Moon's residents walk a public path
+to its door, and the valley's come to the site's perimeter. Each costs five even stages of 400,000
+coins and never gates an era or puzzle. `commissionStatus()` drives the one signal that a commission
+is active: a light pill beside the town project (`TownCommissionGoal`), the same pill in the Build
+sheet and a letter action icon over a site awaiting its choice. `testing/browser/town-commission-signal.cjs`
+checks every state in the real game, on desktop and phone, in English and French.
 
 Every design has its own silhouette (`form`) and card artwork; no two designs share
 one. A later era with a valley site skips at least one era after the previous valley site, and its

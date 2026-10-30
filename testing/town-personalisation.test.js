@@ -222,7 +222,7 @@ describe('Personalisation save and progression contract', () => {
   );
   it('spaces coin sites every other era, each design with its own silhouette', () => {
     const eras = areasForSettlement()
-      .filter((a) => a.currency === 'coins')
+      .filter((a) => a.currency === 'coins' && !a.opens)
       .map((area) => ERAS.findIndex((era) => era.id === area.era));
     expect(eras).not.toContain(-1);
     const sorted = [...eras].sort((a, b) => a - b);
@@ -411,7 +411,7 @@ describe('Personalisation rendering', () => {
   it('reserves real navigation obstacles for each garden choice, clear of existing plots', () => {
     for (const area of areasForSettlement())
       for (const choice of area.choices) {
-        const town = createTown();
+        const town = withOpening(createTown(), area);
         town.era = area.era;
         town.personalisation.areas[area.id] = [choice];
         const d = fixture(town),
@@ -456,6 +456,8 @@ describe('Personalisation rendering', () => {
   it('turns every site, open or built, so its monument fronts the declared direction', () => {
     const town = createTown();
     town.era = ERAS.at(-1).id;
+    for (const area of areasForSettlement())
+      if (area.opens) town.buildings[area.opens.building] = area.opens.level;
     const open = buildPersonalAreas(fixture(town), town);
     for (const area of areasForSettlement()) {
       town.personalisation.areas[area.id] = [area.choices.at(-1)];

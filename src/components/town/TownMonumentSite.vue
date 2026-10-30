@@ -2,7 +2,9 @@
   <section class="town-monument" aria-labelledby="monument-title">
     <div class="town-detail-title">
       <div>
-        <p class="town-kicker">{{ t('Monument site') }} · {{ t(era.label) }}</p>
+        <p class="town-kicker">
+          {{ t(commission ? 'Commission' : 'Monument site') }} · {{ t(era.label) }}
+        </p>
         <h2 id="monument-title">{{ t(built ? LANDMARK_BY_ID[built].label : area.label) }}</h2>
       </div>
       <span class="town-level-badge">{{ badge }}</span>
@@ -157,7 +159,9 @@
       <p class="monument-intro">
         {{
           t(
-            'Choose one monument for this site. It is optional and never needed to reach the next era.',
+            commission
+              ? 'Choose what this place becomes. Your choice is permanent, and it is never needed to reach the next era.'
+              : 'Choose one monument for this site. It is optional and never needed to reach the next era.',
           )
         }}
       </p>
@@ -266,7 +270,7 @@ import {
   landmarkLevel,
   monumentWork,
 } from '../../data/townLandmarks';
-import { moonCommission } from '../../data/moonCommissions';
+import { commissionFor } from '../../data/commissions';
 import { monumentOpening, monumentStatus } from '../../game/town/TownBuildingFeedback';
 import TownIcon from './TownIcon.vue';
 import TownLandmarkPreview from './TownLandmarkPreview.vue';
@@ -284,7 +288,7 @@ const emit = defineEmits(['preview', 'unveil', 'replay']);
 const area = computed(() => AREA_BY_ID[props.id]);
 const era = computed(() => ERA_BY_ID[area.value.era]);
 const unlocked = computed(() => areaUnlocked(props.town, area.value));
-const commission = computed(() => moonCommission(props.id));
+const commission = computed(() => commissionFor(props.id));
 const built = computed(() => areaChoice(props.town, area.value));
 const stage = computed(() => areaStage(props.town, area.value));
 const work = computed(() => monumentWork(props.town, area.value));

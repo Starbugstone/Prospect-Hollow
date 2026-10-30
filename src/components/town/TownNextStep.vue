@@ -100,6 +100,12 @@
         </button>
       </div>
     </div>
+    <TownCommissionGoal
+      v-if="commission"
+      inline
+      :status="commission"
+      @open="$emit('select', commission.site)"
+    />
     <JourneyProgress />
   </section>
 </template>
@@ -111,16 +117,19 @@ import { computed } from 'vue';
 import { t, number } from '../../i18n';
 import { BUILDINGS, BUILDING_BY_ID } from '../../data/town';
 import { plotInEra, eraBuildingLevel } from '../../game/town/TownEras';
+import { commissionStatus } from '../../data/commissions';
 import { useNextStepAction } from '../../composables/useNextStepAction';
 import { constructionRuns, population } from '../../game/town/TownRules';
 import TownIcon from './TownIcon.vue';
 import TownBuilding from './TownBuilding.vue';
+import TownCommissionGoal from './TownCommissionGoal.vue';
 import TownDefenseStatus from './TownDefenseStatus.vue';
 import JourneyProgress from '../JourneyProgress.vue';
 const props = defineProps({ town: Object, hammers: Number });
 const emit = defineEmits(['select', 'inspect', 'build-free', 'mine', 'advance-era']);
 const campaign = useCampaignStore();
 const tip = computed(() => townTip(campaign));
+const commission = computed(() => commissionStatus(props.town)[0] ?? null);
 const showEraProgress = computed(
   () =>
     props.town.era !== 'frontier' || Object.values(props.town.buildings).some((level) => level > 1),

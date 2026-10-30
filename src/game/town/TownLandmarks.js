@@ -1,6 +1,7 @@
 import { buildMoonstoneLandmark, MOONSTONE_LANDMARK_FORMS } from './TownMoonstoneLandmarks';
 import { buildMoonLandmark, LUNAR_LANDMARK_FORMS } from './moon/MoonLandmarks';
 import { buildCommissionLandmark, COMMISSION_LANDMARK_FORMS } from './moon/MoonCommissionLandmarks';
+import { buildValleyCommission, VALLEY_COMMISSION_FORMS } from './TownCommissionLandmarks';
 import { createLandmarkMotion } from './TownLandmarkMotion';
 import { LANDMARK_BY_ID, LANDMARK_PROGRESSION } from '../../data/townLandmarks';
 import { futureShape } from './buildings/futureShapes';
@@ -104,6 +105,7 @@ export function buildLandmark(d, parent, choice, stage = 1, timeless = false, st
   if (timeless && buildMonumentSculpture(d, g, choice, move)) {
     // The authored proportions apply equally in the map and unveiling close-ups.
   } else if (commission) buildCommissionLandmark(d, g, o, tier, move);
+  else if (VALLEY_COMMISSION_FORMS.includes(o.form)) buildValleyCommission(d, g, o, tier, move);
   else if (mineral) buildMoonstoneLandmark(d, g, o, tier, move);
   else if (lunar) buildMoonLandmark(d, g, o, tier, move);
   else if (o.form === 'arch') {

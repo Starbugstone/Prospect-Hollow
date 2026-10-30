@@ -3,7 +3,12 @@ import { createSSRApp, h } from 'vue';
 import { renderToString } from 'vue/server-renderer';
 import { Box3, Group, Scene } from 'three';
 import { createTown } from '../src/data/town';
-import { MOON_COMMISSIONS, moonCommission } from '../src/data/moonCommissions';
+import {
+  COMMISSIONS,
+  commissionFor,
+  commissionLetters,
+  commissionStatus,
+} from '../src/data/commissions';
 import {
   AREA_BY_ID,
   LANDMARK_BY_ID,
@@ -40,10 +45,17 @@ import { monumentStatus } from '../src/game/town/TownBuildingFeedback';
 import { TownPrimitives } from '../src/game/town/TownPrimitives';
 import TownLandmarkPreview from '../src/components/town/TownLandmarkPreview.vue';
 import TownMonumentSite from '../src/components/town/TownMonumentSite.vue';
+import TownCommissionGoal from '../src/components/town/TownCommissionGoal.vue';
+import { buildingActionLabel, TOWN_ACTIONS } from '../src/data/townIndicators';
+import { buildingIndicators } from '../src/game/town/TownRules';
+import { monumentCast } from '../src/game/town/TownMonumentLife';
+import { townFauna } from '../src/data/townAnimals';
+import { eraEvolution } from '../src/data/eras';
+import { areasForSettlement } from '../src/data/townLandmarks';
 import schema from '../backend/content/public-schema.json';
 
 const area = AREA_BY_ID['earthlight-conservatory'];
-const commission = moonCommission(area.id);
+const commission = commissionFor(area.id);
 const town = (greenhouse = 3) => {
   const base = createTown();
   return {
@@ -85,26 +97,27 @@ const render = (component, props) =>
   renderToString(createSSRApp({ render: () => h(component, props) }));
 
 describe('the commission contract', () => {
-  it.each(MOON_COMMISSIONS)('$site names a Moon site and one outcome per design', (entry) => {
+  it.each(COMMISSIONS)('$site names a site and one outcome per design', (entry) => {
     const site = AREA_BY_ID[entry.site];
-    expect(site.settlement).toBe('moon');
+    expect(site.opens).toBeTruthy();
     expect(Object.keys(entry.outcomes).sort()).toEqual([...site.choices].sort());
     for (const { thanks, visits } of Object.values(entry.outcomes)) {
       expect(thanks).toBeTruthy();
-      expect(visits.settler + visits.willowkin).toBeGreaterThan(0);
-      expect(Math.max(visits.settler, visits.willowkin)).toBeLessThanOrEqual(3);
+      const counts = Object.values(visits);
+      expect(counts.reduce((sum, count) => sum + count, 0)).toBeGreaterThan(0);
+      expect(Math.max(...counts)).toBeLessThanOrEqual(3);
     }
     expect(entry.writer && entry.request).toBeTruthy();
   });
 
-  it('gives each outcome its own residents', () => {
-    const shapes = Object.values(commission.outcomes).map(({ visits }) => JSON.stringify(visits));
-    expect(new Set(shapes).size).toBe(area.choices.length);
+  it.each(COMMISSIONS)('$site gives each outcome its own residents', ({ outcomes }) => {
+    const shapes = Object.values(outcomes).map(({ visits }) => JSON.stringify(visits));
+    expect(new Set(shapes).size).toBe(Object.keys(outcomes).length);
   });
 
   it('returns no commission for an ordinary monument site', () => {
-    expect(moonCommission('earthrise-plaza')).toBeNull();
-    expect(moonCommission(undefined)).toBeNull();
+    expect(commissionFor('earthrise-plaza')).toBeNull();
+    expect(commissionFor(undefined)).toBeNull();
   });
 });
 
@@ -320,5 +333,125 @@ describe('the letters', () => {
     expect(await render(TownMonumentSite, { id: 'earthrise-plaza', town: town() })).not.toContain(
       'data-commission-request',
     );
+  });
+});
+
+describe('the valley commission', () => {
+  const site = AREA_BY_ID['homecoming-commons'];
+  const entry = commissionFor(site.id);
+  const valley = (hall = 3) => {
+    const base = createTown();
+    return {
+      ...base,
+      era: 'twin-hollows',
+      coins: 1e8,
+      buildings: { ...base.buildings, homecomingHall: hall },
+    };
+  };
+  const buyHere = (value, choice = site.choices[0]) => {
+    const offer = landmarkOffer(value, site, choice);
+    return offer && purchaseLandmark(value, { id: site.id, slot: 0, value: choice, ...offer });
+  };
+  const finishHere = (value, level = 1) => {
+    while (!monumentWork(value, site).ready) value = advanceMonumentWorks(value);
+    return unveilLandmark(value, site.id, level);
+  };
+
+  it('stands in the valley and opens with the finished homecoming hall', () => {
+    expect(areasForSettlement()).toContain(site);
+    expect(areaUnlocked(valley(2), site)).toBe(false);
+    expect(areaUnlocked(valley(3), site)).toBe(true);
+    expect(commissionLetters(valley(2), 'valley')).toEqual([]);
+    expect(commissionLetters(valley(3), 'valley').map(({ id }) => id)).toEqual([
+      `${site.id}-request`,
+    ]);
+    // Valley letters never appear among New Hollow's.
+    expect(moonLetters(valley(3)).map(({ id }) => id)).not.toContain(`${site.id}-request`);
+  });
+
+  it.each(site.choices)('%s draws the visitors its outcome promises', (choice) => {
+    const open = valley();
+    const fauna = townFauna(eraEvolution(open.era));
+    const before = monumentCast(open, fauna).filter(({ area }) => area === site).length;
+    const value = finishHere(buyHere(open, choice));
+    const cast = monumentCast(value, fauna).filter(({ area }) => area === site);
+    const { resident, wild } = entry.outcomes[choice].visits;
+    const expected = wild + (fauna.companions?.species ? resident : 0);
+    expect(cast.length - before).toBeLessThanOrEqual(expected);
+    expect(new Set(cast.map(({ seed }) => seed)).size).toBe(cast.length);
+  });
+
+  it.each(site.choices)('%s stays within budget at every stage', (choice) => {
+    const d = fixture(),
+      signatures = new Set();
+    for (let stage = 1; stage <= 5; stage++) {
+      const root = buildLandmark(d, new Group(), choice, stage);
+      let triangles = 0;
+      root.traverse((mesh) => {
+        if (mesh.isMesh)
+          triangles += (mesh.geometry.index?.count ?? mesh.geometry.attributes.position.count) / 3;
+      });
+      signatures.add(triangles);
+      const box = new Box3().setFromObject(root);
+      expect(Math.max(-box.min.x, box.max.x, -box.min.z, box.max.z)).toBeLessThan(site.radius);
+    }
+    expect(signatures.size).toBe(5);
+  });
+});
+
+describe('seeing a commission', () => {
+  const status = (value) => commissionStatus(value)[0];
+
+  it('is silent until a commission opens', () => {
+    expect(commissionStatus(town(2))).toEqual([]);
+    expect(commissionStatus(null)).toEqual([]);
+    expect(buildingIndicators(town(2))[area.id]).toBeUndefined();
+  });
+
+  it('follows one commission from request to finished', () => {
+    let value = town();
+    expect(status(value)).toMatchObject({ site: area.id, state: 'request', choice: null });
+    value = buy(value);
+    expect(status(value)).toMatchObject({ state: 'work', done: 0, total: 3 });
+    value = advanceMonumentWorks(value);
+    expect(status(value)).toMatchObject({ state: 'work', done: 1, total: 3 });
+    while (!monumentWork(value, area).ready) value = advanceMonumentWorks(value);
+    expect(status(value)).toMatchObject({ state: 'ready', done: 3, total: 3 });
+    value = unveilLandmark(value, area.id, 1);
+    expect(status(value)).toMatchObject({ state: 'funding', done: 1, total: 5 });
+    for (let level = 2; level <= 5; level++) value = finish(buy(value), level);
+    expect(commissionStatus(value)).toEqual([]);
+  });
+
+  it('puts what needs the player first when two are open', () => {
+    const value = {
+      ...buy(town()),
+      buildings: { ...buy(town()).buildings, homecomingHall: 3 },
+    };
+    expect(commissionStatus(value).map(({ state }) => state)).toEqual(['request', 'work']);
+  });
+
+  it('hangs a letter over a site awaiting a choice, and then takes it down', () => {
+    expect(buildingIndicators(town())[area.id]).toBe('commission');
+    expect(TOWN_ACTIONS.commission.icon).toContain('commission-letter');
+    expect(buildingActionLabel(town(), area.id, 'commission')).toContain(area.label);
+    expect(buildingIndicators(buy(town()))[area.id]).toBeUndefined();
+  });
+
+  it('never stacks the letter on an unveiling hammer', () => {
+    let value = buy(town());
+    while (!monumentWork(value, area).ready) value = advanceMonumentWorks(value);
+    expect(buildingIndicators(value)[area.id]).toBe('ready');
+  });
+
+  it.each([
+    ['request', town(), 'New commission', 'is-calling'],
+    ['work', buy(town()), 'Commission · Earthlight Orchard', 'town-project-goal'],
+  ])('shows the %s state as a light pill', async (state, value, text, css) => {
+    const html = await render(TownCommissionGoal, { status: status(value) });
+    expect(html).toContain(`data-commission-state="${state}"`);
+    expect(html).toContain(text);
+    expect(html).toContain(css);
+    expect(html).toContain('commission-letter.svg');
   });
 });

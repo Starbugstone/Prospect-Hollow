@@ -1,3 +1,4 @@
+import { commissionFor } from '../data/commissions';
 import {
   MOONSTONE_VERSION,
   advanceMoonstoneProduction,
@@ -1181,6 +1182,7 @@ export const useCampaignStore = defineStore('campaign', {
           this.lastConstruction.push({
             id,
             monument: areaChoice(this.town, AREA_BY_ID[id]),
+            ...(commissionFor(id) ? { commission: true } : {}),
             stage: work.level,
             wins: work.wins,
             required: work.required,

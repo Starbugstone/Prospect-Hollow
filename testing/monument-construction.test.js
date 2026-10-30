@@ -323,6 +323,7 @@ describe('Monument construction in the town', () => {
           for (const wins of [0, 1, required]) {
             const town = createTown();
             town.era = ERAS.at(-1).id;
+            if (area.opens) town.buildings[area.opens.building] = area.opens.level;
             Object.assign(town.personalisation, {
               areas: { [area.id]: [choice] },
               areaLevels: { [area.id]: level },

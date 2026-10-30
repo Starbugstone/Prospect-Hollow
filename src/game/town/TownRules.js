@@ -1,6 +1,7 @@
 import { advancePuzzleProduction } from '../../data/puzzleProduction';
 import { normalizeMoonstones, rewardMoonBuilding } from '../../data/moonstones';
 import { normalizePersonalisation } from '../../data/townPersonalisation';
+import { commissionStatus } from '../../data/commissions';
 import { PERSONAL_AREAS, areaUnlocked, monumentWork } from '../../data/townLandmarks';
 import { CREST_EMBLEM_IDS } from '../../data/townCrests';
 import { normalizePresentations } from '../../data/townPresentations';
@@ -475,6 +476,9 @@ export function buildingIndicators(
   // A finished monument level waits for its unveiling, like a finished building.
   for (const area of PERSONAL_AREAS)
     if (areaUnlocked(town, area) && monumentWork(town, area)?.ready) indicators[area.id] = 'ready';
+  // A commission's letter hangs over its site until the player chooses what it becomes.
+  for (const { site, state } of commissionStatus(town))
+    if (state === 'request') indicators[site] = 'commission';
   if (eraGate(town).available) indicators.square = 'era';
   if (canRingTownBell(town) && !constructionReady(town.projects.square)) indicators.square = 'bell';
   return indicators;

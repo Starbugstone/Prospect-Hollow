@@ -1,4 +1,5 @@
 import { BUILDING_BY_ID } from '../../data/town';
+import { commissionFor } from '../../data/commissions';
 import { ERA_BY_ID } from '../../data/eras';
 import {
   AREA_BY_ID,
@@ -106,7 +107,7 @@ const stageOf = (town, area) => ({
 // A site's wording on the Moon's map labels, its card's badge and the Build tab's rows.
 const MONUMENT = {
   map: {
-    open: () => t('Choose a design'),
+    open: (town, area) => t(commissionFor(area.id) ? 'New commission' : 'Choose a design'),
     work: () => t('Under construction'),
     ready: () => t('Ready to unveil'),
     built: () => t('Monument'),
@@ -117,14 +118,17 @@ const MONUMENT = {
       area.opens
         ? t('Opens at {building} level {level}', monumentOpening(area))
         : t('Opens in {era}', { era: t(ERA_BY_ID[area.era].label) }),
-    open: () => t('Open site · optional'),
+    open: (town, area) => t(commissionFor(area.id) ? 'New commission' : 'Open site · optional'),
     work: () => t('Under construction'),
     ready: () => t('Ready to unveil'),
     built: (town, area) => t('Stage {stage} of {maximum}', stageOf(town, area)),
     timeless: () => t('Monument'),
   },
   list: {
-    open: (town, area) => t('Open site · {count} designs', { count: area.choices.length }),
+    open: (town, area) =>
+      commissionFor(area.id)
+        ? t('New commission · {count} outcomes', { count: area.choices.length })
+        : t('Open site · {count} designs', { count: area.choices.length }),
     work: (town, area) => {
       const work = monumentWork(town, area);
       return t(

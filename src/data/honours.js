@@ -288,6 +288,7 @@ export const NON_MONUMENT_HONOURS = Object.freeze({
   // Landmark Patron's shipped sites are fixed. Commissions get their own family once the
   // first arc of them is complete enough to set fixed goals.
   'earthlight-conservatory': 'Commissions earn their own family with the first complete arc.',
+  'homecoming-commons': 'Commissions earn their own family with the first complete arc.',
 });
 function obstacle(id) {
   return OBSTACLES.find((entry) => entry.id === id) ?? { present: () => false };

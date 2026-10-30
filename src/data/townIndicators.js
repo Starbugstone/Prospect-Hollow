@@ -10,6 +10,7 @@ export const TOWN_ACTIONS = Object.freeze({
   tnt: { icon: '/art/powers/tnt.svg', scale: 1.4 },
   bell: { icon: '/art/rewards/town-bell.svg', scale: 1, class: 'raid-bell-ready' },
   era: { icon: '/art/rewards/era-compass.svg', scale: 1, class: 'town-era-icon' },
+  commission: { icon: '/art/rewards/commission-letter.svg', scale: 1.2 },
 });
 
 // The accessible name of a place's action icon on every settlement map. A monument
@@ -27,6 +28,7 @@ export function buildingActionLabel(town, id, indicator) {
     tnt: () => t('Collect 1 TNT'),
     bell: () => t('Ring town bell · halve the loss'),
     era: () => t('Advance to the next era'),
+    commission: () => t('Read the request for {site}', { site: t(area.label) }),
   };
   return labels[indicator]?.();
 }

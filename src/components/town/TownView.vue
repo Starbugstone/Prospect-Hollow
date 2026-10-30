@@ -56,6 +56,11 @@
           ></span>
           <b>{{ projectGoal.done }}/{{ projectGoal.total }}</b>
         </button>
+        <TownCommissionGoal
+          v-if="commissionGoal && !playingRaid"
+          :status="commissionGoal"
+          @open="selectBuilding(commissionGoal.site)"
+        />
         <p
           v-if="(campaign.saveWarning || campaign.inventoryNotice) && !playingRaid"
           role="status"
@@ -344,6 +349,19 @@
             </button>
           </section>
         </div>
+        <section
+          v-if="valleyLetters.length"
+          class="town-story-letters"
+          aria-labelledby="town-valley-letters-heading"
+        >
+          <h2 id="town-valley-letters-heading">{{ t('Letters from the valley') }}</h2>
+          <ul>
+            <li v-for="letter in valleyLetters" :key="letter.id" :data-moon-letter="letter.id">
+              <small>{{ t(letter.from) }}</small>
+              <p>{{ t(letter.text) }}</p>
+            </li>
+          </ul>
+        </section>
         <section
           v-if="newHollowLetters.length"
           class="town-story-letters"
@@ -749,7 +767,9 @@ import TownIcon from './TownIcon.vue';
 import TownRaidNotice from './TownRaidNotice.vue';
 import TownResourceCollection from './TownResourceCollection.vue';
 import TownMoonstoneBalance from './TownMoonstoneBalance.vue';
+import { commissionFor, commissionLetters, commissionStatus } from '../../data/commissions';
 import { moonLetters } from '../../data/moonSettlement';
+import TownCommissionGoal from './TownCommissionGoal.vue';
 import TownNextStep from './TownNextStep.vue';
 import TownBuildRow from './TownBuildRow.vue';
 import TownTabBar from './TownTabBar.vue';
@@ -908,6 +928,19 @@ const projectGoal = computed(() => {
   const open = townProjects(town.value).filter((project) => project.hammers && !project.complete);
   return open.find((project) => project.id === campaign.townProjectFocus) ?? open[0] ?? null;
 });
+// The commission the player should see first: the map's pill and its announcement.
+const commissionGoal = computed(() =>
+  tutorial.value ? null : (commissionStatus(town.value)[0] ?? null),
+);
+watch(
+  () => (commissionGoal.value?.state === 'request' ? commissionGoal.value.site : null),
+  (site) => {
+    if (site)
+      announcement.value = t('A new commission has arrived: {site}.', {
+        site: t(AREA_BY_ID[site].label),
+      });
+  },
+);
 // Build lists the settlement on screen first (the valley or New Hollow), in the same
 // order and with the same tap that buys, finishes or opens a place in both. Each row
 // carries its place's settlement (settlements.js).
@@ -991,37 +1024,43 @@ function replayUnveiling(id) {
     showMonument(id, Math.min(areaStage(town.value, area), areaMaximum(town.value, area)));
 }
 const monumentSites = computed(() =>
-  PERSONAL_AREAS.filter((area) => areaUnlocked(town.value, area)).map((area) => {
-    const choice = areaChoice(town.value, area);
-    if (!choice) {
-      const prices = area.choices.map((id) => landmarkPrice(area, id, 1));
+  [
+    ...PERSONAL_AREAS.filter((area) => commissionFor(area.id)),
+    ...PERSONAL_AREAS.filter((area) => !commissionFor(area.id)),
+  ]
+    .filter((area) => areaUnlocked(town.value, area))
+    .map((area) => {
+      const choice = areaChoice(town.value, area);
+      if (!choice) {
+        const prices = area.choices.map((id) => landmarkPrice(area, id, 1));
+        return {
+          id: area.id,
+          settlement: area.settlement,
+          name: area.label,
+          icon: landmarkPayment(town.value, area, 0).icon,
+          colour: '#c9a35a',
+          status: monumentStatus(town.value, area.id, { context: 'list' }).text,
+          price: Math.min(...prices),
+          from: new Set(prices).size > 1,
+        };
+      }
+      const upgrade = landmarkOffer(town.value, area, choice);
       return {
         id: area.id,
         settlement: area.settlement,
-        name: area.label,
+        name: LANDMARK_BY_ID[choice].label,
         icon: landmarkPayment(town.value, area, 0).icon,
-        colour: '#c9a35a',
+        colour: LANDMARK_BY_ID[choice].colour,
+        // The site's shared status, as its card and the Moon's labels read it.
         status: monumentStatus(town.value, area.id, { context: 'list' }).text,
-        price: Math.min(...prices),
-        from: new Set(prices).size > 1,
+        price: upgrade?.price ?? 0,
+        from: false,
       };
-    }
-    const upgrade = landmarkOffer(town.value, area, choice);
-    return {
-      id: area.id,
-      settlement: area.settlement,
-      name: LANDMARK_BY_ID[choice].label,
-      icon: landmarkPayment(town.value, area, 0).icon,
-      colour: LANDMARK_BY_ID[choice].colour,
-      // The site's shared status, as its card and the Moon's labels read it.
-      status: monumentStatus(town.value, area.id, { context: 'list' }).text,
-      price: upgrade?.price ?? 0,
-      from: false,
-    };
-  }),
+    }),
 );
 // Each Moon building sends one letter home; the Story tab keeps them.
 const newHollowLetters = computed(() => moonLetters(town.value));
+const valleyLetters = computed(() => commissionLetters(town.value, HOME_SETTLEMENT));
 const nextMonumentSite = computed(() =>
   PERSONAL_AREAS.find((area) => !areaUnlocked(town.value, area)),
 );
@@ -1124,7 +1163,11 @@ const dialogTitle = computed(() =>
         built: built.value,
         total: currentEraPlots.value.length,
       })
-    : t(DIALOG_TITLES[dialogMode.value] ?? 'Your town'),
+    : t(
+        dialogMode.value === 'monument' && commissionFor(monumentSite.value)
+          ? 'Commission'
+          : (DIALOG_TITLES[dialogMode.value] ?? 'Your town'),
+      ),
 );
 const villageStats = computed(() => {
   const { water, food, happiness: happy } = needs.value;
