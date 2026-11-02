@@ -1,6 +1,7 @@
 import { toRaw } from 'vue';
 import { advanceOreOrders } from '../../game/engine/ChapterMechanics';
 import { recoverBoard } from '../../game/engine/BoardRecovery';
+import { gameRandom } from '../../game/engine/gameRandom';
 import { isPlayableCell } from '../../game/engine/BoardTopology';
 import { BASE_GEM_TYPES } from '../../game/engine/GemFactory';
 import { MatchEngine } from '../../game/engine/MatchEngine';
@@ -20,6 +21,7 @@ import {
 import { tallyContinuousMine, tallySteps } from '../../data/honours';
 import { useInventoryStore } from '../inventoryStore';
 import { plain, workingTiles } from './boardData';
+import { logRunAction, muteRunLog } from './runLog';
 import { storeTimers } from './storeTimers';
 
 const matchEngine = new MatchEngine();
@@ -142,6 +144,8 @@ export async function activatePower(store, bonusName, index, consume = false) {
     store.clearBonusPreview(true);
     return false;
   }
+  // The free rescue sweep is automatic: it follows from the moves, so it isn't an input.
+  if (!rescue) logRunAction(store, { type: 'power', name: bonusName, index });
   store.powerInUse = consume ? bonusName : null;
   store.bonusPreview = { indices: [], key: null };
   store.renderer?.animator?.fadeBonusPreview?.();
@@ -256,7 +260,11 @@ export function activateOneTimeBonus(store, bonusName, { consume = false } = {})
     return false;
   store.clearBonusPreview(true);
   const { boardCols: cols, boardRows: rows } = store;
-  return store._activatePower(bonusName, oneTimeOrigin(store, bonusName, cols, rows), consume);
+  // Choosing the origin rolls the dice, so the replay has to choose it the same way.
+  logRunAction(store, { type: 'one-time', name: bonusName });
+  return muteRunLog(store, () =>
+    store._activatePower(bonusName, oneTimeOrigin(store, bonusName, cols, rows), consume),
+  );
 }
 
 // Shaped boards have void cells, which cannot start a power. Clear Row picks a row
@@ -272,7 +280,7 @@ function oneTimeOrigin(store, bonusName, cols, rows) {
     const rowStarts = [];
     for (const i of playable) rowStarts[Math.floor(i / cols)] ??= i;
     const starts = rowStarts.filter((i) => i !== undefined);
-    return starts[Math.floor(Math.random() * starts.length)];
+    return starts[Math.floor(gameRandom() * starts.length)];
   }
   if (isPlayableCell(tiles[center])) return center;
   const distance = (i) =>
@@ -300,6 +308,7 @@ export async function resolveSwap(store, aIndex, bIndex, { activateInPlace = fal
     ? matchEngine.evaluateActivation(board, cols, rows, aIndex, tiles)
     : matchEngine.evaluateSwap(board, cols, rows, aIndex, bIndex, tiles);
   if (!evaluation.matches.length) return store.rejectSwap(aIndex, bIndex, session);
+  logRunAction(store, { type: 'swap', a: aIndex, b: bIndex, inPlace: activateInPlace });
   const animator = store.renderer?.animator;
   animator?.clearQueuedSwapHighlight();
   return runMove(store, 'Error in resolveSwap:', async () => {
@@ -510,11 +519,13 @@ export function shuffleBoard(store, { recoveryBoard = null, consume = null } = {
   const board = boardOf(store);
   const tiles = tilesOf(store);
   const nextBoard = [...(recoveryBoard ?? board)];
+  // Automatic reshuffles of a dead board follow from the moves; only the player's own is an input.
+  if (consume) logRunAction(store, { type: 'shuffle' });
   const movable = nextBoard
     .map((gem, index) => (canSwapGem(gem, tiles[index]) ? index : -1))
     .filter((index) => index >= 0);
   for (let i = recoveryBoard ? 0 : movable.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(gameRandom() * (i + 1));
     const a = movable[i],
       b = movable[j];
     [nextBoard[a], nextBoard[b]] = [nextBoard[b], nextBoard[a]];

@@ -17,6 +17,9 @@ const ARCADE_CHAINS = ['fusion', 'multi-match'];
 // move resolution and Phaser binding live in ./game and receive this store.
 export const useGameStore = defineStore('game', {
   state: () => ({
+    // The running puzzle's seed and moves, for replaying it (see game/runLog.js).
+    runLog: null,
+    runLogMuted: false,
     sessionActive: false,
     sessionVersion: 0,
     introTaskSession: null,
@@ -104,8 +107,8 @@ export const useGameStore = defineStore('game', {
     bootstrap() {
       level.bootstrap(this);
     },
-    startLevel(levelId, mode) {
-      return level.startLevel(this, levelId, mode);
+    startLevel(levelId, mode, options) {
+      return level.startLevel(this, levelId, mode, options);
     },
     exitLevel() {
       level.exitLevel(this);

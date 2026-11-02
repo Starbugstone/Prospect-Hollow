@@ -148,6 +148,10 @@
         <p v-if="saveError" role="alert" class="save-error">{{ t(saveError) }}</p>
         <p v-if="saveStatus" role="status">{{ t(saveStatus) }}</p>
       </section>
+      <button v-if="canCopyRun" type="button" class="account-open" @click="copyRun">
+        {{ t('Copy this puzzle for a bug report') }}
+      </button>
+      <p v-if="runCopied" role="status">{{ t('Puzzle copied. Paste it into your bug report.') }}</p>
       <div class="keyboard-guide">
         <h3>{{ t('Keyboard controls') }}</h3>
         <p>
@@ -183,6 +187,9 @@ import { townStorage } from '../services/townStorage';
 import { computed, inject, ref, watch } from 'vue';
 import { HONOUR_NOTICE_MODES, useSettingsStore } from '../stores/settingsStore';
 import { useCampaignStore } from '../stores/campaignStore';
+import { useGameStore } from '../stores/gameStore';
+import { settledRunReport } from '../stores/game/runLog';
+import { debugToolsAllowed } from '../services/debugTools';
 import { downloadSaveFile, saveFileName } from '../services/saveTransfer';
 import { privacyUrl } from '../services/appRoute';
 import { useSaveImport } from '../composables/useSaveImport';
@@ -221,6 +228,19 @@ function exportProgress() {
     saveStatus.value = 'Save file download started.';
   } catch {
     saveError.value = 'Your save could not be exported. Please try again.';
+  }
+}
+// Preprod only, like prospectDebug: the running puzzle's seed and moves, which replay it exactly.
+const game = useGameStore();
+const canCopyRun = computed(() => debugToolsAllowed() && !!game.runLog);
+const runCopied = ref(false);
+async function copyRun() {
+  const text = JSON.stringify(await settledRunReport(game));
+  try {
+    await navigator.clipboard.writeText(text);
+    runCopied.value = true;
+  } catch {
+    window.prompt(t('Copy this puzzle for a bug report'), text);
   }
 }
 const confirmReset = ref(false);

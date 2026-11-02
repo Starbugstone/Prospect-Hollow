@@ -148,7 +148,8 @@ function protectedRaid(campaign, overrides = {}) {
 describe('The run tally', () => {
   it('counts committed swaps, powers and post-shuffle matches, never the rescue sweep', async () => {
     const game = gameStore();
-    expect(game.startLevel(1)).toBe(true);
+    // A fixed seed: on about 2% of random boards boardWithMatch can't make its match.
+    expect(game.startLevel(1, undefined, { seed: 1 })).toBe(true);
     const committed = vi.spyOn(game, 'commitResolution');
     await swap(game);
     const afterSwap = total(game.honourTally.gems);

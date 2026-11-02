@@ -1,3 +1,4 @@
+import { gameRandom } from './gameRandom.js';
 import { BOARD_BONUSES, isAnchored } from './TileRules.js';
 import { GEM_TYPES } from './GemFactory.js';
 import { dominantGemType, getBonusFusion } from './BonusFusion.js';
@@ -223,9 +224,9 @@ export class BonusActivator {
         : [],
     );
     if (crates.length) {
-      const count = context?.randomCrates ? 1 + Math.floor(Math.random() * crates.length) : 1;
+      const count = context?.randomCrates ? 1 + Math.floor(gameRandom() * crates.length) : 1;
       for (let n = 0; n < count; n++) {
-        const pick = context?.randomCrates ? Math.floor(Math.random() * crates.length) : 0;
+        const pick = context?.randomCrates ? Math.floor(gameRandom() * crates.length) : 0;
         cleared.add(crates.splice(pick, 1)[0]);
       }
     }

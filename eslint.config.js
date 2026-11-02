@@ -87,6 +87,22 @@ export default [
     rules: { 'no-restricted-imports': 'off' },
   },
   {
+    // Puzzles replay from a seed and the player's moves: rules roll gameRandom. Animation may use Math.random.
+    files: ['src/game/engine/**/*.js', 'src/stores/game/**/*.js'],
+    ignores: ['src/game/engine/gameRandom.js'],
+    rules: {
+      'no-restricted-properties': [
+        'error',
+        {
+          object: 'Math',
+          property: 'random',
+          message:
+            'Puzzle rules must replay from their seed: use gameRandom from src/game/engine/gameRandom.js.',
+        },
+      ],
+    },
+  },
+  {
     // The maps stay uncluttered (AGENTS.md, settlement maps): lists, dropdowns and
     // letters belong in the Build, Story or More tabs, never floating over a map.
     files: MAP_OVERLAY_FILES,

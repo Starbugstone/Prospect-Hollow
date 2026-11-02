@@ -1,3 +1,4 @@
+import { beginRunLog, endRunLog, resumeRunLog } from './runLog';
 import { levelConfig } from '../../game/engine/LevelGenerator';
 import { miningPayout } from '../../game/town/TownRules';
 import { BOARD_BONUSES, layerCount } from '../../game/engine/TileRules';
@@ -100,6 +101,7 @@ export function restoreHandoff(store, snapshot) {
       inputPaused: true,
     }),
   );
+  resumeRunLog(store);
   store.playClock.reset();
   store.playClock.elapsed = Math.max(0, snapshot.elapsedMs);
   store.playClock.started = !!snapshot.clockStarted;
@@ -139,7 +141,7 @@ export function resetRunPresentation(store) {
   store.reshuffleNotice = null;
 }
 
-export function startLevel(store, levelId, mode = 'normal') {
+export function startLevel(store, levelId, mode = 'normal', { seed } = {}) {
   performanceMark('mine-intent');
   const campaign = useCampaignStore();
   if (!['normal', 'continuous'].includes(mode) || !campaign.canPlay(levelId, mode)) return false;
@@ -147,6 +149,7 @@ export function startLevel(store, levelId, mode = 'normal') {
   if (!config) return false;
   store.playMode = mode;
   store.runId = campaign.beginRun(mode, levelId);
+  beginRunLog(store, levelId, mode, seed);
   boardReadiness(store).cancel();
   store.sessionVersion += 1;
   store.renderer?.animator?.clear();
@@ -192,6 +195,7 @@ export function startLevel(store, levelId, mode = 'normal') {
 
 export function exitLevel(store) {
   boardReadiness(store).cancel();
+  endRunLog(store);
   const campaign = useCampaignStore();
   campaign.endRun(store.runId);
   campaign.settlePendingChests();
