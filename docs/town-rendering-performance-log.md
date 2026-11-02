@@ -487,3 +487,20 @@ Remaining hotspots in these measurements:
 
 These are headless numbers. Physical phones still need a pass with `prospectDebug.townTimings()`
 and `townFrameStats()`.
+
+## Frame and download budgets, November 2026
+
+`testing/browser/frame-budget.cjs` holds the game's own script time per frame on a dev build with a
+375×690 viewport and a 4× CPU slowdown. The first-download figure comes from the production build.
+SwiftShader draws on the CPU, so these guard against regressions and don't predict a phone.
+
+| Scene                              | Script per frame | Ceiling | Frame interval p50 / p95 |
+| ---------------------------------- | ---------------- | ------- | ------------------------ |
+| Level 13                           | 3.1–3.9 ms       | 12 ms   | 16.7 / 33.4 ms           |
+| Level 60                           | 5.1 ms           | 12 ms   | 16.7 / 33.4 ms           |
+| Level 376                          | 5.8–7.0 ms       | 12 ms   | 16.7 / 33.4–50 ms        |
+| Level 397                          | 4.4–5.5 ms       | 12 ms   | 16.7 / 33.4 ms           |
+| Twin Hollows town, camera orbiting | 24.7 ms          | 35 ms   | 50.1 / 149.9 ms          |
+
+First download: 443 kB gzipped against a 480 kB ceiling. The town at this slowdown exceeds a 60 fps
+frame on script alone, which matches earlier entries in this log; its ceiling stops it getting worse.
