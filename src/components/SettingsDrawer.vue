@@ -148,7 +148,7 @@
         <p v-if="saveError" role="alert" class="save-error">{{ t(saveError) }}</p>
         <p v-if="saveStatus" role="status">{{ t(saveStatus) }}</p>
       </section>
-      <button v-if="canCopyRun" type="button" class="account-open" @click="copyRun">
+      <button v-if="canCopyRun" type="button" class="text-button" @click="copyRun">
         {{ t('Copy this puzzle for a bug report') }}
       </button>
       <p v-if="runCopied" role="status">{{ t('Puzzle copied. Paste it into your bug report.') }}</p>
