@@ -135,7 +135,8 @@ export function createIntegrityFixtures() {
       (campaign) => {
         const game = useGameStore();
         game.bootstrap();
-        expectSuccess(game.startLevel(1), 'long victory start');
+        // A given seed, so starting the level doesn't draw from the flow's own random sequence.
+        expectSuccess(game.startLevel(1, 'normal', { seed: 1 }), 'long victory start');
         game.moves = 175;
         game.remainingLayers = 0;
         game.playClock.started = true;
