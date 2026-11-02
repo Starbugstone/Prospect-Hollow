@@ -45,8 +45,8 @@ are independent; puzzle moves remain unlimited.
 
 ## Contributor references
 
-- [Development workflow](development-workflow.md): acceptance checks, prevention of recurring bugs,
-  state modeling and performance evidence.
+- [Development workflow](development-workflow.md): acceptance checks, replaying puzzle failures,
+  prevention of recurring bugs, state models and performance budgets.
 - [Gameplay verification map](../.agents/skills/verify-prospect-hollow/SKILL.md):
   isolated Docker startup, doctor, four browser journeys and retained evidence.
 - [Contributor rules](../AGENTS.md) and [developer scripts](../scripts/README.md).

@@ -10,12 +10,15 @@ formatting checks rather than a gameplay run. All local checks still run in Dock
 - When fixing a recurring mistake or protecting a permanent rule, add the smallest
   useful lint rule, shared contract or regression check. Demonstrate that it rejects
   the failure and accepts valid behavior; prefer behavioral checks over source-text matching.
-- Preserve reproducible seeds and action sequences for simulation bugs.
+- Reproduce puzzle bugs from a run log (seed and moves; Settings on preprod copies one) and keep it as the regression. Puzzle rules roll `gameRandom`, never `Math.random`; ESLint enforces it.
 - For consequential state transitions, write the invariant and check relevant
-  interleavings. Use a bounded formal model when ordinary tests leave material gaps;
-  replay counterexamples against the implementation before calling them game bugs.
-- Profile before optimizing frame code. Preserve build budgets, use the project's
-  browser verification recipes for changed journeys, and report checks actually run.
+  interleavings. Major state machines get a checked model in `docs/models/` (run
+  `bash scripts/check-models.sh`); update it with the transitions it covers, and replay
+  counterexamples against the implementation before calling them game bugs.
+- Profile before optimizing frame code. Preserve build budgets, including the gzipped
+  first download, and `testing/browser/frame-budget.cjs`. Browser measurements are not
+  phone measurements. Use the project's browser verification recipes for changed
+  journeys, and report checks actually run.
 
 ## Permanent gameplay rule: no move limits
 

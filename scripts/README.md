@@ -10,7 +10,8 @@ scripts run with `blender --background --python <script>`.
 | -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
 | `split-mesh-catalogs.mjs`                                | Splits the Blender mesh exports into bounded lazy chunks before dev/test/build.                           |
 | `generate-footprints.mjs`, `footprint-generator.js`      | Builds building footprints; `--check` fails on drift (`npm run check:footprints`).                        |
-| `check-bundle-budget.mjs`                                | Fails the build when a JavaScript chunk exceeds its budget.                                               |
+| `check-bundle-budget.mjs`                                | Fails the build when a JavaScript chunk or the gzipped first download exceeds its budget.                 |
+| `check-models.sh`                                        | Model-checks `docs/models` with TLC in Docker: every model holds and every deliberate break is caught.    |
 | `create-era-demo.mjs`                                    | Writes disposable demo saves for each era (`npm run demo:eras`).                                          |
 | `export-public-content.mjs`                              | Writes the public-town allowlist and the honours and distinctions catalog the server verifies.            |
 | `export-honour-levels.mjs`                               | Writes the mine elements each level uses for the museum's honour icons; `--check` detects drift.          |
