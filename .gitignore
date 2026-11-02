@@ -37,3 +37,6 @@ __pycache__/
 
 # Reproducible bounded mesh chunks; authoring exports live in src/assets.
 src/assets/meshes/
+
+# Downloaded model checker
+.cache/
