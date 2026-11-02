@@ -1,5 +1,22 @@
 # Prospect Hollow contributor rules
 
+## Default development workflow
+
+Follow [the game development workflow](docs/development-workflow.md) for changes.
+Use the stages relevant to the task; documentation changes need content, link and
+formatting checks rather than a gameplay run. All local checks still run in Docker.
+
+- Define the player-visible result and a check that can fail before implementing.
+- When fixing a recurring mistake or protecting a permanent rule, add the smallest
+  useful lint rule, shared contract or regression check. Demonstrate that it rejects
+  the failure and accepts valid behavior; prefer behavioral checks over source-text matching.
+- Preserve reproducible seeds and action sequences for simulation bugs.
+- For consequential state transitions, write the invariant and check relevant
+  interleavings. Use a bounded formal model when ordinary tests leave material gaps;
+  replay counterexamples against the implementation before calling them game bugs.
+- Profile before optimizing frame code. Preserve build budgets, use the project's
+  browser verification recipes for changed journeys, and report checks actually run.
+
 ## Permanent gameplay rule: no move limits
 
 The user has explicitly required unlimited puzzle moves. All contributors and
