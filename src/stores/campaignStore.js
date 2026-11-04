@@ -358,7 +358,7 @@ export const useCampaignStore = defineStore('campaign', {
       (state) =>
       (now = Date.now()) =>
         state.town.buildings.blacksmith > 0 &&
-        state.town.forge.charge === 1 &&
+        state.town.forge.charge >= 1 &&
         state.powers.find((power) => power.id === 'tnt').quantity < bonusCapacity(state.town) &&
         !collectionCooldownRemaining(state.town, 'blacksmith', now),
     canReplay: (state) => state.town.buildings.museum > 0,
@@ -585,17 +585,21 @@ export const useCampaignStore = defineStore('campaign', {
     collectForgeTNT(now = Date.now()) {
       if (!Number.isSafeInteger(now) || now < 0 || this.activeRun || !this.canCollectForge(now))
         return false;
+      const amount = Math.min(
+        this.town.forge.charge,
+        bonusCapacity(this.town) - this.powers.find((power) => power.id === 'tnt').quantity,
+      );
       return this.commit(
         {
           town: {
             ...this.town,
-            forge: { progress: 0, charge: 0 },
+            forge: { ...this.town.forge, charge: this.town.forge.charge - amount },
             lastCollections: { ...this.town.lastCollections, blacksmith: now },
           },
           powers: this.powers.map((power) =>
-            power.id === 'tnt' ? { ...power, quantity: power.quantity + 1 } : power,
+            power.id === 'tnt' ? { ...power, quantity: power.quantity + amount } : power,
           ),
-          honours: creditCounter(this.honours, 'forge'),
+          honours: creditCounter(this.honours, 'forge', amount),
         },
         { kind: 'forge-collect', data: { at: now } },
       );
@@ -651,14 +655,16 @@ export const useCampaignStore = defineStore('campaign', {
       const best = Math.max(previous.score, score);
       const claim = tally ? { version: 1, ...runClaim(tally), mine: { ...tally.mine } } : null;
       const changed = claim && JSON.stringify(claim) !== JSON.stringify(run.honours);
-      // Both lifecycles observe the unchanged cumulative jewels. A full workshop
-      // still journals observations so later collection cannot bank discarded gems.
-      const workshopObservation =
-        !!this.town.buildings.moonstoneWorkshop &&
-        (previous.moonstoneGems ?? 0) <
-          MOONSTONE_ECONOMY.continuousGemsPerPuzzle * MOONSTONE_ECONOMY.continuousPuzzlesPerLevel &&
-        observed > (run.moonstoneJewels ?? 0);
-      const receipt = delta || workshopObservation || changed || (claim && best > previous.score);
+      // Observe gems before construction too: building during this run must not
+      // retroactively credit gems collected while the workshop was unbuilt.
+      const unbuiltObservation =
+        !this.town.buildings.moonstoneWorkshop && observed > (run.moonstoneJewels ?? 0);
+      const receipt =
+        delta ||
+        unbuiltObservation ||
+        stock.gems !== (previous.moonstoneGems ?? 0) ||
+        changed ||
+        best > previous.score;
       if (!receipt && previous.score === best && this.continuousRecords[id]) return true;
       return this.commit(
         {

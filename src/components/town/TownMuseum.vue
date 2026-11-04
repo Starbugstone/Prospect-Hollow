@@ -43,7 +43,7 @@
     >
       {{
         t(
-          'Your workshop gains one puzzle of production per {gems} gems, up to {puzzles} puzzles per level for the lifetime of your town. Collect its stock before it fills.',
+          'Your workshop gains one puzzle of production per {gems} gems, up to {puzzles} puzzles per level for the lifetime of your town.',
           {
             gems: MOONSTONE_ECONOMY.continuousGemsPerPuzzle,
             puzzles: MOONSTONE_ECONOMY.continuousPuzzlesPerLevel,

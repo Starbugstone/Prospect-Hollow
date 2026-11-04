@@ -24,7 +24,7 @@ export function buildingActionLabel(town, id, indicator) {
           })
         : t('Finish {building}', { building: t(BUILDING_BY_ID[id].shortName) }),
     coins: () => t('Collect {coins} coins', { coins: town.income.stored }),
-    tnt: () => t('Collect 1 TNT'),
+    tnt: () => t('Collect stored TNT'),
     bell: () => t('Ring town bell · halve the loss'),
     era: () => t('Advance to the next era'),
   };

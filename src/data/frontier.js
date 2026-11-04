@@ -69,7 +69,8 @@ export const FRONTIER_BUILDINGS = [
       'Complete the frontier workshop',
     ],
     benefits: FORGE_PRODUCTION_RUNS.map(
-      (runs) => `One TNT every ${runs} normal puzzles. Collect it to start the next cycle.`,
+      (runs) =>
+        `One TNT every ${runs} normal puzzles. Production never stops; collect the stored TNT any time.`,
     ),
     costs: [120, 220, 350, 700, 1750],
   },

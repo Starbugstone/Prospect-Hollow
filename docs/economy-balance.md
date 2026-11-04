@@ -12,6 +12,24 @@ reward change in this rerun: new v2 receipts pay **10 × mining depth**, while v
 retains **5 × depth** and unversioned receipts retain flat five. No further tuning
 is recommended from these measured patterns.
 
+### Unlimited production recheck (2026-11-04)
+
+Regenerated the 3,276 normal/continuous board samples and ran the integrated probe
+against both the pre-change source and unlimited workshop/forge storage, with
+identical inputs, using the method below (outputs stay local; `output/` is not
+committed). All **24 non-deferred trajectories are identical**, including every primary A/B/C
+result in the tables below. Production rates, sale prices and shipped honour
+requirements stay fixed.
+
+Only the three `C-deferred` trajectories change: three visits per old level can
+fill the former storage limit between ten-puzzle collections. Preserved workshop
+credits rise by 8 / 5 / 3 for seeds 1 / 2 / 3, and lifetime stones at puzzle 2,184
+rise by 18 / 9 / 12. Required town completion stays unchanged; seed 3 completes
+both monuments ten puzzles earlier (961 instead of 971), while seeds 1 / 2 stay
+at 941 / 931. The deferred figures below reflect this recheck. The separate
+Moonstone probe also preserves three formerly discarded stones for a collector
+visiting every 30 puzzles; see [the workshop calibration](moonstones.md#stored-workshop-balance-comparison-2026-11-04).
+
 ### Method and reproduction
 
 Board-sample base commit `9d00d5604c22c89aa994ac2842beeb0e7903822a`. The existing
@@ -173,10 +191,10 @@ when stones are sold or spent. No shipped honour requirement should be changed.
 - **Deferred continuous sensitivity:** postpone C's visits until workshop level 3,
   then visit one old level three times per normal puzzle, keeping the same lifetime
   visit count, collection cadence and half-sales rule. Both monuments finish at
-  **941 [931–971]**, versus town completion **660 [642–688]**. Accepted continuous
-  credits total **874 [865–877]**; earned/sold stones at 2,184 are
-  **2,432 [2,400–2,456] / 1,216 [1,200–1,228]**. Even the deferred pattern's
-  Twin-construction sales supply only **0.39%** of coins. There is no early-completion
+  **941 [931–961]**, versus town completion **660 [642–688]**. Accepted continuous
+  credits total **882 [868–882]**; earned/sold stones at 2,184 are
+  **2,450 [2,412–2,465] / 1,225 [1,206–1,232]**. Even the deferred pattern's
+  Twin-construction sales supply **less than 0.5%** of coins in every seed. There is no early-completion
   or coin-source inversion flag.
 
 Historical v1 comparison (same board samples and patterns): C opened Twin Hollows

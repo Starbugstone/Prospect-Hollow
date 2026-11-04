@@ -12,7 +12,7 @@
     <p>
       {{
         t(
-          'Continuous play: every {gems} gems advances production by one puzzle, up to {puzzles} puzzles per level for the lifetime of your town. Gems collected while storage is full do not count.',
+          'Continuous play: every {gems} gems advances production by one puzzle, up to {puzzles} puzzles per level for the lifetime of your town.',
           {
             gems: MOONSTONE_ECONOMY.continuousGemsPerPuzzle,
             puzzles: MOONSTONE_ECONOMY.continuousPuzzlesPerLevel,
@@ -22,20 +22,17 @@
     </p>
     <p>
       {{
-        t('Stored {count} / {capacity}', {
+        t('Stored {count}', {
           count: town.moonstoneProduction.stored,
-          capacity: moonstoneCapacity(town),
         })
       }}
     </p>
     <p>
       {{
-        town.moonstoneProduction.stored >= moonstoneCapacity(town)
-          ? t('Storage full. Collect moonstones to resume production.')
-          : t('Production: {count}/{total} puzzles', {
-              count: town.moonstoneProduction.progress,
-              total: MOONSTONE_ECONOMY.runs,
-            })
+        t('Production: {count}/{total} puzzles', {
+          count: town.moonstoneProduction.progress,
+          total: MOONSTONE_ECONOMY.runs,
+        })
       }}
     </p>
     <button
@@ -110,7 +107,7 @@
 <script setup>
 import { ref } from 'vue';
 import { number, t } from '../../i18n';
-import { MOONSTONE_ECONOMY, moonstoneCapacity, sellMoonstoneBalance } from '../../data/moonstones';
+import { MOONSTONE_ECONOMY, sellMoonstoneBalance } from '../../data/moonstones';
 import TownMoonstoneBalance from './TownMoonstoneBalance.vue';
 import TownIcon from './TownIcon.vue';
 const props = defineProps({

@@ -212,7 +212,6 @@ final class SaveIntegrity
         if (
             !is_array($moonstones) ||
             ($moonstones['version'] ?? null) !== 2 ||
-            !self::integer($moonstones['storageBatches'] ?? null, 1) ||
             !self::integer($moonstones['continuousGemsPerPuzzle'] ?? null, 1) ||
             !self::integer($moonstones['continuousPuzzlesPerLevel'] ?? null, 1) ||
             !self::integer($moonstones['runs'] ?? null, 1) ||
@@ -381,12 +380,7 @@ final class SaveIntegrity
                             $town['buildings']['moonstoneWorkshop'] ?? 0,
                         ) ||
                         ($production['charge'] && $production['progress'])
-                    : !self::integer(
-                        $production['stored'] ?? null,
-                        0,
-                        ($town['buildings']['moonstoneWorkshop'] ?? 0) *
-                            $this->rules['economy']['moonstones']['storageBatches'],
-                    ))
+                    : !self::integer($production['stored'] ?? null))
             ) {
                 self::invalid('town.moonstones');
             }
@@ -612,7 +606,7 @@ final class SaveIntegrity
             array_key_exists('forge', $town) &&
             (!is_array($town['forge']) ||
                 !self::integer($town['forge']['progress'] ?? null, 0, 19) ||
-                !self::integer($town['forge']['charge'] ?? null, 0, 1))
+                !self::integer($town['forge']['charge'] ?? null))
         ) {
             self::invalid('town.forge');
         }
@@ -2339,13 +2333,7 @@ final class SaveIntegrity
                             $gems,
                     );
                     $perPuzzle = $this->rules['economy']['moonstones']['continuousGemsPerPuzzle'];
-                    while (
-                        $remaining > 0 &&
-                        ($s['town']['buildings']['moonstoneWorkshop'] ?? 0) &&
-                        $s['town']['moonstoneProduction']['stored'] <
-                            $s['town']['buildings']['moonstoneWorkshop'] *
-                                $this->rules['economy']['moonstones']['storageBatches']
-                    ) {
+                    while ($remaining > 0 && ($s['town']['buildings']['moonstoneWorkshop'] ?? 0)) {
                         $used = min($remaining, $perPuzzle - ($gems % $perPuzzle));
                         $gems += $used;
                         $remaining -= $used;
@@ -2486,16 +2474,20 @@ final class SaveIntegrity
                 $this->clock($d['at'] ?? null, $context, $now);
                 if (
                     !$s['town']['buildings']['blacksmith'] ||
-                    $s['town']['forge']['charge'] !== 1 ||
+                    $s['town']['forge']['charge'] < 1 ||
                     $s['powers']['tnt'] >= $this->powerCapacity($s['town']) ||
                     $this->cooldown($s['town'], 'blacksmith', $d['at'])
                 ) {
                     self::mismatch('forge-collect');
                 }
-                $s['town']['forge'] = ['progress' => 0, 'charge' => 0];
+                $amount = min(
+                    $s['town']['forge']['charge'],
+                    $this->powerCapacity($s['town']) - $s['powers']['tnt'],
+                );
+                $s['town']['forge']['charge'] -= $amount;
                 $s['town']['lastCollections']['blacksmith'] = $d['at'];
-                $s['powers']['tnt']++;
-                $context['honours'] = Honours::credit($context['honours'], 'forge');
+                $s['powers']['tnt'] += $amount;
+                $context['honours'] = Honours::credit($context['honours'], 'forge', $amount);
                 break;
             case 'saloon-collect':
                 $this->accrue($s, $context, $d['at'] ?? null, $now);
@@ -3103,16 +3095,11 @@ final class SaveIntegrity
     }
     private function advanceForge(array &$town): void
     {
-        if (!$town['buildings']['blacksmith'] || $town['forge']['charge']) {
+        if (!$town['buildings']['blacksmith']) {
             return;
         }
         $town['forge']['progress']++;
-        if (
-            $town['forge']['progress'] >=
-            ($this->rules['economy']['forgeRuns'][$this->service($town, 'blacksmith') - 1] ?? 6)
-        ) {
-            $town['forge'] = ['progress' => 0, 'charge' => 1];
-        }
+        $this->settleForge($town);
     }
     private function offer(array $town, string $id): ?array
     {
@@ -3303,13 +3290,7 @@ final class SaveIntegrity
         }
         $level = $town['buildings']['moonstoneWorkshop'] ?? 0;
         $key = $version === 2 ? 'stored' : 'charge';
-        $capacity =
-            $level * ($version === 2 ? $this->rules['economy']['moonstones']['storageBatches'] : 1);
-        if (
-            !$level ||
-            ($version === 1 && $town['moonstoneProduction']['charge']) ||
-            $town['moonstoneProduction'][$key] >= $capacity
-        ) {
+        if (!$level || ($version === 1 && $town['moonstoneProduction']['charge'])) {
             return;
         }
         $town['moonstoneProduction']['progress']++;
@@ -3318,22 +3299,18 @@ final class SaveIntegrity
             $this->rules['economy']['moonstones']['runs']
         ) {
             $town['moonstoneProduction']['progress'] = 0;
-            $town['moonstoneProduction'][$key] = min(
-                $capacity,
-                $town['moonstoneProduction'][$key] + $level,
-            );
+            $town['moonstoneProduction'][$key] += $level;
         }
     }
     private function settleForge(array &$town): void
     {
-        if (
-            $town['buildings']['blacksmith'] &&
-            !$town['forge']['charge'] &&
-            $town['forge']['progress'] >=
-                ($this->rules['economy']['forgeRuns'][$this->service($town, 'blacksmith') - 1] ?? 6)
-        ) {
-            $town['forge'] = ['progress' => 0, 'charge' => 1];
+        if (!$town['buildings']['blacksmith']) {
+            return;
         }
+        $runs = $this->rules['economy']['forgeRuns'][$this->service($town, 'blacksmith') - 1] ?? 6;
+        $batches = intdiv($town['forge']['progress'], $runs);
+        $town['forge']['progress'] %= $runs;
+        $town['forge']['charge'] += $batches;
     }
     private function stock(array &$s, mixed $stock, mixed $visit, bool $refresh): void
     {

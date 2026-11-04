@@ -3,7 +3,7 @@ import { townStorage } from './townStorage';
 import { LEVEL_COUNT } from '../data/campaign';
 import { chestReward } from '../data/rewards';
 import { knownChestTerms } from '../data/economy';
-import { MOONSTONE_ECONOMY, MOONSTONE_VERSION, moonstoneCapacity } from '../data/moonstones';
+import { MOONSTONE_ECONOMY, MOONSTONE_VERSION } from '../data/moonstones';
 import { SUPPORTED_SAVE_SCHEMAS, isWholeNumber } from '../data/saveFormat';
 
 export const MAX_SAVE_FILE_BYTES = 5 * 1024 * 1024;
@@ -151,8 +151,7 @@ export function parseSaveFile(text) {
             (profile.town.buildings.moonstoneWorkshop ?? 0) ||
           (profile.town.moonstoneProduction.charge > 0 &&
             profile.town.moonstoneProduction.progress > 0)
-        : !isWholeNumber(profile.town.moonstoneProduction.stored) ||
-          profile.town.moonstoneProduction.stored > moonstoneCapacity(profile.town)))
+        : !isWholeNumber(profile.town.moonstoneProduction.stored)))
   )
     throw new Error('This save contains invalid moonstones.');
   if (file.town !== undefined) {

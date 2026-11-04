@@ -1,4 +1,3 @@
-import { moonstoneCapacity } from '../../data/moonstones';
 import { bonusCapacity } from '../../data/rewards';
 import { forgeProductionRuns } from '../../data/eras';
 import { serviceLevel } from '../../data/buildingProgression';
@@ -45,15 +44,6 @@ export function buildingBenefit(town, id, stage, modernization = false) {
       before: town.buildings.moonstoneWorkshop ?? 0,
       after: after.buildings.moonstoneWorkshop,
       suffix: '',
-      additional: [
-        {
-          icon: 'moonstone',
-          label: 'Moonstone storage capacity',
-          before: moonstoneCapacity(town),
-          after: moonstoneCapacity(after),
-          suffix: '',
-        },
-      ],
     };
   // Water, food, homes, visitors and comfort follow the shared needs model, so
   // modernizing the waterworks or a farm previews its real capacity.

@@ -9,7 +9,6 @@ export const MOONSTONE_VERSION = 2;
 export const MOONSTONE_ECONOMY = Object.freeze({
   version: MOONSTONE_VERSION,
   runs: 3,
-  storageBatches: 10,
   continuousGemsPerPuzzle: 300,
   continuousPuzzlesPerLevel: 3,
   saleCoins: 250,
@@ -23,8 +22,6 @@ export const createMoonstones = () => ({
 });
 // A deterministic state migration, never an additive reward command. Both devices
 // derive the same starting balance; sync chooses a complete checkpoint, never sums it.
-export const moonstoneCapacity = (town) =>
-  (town.buildings.moonstoneWorkshop ?? 0) * MOONSTONE_ECONOMY.storageBatches;
 export function normalizeMoonstones(saved, town) {
   const migrated = [1, MOONSTONE_VERSION].includes(saved?.moonstoneVersion);
   const earned = migrated ? count(saved.moonstonesEarned) : moonstoneKeepsakes(town);
@@ -36,12 +33,9 @@ export function normalizeMoonstones(saved, town) {
     moonstoneProduction: {
       progress: migrated ? Math.min(MOONSTONE_ECONOMY.runs - 1, count(production?.progress)) : 0,
       stored: migrated
-        ? Math.min(
-            saved.moonstoneVersion === 1
-              ? (town.buildings.moonstoneWorkshop ?? 0)
-              : moonstoneCapacity(town),
-            count(saved.moonstoneVersion === 1 ? production?.charge : production?.stored),
-          )
+        ? saved.moonstoneVersion === 1
+          ? Math.min(town.buildings.moonstoneWorkshop ?? 0, count(production?.charge))
+          : count(production?.stored)
         : 0,
     },
   };
@@ -71,7 +65,6 @@ export function advanceMoonstoneProduction(town) {
           town.moonstoneProduction,
           MOONSTONE_ECONOMY.runs,
           level,
-          moonstoneCapacity(town),
         ),
       }
     : town;
@@ -90,18 +83,13 @@ export function sellMoonstoneBalance(town, amount) {
     : null;
 }
 
-// Only eligible gems consume the level's lifetime allowance. Once full, discard
-// the rest of this settlement, preserving already earned partial credit.
+// Only gems collected after construction consume the level's lifetime allowance.
 export function advanceContinuousMoonstones(town, previousGems, jewels) {
   const perPuzzle = MOONSTONE_ECONOMY.continuousGemsPerPuzzle;
   const limit = perPuzzle * MOONSTONE_ECONOMY.continuousPuzzlesPerLevel;
   let gems = previousGems;
   let remaining = Math.min(jewels, limit - gems);
-  while (
-    remaining > 0 &&
-    town.buildings.moonstoneWorkshop &&
-    town.moonstoneProduction.stored < moonstoneCapacity(town)
-  ) {
+  while (remaining > 0 && town.buildings.moonstoneWorkshop) {
     const used = Math.min(remaining, perPuzzle - (gems % perPuzzle));
     gems += used;
     remaining -= used;
