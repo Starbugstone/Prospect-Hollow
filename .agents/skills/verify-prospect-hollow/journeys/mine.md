@@ -33,9 +33,8 @@ the configuration matrix to hide a layout failure.
 ## Continuous replay navigation
 
 `testing/browser/continuous-navigation.cjs` extends the mine checks with the museum
-journey. Use the standalone Docker Vite setup in
-[the development workflow](../../../../docs/development-workflow.md#hold-the-performance-and-download-budgets),
-then run:
+journey. Serve the game with a standalone Vite dev server in Docker on the host
+network, as for the other browser checks, then run:
 
 ```sh
 docker run --rm --network host --shm-size=1g --user "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD":/app -w /app mcr.microsoft.com/playwright:v1.64.1-noble sh -c 'npm i --no-save --silent --prefix /tmp/pw playwright@1.64.1 && PLAYWRIGHT_MODULE=/tmp/pw/node_modules/playwright node testing/browser/continuous-navigation.cjs'
