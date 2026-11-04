@@ -459,9 +459,6 @@
     width: 100%;
     min-height: 0;
   }
-  .app-shell.is-playing .continuous-exit {
-    display: none;
-  }
 }
 @media (max-width: 600px) {
   .next-step-buttons svg {

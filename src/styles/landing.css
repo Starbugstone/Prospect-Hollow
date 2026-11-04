@@ -367,8 +367,18 @@
   font-size: 15px;
   color: #f5dd99;
 }
-.continuous-coins {
+.continuous-coins,
+.continuous-gems {
   display: block;
+}
+.continuous-banner > div:first-child {
+  min-width: 0;
+}
+.continuous-actions {
+  display: flex;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 .continuous-exit {
   display: inline-flex;
