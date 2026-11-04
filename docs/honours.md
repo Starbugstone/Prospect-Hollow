@@ -107,7 +107,7 @@ and displayed on buildings like other Town Honours; it grants no coins or progre
   Continuous mine elements count consumed pieces only: delivered relics, fully lit lanterns,
   completed survey trails, filled orders, spent cores and broken gates, at most the authored
   count once per visit. Free recovery sweeps are excluded.
-- The forge counts successful `collectForgeTNT` commits only, never TNT from chests, the shop or
+- The forge counts TNT transferred by successful `collectForgeTNT` commits only, never TNT from chests, the shop or
   gifts. Storage tops out at 26, so higher ranks mean spending TNT along the way.
 - Town Guardian counts `markRaidSeen` of a protected, zero-loss incident.
 - Social counts come from the server through the owner's guestbook (`uniqueVisitors`,

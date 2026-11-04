@@ -1068,10 +1068,10 @@ export function creditRun(honours, { gems = {}, fusions = {}, mine = {} } = {}) 
     for (const [key, count] of Object.entries(countMap(map))) add(next.counts[name], key, count);
   return next;
 }
-// One forge collection or fully protected incident.
-export function creditCounter(honours, counter) {
+// TNT collected from the forge or fully protected incidents.
+export function creditCounter(honours, counter, amount = 1) {
   const next = normalizeHonours(honours);
-  next.counts[counter] = Math.min(MAX_COUNT, next.counts[counter] + 1);
+  next.counts[counter] = Math.min(MAX_COUNT, next.counts[counter] + safeCount(amount));
   return next;
 }
 // The owner's guestbook reports the server's social counts ({ visitors, travels });

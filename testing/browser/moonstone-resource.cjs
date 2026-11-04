@@ -41,7 +41,7 @@ window.getScene=()=>app._instance.subTree.component.setupState.scene;
       await page.getByRole('button', { name: 'Collect 12 moonstones', exact: true }).isDisabled(),
       true,
     );
-    await page.getByText('Stored 12 / 30', { exact: true }).waitFor();
+    await page.getByText('Stored 12', { exact: true }).waitFor();
     await page.getByRole('button', { name: 'Sell all', exact: true }).click();
     await page.getByText('Sell all 42 moonstones for 10,500 coins?', { exact: true }).waitFor();
     assert.deepEqual(await balance(), { coins: 1000, stones: 42, earned: 57 });

@@ -222,22 +222,24 @@ it('journals a long successful puzzle and chest claim with exact existing earnin
   expect(restored.integrity).toEqual(durable.integrity);
 });
 
-it('does not create commands for idle refreshes, guidance or score-only continuous matches', () => {
+it('journals score-only continuous improvements without commands for idle refreshes or guidance', () => {
   const campaign = useCampaignStore();
   campaign.town.buildings.museum = 1;
   const runId = campaign.beginRun('continuous', 1);
   expect(campaign.recordContinuous({ id: 1, runId, jewels: 250, score: 100 })).toBe(true);
   expect(campaign.continuousRecords[1].coins).toBe(CONTINUOUS_COIN_CAP);
-  const actions = campaign.integrity.actions;
-  for (let count = 1; count <= 200; count++) {
+  const actions = campaign.integrity.actions.length;
+  for (let count = 1; count <= 3; count++) {
     campaign.accrueSaloonIncome(Date.now() + count);
     expect(
       campaign.recordContinuous({ id: 1, runId, jewels: 250 + count, score: 100 + count }),
     ).toBe(true);
   }
+  const beforeVisit = campaign.integrity.actions.length;
   campaign.visitVillage();
-  expect(campaign.integrity.actions).toEqual(actions);
-  expect(campaign.continuousRecords[1].score).toBe(300);
+  expect(campaign.integrity.actions).toHaveLength(beforeVisit);
+  expect(beforeVisit).toBe(actions + 3);
+  expect(campaign.continuousRecords[1].score).toBe(103);
   expect(campaign.town.coins).toBe(CONTINUOUS_COIN_CAP);
 });
 

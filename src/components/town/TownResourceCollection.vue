@@ -89,7 +89,7 @@ const resources = {
     image: '/art/powers/tnt.svg',
     particles: 5,
     cue: 'jackpot',
-    message: 'Collected 1 TNT · added to your armory',
+    message: 'Collected {coins} TNT · added to your armory',
     suffix: ' TNT',
   },
 };

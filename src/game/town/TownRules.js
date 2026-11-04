@@ -112,9 +112,9 @@ export function normalizeTown(saved) {
   town.guestVip = normalizeGuestVip(saved?.guestVip);
   // Missing or malformed additions leave existing v3 receipts intact.
   const forge = saved?.forge;
-  town.forge.charge = forge?.charge === 1 ? 1 : 0;
+  town.forge.charge = intIn(forge?.charge, 0) ? forge.charge : 0;
   // Older saves can carry up to 19 puzzles from the previous forge cycle.
-  town.forge.progress = !town.forge.charge && intIn(forge?.progress, 0, 19) ? forge.progress : 0;
+  town.forge.progress = intIn(forge?.progress, 0, 19) ? forge.progress : 0;
   if (intIn(saved?.coins, 0)) town.coins = saved.coins;
   for (const building of BUILDINGS) {
     const stage = saved?.buildings?.[building.id];
@@ -302,23 +302,25 @@ export const foodCapacity = (town) => townSupply(town).food;
 export const waterCapacity = (town) => townSupply(town).water;
 export const housingCapacity = (town) => townSupply(town).housing;
 export function settleForgeProduction(town) {
-  if (
-    !town.buildings.blacksmith ||
-    town.forge.charge ||
-    town.forge.progress < forgeProductionRuns(serviceLevel(town, 'blacksmith'))
-  )
-    return town;
-  return { ...town, forge: { progress: 0, charge: 1 } };
+  if (!town.buildings.blacksmith) return town;
+  const runs = forgeProductionRuns(serviceLevel(town, 'blacksmith'));
+  const batches = Math.floor(town.forge.progress / runs);
+  return batches
+    ? {
+        ...town,
+        forge: { progress: town.forge.progress % runs, charge: town.forge.charge + batches },
+      }
+    : town;
 }
 export function advanceForge(town) {
-  if (!town.buildings.blacksmith || town.forge.charge) return town;
-  return settleForgeProduction({
+  if (!town.buildings.blacksmith) return town;
+  return {
     ...town,
     forge: advancePuzzleProduction(
       town.forge,
       forgeProductionRuns(serviceLevel(town, 'blacksmith')),
     ),
-  });
+  };
 }
 export const residentPopulation = (town) => townNeeds(town).residents;
 export const visitorCapacity = (town) => townSupply(town).visitors;
@@ -467,7 +469,7 @@ export function buildingIndicators(
     else if (
       id === 'blacksmith' &&
       town.buildings.blacksmith > 0 &&
-      town.forge.charge === 1 &&
+      town.forge.charge >= 1 &&
       forgeCollectible &&
       !collectionCooldownRemaining(town, id, now)
     )

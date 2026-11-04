@@ -210,7 +210,7 @@
       }}
     </p>
     <section v-if="id === 'blacksmith' && stage && !readOnly" class="town-service">
-      <h3>{{ t('Forge Charge: {count}/1', { count: town.forge.charge }) }}</h3>
+      <h3>{{ t('Stored TNT: {count}', { count: town.forge.charge }) }}</h3>
       <p>
         {{
           t('Normal puzzles: {count}/{required}', {
@@ -222,7 +222,7 @@
       <p>
         {{
           t(
-            'The blacksmith holds one TNT. Tap the blacksmith or its TNT icon in the town to collect it and restart production. Opening this card does not collect it. Upgrades shorten the cycle and keep your progress. If your armory is full, it waits here.',
+            'The blacksmith stores TNT and keeps producing. Tap the blacksmith or its TNT icon in the town to collect as much as your inventory can hold. The rest stays here. Opening this card does not collect it. Upgrades shorten the cycle and keep your progress.',
           )
         }}
       </p>

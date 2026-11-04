@@ -9,7 +9,7 @@ progress 2 and 12 stored. Elevator and all Moon lots are level 3. No account.
 The intercepted `/moonstone-resource-test` mounts the real workshop component and
 campaign store. Its collection cooldown is 30 seconds.
 
-1. **Collect 12 moonstones** is disabled in the workshop; **Stored 12 / 30** is shown.
+1. **Collect 12 moonstones** is disabled in the workshop; **Stored 12** is shown.
 2. Click **Sell all**. The confirmation asks about 42 stones for 10,500 coins;
    balances remain unchanged. Click **Cancel**.
 3. Click **Sell 10**: the receipt reports 2,500 coins; balances become 3,500 coins

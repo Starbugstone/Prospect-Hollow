@@ -917,25 +917,43 @@ foreach ($fixtures->fixtures as $fixture) {
         'save_integrity_mismatch',
         $fixture->name . ' cannot hide an extra coin in a legitimate batch',
     );
+    if ($fixture->name === 'unlimited workshop and forge production with partial TNT collection') {
+        assertIntegrity(
+            $result->town->moonstoneProduction->stored === 36 &&
+                $result->town->moonstoneProduction->progress === 2 &&
+                $result->continuousRecords->{'1'}->moonstoneGems === 900,
+            'workshop stock exceeds ten batches and continuous gems keep advancing it',
+        );
+        assertIntegrity(
+            $result->town->forge->charge === 15 && $result->town->forge->progress === 1,
+            'forge accumulates seventeen cycles, collects two and keeps partial progress',
+        );
+        assertIntegrity(
+            $result->integrity->context->honours->forge === 2,
+            'forge honour counts the two TNT actually collected',
+        );
+        $retry = $validator->accept($fixture->after, $result, $clock);
+        assertIntegrity(
+            $retry->town->forge == $result->town->forge &&
+                $retry->integrity->context->honours->forge === 2,
+            'retry cannot collect stored TNT or credit the forge honour twice',
+        );
+        $fakeForge = integrityData($fixture->after);
+        $fakeForge['town']['forge']['charge']++;
+        integrityDenied(
+            fn() => $validator->accept(integrityObject($fakeForge), $starting, $clock),
+            'save_integrity_mismatch',
+            'unlimited forge stock still requires production receipts',
+        );
+    }
     if (str_contains($fixture->name, 'moonstone') || str_contains($fixture->name, 'workshop')) {
         $fakeStock = integrityData($fixture->after);
-        $fakeStock['town']['moonstoneProduction']['stored'] =
-            $fakeStock['town']['buildings']['moonstoneWorkshop'] * 10 + 1;
+        $fakeStock['town']['moonstoneProduction']['stored']++;
         integrityDenied(
             fn() => $validator->accept(integrityObject($fakeStock), $starting, $clock),
-            'save_integrity_invalid',
-            'workshop cannot hold above capacity',
+            'save_integrity_mismatch',
+            'every stored stone still requires production receipts',
         );
-        if ($fakeStock['town']['buildings']['moonstoneWorkshop'] > 0) {
-            $fakeStock['town']['moonstoneProduction']['stored'] =
-                ($fixture->after->town->moonstoneProduction->stored + 1) %
-                ($fakeStock['town']['buildings']['moonstoneWorkshop'] * 10 + 1);
-            integrityDenied(
-                fn() => $validator->accept(integrityObject($fakeStock), $starting, $clock),
-                'save_integrity_mismatch',
-                'stock within capacity still requires production receipts',
-            );
-        }
         $overCollect = integrityData($fixture->after);
         foreach ($overCollect['integrity']['actions'] as &$action) {
             if ($action['kind'] === 'moonstone-collect') {

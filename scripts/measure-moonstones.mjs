@@ -104,7 +104,11 @@ try {
         town.coins += runs[n]?.coins ?? replayPayout;
         town.completedRuns++;
         town = rules.advanceConstruction(town);
-        if (model === 'before' && town.buildings.moonstoneWorkshop) {
+        if (
+          model === 'before' &&
+          town.buildings.moonstoneWorkshop &&
+          !town.moonstoneProduction.stored
+        ) {
           const batch = advancePuzzleProduction(
             {
               progress: town.moonstoneProduction.progress,
@@ -149,7 +153,7 @@ try {
       [1, 10, 30].map((n) => simulate(model, n)),
     );
     // A completed 546-level campaign is the measured input, so every level is unlocked.
-    // Maximum assumes level 3, unused allowances, and collection before the store fills.
+    // Maximum assumes level 3 and unused allowances.
     const maxLevel = BUILDINGS.find((building) => building.id === 'moonstoneWorkshop').upgrades
       .length;
     const gemsPerLevel =
