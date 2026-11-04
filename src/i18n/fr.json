@@ -1,4 +1,6 @@
 {
+  "The workshop and forge never stop": "L’atelier et la forge ne s’arrêtent plus",
+  "The Moonstone workshop and the forge now keep producing however long you wait to collect: moonstones and TNT simply pile up. Collecting TNT takes as much as your inventory holds and leaves the rest at the forge. In continuous play, the banner now shows the level’s workshop gems next to its coins. The museum offers the next unfinished level and an Unfinished filter, and the banner’s Next level button takes you straight there.": "L’atelier de pierres de lune et la forge produisent désormais sans s’arrêter, même si vous tardez à récupérer : les pierres de lune et le TNT s’accumulent. Récupérer le TNT en prend autant que votre inventaire peut en contenir et laisse le reste à la forge. En mode continu, la bannière affiche maintenant les gemmes de l’atelier du niveau à côté de ses pièces. Le musée propose le prochain niveau à compléter et un filtre « À compléter », et le bouton Niveau suivant de la bannière vous y emmène directement.",
   "{earned}/{cap} workshop gems for this level": "{earned}/{cap} gemmes pour l’atelier à ce niveau",
   "Next unfinished level": "Prochain niveau à compléter",
   "Every unlocked level has its continuous rewards.": "Tous les niveaux débloqués ont donné leurs récompenses en mode continu.",
