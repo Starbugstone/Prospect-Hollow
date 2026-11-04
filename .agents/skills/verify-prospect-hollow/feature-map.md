@@ -25,6 +25,9 @@ Other source-backed coverage remains outside this four-journey map:
 - Board motion: `testing/browser/board-motion.cjs`; mandatory when gravity,
   board animation or board shapes change, as described in `AGENTS.md`.
 - Unlimited moves and late completion: `testing/chapter-progression.test.js`.
+- Museum continuous replay navigation and live reward counters:
+  [the continuous journey](journeys/mine.md#continuous-replay-navigation),
+  `testing/browser/continuous-navigation.cjs` (4 November 2026: passed).
 - Every obstacle's completed rendering: `testing/completed-board-markers.test.js`.
 - Parcel geometry, map cameras, shared build flow and settlers: the regression
   files named in `AGENTS.md`. The Moon input fixture covers one parcel label,

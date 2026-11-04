@@ -363,6 +363,24 @@ export const useCampaignStore = defineStore('campaign', {
         state.powers.find((power) => power.id === 'tnt').quantity < bonusCapacity(state.town) &&
         !collectionCooldownRemaining(state.town, 'blacksmith', now),
     canReplay: (state) => state.town.buildings.museum > 0,
+    unfinishedContinuousLevels() {
+      const gemCap =
+        MOONSTONE_ECONOMY.continuousGemsPerPuzzle * MOONSTONE_ECONOMY.continuousPuzzlesPerLevel;
+      return Array.from({ length: LEVEL_COUNT }, (_, index) => index + 1).filter((id) => {
+        if (!this.canPlay(id, 'continuous')) return false;
+        const record = this.continuousRecords[id];
+        return (
+          (record?.coins ?? 0) < CONTINUOUS_COIN_CAP ||
+          (this.town.buildings.moonstoneWorkshop > 0 && (record?.moonstoneGems ?? 0) < gemCap)
+        );
+      });
+    },
+    nextContinuousLevel() {
+      return (after = 0) =>
+        this.unfinishedContinuousLevels.find((id) => id > after) ??
+        this.unfinishedContinuousLevels.find((id) => id !== after) ??
+        null;
+    },
     nextLevel(state) {
       for (let id = 1; id <= LEVEL_COUNT; id++) if (!state.records[id]) return id;
       return LEVEL_COUNT;

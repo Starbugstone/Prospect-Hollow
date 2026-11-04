@@ -114,7 +114,8 @@ describe('Museum Show filter', () => {
 
   it('leaves continuous play, its coin allowance and replays unchanged', async () => {
     const html = await museum({ mode: 'continuous' });
-    expect(html).not.toContain('museum-show');
+    expect(html).not.toContain('Below ✦✦✦');
+    expect(html).not.toContain('For an honour');
     expect(html).toContain(`0/25 coins collected`);
     expect(html).toContain('Keep matching');
     expect(cards(html)).toBe(campaign.nextLevel);
