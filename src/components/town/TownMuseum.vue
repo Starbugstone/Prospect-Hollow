@@ -51,6 +51,38 @@
         )
       }}
     </p>
+    <div v-if="mode === 'continuous'" class="museum-completion">
+      <p>
+        <button
+          v-if="campaign.nextContinuousLevel() !== null"
+          class="town-primary"
+          @click="$emit('continuous', campaign.nextContinuousLevel())"
+        >
+          {{ t('Next unfinished level') }}
+        </button>
+        <span v-else role="status">{{
+          t('Every unlocked level has its continuous rewards.')
+        }}</span>
+      </p>
+      <div class="museum-show">
+        <span id="museum-continuous-show-label" class="museum-show-label">{{ t('Show') }}</span>
+        <div
+          class="museum-show-options"
+          role="group"
+          aria-labelledby="museum-continuous-show-label"
+        >
+          <button :aria-pressed="continuousShow === 'all'" @click="continuousShow = 'all'">
+            {{ t('All unlocked') }} <b>{{ number(unlockedIds.length) }}</b>
+          </button>
+          <button
+            :aria-pressed="continuousShow === 'unfinished'"
+            @click="continuousShow = 'unfinished'"
+          >
+            {{ t('Unfinished') }} <b>{{ number(campaign.unfinishedContinuousLevels.length) }}</b>
+          </button>
+        </div>
+      </div>
+    </div>
     <div v-if="mode === 'normal'" class="museum-completion">
       <p class="museum-progress" role="status">
         <strong>✦ {{ t('{perfect}/{total} levels at three stars', campaign.completion) }}</strong>
@@ -196,6 +228,7 @@ const navigation = useHonourNavigation();
 const { dialog, closeButton, dismissBackdrop } = useNativeDialog(() => emit('close'));
 const mode = ref('normal');
 const show = ref('all');
+const continuousShow = ref('all');
 const familyId = ref(null);
 const LEVELS = Array.from({ length: LEVEL_COUNT }, (_, index) => index + 1);
 
@@ -278,8 +311,12 @@ const advances = (option, id) =>
   (option.link !== 'museum-stars' || campaign.records[id].stars < 3);
 
 const completedIds = computed(() => LEVELS.filter((id) => campaign.records[id]));
+const unlockedIds = computed(() => LEVELS.filter((id) => campaign.isUnlocked(id)));
 const visibleLevels = computed(() => {
-  if (mode.value === 'continuous') return LEVELS.filter((id) => campaign.isUnlocked(id));
+  if (mode.value === 'continuous')
+    return continuousShow.value === 'unfinished'
+      ? campaign.unfinishedContinuousLevels
+      : unlockedIds.value;
   if (show.value === 'below') return campaign.completion.replayIds;
   if (show.value === 'honour' && selected.value)
     return completedIds.value.filter((id) => advances(selected.value, id));

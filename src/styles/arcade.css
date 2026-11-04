@@ -298,7 +298,7 @@
 
 @media (max-width: 640px), (max-height: 500px) and (max-width: 1000px) {
   .is-playing .play-area:has(.continuous-banner) {
-    --mode-space: 62px;
+    --mode-space: 110px;
   }
   .is-playing .continuous-banner {
     box-sizing: border-box;
@@ -316,8 +316,12 @@
   .is-playing .continuous-banner .continuous-description {
     display: none;
   }
-  .is-playing .continuous-coins {
+  .is-playing .continuous-coins,
+  .is-playing .continuous-gems {
     font-size: 9px;
+  }
+  .is-playing .continuous-actions {
+    flex-direction: column;
   }
 }
 @media (max-height: 500px) and (min-width: 480px) and (max-width: 1000px) {
