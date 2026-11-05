@@ -827,6 +827,56 @@ integrityDenied(
     'resolve cannot introduce invented historical money',
 );
 
+// Receipts journaled before unlimited production keep their capped replay, so pending
+// offline play and strict restores of older histories are not rewritten.
+$capped = json_decode(
+    file_get_contents(__DIR__ . '/fixtures/integrity-flows-capped-production.json'),
+    false,
+    64,
+    JSON_THROW_ON_ERROR,
+);
+foreach ($capped->fixtures as $fixture) {
+    $starting = $validator->accept(
+        $fixture->before,
+        null,
+        $fixture->baselineServerNow ?? $fixture->serverNow,
+    );
+    try {
+        $result = $validator->accept($fixture->after, $starting, $fixture->serverNow);
+    } catch (ApiError $error) {
+        throw new RuntimeException(
+            'capped ' . $fixture->name . ': ' . json_encode($error->details),
+            0,
+            $error,
+        );
+    }
+    assertIntegrity(
+        SaveIntegrity::receipt($result)['status'] === 'tracked',
+        $fixture->name . ' replays with capped production',
+    );
+}
+$stamped = integrityData($capped->fixtures[0]->after);
+foreach ($stamped['integrity']['actions'] as &$action) {
+    if ($action['kind'] === 'victory') {
+        $action['data']['production'] = 3;
+        break;
+    }
+}
+unset($action);
+try {
+    $validator->accept(
+        integrityObject($stamped),
+        $validator->accept($capped->fixtures[0]->before, null, $capped->fixtures[0]->serverNow),
+        $capped->fixtures[0]->serverNow,
+    );
+    assertIntegrity(false, 'an unknown production version is refused');
+} catch (ApiError $error) {
+    assertIntegrity(
+        ($error->details['field'] ?? null) === 'victory.production',
+        'an unknown production version is refused',
+    );
+}
+
 $fixturesPath = __DIR__ . '/fixtures/integrity-flows.json';
 if (!is_file($fixturesPath)) {
     throw new RuntimeException(
