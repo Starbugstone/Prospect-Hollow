@@ -361,6 +361,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 1,
                 "levelId": 1,
                 "score": 15000,
@@ -1776,6 +1777,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 1,
                 "levelId": 1,
                 "score": 7500,
@@ -2503,6 +2505,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 1,
                 "levelId": 1,
                 "score": 7500,
@@ -4647,6 +4650,7 @@
                 "expectedStage": 2,
                 "projectRewards": 1,
                 "at": 1780000000000,
+                "production": 2,
                 "shopStock": [],
                 "shopVisit": 0
               }
@@ -5341,6 +5345,7 @@
                 "expectedStage": 1,
                 "projectRewards": 1,
                 "at": 1780000000000,
+                "production": 2,
                 "shopStock": [],
                 "shopVisit": 0
               }
@@ -6035,6 +6040,7 @@
                 "expectedStage": 3,
                 "projectRewards": 1,
                 "at": 1780000000000,
+                "production": 2,
                 "shopStock": [],
                 "shopVisit": 0
               }
@@ -6729,6 +6735,7 @@
                 "expectedStage": 2,
                 "projectRewards": 1,
                 "at": 1780000000000,
+                "production": 2,
                 "shopStock": [],
                 "shopVisit": 0
               }
@@ -7423,6 +7430,7 @@
                 "expectedStage": 3,
                 "projectRewards": 1,
                 "at": 1780000000000,
+                "production": 2,
                 "shopStock": [],
                 "shopVisit": 0
               }
@@ -8865,6 +8873,7 @@
                 "expectedStage": 3,
                 "projectRewards": 1,
                 "at": 1780000000000,
+                "production": 2,
                 "shopStock": [
                   { "id": "clear-row", "sold": false },
                   { "id": "tile-breaker", "sold": false },
@@ -9568,7 +9577,7 @@
               "sequence": 1,
               "id": "00000000-0000-4000-8000-000000000068",
               "kind": "forge-collect",
-              "data": { "at": 1780000000000 }
+              "data": { "at": 1780000000000, "production": 2 }
             }
           ]
         },
@@ -10313,6 +10322,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 1,
                 "levelId": 1,
                 "score": 7500,
@@ -10351,6 +10361,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 2,
                 "levelId": 1,
                 "score": 7500,
@@ -10389,6 +10400,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 3,
                 "levelId": 1,
                 "score": 7500,
@@ -10427,6 +10439,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 4,
                 "levelId": 1,
                 "score": 7500,
@@ -10465,6 +10478,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 5,
                 "levelId": 1,
                 "score": 7500,
@@ -10503,6 +10517,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 6,
                 "levelId": 1,
                 "score": 7500,
@@ -10541,6 +10556,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 7,
                 "levelId": 1,
                 "score": 7500,
@@ -10579,6 +10595,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 8,
                 "levelId": 1,
                 "score": 7500,
@@ -10617,6 +10634,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 9,
                 "levelId": 1,
                 "score": 7500,
@@ -10655,6 +10673,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 10,
                 "levelId": 1,
                 "score": 7500,
@@ -10693,6 +10712,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 11,
                 "levelId": 1,
                 "score": 7500,
@@ -10731,6 +10751,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 12,
                 "levelId": 1,
                 "score": 7500,
@@ -10769,6 +10790,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 13,
                 "levelId": 1,
                 "score": 7500,
@@ -10807,6 +10829,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 14,
                 "levelId": 1,
                 "score": 7500,
@@ -10845,6 +10868,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 15,
                 "levelId": 1,
                 "score": 7500,
@@ -10883,6 +10907,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 16,
                 "levelId": 1,
                 "score": 7500,
@@ -10921,6 +10946,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 17,
                 "levelId": 1,
                 "score": 7500,
@@ -10959,6 +10985,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 18,
                 "levelId": 1,
                 "score": 7500,
@@ -10997,6 +11024,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 19,
                 "levelId": 1,
                 "score": 7500,
@@ -11035,6 +11063,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 20,
                 "levelId": 1,
                 "score": 7500,
@@ -11073,6 +11102,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 21,
                 "levelId": 1,
                 "score": 7500,
@@ -11111,6 +11141,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 22,
                 "levelId": 1,
                 "score": 7500,
@@ -11149,6 +11180,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 23,
                 "levelId": 1,
                 "score": 7500,
@@ -11187,6 +11219,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 24,
                 "levelId": 1,
                 "score": 7500,
@@ -11225,6 +11258,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 25,
                 "levelId": 1,
                 "score": 7500,
@@ -11263,6 +11297,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 26,
                 "levelId": 1,
                 "score": 7500,
@@ -11301,6 +11336,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 27,
                 "levelId": 1,
                 "score": 7500,
@@ -11339,6 +11375,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 28,
                 "levelId": 1,
                 "score": 7500,
@@ -11377,6 +11414,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 29,
                 "levelId": 1,
                 "score": 7500,
@@ -11415,6 +11453,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 30,
                 "levelId": 1,
                 "score": 7500,
@@ -11453,6 +11492,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 31,
                 "levelId": 1,
                 "score": 7500,
@@ -11491,6 +11531,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 32,
                 "levelId": 1,
                 "score": 7500,
@@ -11529,6 +11570,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 33,
                 "levelId": 1,
                 "score": 7500,
@@ -11567,6 +11609,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 34,
                 "levelId": 1,
                 "score": 7500,
@@ -11605,6 +11648,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 35,
                 "levelId": 1,
                 "score": 7500,
@@ -12426,6 +12470,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
+                "production": 2,
                 "runId": 1,
                 "levelId": 1,
                 "score": 7500,
@@ -12464,6 +12509,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
+                "production": 2,
                 "runId": 2,
                 "levelId": 1,
                 "score": 7500,
@@ -12502,6 +12548,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
+                "production": 2,
                 "runId": 3,
                 "levelId": 1,
                 "score": 7500,
@@ -12540,6 +12587,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
+                "production": 2,
                 "runId": 4,
                 "levelId": 1,
                 "score": 7500,
@@ -12578,6 +12626,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
+                "production": 2,
                 "runId": 5,
                 "levelId": 1,
                 "score": 7500,
@@ -12616,6 +12665,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
+                "production": 2,
                 "runId": 6,
                 "levelId": 1,
                 "score": 7500,
@@ -12654,6 +12704,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
+                "production": 2,
                 "runId": 7,
                 "levelId": 1,
                 "score": 7500,
@@ -12692,6 +12743,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
+                "production": 2,
                 "runId": 8,
                 "levelId": 1,
                 "score": 7500,
@@ -12730,6 +12782,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
+                "production": 2,
                 "runId": 9,
                 "levelId": 1,
                 "score": 7500,
@@ -12768,6 +12821,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
+                "production": 2,
                 "runId": 10,
                 "levelId": 1,
                 "score": 7500,
@@ -12806,6 +12860,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
+                "production": 2,
                 "runId": 11,
                 "levelId": 1,
                 "score": 7500,
@@ -12844,6 +12899,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
+                "production": 2,
                 "runId": 12,
                 "levelId": 1,
                 "score": 7500,
@@ -13643,6 +13699,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
+                "production": 2,
                 "runId": 1,
                 "levelId": 1,
                 "score": 7500,
@@ -13681,6 +13738,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
+                "production": 2,
                 "runId": 2,
                 "levelId": 1,
                 "score": 7500,
@@ -13719,6 +13777,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
+                "production": 2,
                 "runId": 3,
                 "levelId": 1,
                 "score": 7500,
@@ -13757,6 +13816,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
+                "production": 2,
                 "runId": 4,
                 "levelId": 1,
                 "score": 7500,
@@ -15315,6 +15375,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
+                "production": 2,
                 "runId": 1,
                 "levelId": 1,
                 "score": 7500,
@@ -15353,6 +15414,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
+                "production": 2,
                 "runId": 2,
                 "levelId": 1,
                 "score": 7500,
@@ -15391,6 +15453,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
+                "production": 2,
                 "runId": 3,
                 "levelId": 1,
                 "score": 7500,
@@ -15429,6 +15492,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
+                "production": 2,
                 "runId": 4,
                 "levelId": 1,
                 "score": 7500,
@@ -15467,6 +15531,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
+                "production": 2,
                 "runId": 5,
                 "levelId": 1,
                 "score": 7500,
@@ -15505,6 +15570,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
+                "production": 2,
                 "runId": 6,
                 "levelId": 1,
                 "score": 7500,
@@ -15543,6 +15609,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
+                "production": 2,
                 "runId": 7,
                 "levelId": 1,
                 "score": 7500,
@@ -15581,6 +15648,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
+                "production": 2,
                 "runId": 8,
                 "levelId": 1,
                 "score": 7500,
@@ -15619,6 +15687,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
+                "production": 2,
                 "runId": 9,
                 "levelId": 1,
                 "score": 7500,
@@ -15657,6 +15726,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
+                "production": 2,
                 "runId": 10,
                 "levelId": 1,
                 "score": 7500,
@@ -15695,6 +15765,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
+                "production": 2,
                 "runId": 11,
                 "levelId": 1,
                 "score": 7500,
@@ -15733,6 +15804,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 1,
+                "production": 2,
                 "runId": 12,
                 "levelId": 1,
                 "score": 7500,
@@ -15771,6 +15843,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 13,
                 "levelId": 1,
                 "score": 7500,
@@ -16578,7 +16651,8 @@
                 "jewels": 299,
                 "score": 299,
                 "at": 1780000000000,
-                "moonstoneVersion": 2
+                "moonstoneVersion": 2,
+                "production": 2
               }
             },
             {
@@ -16591,7 +16665,8 @@
                 "jewels": 600,
                 "score": 600,
                 "at": 1780000000000,
-                "moonstoneVersion": 2
+                "moonstoneVersion": 2,
+                "production": 2
               }
             },
             {
@@ -16604,7 +16679,8 @@
                 "jewels": 750,
                 "score": 750,
                 "at": 1780000000000,
-                "moonstoneVersion": 2
+                "moonstoneVersion": 2,
+                "production": 2
               }
             },
             {
@@ -16623,7 +16699,8 @@
                 "jewels": 1500,
                 "score": 1500,
                 "at": 1780000000000,
-                "moonstoneVersion": 2
+                "moonstoneVersion": 2,
+                "production": 2
               }
             }
           ]
@@ -17391,7 +17468,8 @@
                 "jewels": 750,
                 "score": 750,
                 "at": 1780000000000,
-                "moonstoneVersion": 2
+                "moonstoneVersion": 2,
+                "production": 2
               }
             },
             {
@@ -17404,7 +17482,8 @@
                 "jewels": 1000,
                 "score": 1000,
                 "at": 1780000000000,
-                "moonstoneVersion": 2
+                "moonstoneVersion": 2,
+                "production": 2
               }
             },
             {
@@ -17423,7 +17502,8 @@
                 "jewels": 1300,
                 "score": 1300,
                 "at": 1780000000000,
-                "moonstoneVersion": 2
+                "moonstoneVersion": 2,
+                "production": 2
               }
             }
           ]
@@ -18196,6 +18276,7 @@
                 "expectedStage": 1,
                 "projectRewards": 1,
                 "at": 1780000000000,
+                "production": 2,
                 "shopStock": [
                   { "id": "clear-row", "sold": false },
                   { "id": "tile-breaker", "sold": false },
@@ -23154,7 +23235,8 @@
                 "jewels": 250,
                 "score": 10000,
                 "at": 1780000000000,
-                "moonstoneVersion": 2
+                "moonstoneVersion": 2,
+                "production": 2
               }
             },
             {
@@ -23167,7 +23249,8 @@
                 "jewels": 250,
                 "score": 20000,
                 "at": 1780000000000,
-                "moonstoneVersion": 2
+                "moonstoneVersion": 2,
+                "production": 2
               }
             }
           ]
@@ -23867,7 +23950,8 @@
                 "jewels": 3,
                 "score": 300,
                 "at": 1780000000000,
-                "moonstoneVersion": 2
+                "moonstoneVersion": 2,
+                "production": 2
               }
             }
           ]
@@ -24852,6 +24936,7 @@
                 "score": 25000,
                 "at": 1780000000000,
                 "moonstoneVersion": 2,
+                "production": 2,
                 "honours": {
                   "version": 1,
                   "gems": { "ruby": 600 },
@@ -24871,6 +24956,7 @@
                 "score": 100000,
                 "at": 1780000000000,
                 "moonstoneVersion": 2,
+                "production": 2,
                 "honours": {
                   "version": 1,
                   "gems": { "ruby": 2600 },
@@ -27995,6 +28081,7 @@
                 "expectedStage": 3,
                 "projectRewards": 1,
                 "at": 1780000000000,
+                "production": 2,
                 "shopStock": [
                   { "id": "clear-row", "sold": false },
                   { "id": "tile-breaker", "sold": false },
@@ -28720,7 +28807,8 @@
                 "jewels": 3,
                 "score": 300,
                 "at": 1780000000000,
-                "moonstoneVersion": 2
+                "moonstoneVersion": 2,
+                "production": 2
               }
             },
             {
@@ -30887,7 +30975,7 @@
               "sequence": 2,
               "id": "00000000-0000-4000-8000-000000000323",
               "kind": "forge-collect",
-              "data": { "at": 1780000000000 }
+              "data": { "at": 1780000000000, "production": 2 }
             },
             {
               "sequence": 3,
@@ -30907,6 +30995,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 1,
                 "levelId": 55,
                 "score": 24500,
@@ -30946,6 +31035,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 2,
                 "levelId": 56,
                 "score": 27500,
@@ -31787,6 +31877,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 1,
                 "levelId": 1,
                 "score": 7500,
@@ -31825,6 +31916,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 2,
                 "levelId": 1,
                 "score": 7500,
@@ -31863,6 +31955,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 3,
                 "levelId": 1,
                 "score": 7500,
@@ -31922,6 +32015,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 4,
                 "levelId": 1,
                 "score": 7500,
@@ -31981,6 +32075,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 5,
                 "levelId": 1,
                 "score": 7500,
@@ -32040,6 +32135,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 6,
                 "levelId": 1,
                 "score": 7500,
@@ -32099,6 +32195,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 7,
                 "levelId": 1,
                 "score": 7500,
@@ -32865,6 +32962,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 1,
                 "levelId": 1,
                 "score": 7500,
@@ -32903,6 +33001,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 2,
                 "levelId": 1,
                 "score": 7500,
@@ -32941,6 +33040,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 3,
                 "levelId": 1,
                 "score": 7500,
@@ -33713,6 +33813,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 1,
                 "levelId": 1,
                 "score": 7500,
@@ -33751,6 +33852,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 2,
                 "levelId": 1,
                 "score": 7500,
@@ -33789,6 +33891,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 3,
                 "levelId": 1,
                 "score": 7500,
@@ -33848,6 +33951,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 4,
                 "levelId": 1,
                 "score": 7500,
@@ -33907,6 +34011,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 5,
                 "levelId": 1,
                 "score": 7500,
@@ -33966,6 +34071,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 6,
                 "levelId": 1,
                 "score": 7500,
@@ -34025,6 +34131,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 7,
                 "levelId": 1,
                 "score": 7500,
@@ -34791,6 +34898,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 1,
                 "levelId": 1,
                 "score": 7500,
@@ -34829,6 +34937,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 2,
                 "levelId": 1,
                 "score": 7500,
@@ -34867,6 +34976,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 3,
                 "levelId": 1,
                 "score": 7500,
@@ -34926,6 +35036,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 4,
                 "levelId": 1,
                 "score": 7500,
@@ -34985,6 +35096,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 5,
                 "levelId": 1,
                 "score": 7500,
@@ -35044,6 +35156,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 6,
                 "levelId": 1,
                 "score": 7500,
@@ -35103,6 +35216,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 7,
                 "levelId": 1,
                 "score": 7500,
@@ -35869,6 +35983,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 1,
                 "levelId": 1,
                 "score": 7500,
@@ -35907,6 +36022,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 2,
                 "levelId": 1,
                 "score": 7500,
@@ -35945,6 +36061,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 3,
                 "levelId": 1,
                 "score": 7500,
@@ -36004,6 +36121,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 4,
                 "levelId": 1,
                 "score": 7500,
@@ -36063,6 +36181,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 5,
                 "levelId": 1,
                 "score": 7500,
@@ -36122,6 +36241,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 6,
                 "levelId": 1,
                 "score": 7500,
@@ -36181,6 +36301,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 7,
                 "levelId": 1,
                 "score": 7500,
@@ -36947,6 +37068,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 1,
                 "levelId": 1,
                 "score": 7500,
@@ -36985,6 +37107,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 2,
                 "levelId": 1,
                 "score": 7500,
@@ -37023,6 +37146,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 3,
                 "levelId": 1,
                 "score": 7500,
@@ -37082,6 +37206,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 4,
                 "levelId": 1,
                 "score": 7500,
@@ -37141,6 +37266,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 5,
                 "levelId": 1,
                 "score": 7500,
@@ -37200,6 +37326,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 6,
                 "levelId": 1,
                 "score": 7500,
@@ -37259,6 +37386,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 7,
                 "levelId": 1,
                 "score": 7500,
@@ -38025,6 +38153,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 1,
                 "levelId": 1,
                 "score": 7500,
@@ -38063,6 +38192,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 2,
                 "levelId": 1,
                 "score": 7500,
@@ -38101,6 +38231,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 3,
                 "levelId": 1,
                 "score": 7500,
@@ -38160,6 +38291,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 4,
                 "levelId": 1,
                 "score": 7500,
@@ -38219,6 +38351,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 5,
                 "levelId": 1,
                 "score": 7500,
@@ -38278,6 +38411,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 6,
                 "levelId": 1,
                 "score": 7500,
@@ -38337,6 +38471,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 7,
                 "levelId": 1,
                 "score": 7500,
@@ -39133,6 +39268,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 1,
                 "levelId": 1,
                 "score": 7500,
@@ -39171,6 +39307,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 2,
                 "levelId": 1,
                 "score": 7500,
@@ -39209,6 +39346,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 3,
                 "levelId": 1,
                 "score": 7500,
@@ -39268,6 +39406,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 4,
                 "levelId": 1,
                 "score": 7500,
@@ -39327,6 +39466,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 5,
                 "levelId": 1,
                 "score": 7500,
@@ -39386,6 +39526,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 6,
                 "levelId": 1,
                 "score": 7500,
@@ -39445,6 +39586,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 7,
                 "levelId": 1,
                 "score": 7500,
@@ -40271,6 +40413,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 1,
                 "levelId": 1,
                 "score": 7500,
@@ -40309,6 +40452,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 2,
                 "levelId": 1,
                 "score": 7500,
@@ -40347,6 +40491,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 3,
                 "levelId": 1,
                 "score": 7500,
@@ -40406,6 +40551,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 4,
                 "levelId": 1,
                 "score": 7500,
@@ -40465,6 +40611,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 5,
                 "levelId": 1,
                 "score": 7500,
@@ -40524,6 +40671,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 6,
                 "levelId": 1,
                 "score": 7500,
@@ -40583,6 +40731,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 7,
                 "levelId": 1,
                 "score": 7500,
@@ -41427,6 +41576,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 1,
                 "levelId": 1,
                 "score": 7500,
@@ -41465,6 +41615,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 2,
                 "levelId": 1,
                 "score": 7500,
@@ -41503,6 +41654,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 3,
                 "levelId": 1,
                 "score": 7500,
@@ -41562,6 +41714,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 4,
                 "levelId": 1,
                 "score": 7500,
@@ -41621,6 +41774,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 5,
                 "levelId": 1,
                 "score": 7500,
@@ -41680,6 +41834,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 6,
                 "levelId": 1,
                 "score": 7500,
@@ -41739,6 +41894,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 7,
                 "levelId": 1,
                 "score": 7500,
@@ -42601,6 +42757,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 1,
                 "levelId": 1,
                 "score": 7500,
@@ -42639,6 +42796,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 2,
                 "levelId": 1,
                 "score": 7500,
@@ -42677,6 +42835,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 3,
                 "levelId": 1,
                 "score": 7500,
@@ -42736,6 +42895,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 4,
                 "levelId": 1,
                 "score": 7500,
@@ -42795,6 +42955,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 5,
                 "levelId": 1,
                 "score": 7500,
@@ -42854,6 +43015,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 6,
                 "levelId": 1,
                 "score": 7500,
@@ -42913,6 +43075,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 7,
                 "levelId": 1,
                 "score": 7500,
@@ -43775,6 +43938,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 1,
                 "levelId": 1,
                 "score": 7500,
@@ -43813,6 +43977,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 2,
                 "levelId": 1,
                 "score": 7500,
@@ -43851,6 +44016,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 3,
                 "levelId": 1,
                 "score": 7500,
@@ -43910,6 +44076,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 4,
                 "levelId": 1,
                 "score": 7500,
@@ -43969,6 +44136,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 5,
                 "levelId": 1,
                 "score": 7500,
@@ -44028,6 +44196,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 6,
                 "levelId": 1,
                 "score": 7500,
@@ -44087,6 +44256,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 7,
                 "levelId": 1,
                 "score": 7500,
@@ -44949,6 +45119,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 1,
                 "levelId": 1,
                 "score": 7500,
@@ -44987,6 +45158,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 2,
                 "levelId": 1,
                 "score": 7500,
@@ -45025,6 +45197,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 3,
                 "levelId": 1,
                 "score": 7500,
@@ -45084,6 +45257,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 4,
                 "levelId": 1,
                 "score": 7500,
@@ -45143,6 +45317,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 5,
                 "levelId": 1,
                 "score": 7500,
@@ -45202,6 +45377,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 6,
                 "levelId": 1,
                 "score": 7500,
@@ -45261,6 +45437,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 7,
                 "levelId": 1,
                 "score": 7500,
@@ -46105,6 +46282,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 1,
                 "levelId": 1,
                 "score": 7500,
@@ -46143,6 +46321,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 2,
                 "levelId": 1,
                 "score": 7500,
@@ -46181,6 +46360,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 3,
                 "levelId": 1,
                 "score": 7500,
@@ -46240,6 +46420,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 4,
                 "levelId": 1,
                 "score": 7500,
@@ -46299,6 +46480,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 5,
                 "levelId": 1,
                 "score": 7500,
@@ -46358,6 +46540,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 6,
                 "levelId": 1,
                 "score": 7500,
@@ -46417,6 +46600,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 7,
                 "levelId": 1,
                 "score": 7500,
@@ -47237,6 +47421,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 1,
                 "levelId": 1,
                 "score": 7500,
@@ -47275,6 +47460,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 2,
                 "levelId": 1,
                 "score": 7500,
@@ -47313,6 +47499,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 3,
                 "levelId": 1,
                 "score": 7500,
@@ -47372,6 +47559,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 4,
                 "levelId": 1,
                 "score": 7500,
@@ -47431,6 +47619,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 5,
                 "levelId": 1,
                 "score": 7500,
@@ -47490,6 +47679,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 6,
                 "levelId": 1,
                 "score": 7500,
@@ -47549,6 +47739,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 7,
                 "levelId": 1,
                 "score": 7500,
@@ -49108,6 +49299,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 1,
                 "levelId": 1,
                 "score": 7500,
@@ -49160,6 +49352,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 2,
                 "levelId": 1,
                 "score": 7500,
@@ -49212,6 +49405,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 3,
                 "levelId": 1,
                 "score": 7500,
@@ -49264,6 +49458,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 4,
                 "levelId": 1,
                 "score": 7500,
@@ -49316,6 +49511,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 5,
                 "levelId": 1,
                 "score": 7500,
@@ -49368,6 +49564,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 6,
                 "levelId": 1,
                 "score": 7500,
@@ -49420,6 +49617,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 7,
                 "levelId": 1,
                 "score": 7500,
@@ -49472,6 +49670,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 8,
                 "levelId": 1,
                 "score": 7500,
@@ -49524,6 +49723,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 9,
                 "levelId": 1,
                 "score": 7500,
@@ -49576,6 +49776,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 10,
                 "levelId": 1,
                 "score": 7500,
@@ -49628,6 +49829,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 11,
                 "levelId": 1,
                 "score": 7500,
@@ -49680,6 +49882,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 12,
                 "levelId": 1,
                 "score": 7500,
@@ -49732,6 +49935,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 13,
                 "levelId": 1,
                 "score": 7500,
@@ -49784,6 +49988,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 14,
                 "levelId": 1,
                 "score": 7500,
@@ -49836,6 +50041,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 15,
                 "levelId": 1,
                 "score": 7500,
@@ -49888,6 +50094,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 16,
                 "levelId": 1,
                 "score": 7500,
@@ -49940,6 +50147,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 17,
                 "levelId": 1,
                 "score": 7500,
@@ -49992,6 +50200,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 18,
                 "levelId": 1,
                 "score": 7500,
@@ -50044,6 +50253,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 19,
                 "levelId": 1,
                 "score": 7500,
@@ -50096,6 +50306,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 20,
                 "levelId": 1,
                 "score": 7500,
@@ -50148,6 +50359,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 21,
                 "levelId": 1,
                 "score": 7500,
@@ -50200,6 +50412,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 22,
                 "levelId": 1,
                 "score": 7500,
@@ -50252,6 +50465,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 23,
                 "levelId": 1,
                 "score": 7500,
@@ -50304,6 +50518,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 24,
                 "levelId": 1,
                 "score": 7500,
@@ -50356,6 +50571,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 25,
                 "levelId": 1,
                 "score": 7500,
@@ -50408,6 +50624,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 26,
                 "levelId": 1,
                 "score": 7500,
@@ -50460,6 +50677,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 27,
                 "levelId": 1,
                 "score": 7500,
@@ -50512,6 +50730,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 28,
                 "levelId": 1,
                 "score": 7500,
@@ -50564,6 +50783,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 29,
                 "levelId": 1,
                 "score": 7500,
@@ -50616,6 +50836,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 30,
                 "levelId": 1,
                 "score": 7500,
@@ -50668,6 +50889,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 31,
                 "levelId": 1,
                 "score": 7500,
@@ -50720,6 +50942,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 32,
                 "levelId": 1,
                 "score": 7500,
@@ -50772,6 +50995,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 33,
                 "levelId": 1,
                 "score": 7500,
@@ -50824,6 +51048,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 34,
                 "levelId": 1,
                 "score": 7500,
@@ -50876,6 +51101,7 @@
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
+                "production": 2,
                 "runId": 35,
                 "levelId": 1,
                 "score": 7500,
@@ -50920,7 +51146,7 @@
               "sequence": 107,
               "id": "00000000-0000-4000-8000-000000000775",
               "kind": "forge-collect",
-              "data": { "at": 1780000000000 }
+              "data": { "at": 1780000000000, "production": 2 }
             },
             {
               "sequence": 108,
@@ -50938,7 +51164,8 @@
                 "jewels": 900,
                 "score": 900,
                 "at": 1780000000000,
-                "moonstoneVersion": 2
+                "moonstoneVersion": 2,
+                "production": 2
               }
             }
           ]
@@ -51712,7 +51939,8 @@
                 "jewels": 250,
                 "score": 100,
                 "at": 1780000000000,
-                "moonstoneVersion": 2
+                "moonstoneVersion": 2,
+                "production": 2
               }
             },
             {
@@ -51725,7 +51953,8 @@
                 "jewels": 750,
                 "score": 100,
                 "at": 1780000000000,
-                "moonstoneVersion": 2
+                "moonstoneVersion": 2,
+                "production": 2
               }
             },
             {
@@ -51743,6 +51972,7 @@
                 "expectedStage": 1,
                 "projectRewards": 1,
                 "at": 1780000000000,
+                "production": 2,
                 "shopStock": [
                   { "id": "clear-row", "sold": false },
                   { "id": "tile-breaker", "sold": false },
@@ -51763,7 +51993,8 @@
                 "jewels": 1050,
                 "score": 100,
                 "at": 1780000000000,
-                "moonstoneVersion": 2
+                "moonstoneVersion": 2,
+                "production": 2
               }
             }
           ]

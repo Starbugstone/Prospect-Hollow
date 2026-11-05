@@ -17,6 +17,7 @@ import {
   unveilLandmark,
 } from '../data/townLandmarks';
 import { personaliseTown } from '../data/townPersonalisation';
+import { PRODUCTION_VERSION } from '../data/puzzleProduction';
 import { CREST_EMBLEM_IDS } from '../data/townCrests';
 import {
   vipSpend,
@@ -620,7 +621,7 @@ export const useCampaignStore = defineStore('campaign', {
           ),
           honours: creditCounter(this.honours, 'forge', amount),
         },
-        { kind: 'forge-collect', data: { at: now } },
+        { kind: 'forge-collect', data: { at: now, production: PRODUCTION_VERSION } },
       );
     },
     beginRun(mode = 'normal', id = null) {
@@ -720,6 +721,7 @@ export const useCampaignStore = defineStore('campaign', {
                 score,
                 at,
                 moonstoneVersion: MOONSTONE_VERSION,
+                production: PRODUCTION_VERSION,
                 ...(claim ? { honours: claim } : {}),
               },
             }
@@ -961,7 +963,13 @@ export const useCampaignStore = defineStore('campaign', {
           {},
           {
             kind: 'building-finish',
-            data: { buildingId: id, expectedStage, projectRewards: 1, at },
+            data: {
+              buildingId: id,
+              expectedStage,
+              projectRewards: 1,
+              at,
+              production: PRODUCTION_VERSION,
+            },
           },
         )
       );
@@ -977,7 +985,13 @@ export const useCampaignStore = defineStore('campaign', {
           { builderHammers: this.builderHammers - 1 },
           {
             kind: 'building-hammer',
-            data: { buildingId: id, expectedStage, projectRewards: 1, at },
+            data: {
+              buildingId: id,
+              expectedStage,
+              projectRewards: 1,
+              at,
+              production: PRODUCTION_VERSION,
+            },
           },
         )
       );
@@ -1263,6 +1277,7 @@ export const useCampaignStore = defineStore('campaign', {
       this.town = queueCampaignPresentations(this.town, this.records);
       this.recordAction('victory', {
         moonstoneVersion: MOONSTONE_VERSION,
+        production: PRODUCTION_VERSION,
         runId,
         levelId: id,
         score,
