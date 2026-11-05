@@ -29,3 +29,26 @@ context. It does not replace campaign simulation or the unlimited-moves regressi
 Evidence: `mine.log`, `artifacts/mine-feedback/report.json` and screenshots beside it.
 Cleanup: contexts close automatically; run the shared cleanup command. Never reduce
 the configuration matrix to hide a layout failure.
+
+## Continuous replay navigation
+
+`testing/browser/continuous-navigation.cjs` extends the mine checks with the museum
+journey. Serve the game with a standalone Vite dev server in Docker on the host
+network, as for the other browser checks, then run:
+
+```sh
+docker run --rm --network host --shm-size=1g --user "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD":/app -w /app mcr.microsoft.com/playwright:v1.64.1-noble sh -c 'npm i --no-save --silent --prefix /tmp/pw playwright@1.64.1 && PLAYWRIGHT_MODULE=/tmp/pw/node_modules/playwright node testing/browser/continuous-navigation.cjs'
+```
+
+This image runs Node 24. The check imports a synthetic local save with a built museum
+and workshop, opens More → Museum → Continuous play, filters unfinished levels and
+starts the first one. It injects committed-move counters to check live coin and gem
+status, then checks that animation disables both navigation buttons and that Next
+level ends the old run before starting exactly one new run. Credited records must
+survive exit and reload. It checks English and French at 320, 360, 844 and 1280 pixels,
+including visible buttons, counter bounds and phone board separation.
+
+Evidence: `output/playwright/continuous-navigation/result.json` and screenshots
+beside it. Verified 4 November 2026. This controlled journey does not prove a real
+player's gem collection or performance on a physical phone. Close the disposable
+browser context and stop the standalone Vite container after the check.

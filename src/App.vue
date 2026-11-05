@@ -150,10 +150,37 @@
                 cap: CONTINUOUS_COIN_CAP,
               })
             }}</span>
+            <span
+              v-if="campaign.town.buildings.moonstoneWorkshop"
+              class="continuous-gems"
+              role="status"
+              >{{
+                t('{earned}/{cap} workshop gems for this level', {
+                  earned: campaign.continuousRecords[game.currentLevelId]?.moonstoneGems ?? 0,
+                  cap:
+                    MOONSTONE_ECONOMY.continuousGemsPerPuzzle *
+                    MOONSTONE_ECONOMY.continuousPuzzlesPerLevel,
+                })
+              }}</span
+            >
           </div>
-          <button class="continuous-exit" :disabled="game.animationInProgress" @click="showVillage">
-            <GameIcon name="home" /> {{ t('Exit mine') }}
-          </button>
+          <div class="continuous-actions">
+            <button
+              v-if="campaign.nextContinuousLevel(game.currentLevelId) !== null"
+              class="continuous-exit"
+              :disabled="game.animationInProgress"
+              @click="startNextContinuousLevel"
+            >
+              {{ t('Next level') }}
+            </button>
+            <button
+              class="continuous-exit"
+              :disabled="game.animationInProgress"
+              @click="showVillage"
+            >
+              <GameIcon name="home" /> {{ t('Exit mine') }}
+            </button>
+          </div>
         </div>
         <div class="mine-feedback">
           <div v-show="!game.activeBonusMode && !game.arcadeBanner" class="mine-tip-slot">
@@ -297,6 +324,7 @@ import PowerUpBar from './components/PowerUpBar.vue';
 import LandingView from './components/LandingView.vue';
 import './styles/town.css';
 import { CONTINUOUS_COIN_CAP } from './data/rewards';
+import { MOONSTONE_ECONOMY } from './data/moonstones';
 import { LEVEL_COUNT, POWERS } from './data/campaign';
 import VictoryModal from './components/VictoryModal.vue';
 import SettingsDrawer from './components/SettingsDrawer.vue';
@@ -418,6 +446,14 @@ const startLevel = (id, mode = 'normal') => {
     return;
   }
   enterMine(id, mode);
+};
+const startNextContinuousLevel = () => {
+  if (!game.sessionActive || game.playMode !== 'continuous' || game.animationInProgress) return;
+  const id = campaign.nextContinuousLevel(game.currentLevelId);
+  if (id === null) return;
+  // Exit settles the last committed move and ends its run before issuing another.
+  showVillage();
+  startLevel(id, 'continuous');
 };
 const confirmMineEntry = () => {
   const entry = pendingMineEntry.value;

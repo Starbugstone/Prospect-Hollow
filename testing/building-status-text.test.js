@@ -152,13 +152,13 @@ const CASES = [
     'blacksmith',
     played((town) => {
       town.buildings.blacksmith = 1;
-      town.forge = { ...town.forge, charge: 1 };
+      town.forge = { progress: 2, charge: 5 };
     }),
     { forgeCollectible: true },
     {
       en: {
-        label: '<span class="plot-name">Blacksmith</span><small>Collect 1 TNT</small>',
-        moon: 'Collect 1 TNT',
+        label: '<span class="plot-name">Blacksmith</span><small>Collect stored TNT</small>',
+        moon: 'Collect stored TNT',
         plots: '<small>Level 1 / 3</small>',
       },
     },

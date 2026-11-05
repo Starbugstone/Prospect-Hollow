@@ -24,6 +24,11 @@ final class SaveIntegrity
     // Whether reconcile() saved other protected values than the upload's: the game must
     // load them. Kept apart from the findings, which are capped.
     private bool $changed = false;
+    // Receipts journaled before unlimited production carry no `production` stamp and
+    // replay with the capped rules their game applied: a forge holding one TNT and a
+    // workshop storing ten batches per level. Saves and current receipts use the new rules.
+    private bool $cappedProduction = false;
+    private const CAPPED_STORAGE_BATCHES = 10;
     /** Findings kept per upload; the first ones explain a desync, the rest repeat it. */
     public const MAX_FINDINGS = 40;
     /** Protected save fields compared whole, at the top of the save and in its town. */
@@ -212,7 +217,6 @@ final class SaveIntegrity
         if (
             !is_array($moonstones) ||
             ($moonstones['version'] ?? null) !== 2 ||
-            !self::integer($moonstones['storageBatches'] ?? null, 1) ||
             !self::integer($moonstones['continuousGemsPerPuzzle'] ?? null, 1) ||
             !self::integer($moonstones['continuousPuzzlesPerLevel'] ?? null, 1) ||
             !self::integer($moonstones['runs'] ?? null, 1) ||
@@ -381,12 +385,7 @@ final class SaveIntegrity
                             $town['buildings']['moonstoneWorkshop'] ?? 0,
                         ) ||
                         ($production['charge'] && $production['progress'])
-                    : !self::integer(
-                        $production['stored'] ?? null,
-                        0,
-                        ($town['buildings']['moonstoneWorkshop'] ?? 0) *
-                            $this->rules['economy']['moonstones']['storageBatches'],
-                    ))
+                    : !self::integer($production['stored'] ?? null))
             ) {
                 self::invalid('town.moonstones');
             }
@@ -612,7 +611,7 @@ final class SaveIntegrity
             array_key_exists('forge', $town) &&
             (!is_array($town['forge']) ||
                 !self::integer($town['forge']['progress'] ?? null, 0, 19) ||
-                !self::integer($town['forge']['charge'] ?? null, 0, 1))
+                !self::integer($town['forge']['charge'] ?? null))
         ) {
             self::invalid('town.forge');
         }
@@ -1994,7 +1993,22 @@ final class SaveIntegrity
         $coins = $state['town']['coins'];
         $pending = array_column($state['pendingChests'], 'id');
         $bounty = $this->bountyEntitlement($state['town']['events'][$this->incidentId()] ?? null);
-        $this->apply($state, $context, $kind, $data, $now);
+        // The receipts that advance, settle or collect forge and workshop production.
+        $produces = in_array(
+            $kind,
+            ['victory', 'continuous', 'forge-collect', 'building-finish', 'building-hammer'],
+            true,
+        );
+        $production = $data['production'] ?? 1;
+        if ($produces && !in_array($production, [1, 2], true)) {
+            self::mismatch($kind . '.production');
+        }
+        $this->cappedProduction = $produces && $production === 1;
+        try {
+            $this->apply($state, $context, $kind, $data, $now);
+        } finally {
+            $this->cappedProduction = false;
+        }
         $minted = 0;
         $reserved = 0;
         $cost = 0.0;
@@ -2342,9 +2356,7 @@ final class SaveIntegrity
                     while (
                         $remaining > 0 &&
                         ($s['town']['buildings']['moonstoneWorkshop'] ?? 0) &&
-                        $s['town']['moonstoneProduction']['stored'] <
-                            $s['town']['buildings']['moonstoneWorkshop'] *
-                                $this->rules['economy']['moonstones']['storageBatches']
+                        !$this->moonstonesFull($s['town'], 2)
                     ) {
                         $used = min($remaining, $perPuzzle - ($gems % $perPuzzle));
                         $gems += $used;
@@ -2486,16 +2498,25 @@ final class SaveIntegrity
                 $this->clock($d['at'] ?? null, $context, $now);
                 if (
                     !$s['town']['buildings']['blacksmith'] ||
-                    $s['town']['forge']['charge'] !== 1 ||
+                    $s['town']['forge']['charge'] < 1 ||
                     $s['powers']['tnt'] >= $this->powerCapacity($s['town']) ||
                     $this->cooldown($s['town'], 'blacksmith', $d['at'])
                 ) {
                     self::mismatch('forge-collect');
                 }
-                $s['town']['forge'] = ['progress' => 0, 'charge' => 0];
+                $amount = $this->cappedProduction
+                    ? 1
+                    : min(
+                        $s['town']['forge']['charge'],
+                        $this->powerCapacity($s['town']) - $s['powers']['tnt'],
+                    );
+                $s['town']['forge']['charge'] -= $amount;
+                if ($this->cappedProduction) {
+                    $s['town']['forge']['progress'] = 0;
+                }
                 $s['town']['lastCollections']['blacksmith'] = $d['at'];
-                $s['powers']['tnt']++;
-                $context['honours'] = Honours::credit($context['honours'], 'forge');
+                $s['powers']['tnt'] += $amount;
+                $context['honours'] = Honours::credit($context['honours'], 'forge', $amount);
                 break;
             case 'saloon-collect':
                 $this->accrue($s, $context, $d['at'] ?? null, $now);
@@ -3103,16 +3124,14 @@ final class SaveIntegrity
     }
     private function advanceForge(array &$town): void
     {
-        if (!$town['buildings']['blacksmith'] || $town['forge']['charge']) {
+        if (
+            !$town['buildings']['blacksmith'] ||
+            ($this->cappedProduction && $town['forge']['charge'])
+        ) {
             return;
         }
         $town['forge']['progress']++;
-        if (
-            $town['forge']['progress'] >=
-            ($this->rules['economy']['forgeRuns'][$this->service($town, 'blacksmith') - 1] ?? 6)
-        ) {
-            $town['forge'] = ['progress' => 0, 'charge' => 1];
-        }
+        $this->settleForge($town);
     }
     private function offer(array $town, string $id): ?array
     {
@@ -3303,12 +3322,10 @@ final class SaveIntegrity
         }
         $level = $town['buildings']['moonstoneWorkshop'] ?? 0;
         $key = $version === 2 ? 'stored' : 'charge';
-        $capacity =
-            $level * ($version === 2 ? $this->rules['economy']['moonstones']['storageBatches'] : 1);
         if (
             !$level ||
             ($version === 1 && $town['moonstoneProduction']['charge']) ||
-            $town['moonstoneProduction'][$key] >= $capacity
+            $this->moonstonesFull($town, $version)
         ) {
             return;
         }
@@ -3318,22 +3335,38 @@ final class SaveIntegrity
             $this->rules['economy']['moonstones']['runs']
         ) {
             $town['moonstoneProduction']['progress'] = 0;
-            $town['moonstoneProduction'][$key] = min(
-                $capacity,
-                $town['moonstoneProduction'][$key] + $level,
-            );
+            $town['moonstoneProduction'][$key] += $level;
+            if ($this->cappedProduction && $version === 2) {
+                $town['moonstoneProduction'][$key] = min(
+                    $level * self::CAPPED_STORAGE_BATCHES,
+                    $town['moonstoneProduction'][$key],
+                );
+            }
         }
+    }
+    /** Whether a capped receipt finds the version-2 workshop store full. */
+    private function moonstonesFull(array $town, int $version): bool
+    {
+        return $this->cappedProduction &&
+            $version === 2 &&
+            $town['moonstoneProduction']['stored'] >=
+                ($town['buildings']['moonstoneWorkshop'] ?? 0) * self::CAPPED_STORAGE_BATCHES;
     }
     private function settleForge(array &$town): void
     {
-        if (
-            $town['buildings']['blacksmith'] &&
-            !$town['forge']['charge'] &&
-            $town['forge']['progress'] >=
-                ($this->rules['economy']['forgeRuns'][$this->service($town, 'blacksmith') - 1] ?? 6)
-        ) {
-            $town['forge'] = ['progress' => 0, 'charge' => 1];
+        if (!$town['buildings']['blacksmith']) {
+            return;
         }
+        $runs = $this->rules['economy']['forgeRuns'][$this->service($town, 'blacksmith') - 1] ?? 6;
+        if ($this->cappedProduction) {
+            if (!$town['forge']['charge'] && $town['forge']['progress'] >= $runs) {
+                $town['forge'] = ['progress' => 0, 'charge' => 1];
+            }
+            return;
+        }
+        $batches = intdiv($town['forge']['progress'], $runs);
+        $town['forge']['progress'] %= $runs;
+        $town['forge']['charge'] += $batches;
     }
     private function stock(array &$s, mixed $stock, mixed $visit, bool $refresh): void
     {

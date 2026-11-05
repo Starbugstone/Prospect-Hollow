@@ -51404,7 +51404,6 @@
     "moonstones": {
       "version": 2,
       "runs": 3,
-      "storageBatches": 10,
       "continuousGemsPerPuzzle": 300,
       "continuousPuzzlesPerLevel": 3,
       "saleCoins": 250,
@@ -52247,5 +52246,5 @@
       "seenGeneration": 5
     }
   },
-  "contentDigest": "daa704520bdfb304ce3bea9adaf3abf89b8ec5a5ef048665ab27a1c25799da03"
+  "contentDigest": "80f03b29a6bf96b4e2fbe8740f29c405bcd3ffd132bf94e3b10ee81c620d5b7e"
 }

@@ -72,7 +72,7 @@ it('rewards construction and hammer completion once per real Moon level', () => 
   expect(buildWithHammer(hammered, 'ribbonLanding', 1)).toBeNull();
 });
 it.each([1, 2, 3])(
-  'stores up to ten level-%s batches after three puzzles and collects atomically',
+  'stores every level-%s batch after three puzzles and collects atomically',
   (level) => {
     const campaign = useCampaignStore();
     campaign.town.buildings.moonstoneWorkshop = level;
@@ -80,10 +80,10 @@ it.each([1, 2, 3])(
     expect(campaign.collectMoonstones()).toBe(0);
     campaign.town = advanceMoonstoneProduction(campaign.town);
     for (let i = 0; i < 100; i++) campaign.town = advanceMoonstoneProduction(campaign.town);
-    expect(campaign.town.moonstoneProduction.stored).toBe(10 * level);
-    expect(campaign.collectMoonstones()).toBe(10 * level);
+    expect(campaign.town.moonstoneProduction.stored).toBe(34 * level);
+    expect(campaign.collectMoonstones()).toBe(34 * level);
     expect(campaign.collectMoonstones()).toBe(0);
-    expect(campaign.town).toMatchObject({ moonstones: 10 * level, moonstonesEarned: 10 * level });
+    expect(campaign.town).toMatchObject({ moonstones: 34 * level, moonstonesEarned: 34 * level });
   },
 );
 // The shipped game installs the integrity guard before any store exists; every
@@ -208,7 +208,7 @@ it('rejects damaged version-3 transfers without changing the live town', () => {
   const campaign = useCampaignStore();
   campaign.town = normalizeTown(legacy());
   const file = JSON.parse(campaign.exportSave());
-  file.profile.town.moonstoneProduction = { stored: 31, progress: 0 };
+  file.profile.town.moonstoneProduction = { stored: -1, progress: 0 };
   expect(() => campaign.importSave(JSON.stringify(file))).toThrow('invalid moonstones');
   expect(campaign.town.moonstones).toBe(5);
 });
@@ -255,17 +255,17 @@ it('accumulates batches while retaining partial progress through collection and 
   expect(c.town.moonstoneProduction).toEqual({ progress: 0, stored: 2 });
   c.town.moonstoneProduction = { progress: 2, stored: 20 };
   for (let n = 0; n < 10; n++) c.town = advanceMoonstoneProduction(c.town);
-  expect(c.town.moonstoneProduction).toEqual({ progress: 2, stored: 20 });
-  expect(c.collectMoonstones(31000)).toBe(20);
+  expect(c.town.moonstoneProduction).toEqual({ progress: 0, stored: 28 });
+  expect(c.collectMoonstones(31000)).toBe(28);
   c.town = advanceMoonstoneProduction(c.town);
-  expect(c.town.moonstoneProduction).toEqual({ progress: 0, stored: 2 });
+  expect(c.town.moonstoneProduction).toEqual({ progress: 1, stored: 0 });
 });
-it('bounds the final batch after an upgrade with a stock not divisible by the new level', () => {
+it('keeps the whole batch after an upgrade with a stock not divisible by the new level', () => {
   const c = useCampaignStore();
   c.town.buildings.moonstoneWorkshop = 3;
   c.town.moonstoneProduction = { progress: 2, stored: 29 };
   c.town = advanceMoonstoneProduction(c.town);
-  expect(c.town.moonstoneProduction).toEqual({ progress: 0, stored: 30 });
+  expect(c.town.moonstoneProduction).toEqual({ progress: 0, stored: 32 });
 });
 const continuous = (c, id, jewels, runId = c.beginRun('continuous', id)) => {
   expect(c.recordContinuous({ id, runId, jewels, score: jewels })).toBe(true);
@@ -297,7 +297,7 @@ it('credits continuous gems incrementally, with a separate lifetime allowance pe
   expect(c.town.completedRuns).toBe(0);
   expect(c.pendingChests).toEqual([]);
 });
-it('discards gems while unbuilt/full and resumes without consuming unused allowance', () => {
+it('discards gems while unbuilt and credits every eligible gem after construction', () => {
   const c = useCampaignStore();
   c.town.buildings.museum = 1;
   continuous(c, 1, 999);
@@ -305,14 +305,14 @@ it('discards gems while unbuilt/full and resumes without consuming unused allowa
   c.town.buildings.moonstoneWorkshop = 1;
   c.town.moonstoneProduction = { progress: 2, stored: 9 };
   const run = continuous(c, 1, 750);
-  expect(c.town.moonstoneProduction.stored).toBe(10);
-  expect(c.continuousRecords[1].moonstoneGems).toBe(300);
+  expect(c.town.moonstoneProduction).toEqual({ stored: 10, progress: 1 });
+  expect(c.continuousRecords[1].moonstoneGems).toBe(750);
   continuous(c, 1, 1000, run);
-  expect(c.continuousRecords[1].moonstoneGems).toBe(300);
+  expect(c.continuousRecords[1].moonstoneGems).toBe(900);
   expect(c.collectMoonstones(1000)).toBe(10);
   continuous(c, 1, 1300, run);
-  expect(c.continuousRecords[1].moonstoneGems).toBe(600);
-  expect(c.town.moonstoneProduction.progress).toBe(1);
+  expect(c.continuousRecords[1].moonstoneGems).toBe(900);
+  expect(c.town.moonstoneProduction.progress).toBe(2);
 });
 it('rolls back continuous allowance, progress, coins and receipt when storage fails', () => {
   const c = useCampaignStore();
@@ -351,31 +351,19 @@ it('keeps v1 partial progress and bounds malformed continuous allowance on reloa
   });
 });
 
-it.each([1, 2, 3])(
-  'previews workshop level %s production and storage ahead of generic visitors',
-  (level) => {
-    const town = createTown();
-    town.era = 'twin-hollows';
-    town.buildings.moonstoneWorkshop = level - 1;
-    expect(buildingBenefit(town, 'moonstoneWorkshop', level)).toEqual({
-      icon: 'moonstone',
-      label: 'Moonstones per batch',
-      before: level - 1,
-      after: level,
-      suffix: '',
-      additional: [
-        {
-          icon: 'moonstone',
-          label: 'Moonstone storage capacity',
-          before: (level - 1) * 10,
-          after: level * 10,
-          suffix: '',
-        },
-      ],
-    });
-    expect(town.buildings.moonstoneWorkshop).toBe(level - 1);
-  },
-);
+it.each([1, 2, 3])('previews workshop level %s production ahead of generic visitors', (level) => {
+  const town = createTown();
+  town.era = 'twin-hollows';
+  town.buildings.moonstoneWorkshop = level - 1;
+  expect(buildingBenefit(town, 'moonstoneWorkshop', level)).toEqual({
+    icon: 'moonstone',
+    label: 'Moonstones per batch',
+    before: level - 1,
+    after: level,
+    suffix: '',
+  });
+  expect(town.buildings.moonstoneWorkshop).toBe(level - 1);
+});
 
 it('rolls back collect-all stock, partial progress, balances and cooldown on a failed save', () => {
   const c = useCampaignStore();
@@ -396,8 +384,14 @@ it.each([
   setLocale(language);
   const town = createTown();
   town.buildings.moonstoneWorkshop = 3;
+  town.moonstoneProduction = { stored: 33, progress: 2 };
   const html = await renderToString(
     createSSRApp({ render: () => h(TownMoonstoneWorkshop, { town, sellMoonstones: () => false }) }),
   );
   expect(html).toContain(phrase);
+  expect(html).toContain(language === 'en' ? 'Stored 33' : 'Stock : 33');
+  expect(html).toContain(
+    language === 'en' ? 'Production: 2/3 puzzles' : 'Production : 2/3 puzzles',
+  );
+  expect(html).not.toContain('33 / 30');
 });

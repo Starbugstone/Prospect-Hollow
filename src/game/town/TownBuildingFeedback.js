@@ -44,7 +44,7 @@ const MAP = {
     return `${runsDone(project)}/${constructionRuns(project)}`;
   },
   coins: (town) => t('Collect {coins} coins', { coins: town.income.stored }),
-  tnt: () => t('Collect 1 TNT'),
+  tnt: () => t('Collect stored TNT'),
   need: (town, id, need) => t(NEED_HINTS[need]),
   available: (town, id) => t(town.buildings[id] ? 'Upgrade' : 'Build'),
   built: (town, id) => t('Lv. {level}', { level: eraBuildingLevel(town, id) }),

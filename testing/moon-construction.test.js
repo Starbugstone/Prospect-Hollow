@@ -118,7 +118,7 @@ it('shares affordable-upgrade and collect labels without retaining the ready ham
   ).toBe('Upgrade');
   town.income.stored = 17;
   expect(buildingStatus(town, 'saloon', { indicator: 'coins' }).text).toBe('Collect 17 coins');
-  expect(buildingActionLabel(town, 'blacksmith', 'tnt')).toBe('Collect 1 TNT');
+  expect(buildingActionLabel(town, 'blacksmith', 'tnt')).toBe('Collect stored TNT');
 });
 
 it('keeps an upgrade scaffold until completion', () => {

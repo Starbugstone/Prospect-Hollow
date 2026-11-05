@@ -248,7 +248,16 @@ the journal, so offline play is credited when its queued actions sync:
   safe non-negative integers, and each map totalling at most the receipt's `jewels`.
   An implausible or missing claim credits nothing from that claim and never rejects the
   save.
-- `forge-collect` adds one to `forge`.
+- `forge-collect` adds the number of TNT actually transferred to inventory to `forge`.
+  Stored forge charge has no capacity; inventory capacity still limits collection,
+  and remaining charge and partial progress survive it. Workshop stock also has no
+  capacity, and built workshops accept continuous gem credits regardless of stock.
+  These rules apply to receipts stamped `production: 2` (`victory`, `continuous`,
+  `forge-collect`, `building-finish`, `building-hammer`). The same receipts without a
+  stamp were journaled by earlier games and replay with the capped rules those games
+  applied: a forge that holds one TNT and stops, and a workshop storing ten batches per
+  level. Pending offline play and restores of older histories therefore replay as they
+  were played (`backend/tests/fixtures/integrity-flows-capped-production.json`).
 - `raid-seen` adds one to `guardian` when the incident being seen was protected with
   no loss (any incident kind).
 

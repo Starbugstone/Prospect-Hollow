@@ -3,6 +3,8 @@ import { createPinia, setActivePinia } from 'pinia';
 import { useCampaignStore } from '../src/stores/campaignStore';
 import { createTown } from '../src/data/town';
 import { advanceMoonstoneProduction } from '../src/data/moonstones';
+import { forgeProductionRuns } from '../src/data/eras';
+import { serviceLevel } from '../src/data/buildingProgression';
 import {
   advanceForge,
   buildingIndicators,
@@ -48,7 +50,9 @@ it('has independent building timers, saves them, and keeps forge production runn
   expect(c.collectMoonstones(1000)).toBe(3);
   for (let i = 0; i < 3; i++) c.town = advanceMoonstoneProduction(c.town);
   expect(c.collectMoonstones(30999)).toBe(0);
-  for (let i = 0; i < 5; i++) c.town = advanceForge(c.town);
+  // One full forge cycle: production kept running through the collection.
+  const runs = forgeProductionRuns(serviceLevel(c.town, 'blacksmith'));
+  for (let i = 0; i < runs; i++) c.town = advanceForge(c.town);
   expect(c.town.forge.charge).toBe(1);
   expect(c.collectForgeTNT(30999)).toBe(false);
   expect(c.town.forge.charge).toBe(1);

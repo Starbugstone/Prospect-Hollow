@@ -365,7 +365,7 @@ export function createIntegrityFixtures() {
         let production = { progress: 0, charge: 0 };
         for (let n = 0; n < 12; n++) {
           victory(campaign);
-          production = advancePuzzleProduction(production, 3, 3);
+          if (!production.charge) production = advancePuzzleProduction(production, 3, 3);
           campaign.town.moonstoneProduction = {
             progress: production.progress,
             stored: production.charge,
@@ -398,7 +398,7 @@ export function createIntegrityFixtures() {
       },
     );
     fixture(
-      'continuous full workshop discards gems then resumes in the same run',
+      'continuous full workshop keeps crediting gems across collection in the same run',
       (profile) => {
         develop(profile, 'twin-hollows');
         profile.town.moonstoneProduction = { progress: 2, stored: 29 };
@@ -732,6 +732,59 @@ export function createIntegrityFixtures() {
           }) !== 10
         )
           throw new Error('A Moon VIP did not spend the valley amount.');
+      },
+    );
+    fixture(
+      'unlimited workshop and forge production with partial TNT collection',
+      (profile) => {
+        develop(profile, 'twin-hollows');
+        profile.town.completedRuns = 100;
+        profile.town.forge = { charge: 0, progress: 0 };
+        profile.town.moonstoneProduction = { stored: 0, progress: 0 };
+        profile.powers.find((power) => power.id === 'tnt').quantity =
+          bonusCapacity(profile.town) - 2;
+      },
+      (campaign) => {
+        for (let n = 0; n < 35; n++) {
+          const [chest] = victory(campaign, { chooseRewards: true });
+          expectSuccess(campaign.claimChest(chest.id, 'coins'), 'coin chest');
+        }
+        if (campaign.town.moonstoneProduction.stored !== 33 || campaign.town.forge.charge <= 1)
+          throw new Error('Uncollected production stopped.');
+        expectSuccess(campaign.collectForgeTNT(), 'partial forge collection');
+        const runId = campaign.beginRun('continuous', 1);
+        expectSuccess(
+          campaign.recordContinuous({ id: 1, runId, jewels: 900, score: 900 }),
+          'continuous credit above former storage capacity',
+        );
+      },
+    );
+    fixture(
+      'continuous gems before workshop construction never become production',
+      (profile) => {
+        develop(profile, 'twin-hollows');
+        profile.town.buildings.moonstoneWorkshop = 0;
+        profile.town.projects.moonstoneWorkshop = {
+          id: 'moonstoneWorkshop',
+          stage: 1,
+          wins: 3,
+          required: 3,
+        };
+      },
+      (campaign) => {
+        const runId = campaign.beginRun('continuous', 1);
+        for (const jewels of [250, 750])
+          expectSuccess(
+            campaign.recordContinuous({ id: 1, runId, jewels, score: 100 }),
+            'unbuilt gems',
+          );
+        expectSuccess(campaign.finishConstruction('moonstoneWorkshop', 1), 'workshop completion');
+        expectSuccess(
+          campaign.recordContinuous({ id: 1, runId, jewels: 1050, score: 100 }),
+          'new workshop gems',
+        );
+        if (campaign.continuousRecords[1].moonstoneGems !== 300)
+          throw new Error('Unbuilt gems became workshop production.');
       },
     );
     return { version: 1, fixtures };

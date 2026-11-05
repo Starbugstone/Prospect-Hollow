@@ -827,6 +827,56 @@ integrityDenied(
     'resolve cannot introduce invented historical money',
 );
 
+// Receipts journaled before unlimited production keep their capped replay, so pending
+// offline play and strict restores of older histories are not rewritten.
+$capped = json_decode(
+    file_get_contents(__DIR__ . '/fixtures/integrity-flows-capped-production.json'),
+    false,
+    64,
+    JSON_THROW_ON_ERROR,
+);
+foreach ($capped->fixtures as $fixture) {
+    $starting = $validator->accept(
+        $fixture->before,
+        null,
+        $fixture->baselineServerNow ?? $fixture->serverNow,
+    );
+    try {
+        $result = $validator->accept($fixture->after, $starting, $fixture->serverNow);
+    } catch (ApiError $error) {
+        throw new RuntimeException(
+            'capped ' . $fixture->name . ': ' . json_encode($error->details),
+            0,
+            $error,
+        );
+    }
+    assertIntegrity(
+        SaveIntegrity::receipt($result)['status'] === 'tracked',
+        $fixture->name . ' replays with capped production',
+    );
+}
+$stamped = integrityData($capped->fixtures[0]->after);
+foreach ($stamped['integrity']['actions'] as &$action) {
+    if ($action['kind'] === 'victory') {
+        $action['data']['production'] = 3;
+        break;
+    }
+}
+unset($action);
+try {
+    $validator->accept(
+        integrityObject($stamped),
+        $validator->accept($capped->fixtures[0]->before, null, $capped->fixtures[0]->serverNow),
+        $capped->fixtures[0]->serverNow,
+    );
+    assertIntegrity(false, 'an unknown production version is refused');
+} catch (ApiError $error) {
+    assertIntegrity(
+        ($error->details['field'] ?? null) === 'victory.production',
+        'an unknown production version is refused',
+    );
+}
+
 $fixturesPath = __DIR__ . '/fixtures/integrity-flows.json';
 if (!is_file($fixturesPath)) {
     throw new RuntimeException(
@@ -917,25 +967,43 @@ foreach ($fixtures->fixtures as $fixture) {
         'save_integrity_mismatch',
         $fixture->name . ' cannot hide an extra coin in a legitimate batch',
     );
+    if ($fixture->name === 'unlimited workshop and forge production with partial TNT collection') {
+        assertIntegrity(
+            $result->town->moonstoneProduction->stored === 36 &&
+                $result->town->moonstoneProduction->progress === 2 &&
+                $result->continuousRecords->{'1'}->moonstoneGems === 900,
+            'workshop stock exceeds ten batches and continuous gems keep advancing it',
+        );
+        assertIntegrity(
+            $result->town->forge->charge === 15 && $result->town->forge->progress === 1,
+            'forge accumulates seventeen cycles, collects two and keeps partial progress',
+        );
+        assertIntegrity(
+            $result->integrity->context->honours->forge === 2,
+            'forge honour counts the two TNT actually collected',
+        );
+        $retry = $validator->accept($fixture->after, $result, $clock);
+        assertIntegrity(
+            $retry->town->forge == $result->town->forge &&
+                $retry->integrity->context->honours->forge === 2,
+            'retry cannot collect stored TNT or credit the forge honour twice',
+        );
+        $fakeForge = integrityData($fixture->after);
+        $fakeForge['town']['forge']['charge']++;
+        integrityDenied(
+            fn() => $validator->accept(integrityObject($fakeForge), $starting, $clock),
+            'save_integrity_mismatch',
+            'unlimited forge stock still requires production receipts',
+        );
+    }
     if (str_contains($fixture->name, 'moonstone') || str_contains($fixture->name, 'workshop')) {
         $fakeStock = integrityData($fixture->after);
-        $fakeStock['town']['moonstoneProduction']['stored'] =
-            $fakeStock['town']['buildings']['moonstoneWorkshop'] * 10 + 1;
+        $fakeStock['town']['moonstoneProduction']['stored']++;
         integrityDenied(
             fn() => $validator->accept(integrityObject($fakeStock), $starting, $clock),
-            'save_integrity_invalid',
-            'workshop cannot hold above capacity',
+            'save_integrity_mismatch',
+            'every stored stone still requires production receipts',
         );
-        if ($fakeStock['town']['buildings']['moonstoneWorkshop'] > 0) {
-            $fakeStock['town']['moonstoneProduction']['stored'] =
-                ($fixture->after->town->moonstoneProduction->stored + 1) %
-                ($fakeStock['town']['buildings']['moonstoneWorkshop'] * 10 + 1);
-            integrityDenied(
-                fn() => $validator->accept(integrityObject($fakeStock), $starting, $clock),
-                'save_integrity_mismatch',
-                'stock within capacity still requires production receipts',
-            );
-        }
         $overCollect = integrityData($fixture->after);
         foreach ($overCollect['integrity']['actions'] as &$action) {
             if ($action['kind'] === 'moonstone-collect') {

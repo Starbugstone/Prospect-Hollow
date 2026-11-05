@@ -216,7 +216,7 @@ it('keeps continuous earnings capped by their existing rule and allows score-onl
   expect(campaign.recordContinuous({ id: 1, runId, jewels: 12000, score: 10000 })).toBe(true);
   expect(campaign.town.coins).toBe(CONTINUOUS_COIN_CAP);
   expect(campaign.continuousRecords[1].score).toBe(10000);
-  expect(campaign.integrity.actions).toHaveLength(actions);
+  expect(campaign.integrity.actions).toHaveLength(actions + 1);
   campaign.continuousRecords[1].coins = 999999;
   expect(campaign.continuousRecords[1].coins).toBe(CONTINUOUS_COIN_CAP);
 });

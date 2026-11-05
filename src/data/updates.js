@@ -2,6 +2,11 @@
 // text are English keys for t(); add the French text to src/i18n/fr.json.
 const UPDATES = [
   {
+    date: '2026-11-04',
+    title: 'The workshop and forge never stop',
+    text: 'The Moonstone workshop and the forge now keep producing however long you wait to collect: moonstones and TNT simply pile up. Collecting TNT takes as much as your inventory holds and leaves the rest at the forge. In continuous play, the banner now shows the level’s workshop gems next to its coins. The museum offers the next unfinished level and an Unfinished filter, and the banner’s Next level button takes you straight there.',
+  },
+  {
     date: '2026-10-24',
     title: 'Moonstones to save, spend and show off',
     text: 'Moonstones are now saved: earn one per finished Moon building level. At levels 1/2/3, the Moonstone workshop makes 1/2/3 every three completed puzzles and stores up to 10/20/30; tap it to collect. Continuous play adds one puzzle of workshop progress per 300 gems, up to three per level over your town’s lifetime. Sell stones for 250 coins each, or build Moonrock Court on the Moon and Moonstone Garden in the valley for 20/30/40/50/60 moonstones per stage. Earthrise Plaza on the Moon uses coins. These monuments are optional and never needed to finish an era.',

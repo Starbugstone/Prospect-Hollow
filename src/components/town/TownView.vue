@@ -1501,8 +1501,10 @@ async function selectBuilding(id, locate = true) {
   }
   collection.value = null;
   collectionNow.value = Date.now();
+  const previousTNT = campaign.powers.find((power) => power.id === 'tnt').quantity;
   if (id === 'blacksmith' && campaign.collectForgeTNT(collectionNow.value)) {
-    showCollection('tnt', 1, 'blacksmith');
+    const amount = campaign.powers.find((power) => power.id === 'tnt').quantity - previousTNT;
+    showCollection('tnt', amount, 'blacksmith');
     return;
   }
   await inspectBuilding(id, locate);
