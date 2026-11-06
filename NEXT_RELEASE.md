@@ -21,19 +21,21 @@ The release is finished when:
 
 ## Where things stand
 
-On `preprod` at `7de2b6af`; nothing below has reached `main`.
+On `preprod` after `e8d7191f`; nothing below has reached `main`.
 
-| Piece                                                            | State   |
-| ---------------------------------------------------------------- | ------- |
-| Commission contract, `src/data/commissions.js`                   | Done    |
-| Earthlight Conservatory (Moon), opens at Greenhouse level 3      | Done    |
-| Homecoming Commons (valley), opens at Homecoming Hall level 3    | Done    |
-| Signal: map pill, Build sheet pill, letter over the site         | Done    |
-| Real-game signal check, `testing/browser/town-commission-signal` | Done    |
-| Real phone test                                                  | Not yet |
-| New boards                                                       | Not yet |
-| Third commission                                                 | Not yet |
-| Honours family, economy rerun, release notes                     | Not yet |
+| Piece                                                            | State     |
+| ---------------------------------------------------------------- | --------- |
+| Commission contract, `src/data/commissions.js`                   | Done      |
+| Earthlight Conservatory (Moon), opens at Greenhouse level 3      | Done      |
+| Homecoming Commons (valley), opens at Homecoming Hall level 3    | Done      |
+| Signal: map pill, Build sheet pill, letter over the site         | Done      |
+| Real-game signal check, `testing/browser/town-commission-signal` | Done      |
+| Real phone test                                                  | Not yet   |
+| Residents visibly using each outcome                             | Under way |
+| Route-choice board prototype (chapter 94)                        | Under way |
+| New boards                                                       | Not yet   |
+| Third commission                                                 | Not yet   |
+| Honours family, economy rerun, release notes                     | Not yet   |
 
 ## What the numbers say
 
@@ -365,6 +367,18 @@ If they don't, the next release should lean on boards and new mechanics.
   stops under reduced motion. It saves nothing new. Revisit dismissing if players find it naggy.
 - **Landmark Patron stays as shipped.** Its measure is fixed, so commissions get their own family.
 - **This file is the one plan.** Everything from the earlier plan lives here, so nothing can drift.
+- **The game aims to be very long** (6 November 2026, owner): many hours of play, so new content and
+  mechanics keep coming after this release.
+- **Who replays.** A player who min-maxes should finish everything without replaying a level. Lower
+  earners are pointed to replays once no new level is left: the next step offers "Replay levels"
+  rather than the last level's number.
+- **Owning, choosing and watching are all rewarding**, and events are welcome. Optional event
+  countdowns stay as `AGENTS.md` allows them, built only when an event design needs one.
+- **Route-choice boards join step 3.** Chapter 94 gets one prototype first: either route opens the
+  goal, neither is required, and each order must play differently.
+- **Residents using commissions joins this release** instead of waiting for the phone test.
+- **Labels name the building that stands.** Once a design is chosen, every label shows it rather than
+  the site's name. Map labels and tabs are checked at phone sizes first.
 
 ## Risks
 
