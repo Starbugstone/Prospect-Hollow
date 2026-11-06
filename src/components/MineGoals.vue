@@ -42,7 +42,8 @@ const groups = [
     id: 'cracked-wall',
     label: 'Cracked walls',
     art: '/art/obstacles/cracked-wall.svg',
-    value: (tile) => (tile.waist != null ? tile.health : 0),
+    // A route wall is one way in among several, not a goal.
+    value: (tile) => (tile.waist != null && !tile.routeWall ? tile.health : 0),
   },
   {
     id: 'starglass',

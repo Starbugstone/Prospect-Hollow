@@ -1,5 +1,7 @@
 import { beginRunLog, endRunLog, resumeRunLog } from './runLog';
 import { levelConfig } from '../../game/engine/LevelGenerator';
+import { prototypeConfig } from '../../data/prototypeBoards';
+import { debugToolsAllowed } from '../../services/debugTools';
 import { miningPayout } from '../../game/town/TownRules';
 import { BOARD_BONUSES, layerCount } from '../../game/engine/TileRules';
 import { performanceMark } from '../../game/PresentationWork';
@@ -47,7 +49,8 @@ const HANDOFF_FIELDS = [
 const OPTIONAL_HANDOFF_FIELDS = new Set(['honourTally']);
 
 export function captureHandoff(store) {
-  if (!store.sessionActive) return null;
+  // A prototype board belongs to the debug tools of this tab; it is not transferred.
+  if (!store.sessionActive || store.playMode === 'prototype') return null;
   if (store.animationInProgress || store.pendingBoardState)
     throw new Error('The current move is still finishing. Try again shortly.');
   store.syncRunClock(false);
@@ -141,14 +144,20 @@ export function resetRunPresentation(store) {
   store.reshuffleNotice = null;
 }
 
+// `prototype` plays a board on trial (src/data/prototypeBoards.js), named by its key. Only
+// the debug tools can start one, and it records nothing: no run, reward, power or record.
 export function startLevel(store, levelId, mode = 'normal', { seed } = {}) {
   performanceMark('mine-intent');
   const campaign = useCampaignStore();
-  if (!['normal', 'continuous'].includes(mode) || !campaign.canPlay(levelId, mode)) return false;
-  const config = levelConfig(levelId);
+  const trial = mode === 'prototype';
+  if (trial ? !debugToolsAllowed() : !['normal', 'continuous'].includes(mode)) return false;
+  if (!trial && !campaign.canPlay(levelId, mode)) return false;
+  const config = trial ? prototypeConfig(levelId) : levelConfig(levelId);
   if (!config) return false;
+  if (trial && store.sessionActive) exitLevel(store);
   store.playMode = mode;
-  store.runId = campaign.beginRun(mode, levelId);
+  store.prototypeKey = trial ? levelId : null;
+  store.runId = trial ? null : campaign.beginRun(mode, levelId);
   beginRunLog(store, levelId, mode, seed);
   boardReadiness(store).cancel();
   store.sessionVersion += 1;
@@ -157,7 +166,7 @@ export function startLevel(store, levelId, mode = 'normal', { seed } = {}) {
   store.playClock.reset();
   store.elapsedMs = 0;
   store.speedTargetMs = config.speedTargetMs ?? 0;
-  store.currentLevelId = levelId;
+  store.currentLevelId = config.id;
   clearReshuffleNotice(store);
   store.sessionActive = true;
   // Start audio in the mine-entry gesture, before renderer/paint callbacks.
@@ -197,12 +206,15 @@ export function exitLevel(store) {
   boardReadiness(store).cancel();
   endRunLog(store);
   const campaign = useCampaignStore();
-  campaign.endRun(store.runId);
-  campaign.settlePendingChests();
+  if (store.playMode !== 'prototype') {
+    campaign.endRun(store.runId);
+    campaign.settlePendingChests();
+  }
   // A move still animating has not committed its collection or score. Completed
   // moves already synced in commitResolution; leaving cannot bank a preview.
   if (!store.animationInProgress) store.syncContinuous();
   store.playMode = 'normal';
+  store.prototypeKey = null;
   store.syncRunClock(false);
   store.sessionVersion += 1;
   store.powerInUse = null;
@@ -256,6 +268,15 @@ export function completeLevel(store) {
     store.remainingOre > 0
   )
     return;
+  if (store.playMode === 'prototype') {
+    store.syncRunClock(false);
+    store.levelRewards = [];
+    store.coinReward = 0;
+    store.levelCleared = true;
+    store.cancelHint(true);
+    store.updateObjectives();
+    return;
+  }
   const campaign = useCampaignStore();
   store.syncRunClock(false);
   store.remainingBonusGems = store.board.filter((gem) => BOARD_BONUSES.includes(gem?.type)).length;

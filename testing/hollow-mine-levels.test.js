@@ -61,6 +61,24 @@ describe('append-only floating seam chapters', () => {
     );
   });
 
+  it('keeps all 546 shipped levels identical while new boards are on trial', () => {
+    // Captured before the first prototype board (src/data/prototypeBoards.js) and route
+    // chambers. Levels 1–546 keep their layouts, targets, names and chapters.
+    const shipped = generateLevelConfigs(546).map(({ board, ...level }) => ({
+      ...level,
+      board: board.map((gem) => (gem ? gem.type : null)),
+    }));
+    const payload = JSON.stringify({
+      levels: shipped,
+      stars: STAR_SCORE_TARGETS.slice(0, 546),
+      names: LEVEL_NAMES.slice(0, 546),
+      chapters: CHAPTERS.slice(0, 91),
+    });
+    expect(createHash('sha256').update(payload).digest('hex')).toBe(
+      'c428d193a1bb1550c354dd6645ec62822243f2e71af5712245fe4de619bf047c',
+    );
+  });
+
   it('appends six-puzzle chapters with names and star targets', () => {
     expect(CHAPTERS.slice(67)).toEqual(HOLLOW_MINE_CHAPTERS);
     expect(HOLLOW_MINE_LEVELS).toHaveLength(HOLLOW_MINE_CHAPTERS.length * 6);

@@ -3928,5 +3928,11 @@
   "A new commission has arrived: {site}.": "Une nouvelle commande est arrivée : {site}.",
   "Your commission is taking shape": "Votre commande prend forme",
   "Letters from the valley": "Lettres de la vallée",
-  "Choose what this place becomes. Your choice is permanent, and it is never needed to reach the next era.": "Choisissez ce que ce lieu deviendra. Ce choix est définitif et n’est jamais nécessaire pour atteindre l’ère suivante."
+  "Choose what this place becomes. Your choice is permanent, and it is never needed to reach the next era.": "Choisissez ce que ce lieu deviendra. Ce choix est définitif et n’est jamais nécessaire pour atteindre l’ère suivante.",
+  "Prototype board": "Plateau prototype",
+  "Prototype cleared in {moves} moves": "Prototype terminé en {moves} coups",
+  "A board on trial. Nothing is saved: no rewards, records or powers.": "Un plateau à l’essai. Rien n’est sauvegardé : ni récompense, ni record, ni pouvoir.",
+  "The deep lantern": "La lanterne profonde",
+  "The deep lantern: Two ways down": "La lanterne profonde : Deux voies vers le fond",
+  "Two lanterns and two phase seals wait in a sealed well at the bottom. Crack the thick block above it to drop straight in, or break the thin wall on the right to reach it from the side. One way in is enough; the other wall can stay.": "Deux lanternes et deux sceaux de phase attendent au fond d’un puits scellé. Fendez le bloc épais au-dessus pour y descendre tout droit, ou brisez le mur fin à droite pour l’atteindre par le côté. Une seule voie suffit ; l’autre mur peut rester."
 }

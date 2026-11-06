@@ -27,10 +27,13 @@ export function canSwapCells(board, tiles, aIndex, bIndex, cols, rows) {
   );
 }
 
-// Sealed chambers count from the start: their layers wait behind the wall.
+// Sealed chambers count from the start: their layers wait behind the wall. A route wall
+// (one of several ways into the same place) counts toward no goal.
 export const layerCount = (tile) =>
   tile?.type !== 'void'
-    ? (tile?.health ?? 0) + (tile?.chainHealth ?? 0) + (tile?.signalHealth ?? 0)
+    ? (tile?.routeWall ? 0 : (tile?.health ?? 0)) +
+      (tile?.chainHealth ?? 0) +
+      (tile?.signalHealth ?? 0)
     : 0;
 
 export const neighborsOf = (index, cols, rows) =>

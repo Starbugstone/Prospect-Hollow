@@ -217,6 +217,10 @@ portal cells may not interact as a player expects. If so, swap in spores and len
 ### Tasks
 
 - [ ] Prototype one board per chapter and play them before authoring the rest
+  - [x] Chapter 94: `deep-lantern-routes`, a route-choice board, on trial behind the debug
+        tools (`prospectDebug.playPrototype()`, see
+        [boards on trial](docs/hollow-mine-levels.md#boards-on-trial)). Not yet played on a phone
+  - [ ] Chapters 92 and 93
 - [ ] Add the chapters to `PLANS` in `src/data/hollowMineLevels.js`, with names, stops and tips.
       Consider a new file if this one, already 1,720 lines, gets harder to read
 - [ ] Add French names, stops and tips to `src/i18n/fr.json`
@@ -366,6 +370,11 @@ If they don't, the next release should lean on boards and new mechanics.
 - **No toast, modal or dismiss button.** A gold ring pulses three times for `request` and `ready`, and
   stops under reduced motion. It saves nothing new. Revisit dismissing if players find it naggy.
 - **Landmark Patron stays as shipped.** Its measure is fixed, so commissions get their own family.
+- **Route walls count toward no goal.** Every wall on a level would otherwise be required, so
+  a route-choice board would need both routes. A chamber marked `route: true` keeps its wall
+  out of the goal and may hold nothing the goal counts. No new obstacle or art.
+- **Boards on trial stay out of the campaign.** Chapters are six levels each, so one board
+  can't be appended alone. Prototypes play through the debug tools and save nothing.
 - **This file is the one plan.** Everything from the earlier plan lives here, so nothing can drift.
 - **The game aims to be very long** (6 November 2026, owner): many hours of play, so new content and
   mechanics keep coming after this release.

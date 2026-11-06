@@ -15,10 +15,11 @@ beforeEach(() => {
 });
 afterEach(() => vi.unstubAllGlobals());
 
-it('offers only the read-only profiling, navigation and puzzle log helpers', () => {
+it('offers only the save-free profiling, navigation, puzzle log and prototype helpers', () => {
   const tools = createDebugTools();
   expect(Object.isFrozen(tools)).toBe(true);
   expect(Object.keys(tools).sort()).toEqual([
+    'playPrototype',
     'runLog',
     'showNavigation',
     'townFrameStats',

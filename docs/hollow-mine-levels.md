@@ -46,6 +46,11 @@ Willowkin plant the first tree of the floating island in chapter 23.
   met the earlier portal see its "New in this mine" guide again, marked Updated.
 - **Breakthrough chambers** are sealed rows behind a cracked wall that only bonus blasts
   break. When the whole wall is down, the chamber opens and fills from above.
+- **Route chambers** (`route: true` in a level's `chambers`) are ways into the same place,
+  of which the player needs only one. Their cracked walls count toward no goal, are left
+  out of the goal counters, and may stay standing when the level ends. A route chamber
+  may hold nothing the goal counts; the generator rejects one that does. Once one route is
+  open, the hint stops aiming at the other walls.
 - **No ice on extraction levels.** A level whose goal is lighting lanterns or delivering
   cargo carries no ice.
 
@@ -211,3 +216,34 @@ Stone ceiling) and 429 (Rigging vault: Behind the rigging, now with banded stone
 from 439). With 100 hint-led seeds, 411 takes a median of 29 moves (it was 31 with orders)
 and 429 a median of 25 (29.5); both finished every run. Six colors roughly double the effort
 of a board, so they suit only levels that would otherwise need heavy collection goals.
+
+## Boards on trial
+
+A new board can be played before it joins the campaign. `src/data/prototypeBoards.js` lists
+them in the level grammar of this file. They sit outside `LEVEL_COUNT` and the save. Only
+the debug tools (development, preprod and `VITE_DEBUG_TOOLS=true` builds) open one, with
+`prospectDebug.playPrototype('<key>')` in the console. A banner marks the run, powers are
+hidden, and finishing records nothing: no reward, record, honour or obstacle seen. A board
+keeps the level number it would take (its id also seeds its layout), so appending it there
+gives the same board.
+
+The first is chapter 94's route-choice board, `deep-lantern-routes` ("The deep lantern:
+Two ways down", level 559's slot). Two lanterns and two phase seals sit in a 2 × 2 well
+that no swap can reach. A thick cracked block above it opens a drop shaft, where the
+well lights through vertical matches. A thin wall to its right opens a side chamber,
+where it lights through horizontal matches. `testing/route-chambers.test.js` covers the
+rules and the store, and `testing/levels/prototype-routes.test.js` measures 60 hint-led
+seeds per variant (`npm run test:levels`).
+
+| 60 seeds (hint-led)              | Median moves | Max | Well cells lit by                     |
+| -------------------------------- | -----------: | --: | ------------------------------------- |
+| Both routes                      |           23 |  61 | 52 horizontal, 35 vertical, 212 blast |
+| Drop shaft only                  |           24 |  69 | 66 vertical, 230 blast                |
+| Side chamber only                |           25 | 111 | 96 horizontal, 199 blast              |
+| Neither route (bonuses only)     |           32 | 148 | 291 blast                             |
+| Drop shaft open from the start   |           10 |  29 | 218 vertical, 81 blast                |
+| Side chamber open from the start |           12 |  70 | 62 horizontal, 178 blast              |
+
+With both routes available, the shaft opened first in 33 runs and the side chamber in 23
+(median move 20 and 12), and every run finished. The "lit by" columns count each hit
+that lit a lantern or wore down a seal in the well.

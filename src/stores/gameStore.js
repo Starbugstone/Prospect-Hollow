@@ -3,6 +3,7 @@ import { defineStore } from 'pinia';
 import { remainingOre } from '../game/engine/ChapterMechanics';
 import { PlayClock } from '../game/engine/PlayClock';
 import { levelConfig } from '../game/engine/LevelGenerator';
+import { prototypeConfig } from '../data/prototypeBoards';
 import { createRunTally } from '../data/honours';
 import { useSettingsStore } from './settingsStore';
 import { plain } from './game/boardData';
@@ -75,12 +76,16 @@ export const useGameStore = defineStore('game', {
     hintMove: null,
     currentBoardLayout: null,
     currentLevelId: null,
+    // The key of the prototype board on trial (playMode 'prototype'), otherwise null.
+    prototypeKey: null,
     reshuffleNotice: null,
   }),
   getters: {
     // Levels are generated on first use; see levelConfig().
     currentLevel: (state) => {
-      const config = levelConfig(state.currentLevelId);
+      const config = state.prototypeKey
+        ? prototypeConfig(state.prototypeKey)
+        : levelConfig(state.currentLevelId);
       return config ? { id: config.id, summary: config.summary, config } : null;
     },
     starScoreTarget(state) {
@@ -155,7 +160,7 @@ export const useGameStore = defineStore('game', {
       if (ARCADE_CHAINS.includes(this.arcadeBanner?.kind) && !chain) return;
       this.arcadeBanner = {
         ...banner,
-        ...(this.playMode === 'continuous' ? { coins: undefined } : {}),
+        ...(this.playMode !== 'normal' ? { coins: undefined } : {}),
         id: (this.arcadeBanner?.id ?? 0) + 1,
       };
       storeTimers(this).set('banner', () => (this.arcadeBanner = null), chain ? 3200 : 2000);

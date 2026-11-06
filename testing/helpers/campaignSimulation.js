@@ -13,7 +13,8 @@ const engine = new MatchEngine(),
 
 // Stop at the normal objective finish. No inventory powers or post-victory
 // score farming; diagnostic budgets never become gameplay move limits.
-export function simulateCampaignLevel(level, seed) {
+// `observe(result, { turn, tiles, board })` sees each settled move or shuffle.
+export function simulateCampaignLevel(level, seed, { observe } = {}) {
   const originalRandom = Math.random;
   let randomState = level.id * seed * 7919;
   Math.random = () => {
@@ -87,6 +88,7 @@ export function simulateCampaignLevel(level, seed) {
         gemTypes: level.boardLayout.gemTypes,
       });
       board = result.board;
+      observe?.(result, { turn: turns, tiles, board });
       if (tiles.some((tile, index) => tile.type === 'void' && board[index] !== null))
         throw new Error('Resolution filled a permanent void');
       advanceOreOrders(oreOrders, result.steps);
