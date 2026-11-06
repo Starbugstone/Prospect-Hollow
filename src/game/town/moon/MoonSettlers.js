@@ -7,8 +7,9 @@ import {
 } from '../../../data/moonSettlement';
 import { swingLimbs } from '../TownGait';
 import { animalModel, animateAnimal } from '../TownAnimalModels';
+import { addCarriedItem, holdCarried, routineDay, routinePose } from '../TownCommissionUse';
 import { hash01 as hash } from '../TownMath';
-import { walkPath, walkPose } from '../TownNavigation';
+import { walkPath } from '../TownNavigation';
 
 // New Hollow's settlers: suited figures who leave one building's hatch, walk its
 // public path to the ring road, cross to another building and step inside. Each
@@ -76,7 +77,7 @@ export function moonSettlerBuildings(levels) {
 // The commission a resident heads for on this trip, or none: the first `visits` trips of
 // their day go there, so what the player chose decides who comes and how often.
 const venueForTrip = (venues, kind, trip) =>
-  venues.find(({ visits }) => trip < (visits[kind] ?? 0))?.route ?? null;
+  venues.find(({ visits }) => trip < (visits[kind] ?? 0)) ?? null;
 
 /**
  * One settler's looping day: home → visit → home, three times, resting indoors
@@ -96,29 +97,40 @@ export function moonSettlerPlan(levels, n, homeId = null, venues = [], kind = 's
     buildings.find(({ id }) => id === homeId) ??
     (homes.length ? homes : buildings)[n % (homes.length || buildings.length)];
   const others = buildings.filter((route) => route !== home);
-  const segments = [];
-  let time = 0;
-  const walk = (from, to) => {
-    const route = moonSettlerRoute(from, to);
-    const duration = route.length / MOON_WALK_SPEED;
-    segments.push({ route, start: time, duration });
-    time += duration;
-  };
-  const rest = (building, duration) => {
-    segments.push({ inside: building.id, start: time, duration });
-    time += duration;
-  };
+  const steps = [];
   for (let trip = 0; trip < 3; trip++) {
+    const venue = venueForTrip(venues, kind, trip);
     const visit =
-      venueForTrip(venues, kind, trip) ??
+      venue?.route ??
       (others.length ? others[Math.floor(hash(n * 13 + trip * 7 + 1) * others.length)] : home);
-    walk(home, visit);
-    rest(visit, 3 + hash(n * 5 + trip) * 6);
-    walk(visit, home);
-    rest(home, 5 + hash(n * 3 + trip + 40) * 8);
+    // A commission's outcome decides what happens there (`commissionUse`): settlers go in
+    // through its door, or stand before it, and may bring something home.
+    const stay = venue?.use?.stay ?? 'enter';
+    const enters = stay === 'enter';
+    const there = moonSettlerRoute(home, visit);
+    steps.push({ route: there, toDoor: enters });
+    const pause = 3 + hash(n * 5 + trip) * 6;
+    steps.push(
+      enters
+        ? { inside: visit.id, duration: pause }
+        : { stand: there, face: moonCommissionFront(visit), duration: pause * 2 },
+    );
+    steps.push({
+      route: moonSettlerRoute(visit, home),
+      fromDoor: enters,
+      carry: venue?.use?.carry ?? null,
+    });
+    steps.push({ inside: home.id, duration: 5 + hash(n * 3 + trip + 40) * 8 });
   }
-  return { segments, duration: time, offset: hash(n + 70) * time, home: home.id };
+  const { segments, duration } = routineDay(steps, MOON_WALK_SPEED);
+  return { segments, duration, offset: hash(n + 70) * duration, home: home.id };
 }
+// Standing at a commission without going in, a settler faces its door.
+const moonCommissionFront = (route) => {
+  const [x, y, z] = moonHatch(route);
+  const [nx, , nz] = approachPoints(route)[1] ?? [x, y, z + 1];
+  return [x - (nx - x), y, z - (nz - z)];
+};
 
 /** Where a settler is at `time`: position, heading, door scale and hop distance. */
 export function moonSettlerPose(plan, time, out = {}) {
@@ -133,33 +145,12 @@ export function moonSettlerPose(plan, time, out = {}) {
     out.scale = 1;
     out.distance = time * plan.speed * radius;
     out.inside = null;
+    out.carry = null;
+    out.walking = true;
     return out;
   }
   const local = (((time + plan.offset) % plan.duration) + plan.duration) % plan.duration;
-  let segment = plan.segments[0];
-  for (const candidate of plan.segments) {
-    if (candidate.start > local) break;
-    segment = candidate;
-  }
-  const elapsed = local - segment.start;
-  if (segment.inside) {
-    out.visible = false;
-    out.inside = segment.inside;
-    out.scale = 0;
-    return out;
-  }
-  const { path, length } = segment.route;
-  const distance = Math.min(length, elapsed * MOON_WALK_SPEED);
-  // The valley's path sampling, with its eased turns at corners.
-  walkPose(path, distance / length, out);
-  out.scale = Math.max(
-    0,
-    Math.min(1, elapsed / MOON_DOOR_TIME, (segment.duration - elapsed) / MOON_DOOR_TIME),
-  );
-  out.visible = out.scale > 0;
-  out.distance = distance;
-  out.inside = null;
-  return out;
+  return routinePose(plan, local, MOON_WALK_SPEED, MOON_DOOR_TIME, out);
 }
 
 /**
@@ -203,20 +194,23 @@ export function strideMoonFigure({ body, arms, legs }, distance, walking = true)
 }
 
 // The valley's Willowkin keeps its own rig and walk, at the Moon's stride and hop.
-function strideMoonWillowkin(model, distance) {
+function strideMoonWillowkin(model, distance, walking = true) {
   const step = (distance / STRIDE) * TAU;
-  animateAnimal(model, step / 7, 'walking', true);
-  model.body.position.y = Math.abs(Math.sin(step)) * HOP;
+  animateAnimal(model, step / 7, walking ? 'walking' : 'idle', walking);
+  model.body.position.y = walking ? Math.abs(Math.sin(step)) * HOP : 0;
 }
 
 /** Completed homes add neighbors. A construction project alone never spawns them. */
 export function createMoonSettlers(d, parent, levels = {}, venues = []) {
   const homes = HOMES.reduce((sum, id) => sum + (levels[id] ?? 0), 0);
   const suits = [p.shell, '#d9dde6', '#e8e1cf'];
-  const settlers = Array.from({ length: Math.min(10, 2 + homes * 2) }, (_, n) => ({
-    ...moonSuitFigure(d, { parent, suit: suits[n % suits.length] }),
-    plan: moonSettlerPlan(levels, n, null, venues),
-  }));
+  const settlers = Array.from({ length: Math.min(10, 2 + homes * 2) }, (_, n) => {
+    const figure = moonSuitFigure(d, { parent, suit: suits[n % suits.length] });
+    const plan = moonSettlerPlan(levels, n, null, venues);
+    // Only a settler whose day brings something home holds the item.
+    const carry = plan.segments?.find((segment) => segment.carry)?.carry;
+    return { ...figure, plan, item: carry ? addCarriedItem(d, figure.arms[0].lower, carry) : null };
+  });
   const dome = levels.willowkinDome ?? 0;
   for (let n = 0; n < (dome > 0 ? Math.min(4, dome + 1) : 0); n++)
     settlers.push({
@@ -237,6 +231,7 @@ export function animateMoonSettler(settler, time) {
   root.position.set(pose.x, pose.y, pose.z);
   root.rotation.y = pose.heading;
   root.scale.setScalar(pose.scale);
-  (settler.stride ?? strideMoonFigure)(settler, pose.distance);
+  (settler.stride ?? strideMoonFigure)(settler, pose.distance, pose.walking);
+  holdCarried(settler.item, settler.arms, !!pose.carry);
   return pose;
 }
