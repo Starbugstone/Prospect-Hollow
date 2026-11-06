@@ -140,6 +140,8 @@ export async function activatePower(store, bonusName, index, consume = false) {
   const rescue = bonusName === 'recovery_sweep';
   if (!rescue && !isPlayableCell(tilesOf(store)[index])) return false;
   const inventory = useInventoryStore();
+  // A prototype board spends nothing from the player's stock.
+  if (consume && store.playMode === 'prototype') return false;
   if (consume && inventory.availableQuantity(bonusName) <= 0) {
     store.clearBonusPreview(true);
     return false;
@@ -513,6 +515,7 @@ export function applyScoring(store, steps) {
 // commits, so a shuffle that finishes the puzzle is spent before the victory is recorded.
 export function shuffleBoard(store, { recoveryBoard = null, consume = null } = {}) {
   if (!store.sessionActive || store.animationInProgress || store.levelCleared) return false;
+  if (consume && store.playMode === 'prototype') return false;
   store.cancelHint(true);
   const session = store.sessionVersion;
   const animator = store.renderer?.animator;

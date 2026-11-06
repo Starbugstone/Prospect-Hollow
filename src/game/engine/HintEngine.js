@@ -19,7 +19,15 @@ export class HintEngine {
     if (!board?.length || !cols || !rows) return null;
     let best = null;
     const hasSignals = tiles.some((tile) => tile.signalHealth > 0);
-    const hasBlastTargets = tiles.some((tile) => tile?.bonusOnly && tile.health > 0);
+    // Route chambers are alternative ways into the same place: once one is open, the
+    // other route walls are not worth a bonus.
+    const routes = new Set(tiles.flatMap((tile) => (tile?.routeWall ? [tile.waist] : [])));
+    const routeOpen = [...routes].some(
+      (route) => !tiles.some((tile) => tile?.sealed && tile.chamber === route),
+    );
+    const blastTarget = (tile) =>
+      tile?.bonusOnly && tile.health > 0 && !(routeOpen && tile.routeWall);
+    const hasBlastTargets = tiles.some(blastTarget);
     const routed = isRoutedBoard(tiles) || usesGravityFrames(board, tiles);
     // Clearing a cell on a relic's route (or above a floatstone) moves it on.
     const relicRoutes = routed
@@ -64,6 +72,7 @@ export class HintEngine {
           sum +
           Number(
             (tiles[index]?.health ?? 0) > 0 &&
+              !(routeOpen && tiles[index]?.routeWall) &&
               (!tiles[index]?.bonusOnly || usesBonus) &&
               (!tiles[index]?.lensOnly || !!bent?.has(index)) &&
               (!tiles[index]?.sealColor ||
@@ -76,10 +85,7 @@ export class HintEngine {
       );
       const blastHits = usesBonus
         ? indices.filter(
-            (index) =>
-              tiles[index]?.bonusOnly &&
-              tiles[index].health > 0 &&
-              (!tiles[index].lensOnly || !!bent?.has(index)),
+            (index) => blastTarget(tiles[index]) && (!tiles[index].lensOnly || !!bent?.has(index)),
           ).length
         : 0;
       // Sealed beds and throat gates need deliberately aimed bonuses. Reward
@@ -96,9 +102,7 @@ export class HintEngine {
               )
               .filter(
                 (index) =>
-                  tiles[index]?.bonusOnly &&
-                  tiles[index].health > 0 &&
-                  (!tiles[index].lensOnly || planned.bent.has(index)),
+                  blastTarget(tiles[index]) && (!tiles[index].lensOnly || planned.bent.has(index)),
               ),
           ).size
         : 0;

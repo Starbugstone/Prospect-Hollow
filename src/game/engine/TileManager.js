@@ -270,7 +270,7 @@ export class TileManager {
           tile.cleared = tile.health === 0;
           const maxHealth = tile.maxHealth ?? before;
           if (before !== tile.health) {
-            totalLayersCleared += before - tile.health;
+            if (!tile.routeWall) totalLayersCleared += before - tile.health;
             if (tile.type === 'blocker' && tile.health === 0) tile.type = 'standard';
             step.tileUpdates.push({ index, health: tile.health, maxHealth, type: tile.type });
           }
@@ -447,7 +447,7 @@ export class TileManager {
       tile.maxHealth ??= before;
       tile.health = Math.max(0, before - hits);
       tile.cleared = tile.health === 0;
-      removed += before - tile.health;
+      if (!tile.routeWall) removed += before - tile.health;
       if (tile.type === 'blocker' && tile.cleared) tile.type = 'standard';
       step.tileUpdates.push({
         index,

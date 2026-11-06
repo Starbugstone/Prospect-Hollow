@@ -1639,7 +1639,7 @@ const COLOR_SETS = {
 };
 // One rotation per act (six chapters); each chapter's three seams use it in order.
 const ACT_PALETTES = ['ABC', 'DEF', 'DCE', 'GDB'];
-const chapterPalettes = (chapter) =>
+export const chapterPalettes = (chapter) =>
   [...ACT_PALETTES[Math.floor(chapter / 6) % ACT_PALETTES.length]].map((set) => [
     ...COLOR_SETS[set],
   ]);
@@ -1665,56 +1665,62 @@ export const HOLLOW_MINE_CHAPTERS = PLANS.map(
 export const HOLLOW_MINE_LEVEL_NAMES = PLANS.flatMap(({ name, stops }) =>
   stops.map((stop) => `${name}: ${stop}`),
 );
-export const HOLLOW_MINE_LEVELS = PLANS.flatMap((plan) =>
-  plan.levels.map(({ board, fossilLayers = plan.fossilLayers ?? 2, knotHealth, ...level }) => {
-    const { map, floats, relics, lensCells, portals } = liftPieces(board);
-    const { lenses = [], dust = plan.dust, ...rest } = level;
-    const cols = plan.cols ?? COLS,
-      rows = plan.rows ?? ROWS;
-    if (lenses.length !== lensCells.length) throw new Error('Every lens needs one direction');
-    const edge = (index) =>
-      index < cols || index >= (rows - 1) * cols || index % cols === 0 || index % cols === cols - 1;
-    if (!lensCells.every(edge)) throw new Error('Lens mirrors sit on the board edge');
-    // A gem falls into the entrance pad from the cell above it, then drops out of the exit
-    // pad on the top row into the cell below. The pads never touch, so the animation can
-    // tell a beam from a fall.
-    const cells = map.replaceAll('/', '');
-    const apart = (from, to) =>
-      Math.max(Math.abs((from % cols) - (to % cols)), Math.floor(from / cols)) > 1;
-    if (
-      !portals.every(
-        ({ from, to }) =>
-          from >= cols &&
-          cells[from - cols] !== '_' &&
-          to < cols &&
-          cells[to + cols] !== '_' &&
-          apart(from, to),
-      )
+// One authored level of a plan as a generator spec. Prototype boards share it
+// (src/data/prototypeBoards.js).
+export const hollowLevelSpec = (
+  plan,
+  { board, fossilLayers = plan.fossilLayers ?? 2, knotHealth, ...level },
+) => {
+  const { map, floats, relics, lensCells, portals } = liftPieces(board);
+  const { lenses = [], dust = plan.dust, ...rest } = level;
+  const cols = plan.cols ?? COLS,
+    rows = plan.rows ?? ROWS;
+  if (lenses.length !== lensCells.length) throw new Error('Every lens needs one direction');
+  const edge = (index) =>
+    index < cols || index >= (rows - 1) * cols || index % cols === 0 || index % cols === cols - 1;
+  if (!lensCells.every(edge)) throw new Error('Lens mirrors sit on the board edge');
+  // A gem falls into the entrance pad from the cell above it, then drops out of the exit
+  // pad on the top row into the cell below. The pads never touch, so the animation can
+  // tell a beam from a fall.
+  const cells = map.replaceAll('/', '');
+  const apart = (from, to) =>
+    Math.max(Math.abs((from % cols) - (to % cols)), Math.floor(from / cols)) > 1;
+  if (
+    !portals.every(
+      ({ from, to }) =>
+        from >= cols &&
+        cells[from - cols] !== '_' &&
+        to < cols &&
+        cells[to + cols] !== '_' &&
+        apart(from, to),
     )
-      throw new Error('A portal needs a cell above its entrance and its exit on the top row');
-    const parsed = parseMineBoard(map, {
-      fossilLayers,
-      knotHealth,
-      cols,
-      rows,
-      extra: /[*+zZfWYwqQ]/,
-    });
-    // Moon-dust beds: the fossil lies under ordinary gems and its dust wears off with matches.
-    if (dust) for (const fossil of parsed.fossils) fossil.encased = false;
-    return {
-      ...parsed,
-      ...(floats.length ? { floats } : {}),
-      ...(portals.length ? { portals } : {}),
-      ...(relics.length ? { relics } : {}),
-      ...(lensCells.length
-        ? { lenses: lensCells.map((index, order) => ({ index, out: lenses[order] })) }
-        : {}),
-      ...rest,
-      openExitRows: 0,
-      maxIceLayers: 2,
-      coreBonuses: rest.coreBonuses ?? plan.coreBonuses ?? ['bomb'],
-      ...((rest.gravity ?? plan.gravity) ? { gravity: rest.gravity ?? plan.gravity } : {}),
-      motif: plan.motif,
-    };
-  }),
+  )
+    throw new Error('A portal needs a cell above its entrance and its exit on the top row');
+  const parsed = parseMineBoard(map, {
+    fossilLayers,
+    knotHealth,
+    cols,
+    rows,
+    extra: /[*+zZfWYwqQ]/,
+  });
+  // Moon-dust beds: the fossil lies under ordinary gems and its dust wears off with matches.
+  if (dust) for (const fossil of parsed.fossils) fossil.encased = false;
+  return {
+    ...parsed,
+    ...(floats.length ? { floats } : {}),
+    ...(portals.length ? { portals } : {}),
+    ...(relics.length ? { relics } : {}),
+    ...(lensCells.length
+      ? { lenses: lensCells.map((index, order) => ({ index, out: lenses[order] })) }
+      : {}),
+    ...rest,
+    openExitRows: 0,
+    maxIceLayers: 2,
+    coreBonuses: rest.coreBonuses ?? plan.coreBonuses ?? ['bomb'],
+    ...((rest.gravity ?? plan.gravity) ? { gravity: rest.gravity ?? plan.gravity } : {}),
+    motif: plan.motif,
+  };
+};
+export const HOLLOW_MINE_LEVELS = PLANS.flatMap((plan) =>
+  plan.levels.map((level) => hollowLevelSpec(plan, level)),
 );

@@ -232,7 +232,10 @@ docker stop hollow-motion-web
 
 `PH_TEST_ORIGIN` points the check at another server, for example a
 production build served by `vite preview`. `PH_MOTION_LEVELS` (a
-comma-separated list) and `PH_MOTION_MOVES` change the scenarios. On 1.1.0-beta the
+comma-separated list) and `PH_MOTION_MOVES` change the scenarios. A name instead of a
+number in `PH_MOTION_LEVELS` opens a board on trial through the debug tools, for example
+`PH_MOTION_LEVELS=deep-lantern-routes,495`. A run asking for more moves than the board
+needs to clear reports "only N hinted moves". On 1.1.0-beta the
 check reports thousands of problems on all four shaped levels; level 13 passes on
 both versions.
 

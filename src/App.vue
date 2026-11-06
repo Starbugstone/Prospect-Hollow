@@ -182,6 +182,27 @@
             </button>
           </div>
         </div>
+        <div v-else-if="game.playMode === 'prototype'" class="continuous-banner prototype-banner">
+          <div>
+            <strong>{{
+              game.levelCleared
+                ? t('Prototype cleared in {moves} moves', { moves: game.moves })
+                : t('Prototype board')
+            }}</strong
+            ><span class="continuous-description">{{
+              t('A board on trial. Nothing is saved: no rewards, records or powers.')
+            }}</span>
+          </div>
+          <div class="continuous-actions">
+            <button
+              class="continuous-exit"
+              :disabled="game.animationInProgress"
+              @click="showVillage"
+            >
+              <GameIcon name="home" /> {{ t('Exit mine') }}
+            </button>
+          </div>
+        </div>
         <div class="mine-feedback">
           <div v-show="!game.activeBonusMode && !game.arcadeBanner" class="mine-tip-slot">
             <MineTip />
@@ -250,12 +271,12 @@
             </div></transition
           >
         </div>
-        <PowerUpBar />
+        <PowerUpBar v-if="game.playMode !== 'prototype'" />
       </section>
     </main>
     <BoardHost />
     <VictoryModal
-      v-if="game.levelCleared"
+      v-if="game.levelCleared && game.playMode !== 'prototype'"
       :level-id="game.currentLevelId"
       :rewards="game.levelRewards"
       :coins="game.coinReward"
@@ -336,6 +357,7 @@ import { useCampaignStore } from './stores/campaignStore';
 import { useSettingsStore } from './stores/settingsStore';
 import { useAudio } from './composables/useAudio';
 import { LEVEL_NAMES } from './data/levelNames';
+import { prototypeName } from './data/prototypeBoards';
 import { obstacleSeenKey, obstaclesInLevel, unseenObstacles } from './data/obstacles';
 import { mineThemeAppearance } from './data/mineThemes';
 import ObstacleGuide from './components/ObstacleGuide.vue';
@@ -411,7 +433,8 @@ const openGuide = () => {
   guideOpen.value = true;
 };
 const closeGuide = () => {
-  if (guideIntro.value) campaign.markObstaclesSeen(guideItems.value.map(obstacleSeenKey));
+  if (guideIntro.value && game.playMode !== 'prototype')
+    campaign.markObstaclesSeen(guideItems.value.map(obstacleSeenKey));
   guideOpen.value = false;
 };
 watch(
@@ -434,7 +457,9 @@ let clockInterval, incomeInterval;
 const muted = computed(() => settings.musicVolume === 0 && settings.sfxVolume === 0);
 const toggleMute = () => settings.toggleMute();
 const currentConfig = computed(() => game.currentLevel?.config);
-const levelName = computed(() => LEVEL_NAMES[game.currentLevelId - 1]);
+const levelName = computed(() =>
+  game.prototypeKey ? prototypeName(game.prototypeKey) : LEVEL_NAMES[game.currentLevelId - 1],
+);
 const powerName = computed(
   () => POWERS.find((power) => power.id === game.activeBonusMode)?.label ?? '',
 );
