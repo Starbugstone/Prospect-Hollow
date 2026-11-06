@@ -76,6 +76,8 @@ describe('route chambers', () => {
 
     // Breaking a route wall clears nothing the goal counts.
     const tiles = level.tiles.map((tile) => ({ ...tile }));
+    const counted = () => tiles.reduce((sum, tile) => sum + layerCount(tile), 0);
+    const before = counted();
     const board = level.board.map((gem) => (gem ? { ...gem } : null));
     const [piece] = routeWall('b');
     board[piece - cols] = { id: 'test-bomb', type: 'bomb' };
@@ -89,7 +91,9 @@ describe('route chambers', () => {
       gemTypes: level.boardLayout.gemTypes,
     });
     expect(tiles[piece].health).toBe(0);
-    expect(result.layersCleared).toBe(0);
+    // Refills are random, so a cascade may still reach a counted seal: the goal moves by
+    // exactly the counted layers that went, and the broken wall adds nothing.
+    expect(result.layersCleared).toBe(before - counted());
   });
 
   it('seal the well until a route opens, and each route opens it a different way', () => {
