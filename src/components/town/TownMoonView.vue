@@ -271,7 +271,7 @@ const lotInfo = computed(() => {
       return [
         id,
         {
-          name: moonLotName(id),
+          name: moonLotName(id, props.town),
           status,
           label: moonLotLabel(props.town, id, options),
           state: moonLotStatus(props.town, id),
@@ -298,7 +298,7 @@ const placedLots = computed(() => {
           ['open', 'work', 'ready'].includes(info.state));
       return {
         ...lot,
-        width: townLabelWidth(info.name),
+        width: townLabelWidth(info.name, info.status?.text),
         rank: townLabelRank({
           selected,
           ready: info.status?.kind === 'ready',

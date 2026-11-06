@@ -3,7 +3,9 @@ import { createTown } from '../src/data/town';
 import { MOON_LOTS } from '../src/data/moonSettlement';
 import {
   AREA_BY_ID,
+  LANDMARK_BY_ID,
   advanceMonumentWorks,
+  areaUnlocked,
   areasForSettlement,
   landmarkOffer,
   monumentWork,
@@ -116,6 +118,22 @@ describe('New Hollow lot status, read through the valley’s shared status contr
     while (!monumentWork(town, site).ready) town = advanceMonumentWorks(town);
     expect(moonLotStatus(town, site.id)).toBe('ready');
     expect(moonLotDetail(town, site.id)).toBe('Ready to unveil');
+  });
+
+  it('names every site by the building on it once one is chosen', () => {
+    const open = areasForSettlement('moon').filter((area) => areaUnlocked(moonTown(), area));
+    expect(open.length).toBeGreaterThan(0);
+    for (const area of open) {
+      expect(moonLotName(area.id, moonTown())).toBe(area.label);
+      for (const choice of area.choices) {
+        const town = moonTown();
+        town.personalisation = { ...town.personalisation, areas: { [area.id]: [choice] } };
+        expect(moonLotName(area.id, town)).toBe(LANDMARK_BY_ID[choice].label);
+        expect(moonLotLabel(town, area.id, {})).toMatch(
+          new RegExp(`^${LANDMARK_BY_ID[choice].label} · `),
+        );
+      }
+    }
   });
 
   it('uses the player language', () => {

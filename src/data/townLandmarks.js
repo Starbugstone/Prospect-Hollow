@@ -619,6 +619,10 @@ export const areaChoice = (town, area) => {
   const choice = town.personalisation?.areas?.[area.id]?.[0];
   return area.choices.includes(choice) ? choice : null;
 };
+// A site's name wherever it is shown: the building on it once one is chosen (under
+// construction or standing), otherwise the site itself. A translation key.
+export const areaName = (town, area) =>
+  LANDMARK_BY_ID[areaChoice(town ?? {}, area)]?.label ?? area.label;
 // A paid level under construction: `{ level, wins, required, ready }`, or null once
 // the standing monument is complete. Construction is cosmetic; the paid stage, its
 // price and honours never wait for it.

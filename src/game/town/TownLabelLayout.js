@@ -2,7 +2,11 @@ import { labelsOverlap } from './TownLabels';
 
 // The shared pill has a bounded name and an inline status. Its width estimate is
 // also the renderer's max-width, so translated text cannot outgrow its clearance.
-export const townLabelWidth = (name) => Math.min(280, Math.max(100, name.length * 7 + 70));
+// The name reserves room for a short status ("Lv. 3"); a longer one ("Choose a
+// design") widens the pill so neither part is cut off. Desktop sizes: 13px name,
+// 9px status (phones use smaller type, so the same width fits there too).
+export const townLabelWidth = (name, status = '') =>
+  Math.min(280, Math.max(100, name.length * 7 + 70, name.length * 7 + 39 + status.length * 5.5));
 
 // Mirrors TownMapLabel's translate(-50%, -30%) and its action/mine offsets. Reserve
 // the largest responsive height; the mine includes its enlarged touch target.

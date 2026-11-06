@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest';
-import { layoutTownLabels } from '../src/game/town/TownLabelLayout';
+import { layoutTownLabels, townLabelWidth } from '../src/game/town/TownLabelLayout';
 import {
   townLabelDetail,
   townLabelRank,
@@ -165,4 +165,12 @@ it('updates the DOM dimensions when translated text changes the clearance', () =
   const current = [{ id: 'home', x: 50, y: 50, width: 100, visible: true }];
   const next = [{ ...current[0], width: 180 }];
   expect(updateLabels(current, next, labelLayout(current))).toBe(labelLayout(next));
+});
+
+it('widens a pill for a long status without narrowing any name', () => {
+  for (const name of ['Commons', 'Moonrock Court', 'Earthlight Bakehouse']) {
+    expect(townLabelWidth(name, 'Lv. 3')).toBe(townLabelWidth(name));
+    expect(townLabelWidth(name, 'Choose a design')).toBeGreaterThan(townLabelWidth(name));
+  }
+  expect(townLabelWidth('A very long translated building name', 'A long status')).toBe(280);
 });
