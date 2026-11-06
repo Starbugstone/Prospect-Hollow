@@ -23,19 +23,19 @@ The release is finished when:
 
 On `preprod` after `e8d7191f`; nothing below has reached `main`.
 
-| Piece                                                            | State     |
-| ---------------------------------------------------------------- | --------- |
-| Commission contract, `src/data/commissions.js`                   | Done      |
-| Earthlight Conservatory (Moon), opens at Greenhouse level 3      | Done      |
-| Homecoming Commons (valley), opens at Homecoming Hall level 3    | Done      |
-| Signal: map pill, Build sheet pill, letter over the site         | Done      |
-| Real-game signal check, `testing/browser/town-commission-signal` | Done      |
-| Real phone test                                                  | Not yet   |
-| Residents visibly using each outcome                             | Under way |
-| Route-choice board prototype (chapter 94)                        | Under way |
-| New boards                                                       | Not yet   |
-| Third commission                                                 | Not yet   |
-| Honours family, economy rerun, release notes                     | Not yet   |
+| Piece                                                            | State                                    |
+| ---------------------------------------------------------------- | ---------------------------------------- |
+| Commission contract, `src/data/commissions.js`                   | Done                                     |
+| Earthlight Conservatory (Moon), opens at Greenhouse level 3      | Done                                     |
+| Homecoming Commons (valley), opens at Homecoming Hall level 3    | Done                                     |
+| Signal: map pill, Build sheet pill, letter over the site         | Done                                     |
+| Real-game signal check, `testing/browser/town-commission-signal` | Done                                     |
+| Real phone test                                                  | Not yet                                  |
+| Residents visibly using each outcome                             | Prototype on `preprod`                   |
+| Route-choice board prototype (chapter 94)                        | Prototype on `preprod`, debug tools only |
+| New boards                                                       | Not yet                                  |
+| Third commission                                                 | Not yet                                  |
+| Honours family, economy rerun, release notes                     | Not yet                                  |
 
 ## What the numbers say
 
@@ -113,7 +113,8 @@ Phone test on `preprod`, using a town in Twin Hollows:
 - [ ] The pill reads clearly and doesn't crowd the other map controls
 - [ ] The letter over each site is easy to spot and tap, on both maps
 - [ ] All six outcomes look right at each stage
-- [ ] Settlers reach the Moon door; visitors circle the valley site
+- [ ] Settlers reach the Moon door and come out carrying the outcome's item; valley villagers enter the
+      Story Hall, gather at the Bandstand or roam the Wild Meadow (children)
 - [ ] The frame rate holds on the Moon with a commission standing
 
 Things the checks have not covered:
@@ -288,11 +289,17 @@ since Canopy and have never yet asked for anything.
 - [ ] Add the honours decision, regenerate the catalogs and extend `testing/commissions.test.js`
 - [ ] Run `testing/browser/town-commission-signal.cjs` with three commissions open
 
-### Later, if the phone test asks for it
+### Residents using the result
 
-Valley visitors circle the site, while Moon residents walk to a door. If that feels thin, the next step
-is real villagers using a door along the public paths. It's a larger change, so judge it from the phone
-test rather than building it in advance.
+Brought into this release (owner, 6 November 2026). Each outcome's `use` in `src/data/commissions.js`
+says what residents do there, read through `commissionUse` on both maps (`TownCommissionUse.js`,
+`TownCommissionResidents.js`, `MoonSettlers.js`). A third commission adds its own `use`, or its visitors
+gather at the front.
+
+- [ ] Valley streets end about 40 units short of the Commons, so villagers cross the open field for the
+      last stretch. `AGENTS.md` asks for public paths: a footpath to the site is the proposed fix
+- [ ] Decide the Bandstand audience size (capped at 4, `MAX_COMMISSION_VILLAGERS`), the children's
+      0.68 scale and whether Moon outcomes differ beyond what settlers carry
 
 **Done when** the third commission opens in order on both client and server, and no combination of
 opening order blocks it.
