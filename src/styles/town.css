@@ -1659,6 +1659,26 @@ html:has(.town-museum[open]) {
     font-size: 10px;
   }
 }
+@media (max-width: 340px) {
+  .town-tab-bar {
+    gap: 2px;
+  }
+  .town-tab-bar button {
+    padding-inline: 0;
+    font-size: 9.5px;
+  }
+}
+.town-tab-bar .town-tab-short {
+  display: none;
+}
+@media (max-width: 550px) {
+  .town-tab-bar .town-tab-long {
+    display: none;
+  }
+  .town-tab-bar .town-tab-short {
+    display: inline;
+  }
+}
 @media (min-width: 900px) {
   .town-tab-bar {
     grid-template-columns: repeat(var(--town-tabs, 6), minmax(0, 150px));

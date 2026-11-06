@@ -10,10 +10,12 @@
       :key="tab.id"
       :class="[`town-tab-${tab.id}`, { current: current === tab.id, nudge: tab.nudge }]"
       :aria-current="current === tab.id ? 'page' : undefined"
+      :aria-label="tab.short ? tab.label : undefined"
       @click="$emit('select', tab.id)"
     >
       <GameIcon :name="tab.icon" />
-      <span>{{ tab.label }}</span>
+      <span :class="{ 'town-tab-long': tab.short }">{{ tab.label }}</span>
+      <span v-if="tab.short" class="town-tab-short" aria-hidden="true">{{ tab.short }}</span>
       <i v-if="tab.badge" class="town-tab-badge" aria-hidden="true"></i>
     </button>
   </nav>
@@ -61,7 +63,8 @@ const tabs = computed(() => [
   ...(props.simple
     ? []
     : [
-        { id: 'personalise', icon: 'color-wand', label: t('Personalise') },
+        // Phones show the short name: six tabs leave 50–80px for each word.
+        { id: 'personalise', icon: 'color-wand', label: t('Personalise'), short: t('Crest') },
         { id: 'story', icon: 'book', label: t('Story') },
       ]),
   { id: 'more', icon: 'menu', label: t('More') },

@@ -114,6 +114,13 @@ async function checkBuild(browser, viewport, language) {
   const { page, errors } = await openTown(browser, viewport);
   if (language === 'fr') await useFrench(page);
   const label = `build-${language}-${viewport.width}x${viewport.height}`;
+  // Every tab names its destination in full: none is cut to an ellipsis.
+  const clipped = await page.evaluate(() =>
+    [...document.querySelectorAll('.town-tab-bar button span')]
+      .filter((name) => name.offsetParent && name.scrollWidth > name.clientWidth + 0.5)
+      .map((name) => name.textContent),
+  );
+  assert.deepEqual(clipped, [], `${label}: tab names fit their tabs`);
   await page.locator('.town-tab-build').click();
   const next = page.locator('.town-build-next');
   await next.waitFor();
