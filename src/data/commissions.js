@@ -15,8 +15,14 @@ import {
 // its designs and art, and an entry here; none of them gates an era or puzzle.
 //
 // `visits` depends on the settlement. On the Moon it counts how many of a resident's three
-// daily trips go to the finished place. In the valley it counts the extra visitors around
-// the finished site.
+// daily trips go to the finished place. In the valley `resident` and `wild` count the extra
+// Willowkin and animals around the finished site, and `villager` the townsfolk who walk
+// there from their homes.
+//
+// `use` is what residents do there, read through `commissionUse` in both settlements:
+// `stay` is `enter` (in through its door, out again later), `gather` (stand before it as an
+// audience) or `roam` (wander its grounds); `carry` is what they bring home; `young` sends
+// the town's children. A commission without `use` has its visitors gather at the front.
 export const COMMISSIONS = Object.freeze([
   Object.freeze({
     site: 'earthlight-conservatory',
@@ -28,16 +34,19 @@ export const COMMISSIONS = Object.freeze([
         thanks:
           'The first Earthlight orchard is in leaf. The Willowkin hardly come home now, and the fruit grows sideways toward you.',
         visits: Object.freeze({ settler: 1, willowkin: 3 }),
+        use: Object.freeze({ stay: 'enter', carry: 'fruit' }),
       }),
       'crystal-nursery': Object.freeze({
         thanks:
           'The nursery is humming. We plant a chip of moonstone in the evening and find a crystal the next morning.',
         visits: Object.freeze({ settler: 2, willowkin: 0 }),
+        use: Object.freeze({ stay: 'enter', carry: 'crystal' }),
       }),
       'earthlight-bakehouse': Object.freeze({
         thanks:
           'The bakehouse oven is lit. The whole crater smells of pie, and nobody has eaten at home since.',
         visits: Object.freeze({ settler: 3, willowkin: 1 }),
+        use: Object.freeze({ stay: 'enter', carry: 'pie' }),
       }),
     }),
   }),
@@ -50,22 +59,45 @@ export const COMMISSIONS = Object.freeze([
       'story-hall': Object.freeze({
         thanks:
           'The story hall opened with a tale from 1865. Half the town corrected the other half, and everyone stayed until dark.',
-        visits: Object.freeze({ resident: 1, wild: 1 }),
+        visits: Object.freeze({ resident: 1, wild: 1, villager: 3 }),
+        use: Object.freeze({ stay: 'enter', carry: 'book' }),
       }),
       bandstand: Object.freeze({
         thanks:
           'The bandstand played its first concert last night. The Moon folk say they could hear it from the elevator.',
-        visits: Object.freeze({ resident: 2, wild: 0 }),
+        visits: Object.freeze({ resident: 2, wild: 0, villager: 4 }),
+        use: Object.freeze({ stay: 'gather' }),
       }),
       'wild-meadow': Object.freeze({
         thanks:
           'The meadow is fenced and the animals have already ignored the fence. The children have named every one of them.',
-        visits: Object.freeze({ resident: 0, wild: 3 }),
+        visits: Object.freeze({ resident: 0, wild: 3, villager: 3 }),
+        use: Object.freeze({ stay: 'roam', young: true }),
       }),
     }),
   }),
 ]);
 export const commissionFor = (siteId) => COMMISSIONS.find(({ site }) => site === siteId) ?? null;
+
+export const COMMISSION_STAYS = Object.freeze(['enter', 'gather', 'roam']);
+export const COMMISSION_CARRIES = Object.freeze(['book', 'fruit', 'crystal', 'pie']);
+/**
+ * How residents use a finished commission, with every field filled: an outcome without
+ * `use`, or with a value this build does not know, gathers at the front and carries nothing.
+ */
+export function commissionUse(outcome) {
+  const use = outcome?.use ?? {};
+  return {
+    stay: COMMISSION_STAYS.includes(use.stay) ? use.stay : 'gather',
+    carry: COMMISSION_CARRIES.includes(use.carry) ? use.carry : null,
+    young: use.young === true,
+  };
+}
+// A finished commission never draws a crowd: the valley walks at most this many there.
+export const MAX_COMMISSION_VILLAGERS = 4;
+/** How many valley townsfolk walk to a finished commission: one when the outcome says nothing. */
+export const commissionVillagers = (outcome) =>
+  Math.max(0, Math.min(MAX_COMMISSION_VILLAGERS, outcome?.visits?.villager ?? 1));
 
 const PRESSING = { ready: 0, request: 1, work: 2, funding: 3 };
 /**

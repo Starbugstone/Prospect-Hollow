@@ -22,6 +22,8 @@ const SECONDS = Number(process.env.PH_FRAME_SECONDS || 15);
 const MINE_MS = Number(process.env.PH_MINE_SCRIPT_MS || 12);
 const TOWN_MS = Number(process.env.PH_TOWN_SCRIPT_MS || 35);
 const output = process.env.PH_FRAME_OUTPUT;
+// Another town save to look round, served by the Vite server (a commission's residents, say).
+const TOWN_SAVE = process.env.PH_FRAME_TOWN_SAVE || '/output/era-demo/twin-hollows-open.json';
 const store = `window.stores?.()?.get('game')`;
 
 async function measure(page, work) {
@@ -121,13 +123,13 @@ async function town(browser) {
   await page.waitForFunction(
     () => document.querySelector('.town-scene')?.__vueParentComponent.setupState.scene,
   );
-  await page.evaluate(async () => {
+  await page.evaluate(async (save) => {
     const { createSaveFile } = await import('/src/services/saveTransfer.js');
     const pinia = document.querySelector('#app').__vue_app__.config.globalProperties.$pinia;
     const campaign = pinia._s.get('campaign');
-    const profile = await (await fetch('/output/era-demo/twin-hollows-open.json')).json();
+    const profile = await (await fetch(save)).json();
     campaign.importSave(createSaveFile({ ...campaign.profile(), ...profile }));
-  });
+  }, TOWN_SAVE);
   await page.waitForTimeout(8000);
   const result = await measure(page, async () => {
     const box = await page.locator('.town-scene canvas').first().boundingBox();
@@ -155,7 +157,8 @@ async function town(browser) {
   const failures = [];
   const report = [];
   try {
-    for (const level of (process.env.PH_FRAME_LEVELS || '13,376,397').split(',').map(Number)) {
+    const levels = (process.env.PH_FRAME_LEVELS ?? '13,376,397').split(',').filter(Boolean);
+    for (const level of levels.map(Number)) {
       const result = await mine(browser, level);
       const { log, ...numbers } = result;
       report.push({ scene: `level ${level}`, ...numbers });

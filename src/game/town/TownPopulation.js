@@ -4,6 +4,7 @@ import { addWorkBreak } from './TownWorkRoutine';
 import { TownVipArrivals } from './TownVipArrivals';
 import { addAviationActivity } from './TownAviation';
 import { addTownLife } from './TownLife';
+import { addCommissionResidents } from './TownCommissionResidents';
 import { addLeisureActivity } from './TownLeisure';
 import { addEraActivity, trackTransport } from './TownEraActivity';
 import { addTownVisitors } from './TownActivity';
@@ -78,7 +79,8 @@ const RESIDENTS = [
 const residentHome = (town, home) => [home, ...HOMES].find((id) => town.buildings[id] > 0) ?? null;
 
 // The village's everyday life, prepared in resumable steps after the town is drawn:
-// era and motor activity, visitors, leisure, aviation, then the resident walkers.
+// era and motor activity, visitors, leisure, aviation, then the resident walkers and
+// the townsfolk at finished commissions.
 export function* populateLife(d, town) {
   d.itineraries = new TownItineraries(d);
   d.transports = new Map();
@@ -135,6 +137,9 @@ export function* populateLife(d, town) {
     // Each beat leaves the office door, walks the patrol and returns for a short rest.
     Object.assign(sheriff, { home: 'sheriff', patrol: true });
   }
+  // Townsfolk walk out to use a finished commission the way its outcome promises.
+  d.commissionResidents = [];
+  yield* addCommissionResidents(d, town);
   if (town.buildings.stable && !motorTraffic(town)) {
     d.horse(...atPlot('stable', 2.25, 0.9), 0.5);
     d.horse(...atPlot('stable', 2.65, -0.9), -0.9, 0.85);

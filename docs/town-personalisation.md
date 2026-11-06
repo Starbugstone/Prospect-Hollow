@@ -59,12 +59,25 @@ three designs drawn from what that era brings to the town:
 
 The Earthlight Conservatory and the Homecoming Commons are commissions
 (`src/data/commissions.js`). Each opens with a finished building level (`opens`), a letter asks
-what to build, and the permanent outcome sets who visits: the Moon's residents walk a public path
-to its door, and the valley's come to the site's perimeter. Each costs five even stages of 400,000
+what to build, and the permanent outcome sets who visits and what they do there. Each costs five even stages of 400,000
 coins and never gates an era or puzzle. `commissionStatus()` drives the one signal that a commission
 is active: a light pill beside the town project (`TownCommissionGoal`), the same pill in the Build
 sheet and a letter action icon over a site awaiting its choice. `testing/browser/town-commission-signal.cjs`
 checks every state in the real game, on desktop and phone, in English and French.
+
+Residents use a finished commission (stage 1 unveiled) as its outcome's `use` says, read through
+`commissionUse()` in both settlements: `stay` is `enter` (in through the door and out later),
+`gather` (an audience before it) or `roam` (wandering its grounds), `carry` is what they bring
+home and `young` sends children. Nothing is saved: the outcome and stage decide it. The shared
+day and pose (`TownCommissionUse.js`) serve both maps. On the Moon, `visits` trips of each settler's
+day go to the commission's door along its public path. In the valley, `visits.villager` townsfolk
+(`TownCommissionResidents.js`) leave the nearest homes by their doors, walk the streets to the
+edge of the monument field, cross it on a navigation-checked walk and climb the pedestal to the
+place their form's `VALLEY_COMMISSION_GROUNDS` gives: the Story Hall's door, the Bandstand's
+audience arc, the Wild Meadow's yard. A commission without `use`, or a form without grounds for
+its stay, has its visitors gather before the site. `testing/commission-residents.test.js` checks
+every outcome against its art at every stage; `testing/browser/commission-residents.cjs` checks
+the walks in the real game and films each outcome at phone size.
 
 Every design has its own silhouette (`form`) and card artwork; no two designs share
 one. A later era with a valley site skips at least one era after the previous valley site, and its

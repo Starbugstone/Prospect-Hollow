@@ -609,7 +609,7 @@ export class MoonScene extends TownPrimitives {
     const finishes = Object.keys(MOON_LOTS).map((id) => finishKey(town ?? {}, id));
     const venues = moonCommissionVenues(town);
     // A commission first unveiled brings its public path and its visitors.
-    const signature = `${finishes.join('|')}|${venues.map(({ id, visits }) => [id, visits.settler, visits.willowkin])}`;
+    const signature = `${finishes.join('|')}|${venues.map(({ id, visits, use }) => [id, visits.settler, visits.willowkin, use.stay, use.carry])}`;
     if (signature === this.signature) return;
     // A lot finished while the Moon is open settles into place with the valley's
     // construction reveal: drawn on its own until then, outside the merged settlement.

@@ -5,6 +5,7 @@ import { Box3, Group, Scene } from 'three';
 import { createTown } from '../src/data/town';
 import {
   COMMISSIONS,
+  MAX_COMMISSION_VILLAGERS,
   commissionFor,
   commissionLetters,
   commissionStatus,
@@ -103,9 +104,12 @@ describe('the commission contract', () => {
     expect(Object.keys(entry.outcomes).sort()).toEqual([...site.choices].sort());
     for (const { thanks, visits } of Object.values(entry.outcomes)) {
       expect(thanks).toBeTruthy();
-      const counts = Object.values(visits);
-      expect(counts.reduce((sum, count) => sum + count, 0)).toBeGreaterThan(0);
+      const { villager = 0, ...trips } = visits;
+      const counts = Object.values(trips);
+      expect(counts.reduce((sum, count) => sum + count, villager)).toBeGreaterThan(0);
+      // Three daily trips on the Moon; a small party of townsfolk in the valley.
       expect(Math.max(...counts)).toBeLessThanOrEqual(3);
+      expect(villager).toBeLessThanOrEqual(MAX_COMMISSION_VILLAGERS);
     }
     expect(entry.writer && entry.request).toBeTruthy();
   });

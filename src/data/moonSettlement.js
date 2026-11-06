@@ -1,6 +1,6 @@
 import { eraEvolution } from './eras';
 import { areasForSettlement, siteYaw } from './townLandmarks';
-import { commissionLetters, finishedCommissions } from './commissions';
+import { commissionLetters, commissionUse, finishedCommissions } from './commissions';
 import { MOON_SETTLEMENT } from './settlements';
 // Read inside moonstoneKeepsakes only, after town.js (which needs moonstones.js) loads.
 import { MOONSTONE_BUILDINGS } from './town';
@@ -345,8 +345,8 @@ export function moonCommissionRoute(area) {
   return commissionRoutes.get(area.id);
 }
 /**
- * Finished commissions the settlers use: the path to each, and how many of a resident's
- * three daily trips go there. Derived from the saved choice and stage, so nothing new is
+ * Finished commissions the settlers use: the path to each, how many of a resident's
+ * three daily trips go there and what they do there (`commissionUse`). Derived from the saved choice and stage, so nothing new is
  * saved. Scaffolding around the first stage keeps residents away until it is unveiled.
  */
 export const moonCommissionVenues = (town) =>
@@ -354,6 +354,7 @@ export const moonCommissionVenues = (town) =>
     id: site,
     route: moonCommissionRoute(area),
     visits: outcome.visits,
+    use: commissionUse(outcome),
   }));
 
 // Letters home from New Hollow, one for each finished Moon building. They are

@@ -127,6 +127,29 @@ function buildMeadow(d, g, o, tier, move) {
     for (const x of [-0.9, 0.9]) d.rod(sign, [x, FLOOR, 0], [x, FLOOR + 1.25, 0], 0.06, TIMBER);
   }
 }
+// Where residents use each finished valley commission, in site coordinates with +z the
+// front (TownCommissionResidents): `door` is the threshold they step through, `audience`
+// the radius of the arc they gather on and `yard` the loop they wander, inside a `lawn`
+// raised above the pedestal. The court's fountain stands at [0, 4.8] from stage 3, so
+// walkers come in to its right (`lane`). An unknown form gathers at the front instead.
+export const VALLEY_COMMISSION_GROUNDS = Object.freeze({
+  lane: 1.6,
+  floor: FLOOR,
+  'story-hall': Object.freeze({ door: [0, 1.75] }),
+  bandstand: Object.freeze({ audience: 3.6 }),
+  'wild-meadow': Object.freeze({
+    lawn: 3.9,
+    gate: [1, 3.3],
+    yard: Object.freeze([
+      [1.2, 2],
+      [1.3, 0.6],
+      [0.9, -0.8],
+      [-0.6, -0.7],
+      [-0.1, 0.5],
+      [0.4, 1.9],
+    ]),
+  }),
+});
 const BUILDERS = {
   'story-hall': buildStoryHall,
   bandstand: buildBandstand,
