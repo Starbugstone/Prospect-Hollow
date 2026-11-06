@@ -50,7 +50,9 @@ describe('a puzzle replays exactly from its seed and moves', () => {
 
   it('replays the player shuffle and powers, which roll the same dice', async () => {
     const live = fresh(12);
-    live.startLevel(12);
+    // A fixed seed: about one in ten clears level 12 before the shuffle, and a cleared level
+    // refuses one.
+    expect(live.startLevel(12, 'normal', { seed: 12 })).toBe(true);
     await play(live, 4);
     expect(await live.activateOneTimeBonus('clear-row')).toBe(true);
     await play(live, 2);
