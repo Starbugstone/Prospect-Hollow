@@ -750,7 +750,6 @@ import { useGameStore } from '../../stores/gameStore';
 import { useCampaignStore } from '../../stores/campaignStore';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { HAMMER_CAPACITY } from '../../data/rewards';
-import { LEVEL_COUNT } from '../../data/campaign';
 import TownMuseum from './TownMuseum.vue';
 import TownTour from './TownTour.vue';
 import TownCoach from './TownCoach.vue';
@@ -835,9 +834,7 @@ const currentTab = computed(
     })[dialogMode.value] ?? 'village',
 );
 const mineLabel = computed(() =>
-  campaign.completedCount < LEVEL_COUNT
-    ? t('Mine · {level}', { level: campaign.nextLevel })
-    : t('Museum'),
+  campaign.newLevelsLeft ? t('Mine · {level}', { level: campaign.nextLevel }) : t('Museum'),
 );
 // A new town follows the tutorial; outside it, an empty town and finished constructions
 // are pointed to Build.
@@ -1610,7 +1607,7 @@ defineExpose({ showConstructionSites });
 function goMining() {
   collection.value = null;
   closeDialog();
-  if (campaign.completedCount < LEVEL_COUNT) emit('mine');
+  if (campaign.newLevelsLeft) emit('mine');
   else if (campaign.canReplay) museumOpen.value = true;
   else selectBuilding('museum');
 }

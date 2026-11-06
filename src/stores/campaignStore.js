@@ -394,6 +394,10 @@ export const useCampaignStore = defineStore('campaign', {
       return null;
     },
     completedCount: (state) => Object.keys(state.records).length,
+    // False once every level is done: the mine then sends players to replays.
+    newLevelsLeft() {
+      return this.completedCount < LEVEL_COUNT;
+    },
     completion: (state) => campaignCompletion(state.records),
     // What the village derives from the town's offers, computed once per town state and
     // read by every view: the map, the Build tab, its next step and the victory screen.

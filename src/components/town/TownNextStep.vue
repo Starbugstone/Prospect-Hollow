@@ -96,7 +96,11 @@
           class="next-step-mine"
           @click="$emit('mine')"
         >
-          <TownIcon name="mine" />{{ t('Play level {level}', { level: campaign.nextLevel }) }}
+          <TownIcon name="mine" />{{
+            campaign.newLevelsLeft
+              ? t('Play level {level}', { level: campaign.nextLevel })
+              : t('Replay levels')
+          }}
         </button>
       </div>
     </div>
