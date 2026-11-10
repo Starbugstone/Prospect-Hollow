@@ -25,13 +25,77 @@
       <svg
         v-else
         class="town-moon-map"
-        viewBox="-60 -50 120 100"
+        :viewBox="`${mapBox.x} ${mapBox.y} ${mapBox.width} ${mapBox.height}`"
         preserveAspectRatio="xMidYMid meet"
         aria-hidden="true"
       >
-        <rect x="-60" y="-50" width="120" height="100" fill="#10162b" />
-        <circle cx="-38" cy="-38" r="7" fill="#4f8fc7" />
+        <rect
+          :x="mapBox.x"
+          :y="mapBox.y"
+          :width="mapBox.width"
+          :height="mapBox.height"
+          fill="#10162b"
+        />
+        <circle :cx="mapBox.x + 22" :cy="mapBox.y + 12" r="7" fill="#4f8fc7" />
         <ellipse cy="6" rx="52" ry="40" fill="#b9b6ad" />
+        <!-- A district beyond the rim: its level ground, its roads and its landmark. -->
+        <g
+          v-for="district in mapDistrictShapes"
+          :key="district.id"
+          :data-moon-district="district.id"
+        >
+          <ellipse
+            :cx="district.x"
+            :cy="district.y"
+            :rx="district.floor[0]"
+            :ry="district.floor[1]"
+            fill="#b9b6ad"
+          />
+          <ellipse
+            :cx="district.x"
+            :cy="district.y"
+            :rx="district.ring[0]"
+            :ry="district.ring[1]"
+            fill="none"
+            stroke="#cfccc3"
+            stroke-width="1.6"
+          />
+          <line
+            :x1="district.road[0][0]"
+            :y1="district.road[0][1]"
+            :x2="district.road[1][0]"
+            :y2="district.road[1][1]"
+            stroke="#cfccc3"
+            stroke-width="1.6"
+          />
+          <g v-if="district.answered" data-moon-ribbon="lit">
+            <line
+              :x1="district.x"
+              :y1="district.y"
+              :x2="district.ribbon[0]"
+              :y2="district.ribbon[1]"
+              stroke="#fff3d2"
+              stroke-width="0.5"
+            />
+            <circle
+              v-for="(star, n) in district.stars"
+              :key="n"
+              :cx="star[0]"
+              :cy="star[1]"
+              :r="star[2]"
+              fill="#fff3d2"
+            />
+          </g>
+          <rect
+            v-if="district.stone"
+            :x="district.x - district.stone[0] / 2"
+            :y="district.y - district.stone[1]"
+            :width="district.stone[0]"
+            :height="district.stone[1]"
+            fill="#000000"
+            data-moon-landmark="quietStone"
+          />
+        </g>
         <ellipse
           v-for="ring in MOON_ROADS.rings"
           :key="ring"
@@ -156,6 +220,7 @@ import {
   MOON_LOTS,
   MOON_ROADS,
   moonApproaches,
+  moonDistrictsShown,
   moonLotsShown,
   moonSettlement,
   moonSpokes,
@@ -170,7 +235,13 @@ import {
 } from '../../data/townLandmarks';
 import TownMoonMonument from './TownMoonMonument.vue';
 import { MOON_SETTLEMENT } from '../../data/settlements';
-import { layoutMoonLabels, moonMapLabel } from '../../game/town/moon/MoonLabelLayout';
+import {
+  MOON_MAP_SCALE,
+  layoutMoonLabels,
+  moonMapBox,
+  moonMapLabel,
+  moonMapPoint,
+} from '../../game/town/moon/MoonLabelLayout';
 import { townLabelWidth } from '../../game/town/TownLabelLayout';
 import {
   canCollectMoonstones as collectable,
@@ -198,6 +269,7 @@ import TownMoonConstruction from './TownMoonConstruction.vue';
 import { cameraKeyAction } from '../../game/town/TownCameraKeys';
 import { keyboardActivation } from '../../game/town/TownTapGesture';
 import { useGraphicsRecovery } from '../../composables/useGraphicsRecovery';
+import { quietStoneLabel, signalAnswered, starMap } from '../../data/quietSignal';
 import { t } from '../../i18n';
 
 // New Hollow, the town's settlement on the Moon. Its own small 3D scene sits over
@@ -263,6 +335,34 @@ const mapLots = computed(() =>
     return { id, x: x * 1.3, y: 6 + z * 1.05 };
   }),
 );
+const mapDistricts = computed(() => moonDistrictsShown(props.town));
+// The SVG map grows to hold an opened district, drawn with the crater's own flattening.
+const mapBox = computed(() => moonMapBox(mapDistricts.value));
+const mapDistrictShapes = computed(() =>
+  mapDistricts.value.map(({ id, centre, floor, ring, road, stone }) => {
+    const [x, y] = moonMapPoint(...centre),
+      [sx, sy] = MOON_MAP_SCALE;
+    // The ribbon and its stars run from the stone toward New Hollow, as in the 3D scene.
+    const along = [Math.sin(stone?.turn ?? 0), Math.cos(stone?.turn ?? 0)];
+    const place = (a, c) =>
+      moonMapPoint(
+        centre[0] + along[0] * a + along[1] * c,
+        centre[1] + along[1] * a - along[0] * c,
+      );
+    return {
+      id,
+      x,
+      y,
+      floor: [floor * sx, floor * sy],
+      ring: [ring * sx, ring * sy],
+      road: road.map((point) => moonMapPoint(...point)),
+      stone: stone ? [stone.size[0] * sx, stone.size[1]] : null,
+      answered: !!stone && signalAnswered(props.town),
+      ribbon: place(ring - 1, 0),
+      stars: starMap(ring).stars.map(([a, c, size]) => [...place(a, c), 0.15 + size]),
+    };
+  }),
+);
 const monumentSites = computed(() =>
   areasForSettlement(MOON_SETTLEMENT).filter((area) => areaUnlocked(props.town, area)),
 );
@@ -283,7 +383,17 @@ const mapApproaches = computed(() =>
     points: route.points.map(([x, z]) => `${x * 1.3},${6 + z * 1.05}`).join(' '),
   })),
 );
-const allLots = computed(() => [...mapLots.value, ...mapMonuments.value]);
+// A district's fixed landmark (the Quiet Stone): no lot, no status, only a quiet label.
+const stone = computed(() => quietStoneLabel(props.town));
+const mapLandmarks = computed(() =>
+  mapDistricts.value
+    .filter((district) => district.stone && stone.value)
+    .map(({ centre, stone: slab }) => {
+      const [x, y] = moonMapPoint(...centre);
+      return { id: stone.value.id, x, y: y - slab.size[1] };
+    }),
+);
+const allLots = computed(() => [...mapLots.value, ...mapMonuments.value, ...mapLandmarks.value]);
 // Content changes with the town or its markers, not with camera frames.
 // TownMapLabel owns all state styling on both maps.
 const lotInfo = computed(() => {
@@ -295,6 +405,13 @@ const lotInfo = computed(() => {
   };
   return Object.fromEntries(
     allLots.value.map(({ id }) => {
+      if (id === stone.value?.id) {
+        const [name, text] = [t(stone.value.name), t(stone.value.line)];
+        return [
+          id,
+          { name, status: { kind: 'note', text }, label: `${name} · ${text}`, landmark: true },
+        ];
+      }
       const status = moonLotInfo(props.town, id, options);
       return [
         id,
@@ -313,7 +430,7 @@ const collecting = (id) =>
 const placedLots = computed(() => {
   const { width, height } = viewport.value;
   const projected = unavailable.value
-    ? allLots.value.map((lot) => moonMapLabel(lot, viewport.value))
+    ? allLots.value.map((lot) => moonMapLabel(lot, viewport.value, mapBox.value))
     : labels.value;
   return layoutMoonLabels(
     projected.map((lot) => {
@@ -333,13 +450,16 @@ const placedLots = computed(() => {
           available: attention,
         }),
         inView: lot.visible,
+        // The stone stands unlabelled until it is tapped.
         visible:
           lot.visible &&
-          townLabelDetail({
-            distant: !unavailable.value && cameraDistance.value > TOWN_LABEL_DETAIL_DISTANCE,
-            selected,
-            attention,
-          }),
+          (info.landmark
+            ? selected
+            : townLabelDetail({
+                distant: !unavailable.value && cameraDistance.value > TOWN_LABEL_DETAIL_DISTANCE,
+                selected,
+                attention,
+              })),
         action: !!TOWN_ACTIONS[props.indicators[lot.id]],
       };
     }),
@@ -371,6 +491,7 @@ const choose = (id) => {
 // gesture; their click opens a lot only from the keyboard, or on the SVG map. Opening
 // the workshop collects its moonstones, as the valley's saloon pays out (TownView).
 function activateLabel(id, event) {
+  if (lotInfo.value[id]?.landmark) return;
   if (!scene || keyboardActivation(event)) choose(id);
 }
 function cameraKey(event) {
@@ -442,6 +563,8 @@ async function start() {
       onEarth: () => emit('close'),
       // A tapped lot or monument site opens like its label.
       onSelect: (id) => choose(id),
+      // A tapped landmark shows its label; there is nothing to open.
+      onLandmark: (id) => (selectedLot.value = selectedLot.value === id ? null : id),
       onVipSpend: (receipt) => emit('vip-spend', receipt),
       onFind: (tap) => emit('find', tap),
       onFindZoom: (find) => emit('find-zoom', find),

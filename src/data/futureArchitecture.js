@@ -57,6 +57,10 @@ export const FUTURE_PALETTES = Object.freeze({
 // New Hollow Rising: the Moon tram's livery adds this blue of Earth in New Hollow's sky
 // to the twin palette's moon-white and lantern gold. The valley's small touches wear it.
 export const EARTHLIGHT_BLUE = '#5b8fc9';
+// The Quiet Signal: the night navy of New Hollow's panels, and the one thin line of light
+// the Quiet Stone lays across the dust. The valley's small touches of the era wear them.
+export const SIGNAL_NAVY = '#27365a';
+export const SIGNAL_LIGHT = '#fff3d2';
 // New Hollow on the Moon: moon-white ceramic, steel dome ribs, crater-ice glass,
 // gold foil and the valley's barn red. Used by the Moon map and its drawings.
 export const MOON_PALETTE = Object.freeze({
@@ -176,6 +180,7 @@ export const FUTURE_MINE_PORTALS = Object.freeze([
   'homestead-arch',
   'twin-arch',
   'ring-arch',
+  'signal-arch',
 ]);
 
 export const isFutureEra = (era) => FUTURE_ARCHITECTURES.includes(eraEvolution(era).architecture);

@@ -1,6 +1,6 @@
 import { ROUNDED_PALETTE } from './roundedArchitecture';
 import { COZY_PALETTES } from './cozyArchitecture';
-import { EARTHLIGHT_BLUE, FUTURE_PALETTES } from './futureArchitecture';
+import { EARTHLIGHT_BLUE, FUTURE_PALETTES, SIGNAL_LIGHT, SIGNAL_NAVY } from './futureArchitecture';
 import { eraEvolution } from './eras';
 import { moonSettlement } from './moonSettlement';
 
@@ -55,6 +55,17 @@ export const SKY_SAUCERS = Object.freeze({
     T.light,
     'tram-livery',
     EARTHLIGHT_BLUE,
+  ),
+  // The Quiet Signal: moon-white with a night-navy rim and one thin line of light along
+  // the hull. Like the two eras before it, it flies once an airport is finished in the era.
+  'quiet-signal': saucer(
+    T.shell,
+    SIGNAL_NAVY,
+    T.glass,
+    T.deep,
+    T.light,
+    'signal-line',
+    SIGNAL_LIGHT,
   ),
 });
 

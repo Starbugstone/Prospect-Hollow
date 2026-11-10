@@ -264,6 +264,194 @@
         <circle cx="118" cy="34" r="5" />
         <path d="m75 19 5-17 5 17Z" fill="#eacb80" />
       </template>
+      <template v-else-if="form === 'steady-lens'">
+        <!-- Memory stacks behind, then the panel under its flat canopy, then the wings. -->
+        <g v-if="level >= 4" fill="#ece9e1" stroke="#657481" stroke-width="1">
+          <path d="M34 108V70h12v38ZM48 108V62h12v46ZM100 108V62h12v46ZM114 108V70h12v38Z" />
+          <path
+            d="M37 78h6m-6 8h6m-6 8h6M51 70h6m-6 8h6m-6 8h6m-6 8h6M103 70h6m-6 8h6m-6 8h6m-6 8h6M117 78h6m-6 8h6m-6 8h6"
+            stroke="#27365a"
+            stroke-width="2.5"
+          />
+        </g>
+        <g v-if="level >= 5">
+          <path d="M80 44V14" stroke="#657481" stroke-width="1.5" />
+          <circle cx="80" cy="13" r="2.5" fill="#e8b84a" stroke="none" />
+          <path d="M66 54V44h28v10Z" fill="#a9dbe0" stroke="#27365a" stroke-width="1.5" />
+          <path d="M63 44h34" stroke="#e8b84a" stroke-width="2.5" />
+        </g>
+        <path d="M52 108V58M108 108V58" stroke="#ece9e1" stroke-width="3" />
+        <path d="M44 58h72v-6H44Z" fill="#27365a" stroke="none" />
+        <path d="M42 59h76" stroke="#e8b84a" stroke-width="2" />
+        <path d="M64 108V64h32v44Z" fill="#ece9e1" stroke="#657481" stroke-width="1" />
+        <path d="M68 104V68h24v36Z" fill="#161b28" stroke="none" />
+        <circle cx="80" cy="79" r="6.5" fill="#161b28" stroke="#e8b84a" stroke-width="2" />
+        <circle class="landmark-lens" cx="80" cy="79" r="4" fill="#e23a2c" stroke="none" />
+        <circle cx="81.5" cy="77.5" r="1.2" fill="#ffb199" stroke="none" />
+        <path d="M73 93h14M73 96h14M73 99h14" stroke="#657481" stroke-width="1" />
+        <g v-if="level >= 2" stroke="#657481" stroke-width="1">
+          <path d="M30 108V88l26-3v23ZM130 108V88l-26-3v23Z" fill="#ece9e1" />
+          <path d="M31 88l25-3M129 88l-25-3" stroke="#161b28" stroke-width="3" />
+          <path
+            d="M36 86h2m4-.5h2m4-.5h2M122 86h2m-8-.5h2m-8-.5h2"
+            stroke="#e8b84a"
+            stroke-width="2"
+          />
+        </g>
+        <g v-if="level >= 3" stroke="none">
+          <path d="M66 116h28v3H66Z" fill="#ece9e1" />
+          <circle
+            v-for="x in [26, 44, 116, 134]"
+            :key="x"
+            :cx="x"
+            cy="111"
+            r="2.2"
+            fill="#e8b84a"
+          />
+        </g>
+        <g v-if="level >= 5" stroke="none">
+          <path d="M20 116h10v-6H20ZM130 116h10v-6h-10Z" fill="#27365a" />
+          <path d="m25 100 4 5-4 5-4-5ZM135 100l4 5-4 5-4-5Z" fill="#9b91c4" />
+        </g>
+      </template>
+      <template v-else-if="form === 'twin-wheel'">
+        <g v-if="level >= 5" stroke="none">
+          <path d="M44 108 80 100 116 108 80 118Z" fill="#ece9e1" />
+          <path d="M44 108 80 118 116 108" fill="none" stroke="#e8b84a" stroke-width="2" />
+          <circle v-for="x in [40, 120]" :key="x" :cx="x" cy="100" r="2.2" fill="#e8b84a" />
+        </g>
+        <path
+          d="M70 108 76 62h8l6 46Z"
+          fill="#ece9e1"
+          stroke="#657481"
+          stroke-width="1"
+          :transform="level >= 5 ? 'translate(0 -6)' : undefined"
+        />
+        <g :transform="level >= 5 ? 'translate(0 -8)' : undefined">
+          <path d="M74 60h12v5H74Z" fill="#e8b84a" stroke="none" />
+          <!-- The far wheel: an open gold frame at first, clad from level 3. -->
+          <g v-if="level >= 2" fill="none">
+            <ellipse
+              cx="66"
+              cy="46"
+              rx="15"
+              ry="30"
+              :stroke="level >= 3 ? '#ece9e1' : '#e8b84a'"
+              :stroke-width="level >= 3 ? 6 : 2.5"
+            />
+            <ellipse
+              v-if="level >= 3"
+              cx="66"
+              cy="46"
+              rx="18.5"
+              ry="33.5"
+              stroke="#27365a"
+              stroke-width="1.2"
+            />
+            <path
+              d="M66 16v60M52 34l28 24M52 58l28-24"
+              :stroke="level >= 3 ? '#ece9e1' : '#e8b84a'"
+              stroke-width="1.5"
+            />
+          </g>
+          <path
+            :d="level >= 4 ? 'M42 46h76' : 'M60 46h42'"
+            stroke="#ece9e1"
+            stroke-width="5"
+            fill="none"
+          />
+          <g fill="none">
+            <ellipse cx="94" cy="46" rx="15" ry="30" stroke="#ece9e1" stroke-width="6" />
+            <ellipse cx="94" cy="46" rx="18.5" ry="33.5" stroke="#27365a" stroke-width="1.2" />
+            <path d="M94 16v60M80 34l28 24M80 58l28-24" stroke="#ece9e1" stroke-width="2" />
+          </g>
+          <path d="M88 40h12v12H88Z" fill="#27365a" stroke="none" />
+          <g v-if="level >= 3" stroke="none">
+            <path d="M100 42h6v8h-6Z" fill="#27365a" />
+            <circle class="landmark-glint" cx="107" cy="46" r="2" fill="#f3cf6b" />
+          </g>
+          <g v-if="level >= 4" stroke="none">
+            <path d="M116 42h4v8h-4ZM40 42h4v8h-4Z" fill="#e8b84a" />
+            <path d="M28 28h10v14H28ZM28 50h10v14H28Z" fill="#27365a" />
+            <path d="M33 42v8" stroke="#657481" stroke-width="1.2" />
+            <path d="M128 40h14l4 3-4 3h-14Z" fill="#ece9e1" stroke="#657481" stroke-width="0.8" />
+            <path d="M124 49l-6 5h10Z" fill="#ece9e1" />
+            <path d="M120 46h8" stroke="#e8b84a" stroke-width="1" />
+          </g>
+        </g>
+      </template>
+      <template v-else-if="form === 'work-pod'">
+        <!-- The bay hoop behind, the cradle, the pod, then its arms over the sample. -->
+        <g v-if="level >= 4" fill="none">
+          <circle cx="80" cy="56" r="36" stroke="#ece9e1" stroke-width="5" />
+          <circle cx="80" cy="56" r="31" stroke="#e8b84a" stroke-width="1.5" />
+        </g>
+        <g v-if="level >= 5" stroke="none">
+          <path d="M34 108V40" stroke="#657481" stroke-width="1.5" />
+          <path d="M26 36q8 8 16 0Z" fill="#ece9e1" stroke="#657481" stroke-width="1" />
+          <circle cx="34" cy="33" r="1.6" fill="#e8b84a" />
+        </g>
+        <path
+          d="M56 108q-2-34 8-46M104 108q2-34-8-46"
+          fill="none"
+          stroke="#27365a"
+          stroke-width="4"
+        />
+        <path d="M52 108h56v-5H52Z" fill="#ece9e1" stroke="none" />
+        <g v-if="level >= 4" stroke="none">
+          <path
+            d="M50 52h8v16h-8ZM102 52h8v16h-8Z"
+            fill="#ece9e1"
+            stroke="#657481"
+            stroke-width="0.8"
+          />
+        </g>
+        <circle cx="80" cy="56" r="24" fill="#f3ecd9" stroke="#657481" stroke-width="1" />
+        <path d="M57 63q23 8 46 0" fill="none" stroke="#e8b84a" stroke-width="2.5" />
+        <circle cx="80" cy="50" r="11" fill="#161b28" stroke="#e8b84a" stroke-width="2.5" />
+        <g v-if="level >= 3" stroke="none">
+          <circle v-for="x in [72, 80, 88]" :key="x" :cx="x" cy="35" r="1.8" fill="#f3cf6b" />
+          <path d="M80 32V22" stroke="#657481" stroke-width="1" />
+          <circle cx="80" cy="21" r="1.5" fill="#e8b84a" />
+        </g>
+        <path d="M72 112h16v-9H72Z" fill="#ece9e1" stroke="#657481" stroke-width="0.8" />
+        <path d="M70 103h20" stroke="#e8b84a" stroke-width="2" />
+        <path
+          class="landmark-glint"
+          d="m80 86 5 8-5 8-5-8Z"
+          :fill="option.colour"
+          stroke="#ece9e1"
+          stroke-width="0.8"
+        />
+        <g v-if="level >= 2" fill="none" stroke="#ece9e1" stroke-width="2.5">
+          <path d="M66 72 58 82 72 90M94 72l8 10-14 8" />
+          <path d="m72 90-1 5m1-5 4 3M88 90l1 5m-1-5-4 3" stroke="#e8b84a" stroke-width="1.5" />
+          <g fill="#27365a" stroke="none">
+            <circle cx="66" cy="72" r="2.5" />
+            <circle cx="58" cy="82" r="2.5" />
+            <circle cx="94" cy="72" r="2.5" />
+            <circle cx="102" cy="82" r="2.5" />
+          </g>
+        </g>
+        <g v-if="level >= 4" stroke="none">
+          <path d="M38 112h12v-6H38ZM110 112h12v-6h-12Z" fill="#ece9e1" />
+          <path
+            d="M39 106h10v-9H39ZM111 106h10v-9h-10Z"
+            fill="#a9dbe0"
+            fill-opacity="0.6"
+            stroke="#657481"
+            stroke-width="0.8"
+          />
+          <path d="m44 99 2 3-2 3-2-3Z" fill="#e8b84a" />
+          <path d="m116 99 2 3-2 3-2-3Z" fill="#76b0a6" />
+        </g>
+        <g v-if="level >= 5" fill="none" stroke="#e8b84a" stroke-width="1.5">
+          <path d="M22 104h38M100 104h38" />
+          <g fill="#e8b84a" stroke="none">
+            <circle v-for="x in [22, 138]" :key="x" :cx="x" cy="101" r="2.2" />
+          </g>
+        </g>
+      </template>
       <template v-else-if="form === 'headframe'">
         <path d="M20 110V82h30v28Z" :fill="walls" />
         <path d="m15 84 20-15 20 15Z" fill="#655343" />
@@ -474,7 +662,7 @@
         <path d="m57 22 23-15 23 15Z" />
       </template>
     </g>
-    <g v-if="lunar && !mineral && level >= 2" stroke="#e5e8e7" stroke-width="2">
+    <g v-if="lunar && !mineral && !signal && level >= 2" stroke="#e5e8e7" stroke-width="2">
       <path d="M12 108V94h24v10Zm112-4V94h24v14Z" :fill="option.colour" />
       <path v-if="level >= 3" d="M20 91V78m120 13V78" stroke="#eacb80" stroke-width="4" />
       <path v-if="level >= 4" d="M18 94V48m124 46V48" />
@@ -524,6 +712,7 @@
 <script setup>
 import { computed, useId } from 'vue';
 import { MOONSTONE_LANDMARK_FORMS } from '../../game/town/TownMoonstoneLandmarks';
+import { SIGNAL_LANDMARK_FORMS } from '../../game/town/moon/MoonSignalLandmarks';
 import { LANDMARK_BY_ID, PERSONAL_AREAS, LANDMARK_PROGRESSION } from '../../data/townLandmarks';
 import { settlementOf } from '../../data/settlements';
 import TownCrest from './TownCrest.vue';
@@ -542,6 +731,8 @@ const option = computed(() => ({
 }));
 const form = computed(() => option.value.form);
 const mineral = computed(() => MOONSTONE_LANDMARK_FORMS.includes(form.value));
+// Voyagers' Court draws every level of its own designs: none of the shared lunar extras.
+const signal = computed(() => SIGNAL_LANDMARK_FORMS.includes(form.value));
 // The site's settlement (settlements.js): its own sky and stone.
 const settlement = computed(() =>
   settlementOf(PERSONAL_AREAS.find((area) => area.choices.includes(props.choice))),

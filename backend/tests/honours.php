@@ -164,7 +164,7 @@ $adminAudit = 'honours-test-' . bin2hex(random_bytes(4));
 try {
     // ---------- Shared definitions ----------
     check(
-        $schema['honours']['version'] === 6 &&
+        $schema['honours']['version'] === 7 &&
             $schema['honours']['showcaseSlots'] === 3 &&
             $schema['honours']['counters'] === [
                 'gems' => 'map',
@@ -293,6 +293,10 @@ try {
     );
 
     foreach ($schema['personalisation']['areas'] as $area) {
+        // A site of an era still being built has no playable town, so no fixture yet.
+        if (!$rules['eras'][$area['era']]['enabled']) {
+            continue;
+        }
         $f = flow('optional landmark ' . $area['id'] . ': construction and upgrades');
         $base = $validator->accept(
             $f->before,
@@ -1070,7 +1074,7 @@ try {
         check(
             str_contains(
                 $public->projection($odd, 'Odd', 'honours'),
-                '"honours":{"version":6,"earned":{},"showcase":[]}',
+                '"honours":{"version":7,"earned":{},"showcase":[]}',
             ),
             'garbage still projects an empty object',
         );

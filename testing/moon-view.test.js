@@ -44,7 +44,8 @@ const moonTown = () => ({
 });
 // A Moon monument whose first level waits to be unveiled.
 function readySite(area) {
-  let town = moonTown();
+  // A site opens with its own era.
+  let town = { ...moonTown(), era: area.era };
   const choice = area.choices[0];
   town = purchaseLandmark(town, {
     id: area.id,

@@ -566,6 +566,92 @@ const risingBuildings = [
 }));
 for (const building of risingBuildings) CITY_FAMILIES[building.kind] = building.family;
 
+// The Quiet Signal: a neighbourhood beyond the crater rim, gathered round a black stone
+// that nobody built. Every building stands in the Far Rim district on the Moon. The stone
+// itself is a fixed landmark (moonSettlement.js), never a building.
+const signalBuildings = [
+  {
+    id: 'listeningHouse',
+    name: 'Listening house',
+    shortName: 'Listening house',
+    purpose: 'Instruments that measure the stone’s pulse, and dishes that follow it',
+    family: 'research',
+    effects: { visitors: 2, comfort: 3 },
+  },
+  {
+    id: 'stillwaterBasin',
+    name: 'Stillwater basin',
+    shortName: 'Stillwater',
+    purpose: 'Water for the Far Rim, kept so still that each pulse draws a ring on it',
+    family: 'water',
+    effects: { water: 14, comfort: 1 },
+  },
+  {
+    id: 'tonewoodConservatory',
+    name: 'Tonewood conservatory',
+    shortName: 'Conservatory',
+    purpose: 'Willowkin-grown food and tonewood, every leaf leaning toward the stone',
+    family: 'farm',
+    effects: { food: 14, comfort: 1 },
+  },
+  {
+    id: 'farRimHomes',
+    name: 'Far Rim homes',
+    shortName: 'Far Rim homes',
+    purpose: 'Homes for researchers, craftspeople and families, their windows facing the stone',
+    family: 'residence',
+    effects: { housing: 6, comfort: 1 },
+    unlock: [{ id: 'listeningHouse', level: 1 }],
+  },
+  {
+    id: 'resonanceWorkshop',
+    name: 'Resonance workshop',
+    shortName: 'Workshop',
+    purpose: 'Lenses, tuning frames and wooden resonators, made by hand',
+    family: 'depot',
+    effects: { visitors: 2, comfort: 2 },
+    unlock: [
+      { id: 'listeningHouse', level: 1 },
+      { id: 'tonewoodConservatory', level: 1 },
+    ],
+  },
+  {
+    id: 'signalTerrace',
+    name: 'Signal terrace',
+    shortName: 'Signal terrace',
+    purpose: 'Where New Hollow gathers before the stone, and where its answer is sent',
+    family: 'culture',
+    effects: { visitors: 4, comfort: 2 },
+    unlock: [
+      { id: 'resonanceWorkshop', level: 2 },
+      { id: 'farRimHomes', level: 1 },
+    ],
+  },
+  {
+    id: 'patternGarden',
+    name: 'Pattern garden',
+    shortName: 'Pattern garden',
+    purpose: 'A Willowkin root garden, where the roots grow in shapes that repeat',
+    family: 'park',
+    effects: { comfort: 3 },
+    requiredForEraCompletion: false,
+    unlock: [
+      { id: 'tonewoodConservatory', level: 2 },
+      { id: 'stillwaterBasin', level: 1 },
+    ],
+  },
+].map(({ id, ...building }) => ({
+  id,
+  kind: id,
+  introducedEra: 'quiet-signal',
+  color: '#8d97ad',
+  settlement: MOON_SETTLEMENT,
+  // The Far Rim road leaves from New Hollow's first landing.
+  unlock: [{ id: 'ribbonLanding', level: 1 }],
+  ...building,
+}));
+for (const building of signalBuildings) CITY_FAMILIES[building.kind] = building.family;
+
 // Each level's benefit line follows the building's effects, so a balance change
 // can never leave an outdated number in the text.
 export function cityBenefit({ housing, visitors, food, water, comfort }, level) {
@@ -823,6 +909,7 @@ export const CITY_BUILDINGS = [
   ...skywardBuildings,
   ...twinBuildings,
   ...risingBuildings,
+  ...signalBuildings,
 ].map((building) => ({
   ...building,
   stages: [

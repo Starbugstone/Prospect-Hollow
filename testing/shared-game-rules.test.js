@@ -94,6 +94,7 @@ describe('new building prices', () => {
     moonward: [29250, 33000, 36750],
     'twin-hollows': [31500, 35250, 39000],
     'hollow-rising': [33750, 37500, 41250],
+    'quiet-signal': [36000, 39750, 43500],
   };
 
   it('prices every plot an era introduces from that era alone, landmarks with their premium', () => {

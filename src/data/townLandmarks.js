@@ -309,6 +309,32 @@ export const LANDMARK_OPTIONS = [
     33000,
     'A homecoming arch with banners and a bench for waiting families.',
   ),
+  // The Quiet Signal: Voyagers' Court, beside the way to the Quiet Stone. Three keepsakes of
+  // the old dream of travelling further, in New Hollow's moon-white, navy and gold.
+  option(
+    'steady-lens',
+    'Steady Lens Pavilion',
+    'steady-lens',
+    '#27365a',
+    37000,
+    'A low pavilion for the Far Rim’s reckoning engine: one steady red lens in a dark panel, keeping every measurement.',
+  ),
+  option(
+    'twin-wheel',
+    'Twin Wheel Station',
+    'twin-wheel',
+    '#e8b84a',
+    38000,
+    'A model of a double-wheel station, turning slowly above a sculpted support.',
+  ),
+  option(
+    'work-pod',
+    'Ivory Work Pod',
+    'work-pod',
+    '#9b91c4',
+    39000,
+    'A small round work pod above a display terrace, its two arms reaching out to a crystal sample.',
+  ),
   // First commission: the Earthlight Conservatory, in New Hollow on the Moon. These base
   // prices are never read; the site's explicit schedule below sets every level.
   option(
@@ -501,6 +527,17 @@ const plots = [
     'coins',
     commissionLevelPrices,
     { building: 'homecomingHall', level: 3 },
+  ],
+  // In the Far Rim, beside the way to the Quiet Stone and apart from it: the mirror of the
+  // road's arrival, on the other side of the Signal Terrace. It faces the usual camera.
+  [
+    'voyagers-court',
+    'quiet-signal',
+    'Voyagers’ Court',
+    [14.1, -76.8],
+    ['steady-lens', 'twin-wheel', 'work-pod'],
+    'south',
+    MOON_SETTLEMENT,
   ],
 ];
 export const PERSONAL_AREAS = plots.map(

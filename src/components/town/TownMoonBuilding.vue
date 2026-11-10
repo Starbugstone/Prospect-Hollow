@@ -203,7 +203,7 @@
 import { heritageUpgrade } from '../../data/heritageUpgrades';
 import { computed } from 'vue';
 import { MOON_PALETTE as p } from '../../data/futureArchitecture';
-import { finishDrawing, risingDrawing } from './moonRisingDrawings';
+import { moonDrawing, moonFinishDrawing } from './moonSignalDrawings';
 import MoonShapes from './TownMoonShapes.vue';
 
 // Front-view drawings of New Hollow's buildings, for building cards and the
@@ -217,10 +217,11 @@ const props = defineProps({
   finish: { type: Object, default: null },
 });
 const purpose = computed(() => heritageUpgrade(props.kind));
-// The outer ring's buildings are drawn from plain shapes (moonRisingDrawings.js).
-const drawing = computed(() => risingDrawing(props.kind, props.level));
+// The outer ring's and the Far Rim's buildings are drawn from plain shapes
+// (moonRisingDrawings.js, moonSignalDrawings.js).
+const drawing = computed(() => moonDrawing(props.kind, props.level));
 const finishArt = computed(() =>
-  props.level > 0 ? finishDrawing(props.kind, props.finish) : null,
+  props.level > 0 ? moonFinishDrawing(props.kind, props.finish) : null,
 );
 const drum = (x, r, h) =>
   `M${x - r} 0v${-h}a${r} ${r * 0.22} 0 0 1 ${r * 2} 0v${h}a${r} ${r * 0.22} 0 0 1 ${-r * 2} 0Z`;

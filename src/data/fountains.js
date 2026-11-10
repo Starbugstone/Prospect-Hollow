@@ -19,6 +19,7 @@ export const FOUNTAIN_DESIGNS = Object.freeze([
   'first-well',
   'twin-globes',
   'ring-roads',
+  'still-pool',
 ]);
 /** Unknown or missing designs fall back to the original frontier spring. */
 export const resolveFountain = (id) => (FOUNTAIN_DESIGNS.includes(id) ? id : FOUNTAIN_DESIGNS[0]);

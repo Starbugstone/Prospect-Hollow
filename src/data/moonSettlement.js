@@ -37,12 +37,70 @@ const MOON_LIGHTS = Array.from({ length: MOON_SETTLEMENT_LIMIT }, (_, n) => {
   });
 });
 
+// Ground beyond the crater, opened by a later era. A district is a level hollow round its
+// `centre`, with its own ring road (`ring`, a radius about the centre) and one straight
+// `road` joining the last crater ring to it. `floor` is the radius of its level ground and
+// `blend` how far the ground takes to rise back to the hills. Its lots name it (`district`);
+// before its era a town sees today's rim and hills there and nothing else.
+//
+// The Far Rim lies on the line from the default camera to the risen Earth, so the road, the
+// Quiet Stone at its centre and Earth stand one above the other in the first view of the Moon.
+const FAR_RIM_AXIS = Object.freeze([-0.2109, 0.9775]);
+const FAR_RIM_CENTRE = Object.freeze([34.5, -93.8]);
+// A place in the Far Rim: `turn` degrees round the stone from the side facing New Hollow
+// (positive toward +x), `radius` from the stone.
+const farRim = (turn, radius = 26.5) => {
+  const a = (turn * Math.PI) / 180,
+    [ax, az] = FAR_RIM_AXIS;
+  return [
+    Math.round((FAR_RIM_CENTRE[0] + radius * (Math.cos(a) * ax + Math.sin(a) * az)) * 10) / 10,
+    Math.round((FAR_RIM_CENTRE[1] + radius * (Math.cos(a) * az - Math.sin(a) * ax)) * 10) / 10,
+  ];
+};
+export const MOON_DISTRICTS = Object.freeze({
+  farRim: Object.freeze({
+    id: 'farRim',
+    era: 'quiet-signal',
+    centre: FAR_RIM_CENTRE,
+    ring: 16,
+    floor: 36,
+    blend: 13,
+    // From the end of the outer ring's 315° spoke, past the empty lot under the saucer's
+    // flight line, to the district's ring. It runs beside the sight line, which the Signal
+    // Terrace stands on.
+    road: Object.freeze([Object.freeze([31.8, -31.8]), Object.freeze(farRim(32, 16))]),
+    // The Quiet Stone: a fixed landmark at the centre. `size` is width, height and depth
+    // (1 : 4 : 9 on its side); `turn` faces its broad side to New Hollow.
+    stone: Object.freeze({
+      id: 'quietStone',
+      size: Object.freeze([5.2, 11.7, 1.3]),
+      turn: Math.atan2(FAR_RIM_AXIS[0], FAR_RIM_AXIS[1]),
+    }),
+  }),
+});
+const eraAt = (era) => ERAS.findIndex(({ id }) => id === era);
+const eraReached = (town, era) => {
+  const at = eraAt(era);
+  return at >= 0 && !!ERAS[at].enabled && (town ? eraAt(town.era) : ERAS.length - 1) >= at;
+};
+/** The districts a town sees: those whose era it has reached. Without a town, every enabled era's. */
+export const moonDistrictsShown = (town) =>
+  Object.values(MOON_DISTRICTS).filter(({ era }) => eraReached(town, era));
+/** The district whose level ground holds (x, z), or null on the crater's own ground. */
+export const moonDistrictAt = (x, z) =>
+  Object.values(MOON_DISTRICTS).find(
+    ({ centre, floor }) => Math.hypot(x - centre[0], z - centre[1]) <= floor,
+  ) ?? null;
+
 // Every Moon lot, in one place: where it stands (`at`, the Moon scene's own coordinates), its
 // pad's radius, the public path from its hatch (`arrival`, in the lot's own frame, local +z
 // its front apron) and which way it faces. `face` is 'out' by default: the front looks away
 // from the landing. 'in' turns it toward the landing; a number fixes the turn. `ring` is the
 // ring road its path joins (an index into MOON_ROADS.rings, the inner ring by default). Lots
 // are listed in the order every map draws and labels them. A new Moon building adds one entry.
+// A lot in a district names it (`district`): 'in' then faces the district's centre and its
+// path joins the district's ring. `gather` marks an open place nobody steps inside: visitors
+// stand where its path begins and look to the middle of its ring.
 const MOON_LOT_TABLE = Object.freeze({
   ribbonLanding: {
     at: [0, -8],
@@ -265,6 +323,81 @@ const MOON_LOT_TABLE = Object.freeze({
     face: 'in',
     ring: 1,
   },
+  // The Quiet Signal: the Far Rim's lots stand round the Quiet Stone, beyond its ring road,
+  // and face it. The side toward Earth stays empty, and so does all the ground inside the
+  // ring. The Signal Terrace stands on the sight line from New Hollow to the stone.
+  signalTerrace: {
+    at: farRim(0),
+    pad: 6.2,
+    arrival: [
+      [0, 3.2],
+      [0, 6],
+    ],
+    face: 'in',
+    district: 'farRim',
+    // An open place: visitors stand at its front and look at the stone.
+    gather: true,
+  },
+  stillwaterBasin: {
+    at: farRim(-76),
+    pad: 5.4,
+    arrival: [
+      [0, 3.49],
+      [0, 6],
+    ],
+    face: 'in',
+    district: 'farRim',
+  },
+  listeningHouse: {
+    at: farRim(-114),
+    pad: 5.6,
+    arrival: [
+      [0, 0.05],
+      [0, 6],
+    ],
+    face: 'in',
+    district: 'farRim',
+  },
+  tonewoodConservatory: {
+    at: farRim(-152),
+    pad: 5.8,
+    arrival: [
+      [0, 2.3],
+      [0, 6],
+    ],
+    face: 'in',
+    district: 'farRim',
+  },
+  farRimHomes: {
+    at: farRim(142),
+    pad: 5.8,
+    arrival: [
+      [0, -0.1],
+      [0, 6],
+    ],
+    face: 'in',
+    district: 'farRim',
+  },
+  resonanceWorkshop: {
+    at: farRim(104),
+    pad: 5.4,
+    arrival: [
+      [0, 0.1],
+      [0, 6],
+    ],
+    face: 'in',
+    district: 'farRim',
+  },
+  patternGarden: {
+    at: farRim(66),
+    pad: 5.2,
+    arrival: [
+      [0, 3.39],
+      [0, 6],
+    ],
+    face: 'in',
+    district: 'farRim',
+  },
 });
 const lotEntry = (id) => (Object.hasOwn(MOON_LOT_TABLE, id) ? MOON_LOT_TABLE[id] : null);
 
@@ -276,7 +409,6 @@ export const MOON_LOTS = Object.freeze(
     Object.entries(MOON_LOT_TABLE).map(([id, { at }]) => [id, Object.freeze([...at])]),
   ),
 );
-const eraAt = (era) => ERAS.findIndex(({ id }) => id === era);
 /**
  * The Moon lots a town sees: those of its era and every earlier enabled one, in drawing
  * order. A later era's lots stay hidden, as the valley's future plots do: no pad, label or
@@ -321,8 +453,23 @@ export function moonRoadDistance(x, z, roads = MOON_ROADS) {
     distance = Math.min(distance, moonSegmentDistance(x, z, a, b));
   return distance;
 }
-// The radius of the ring road a lot's path joins.
-const moonLotRing = (id) => MOON_ROADS.rings[lotEntry(id)?.ring ?? 0] ?? MOON_RING_ROAD;
+/** The district a lot stands in, or null for a lot in the crater. */
+export const moonLotDistrict = (id) => MOON_DISTRICTS[lotEntry(id)?.district] ?? null;
+// The radius of the ring road a lot's path joins: its district's, or one of the crater's.
+const moonLotRing = (id) =>
+  moonLotDistrict(id)?.ring ?? MOON_ROADS.rings[lotEntry(id)?.ring ?? 0] ?? MOON_RING_ROAD;
+// The middle of that ring road.
+const ORIGIN = Object.freeze([0, 0]);
+const moonLotRingCentre = (id) => moonLotDistrict(id)?.centre ?? ORIGIN;
+/**
+ * Whether a parcel of `radius` at (x, z) stands on level ground: inside the crater, or on
+ * a district's floor.
+ */
+export const moonOnLevelGround = (x, z, radius = 0) =>
+  Math.hypot(x, z) + radius < MOON_CRATER_RADIUS ||
+  Object.values(MOON_DISTRICTS).some(
+    ({ centre, floor }) => Math.hypot(x - centre[0], z - centre[1]) + radius < floor,
+  );
 // Lots sit inside a crater bowl; footprints stay within this radius of a lot.
 export const MOON_LOT_RADIUS = 5;
 // The crater floor is level out to MOON_FLOOR_RADIUS, rises to a soft rim whose crest is at
@@ -394,10 +541,12 @@ export function moonLotPose(id, lots = MOON_LOTS) {
   // Local +z is the authored front apron. A lot faces away from the landing unless its
   // entry says otherwise: the Saucer Pad faces inward, opposite its sky corridor.
   const face = lotEntry(id)?.face ?? 'out';
+  // A district's lots turn about its centre, the crater's about the landing.
+  const [cx, cz] = moonLotDistrict(id)?.centre ?? [0, landingZ];
   const rotation =
     typeof face === 'number'
       ? face
-      : Math.atan2(-x, -(z - landingZ)) + (face === 'in' ? 0 : Math.PI);
+      : Math.atan2(-(x - cx), -(z - cz)) + (face === 'in' ? 0 : Math.PI);
   return { x, z, rotation };
 }
 
@@ -428,7 +577,9 @@ export function moonApproach(id, level = 3, lots = MOON_LOTS, site = null) {
   const pose = site?.pose ?? moonLotPose(id, lots);
   const local = (site?.arrival ?? lotArrival(id)).map((point) => [...point]);
   if (id === 'willowkinDome' && level >= 2) local[0] = [0, 2.48];
-  const ring = site?.ring ?? moonLotRing(id);
+  const ring = site?.ring ?? moonLotRing(id),
+    [cx, cz] = site?.ringCentre ?? moonLotRingCentre(id),
+    district = site ? null : (moonLotDistrict(id)?.id ?? null);
   const padRadius = site?.padRadius ?? moonPadRadius(id),
     rampStart = moonPadApothem(padRadius - 0.25) - 0.05,
     rampEnd = padRadius + 0.35;
@@ -476,7 +627,7 @@ export function moonApproach(id, level = 3, lots = MOON_LOTS, site = null) {
       }
       for (let j = 0; j < 96; j++) {
         const a = (j * Math.PI) / 48;
-        const end = [Math.cos(a) * ring, Math.sin(a) * ring];
+        const end = [cx + Math.cos(a) * ring, cz + Math.sin(a) * ring];
         const cost = length + Math.hypot(end[0] - arc.at(-1)[0], end[1] - arc.at(-1)[1]);
         if ((!best || cost < best.cost) && clear(arc.at(-1), end))
           best = { cost, points: [...arc, end] };
@@ -485,7 +636,7 @@ export function moonApproach(id, level = 3, lots = MOON_LOTS, site = null) {
   }
   // Incomplete future layouts still get finite, visible access data. Shipped
   // layouts are regression checked to always find a clear exterior connection.
-  const fallback = [Math.cos(startAngle) * ring, Math.sin(startAngle) * ring];
+  const fallback = [cx + Math.cos(startAngle) * ring, cz + Math.sin(startAngle) * ring];
   return {
     id,
     width: MOON_ACCESS_WIDTH,
@@ -496,6 +647,11 @@ export function moonApproach(id, level = 3, lots = MOON_LOTS, site = null) {
     rampStart,
     rampEnd,
     ring,
+    // The middle of that ring road, and the district it belongs to (null in the crater).
+    centre: [cx, cz],
+    district,
+    // An open gathering place: visitors stand at the path's head and face `outlook`.
+    ...(lotEntry(id)?.gather && !site ? { outlook: [cx, cz] } : {}),
     clear: !!best,
     points: [...apron, ...(best?.points.slice(1) ?? [fallback])],
     apronSegments: apron.length - 1,
@@ -596,6 +752,20 @@ const LETTERS = {
   starwatchDish: 'The dish heard a star humming. The elders say it is an old friend.',
   moonballField: 'Moonball final: the children won by a bounce and a half.',
   craterPondGarden: 'A pond on the Moon! The reeds lean toward Earth, just like the tomatoes.',
+  listeningHouse:
+    'The first instruments stand on bedrock. The engineers say the pulse comes every ninety-one seconds. The children say it is a tune, and they hum it on the way to school.',
+  stillwaterBasin:
+    'We keep the basin perfectly still. With each pulse a single ring crosses the water, from the side nearest the stone.',
+  tonewoodConservatory:
+    'The seedlings came up leaning. Not toward Earth, as they do in the old greenhouse, but toward the stone. We turned one pot round. By morning it had turned back.',
+  farRimHomes:
+    'We have moved to the Far Rim. Every home has one window that faces the stone, and in the evening every one of them is lit.',
+  resonanceWorkshop:
+    'Maren ground the first lens today, and Osier brought tonewood from the conservatory for its frame. The wood hums when the pulse passes through it.',
+  signalTerrace:
+    'The terrace is open. People come after work and stand a while. Nobody asks them to be quiet. They simply are.',
+  patternGarden:
+    'The Willowkin lifted a paving stone to show us the roots beneath it. They grow in a shape, and then in the same shape again, smaller.',
 };
 export const moonLetters = (town) => [
   ...Object.entries(LETTERS)

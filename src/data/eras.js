@@ -458,6 +458,41 @@ export const ERAS = continueSupplyTiers(
       horizon: 'New Hollow is ready to grow up.',
       finale: 'A school bell, an orchard and a tram that is never late. New Hollow is a town now.',
     },
+    {
+      id: 'quiet-signal',
+      evolution: {
+        ...FUTURE_CITY_EVOLUTION,
+        // The valley keeps its Twin Hollows buildings, as in New Hollow Rising. Its small
+        // touches (clothes, fountain, road inlay) turn quiet: night navy, moon-white and one
+        // thin line of light.
+        architecture: 'twin',
+        wardrobe: 'listening',
+        fountain: 'still-pool',
+        roadStyle: 'signal-lane',
+        moonSettlement: true,
+        prices: [21600, 24200, 26800],
+        newBuildingPrices: [36000, 39750, 43500],
+        // In the valley only the town square changes, for its still pool. On the Moon the
+        // Starwatch Dish turns to the stone.
+        modernizes: ['square', 'starwatchDish'],
+        upgradeTitle: 'Signal level {level}: {name}',
+        upgradeDescriptions: [
+          'Lay night-blue paving round a still, dark pool that mirrors the sky.',
+          'Set one thin line of light across the pool, pointing at the Moon.',
+        ],
+        cityDescription:
+          'Beyond the crater rim a quiet neighbourhood gathers round a black stone and listens.',
+      },
+      label: 'The Quiet Signal',
+      yearLabel: '2370',
+      // Opens once the owner has reviewed its district, buildings and story.
+      enabled: false,
+      story:
+        'A black stone stands beyond the far rim of the crater, where there was only dust. It is taller than the school and perfectly smooth. When sunlight touches it, the crystal instruments in the greenhouse pulse together. New Hollow has cut a road through the rim to listen.',
+      horizon: 'Something beyond the rim is waiting to be heard.',
+      finale:
+        'We sent our answer, and a thin ribbon of light crossed the dust with a map of stars in it. We do not know who made the stone. We know they listened.',
+    },
   ].map(defineEra),
 );
 export const ERA_BY_ID = Object.fromEntries(ERAS.map((era) => [era.id, era]));

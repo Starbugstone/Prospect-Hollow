@@ -39,6 +39,7 @@ it('places every building and site in the settlement it declares', () => {
     'earthrise-plaza',
     'moonrock-court',
     'earthlight-conservatory',
+    'voyagers-court',
   ]);
 });
 

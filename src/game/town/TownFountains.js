@@ -3,7 +3,12 @@ import { horizonMaterial } from './TownAtmosphere';
 import { walkObstacle } from './TownNavigation';
 import { fountainDesign } from '../../data/fountains';
 import { COZY_PALETTES } from '../../data/cozyArchitecture';
-import { EARTHLIGHT_BLUE, FUTURE_PALETTES } from '../../data/futureArchitecture';
+import {
+  EARTHLIGHT_BLUE,
+  FUTURE_PALETTES,
+  SIGNAL_LIGHT,
+  SIGNAL_NAVY,
+} from '../../data/futureArchitecture';
 import { futureShape } from './buildings/futureShapes';
 
 // The square's centerpiece follows the era its square was completed in. Every design
@@ -646,6 +651,34 @@ function ringRoads(d, g, grand) {
   }
 }
 
+// The Quiet Signal: no jets and no figures. A round pool kept perfectly still in a
+// night-blue rim, with a star of gold at each compass point. The finished square lays one
+// thin line of light across the water, as the Quiet Stone does across the dust.
+function stillPool(d, g, grand) {
+  const p = FUTURE_PALETTES.twin;
+  curb(d, g, 12, 0.98, 0.3, 0.22, 0.14, p.shell);
+  d.mesh(g, 'cylinder', [1.02, 0.05, 1.02], [0, 0.42, 0], SIGNAL_NAVY);
+  pool(d, g, 0.9, 0.44);
+  d.mesh(g, 'cylinder', [0.9, 0.012, 0.9], [0, 0.452, 0], SIGNAL_NAVY).name = 'Still dark water';
+  // A sheen on the surface, where the sky shows in it.
+  spray(d, d.mesh(g, 'cylinder', [0.9, 0.004, 0.9], [0, 0.461, 0], WATER));
+  for (let n = 0; n < (grand ? 8 : 4); n++) {
+    const a = (n / (grand ? 8 : 4)) * TAU;
+    d.ball(g, Math.sin(a) * 1.02, 0.47, Math.cos(a) * 1.02, 0.045, p.light, 'rock');
+  }
+  if (!grand) return;
+  const line = d.box(g, 0.035, 0.012, 1.78, 0, 0.47, 0, SIGNAL_LIGHT);
+  line.rotation.y = 0.5;
+  line.name = 'Line of light';
+  for (const [x, z, size] of [
+    [0.34, -0.2, 0.03],
+    [-0.42, 0.3, 0.022],
+    [0.12, 0.52, 0.018],
+    [-0.2, -0.5, 0.026],
+  ])
+    d.ball(g, x, 0.47, z, [size, 0.006, size], SIGNAL_LIGHT);
+}
+
 /** One renderer for each id in FOUNTAIN_DESIGNS (src/data/fountains.js). */
 export const FOUNTAINS = Object.freeze({
   'frontier-spring': frontierSpring,
@@ -664,6 +697,7 @@ export const FOUNTAINS = Object.freeze({
   'first-well': firstWell,
   'twin-globes': twinGlobes,
   'ring-roads': ringRoads,
+  'still-pool': stillPool,
 });
 /** Build the central fountain for a square completed in `era`; stage 3 adds its tier. */
 export function addTownFountain(d, parent, stage, era = 'frontier') {

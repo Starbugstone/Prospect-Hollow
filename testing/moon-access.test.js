@@ -1,6 +1,7 @@
 import { expect, it } from 'vitest';
 import { Box3, DoubleSide, Group, Raycaster, Vector3 } from 'three';
 import {
+  MOON_DISTRICTS,
   MOON_LOTS,
   MOON_LOT_RADIUS,
   MOON_PAD_TOP,
@@ -12,6 +13,7 @@ import {
   moonApproachHeight,
   moonApproaches,
   moonEntrance,
+  moonLotDistrict,
   moonLotPose,
   moonPadRadius,
   moonSegmentDistance,
@@ -28,14 +30,24 @@ it('connects all authored arrivals to the ring without crossing another parcel o
   for (const route of routes) {
     expect(route.clear, route.id).toBe(true);
     expect(route.points[0]).toEqual(route.entry);
-    // Each path ends on its own ring road: the inner ring, or the outer one beyond it.
-    expect(MOON_ROADS.rings, route.id).toContain(route.ring);
-    expect(route.ring, route.id).toBe(
-      Math.hypot(...MOON_LOTS[route.id]) > MOON_ROADS.rings.at(-1)
-        ? MOON_ROADS.rings.at(-1)
-        : MOON_RING_ROAD,
-    );
-    expect(Math.hypot(...route.points.at(-1)), route.id).toBeCloseTo(route.ring, 8);
+    // Each path ends on its own ring road: the inner ring, the outer one beyond it, or
+    // the ring of the district its lot stands in.
+    const district = moonLotDistrict(route.id);
+    expect(route.district, route.id).toBe(district?.id ?? null);
+    if (district) expect(route.ring, route.id).toBe(district.ring);
+    else {
+      expect(MOON_ROADS.rings, route.id).toContain(route.ring);
+      expect(route.ring, route.id).toBe(
+        Math.hypot(...MOON_LOTS[route.id]) > MOON_ROADS.rings.at(-1)
+          ? MOON_ROADS.rings.at(-1)
+          : MOON_RING_ROAD,
+      );
+    }
+    expect(route.centre, route.id).toEqual(district ? [...district.centre] : [0, 0]);
+    const [end, [cx, cz]] = [route.points.at(-1), route.centre];
+    expect(Math.hypot(end[0] - cx, end[1] - cz), route.id).toBeCloseTo(route.ring, 8);
+    // A district's paths cross its own level ground, once its era has opened it.
+    const ground = district ? [district] : [];
     for (let n = route.apronSegments; n < route.points.length - 1; n++) {
       const a = route.points[n],
         b = route.points[n + 1];
@@ -48,7 +60,7 @@ it('connects all authored arrivals to the ring without crossing another parcel o
         const t = step / Math.max(1, Math.ceil(length / 0.25));
         const x = a[0] + (b[0] - a[0]) * t,
           z = a[1] + (b[1] - a[1]) * t;
-        expect(moonHeight(x, z), `${route.id} crater on approach`).toBeCloseTo(0, 7);
+        expect(moonHeight(x, z, ground), `${route.id} crater on approach`).toBeCloseTo(0, 7);
       }
     }
   }
@@ -118,9 +130,14 @@ it.each(Object.keys(MOON_LOTS).flatMap((id) => [1, 2, 3].map((level) => [id, lev
 );
 
 it('uses one bounded static entrance mesh with supported pad ramps and compatible attributes', () => {
-  const geometry = moonAccessGeometry();
+  // Every lot's path, on the ground of a town that has opened every district.
+  const districts = Object.values(MOON_DISTRICTS);
+  const geometry = moonAccessGeometry(undefined, (x, z) => moonHeight(x, z, districts));
   try {
-    expect(geometry.index.count / 3).toBeLessThan(500);
+    // Every lot's path at once: the crater's and each district's.
+    expect(geometry.index.count / 3).toBeLessThan(
+      500 + 25 * Object.keys(MOON_LOTS).filter(moonLotDistrict).length,
+    );
     expect(geometry.index.count).toBeGreaterThan(60);
     expect(Object.keys(geometry.attributes).sort()).toEqual(['color', 'normal', 'position', 'uv']);
     expect(geometry.attributes.color.count).toBe(geometry.attributes.position.count);
@@ -141,6 +158,16 @@ it('preserves existing lot poses, filters unbuilt lots and extends safely to a n
   const outer = MOON_ROADS.rings.at(-1);
   for (const [id, [x, z]] of Object.entries(MOON_LOTS)) {
     const { rotation } = moonLotPose(id);
+    const district = moonLotDistrict(id);
+    if (district) {
+      // A district's lots front its own ring: their hatch side looks at its centre.
+      const [dx, dz] = [district.centre[0] - x, district.centre[1] - z];
+      expect(
+        (Math.sin(rotation) * dx + Math.cos(rotation) * dz) / Math.hypot(dx, dz),
+        id,
+      ).toBeGreaterThan(0.999);
+      continue;
+    }
     if (Math.hypot(x, z) < outer) {
       // The first lots keep the poses they shipped with.
       const expected =

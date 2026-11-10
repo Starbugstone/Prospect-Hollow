@@ -9,6 +9,7 @@ import {
   MOON_LOTS,
   MOON_ROADS,
   moonApproaches,
+  moonLotDistrict,
   moonPadApothem,
   moonPadRadius,
 } from '../src/data/moonSettlement';
@@ -32,10 +33,11 @@ const beyondPad = (x, z, radius) =>
 describe('New Hollow Rising: the outer ring buildings', () => {
   it('gives every outer lot a form, a drawing and a path to the outer road', () => {
     const outerLots = Object.entries(MOON_LOTS)
-      .filter(([, at]) => Math.hypot(...at) > OUTER)
+      .filter(([id, at]) => Math.hypot(...at) > OUTER && !moonLotDistrict(id))
       .map(([id]) => id);
     expect([...KINDS].sort()).toEqual([...outerLots].sort());
     expect([...RISING_DRAWINGS].sort()).toEqual([...KINDS].sort());
+    // A later era's district lots have their own drawings (moonSignalDrawings.js).
     for (const route of moonApproaches().filter(({ id }) => KINDS.includes(id))) {
       expect(route.clear, route.id).toBe(true);
       expect(route.ring, route.id).toBe(OUTER);

@@ -1,9 +1,9 @@
 // Front-view drawings of New Hollow Rising's buildings, as plain shapes in the Moon palette:
 // TownMoonBuilding.vue draws them. They follow the 3D forms (buildings/moonRising.js) level
 // by level. Colours are MOON_PALETTE keys; the ground is y = 0 and up is negative.
-const rect = (x, y, w, h, fill, more = {}) => ({ t: 'rect', x, y, w, h, fill, ...more });
-const circle = (cx, cy, r, fill, more = {}) => ({ t: 'circle', cx, cy, r, fill, ...more });
-const ellipse = (cx, cy, rx, ry, fill, more = {}) => ({
+export const rect = (x, y, w, h, fill, more = {}) => ({ t: 'rect', x, y, w, h, fill, ...more });
+export const circle = (cx, cy, r, fill, more = {}) => ({ t: 'circle', cx, cy, r, fill, ...more });
+export const ellipse = (cx, cy, rx, ry, fill, more = {}) => ({
   t: 'ellipse',
   cx,
   cy,
@@ -12,34 +12,35 @@ const ellipse = (cx, cy, rx, ry, fill, more = {}) => ({
   fill,
   ...more,
 });
-const path = (d, more) => ({ t: 'path', d, ...more });
-const line = (d, stroke = 'deep', sw = 3) => path(d, { stroke, sw });
-const GLASS = { fo: 0.38, stroke: 'roof', sw: 2.5 };
+export const path = (d, more) => ({ t: 'path', d, ...more });
+export const line = (d, stroke = 'deep', sw = 3) => path(d, { stroke, sw });
+export const GLASS = { fo: 0.38, stroke: 'roof', sw: 2.5 };
 
-const hatch = (x, y = -16, r = 8) =>
+export const hatch = (x, y = -16, r = 8) =>
   circle(x, y, r, 'deep', { stroke: 'light', sw: 2, hatch: true });
-const drum = (x, r, h, fill = 'shell') =>
+export const drum = (x, r, h, fill = 'shell') =>
   path(
     `M${x - r} 0v${-h}a${r} ${r * 0.22} 0 0 1 ${r * 2} 0v${h}a${r} ${r * 0.22} 0 0 1 ${-r * 2} 0Z`,
     { fill },
   );
 /** A dome of `rise` on a base line at `base`: glass unless given another fill. */
-const cap = (x, r, base, rise, fill = 'glass') =>
+export const cap = (x, r, base, rise, fill = 'glass') =>
   path(
     `M${x - r} ${-base}a${r} ${rise} 0 0 1 ${r * 2} 0Z`,
     fill === 'glass' ? { fill, ...GLASS } : { fill },
   );
-const band = (x, r, y, stroke = 'light', sw = 4) => line(`M${x - r} ${y}h${r * 2}`, stroke, sw);
-const lampPost = (x, h = 40) => [line(`M${x} 4v${-h - 4}`), circle(x, -h, 5, 'light')];
+export const band = (x, r, y, stroke = 'light', sw = 4) =>
+  line(`M${x - r} ${y}h${r * 2}`, stroke, sw);
+export const lampPost = (x, h = 40) => [line(`M${x} 4v${-h - 4}`), circle(x, -h, 5, 'light')];
 const tree = (x, y, r, blossom = false) => [
   line(`M${x} ${y}v${-r * 1.1}`, 'timber', 4),
   circle(x, y - r * 1.7, r, 'green'),
   ...(blossom ? [circle(x + r * 0.4, y - r * 2, 3, 'flower')] : []),
 ];
-const planter = (x) => [rect(x - 9, -8, 18, 8, 'timber'), circle(x, -14, 9, 'green')];
-const bench = (x, w = 30) => rect(x - w / 2, -8, w, 5, 'timber');
+export const planter = (x) => [rect(x - 9, -8, 18, 8, 'timber'), circle(x, -14, 9, 'green')];
+export const bench = (x, w = 30) => rect(x - w / 2, -8, w, 5, 'timber');
 const flag = (x, h) => [line(`M${x} 0v${-h}`), path(`M${x} ${-h}l22 7-22 7Z`, { fill: 'flower' })];
-const moduleBox = (x, w, h, windowFill = 'glass') => [
+export const moduleBox = (x, w, h, windowFill = 'glass') => [
   rect(x - w / 2, -h, w, h, 'shell', { rx: 5 }),
   line(`M${x - w / 2} -9h${w}`, 'light', 3),
   rect(x - w * 0.35, -h * 0.82, w * 0.7, 6, windowFill),
@@ -57,7 +58,7 @@ const tramCar = (x) => [
   line(`M${x - 22} -15h44`, 'light', 2.5),
   rect(x - 16, -8, 32, 5, 'deep'),
 ];
-const dish = (x, y, r) => [
+export const dish = (x, y, r) => [
   ellipse(x, y, r, r * 0.42, 'shell', { stroke: 'roof', sw: 2 }),
   line(
     `M${x - r * 0.8} ${y - r * 0.2}L${x} ${y - r * 0.9}L${x + r * 0.8} ${y - r * 0.2}`,
@@ -66,7 +67,7 @@ const dish = (x, y, r) => [
   ),
   circle(x, y - r * 0.9, Math.max(2.5, r * 0.09), 'light'),
 ];
-const at = (level, min, ...shapes) => (level >= min ? shapes.flat() : []);
+export const at = (level, min, ...shapes) => (level >= min ? shapes.flat() : []);
 
 const RISING = {
   ringTram: (level) => [
@@ -650,10 +651,11 @@ const FINISH_LEVELS = 3;
 /**
  * The shapes a modernized finish (`{ era, level }`) adds to a Moon building's drawing, as
  * `{ behind, front }`, or null when it adds nothing: no finish, era level 0, another era or
- * a building the era leaves alone.
+ * a building the era leaves alone. `finishes` is the registry to read: New Hollow Rising's
+ * here, or a later era's (moonSignalDrawings.js).
  */
-export function finishDrawing(kind, finish) {
-  const kinds = Object.hasOwn(FINISHES, finish?.era ?? '') ? FINISHES[finish.era] : null,
+export function finishDrawing(kind, finish, finishes = FINISHES) {
+  const kinds = Object.hasOwn(finishes, finish?.era ?? '') ? finishes[finish.era] : null,
     step = Math.min(FINISH_LEVELS, Math.floor(Number(finish?.level) || 0));
   if (!kinds || !Object.hasOwn(kinds, kind) || step < 1) return null;
   return { era: finish.era, level: step, ...kinds[kind](step) };

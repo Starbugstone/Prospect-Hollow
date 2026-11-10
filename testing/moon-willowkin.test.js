@@ -26,7 +26,11 @@ function scene() {
   fixtures.push(view);
   return view;
 }
-const residents = (view) => view.settlers.filter(({ species }) => species === 'willowkinResident');
+// The dome's own residents. The Far Rim's Willowkin live elsewhere (quiet-signal.test.js).
+const residents = (view) =>
+  view.settlers.filter(
+    ({ species, plan }) => species === 'willowkinResident' && plan.home === 'willowkinDome',
+  );
 const levels = (level) => ({ ribbonLanding: 1, settlerDomes: 2, willowkinDome: level });
 afterEach(() => {
   for (const view of fixtures.splice(0)) {

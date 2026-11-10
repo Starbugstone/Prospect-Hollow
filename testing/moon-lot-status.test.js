@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { MOON_LOTS, moonLotsShown } from '../src/data/moonSettlement';
 import { BUILDING_BY_ID, createTown } from '../src/data/town';
-import { ERA_BY_ID } from '../src/data/eras';
+import { ERAS, ERA_BY_ID } from '../src/data/eras';
 import {
   AREA_BY_ID,
   LANDMARK_BY_ID,
@@ -53,7 +53,9 @@ describe('New Hollow lot status, read through the valley’s shared status contr
       (id) => ERA_BY_ID[BUILDING_BY_ID[id].introducedEra].enabled,
     );
     expect(ids()).toEqual(playable);
-    expect(moonLotsShown({ ...moonTown(), era: 'hollow-rising' })).toEqual(playable);
+    expect(moonLotsShown({ ...moonTown(), era: ERAS.findLast((era) => era.enabled).id })).toEqual(
+      playable,
+    );
     expect(moonLabelAnchors(moonTown()).find(({ id }) => id === site.id).position.y).toBe(2);
     const opened = ids(moonTown());
     expect(opened.slice(0, twinLots.length)).toEqual(twinLots);
