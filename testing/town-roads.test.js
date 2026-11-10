@@ -231,6 +231,37 @@ it('breaks lane paint at junctions and keeps crossings on the approaches', () =>
   expect(roadDetails(townFor('aviation'), [{ ...tracks[0], crossing: 'bridge' }])).toEqual([]);
 });
 
+it('lays an inlay only for a style that defines one, clear of junctions and crossings', () => {
+  const tracks = [
+    { from: [-10, 0], to: [10, 0], width: 1.05 },
+    { from: [0, -10], to: [0, 10], width: 1.05 },
+    { from: [-10, 6], to: [-4, 6], width: 0.6 },
+  ];
+  const kinds = (era, kind) => roadDetails(townFor(era), tracks).filter((p) => p.kind === kind);
+  expect(kinds('twin-hollows', 'inlay')).toEqual([]);
+  const inlay = kinds('hollow-rising', 'inlay');
+  expect(inlay.length).toBeGreaterThan(0);
+  expect(new Set(inlay.map((p) => p.color))).toEqual(
+    new Set([resolveRoadStyle('ring-lane').inlay]),
+  );
+  const beds = kinds('hollow-rising', 'crossing-bed');
+  expect(beds.length).toBeGreaterThan(0);
+  for (const part of inlay) {
+    // Narrow paths stay plain, and both rails keep inside the lane paint's limits.
+    expect(Math.abs(part.from[1]) < 1 || Math.abs(part.from[0]) < 1).toBe(true);
+    for (const [x, z] of roadDetailCorners(part)) {
+      expect(Math.max(Math.abs(x), Math.abs(z))).toBeGreaterThan(0.735);
+      for (const bed of beds) {
+        const xs = roadDetailCorners(bed).map((c) => c[0]),
+          zs = roadDetailCorners(bed).map((c) => c[1]);
+        const inside =
+          x > Math.min(...xs) && x < Math.max(...xs) && z > Math.min(...zs) && z < Math.max(...zs);
+        expect(inside).toBe(false);
+      }
+    }
+  }
+});
+
 it.each(['aviation', 'broadcast', 'contemporary'])(
   'paints %s zebra stripes along traffic, spaced across both road directions',
   (era) => {

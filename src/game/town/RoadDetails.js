@@ -172,6 +172,11 @@ export function roadDetails(town, tracks = townTracks(town)) {
     if (style.pattern === 'slabs')
       for (let s = 1; s < length; s += 2)
         if (clear(s, 0.04)) strip(s, 0, half * 2 - 0.28, 0.035, style.detail, 'joint', true);
+    // A thin continuous inlay down each lane, broken like the centre line at crossings.
+    if (style.inlay && road.width >= 0.85)
+      for (let s = 0.45; s < length; s += 0.9)
+        if (clear(s, 0.86, style.crossing ? 1.25 : 0.06))
+          for (const side of [-1, 1]) strip(s, side * half * 0.5, 0.9, 0.045, style.inlay, 'inlay');
     if (style.line && road.width >= 0.85)
       for (let s = 1; s < length; s += style.line === 'double' ? 0.9 : 2.4) {
         const span = style.line === 'double' ? 0.9 : 0.95;

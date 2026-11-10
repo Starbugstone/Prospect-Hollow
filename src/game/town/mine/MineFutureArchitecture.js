@@ -1,4 +1,4 @@
-import { FUTURE_PALETTES } from '../../../data/futureArchitecture';
+import { EARTHLIGHT_BLUE, FUTURE_PALETTES } from '../../../data/futureArchitecture';
 import { futureShape } from '../buildings/futureShapes';
 
 // Each later era crowns the portal with its own small signature in place of the
@@ -55,5 +55,26 @@ export const FUTURE_MINE_CROWNS = {
     d.box(entry, 1.4, 0.06, 0.06, 0, 3.75, 0.2, p.deep);
     d.ball(entry, -0.45, 3.95, 0.2, 0.2, p.flower, 'rock');
     d.ball(entry, 0.45, 3.92, 0.2, 0.15, p.shell, 'rock');
+  },
+  // New Hollow Rising: a tram-stop roundel over the homecoming gable. The Moon sits
+  // inside its two ring roads; flat discs keep it inside the triangle budget.
+  'ring-arch'(d, entry) {
+    const p = FUTURE_PALETTES.twin;
+    const gable = d.mesh(entry, futureShape(d, 'gable'), [3.4, 0.7, 1.15], [0, 2.78, 0.12], p.roof);
+    gable.name = 'Mine ring-road gable';
+    d.box(entry, 0.08, 0.5, 0.08, 0, 3.0, 0.2, p.deep);
+    for (const [radius, z, color] of [
+      [0.62, 0.2, EARTHLIGHT_BLUE],
+      [0.46, 0.23, p.shell],
+      [0.34, 0.26, p.light],
+      [0.2, 0.29, p.shell],
+    ])
+      d.mesh(
+        entry,
+        futureShape(d, 'octagon'),
+        [radius, 0.05, radius],
+        [0, 3.8, z],
+        color,
+      ).rotation.x = Math.PI / 2;
   },
 };

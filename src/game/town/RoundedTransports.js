@@ -50,6 +50,11 @@ const SAUCER_TRAITS = {
     pod(d, g, [0.15, 0.19, 0.15], [-1.0, base + 0.08, 0], c.traitColor);
     pod(d, g, [0.15, 0.19, 0.15], [1.0, base + 0.08, 0], c.light);
   },
+  // New Hollow Rising: the tram's window band and a lit destination board at the bow.
+  'tram-livery'(d, g, c, top, base) {
+    band(d, g, 1.03, base + 0.16, c.traitColor);
+    d.box(g, 0.62, 0.16, 0.1, 0, base + 0.2, 1.0, c.light);
+  },
 };
 
 /** A saucer-style sky shuttle: a flat disc under a glass dome, standing on three landing

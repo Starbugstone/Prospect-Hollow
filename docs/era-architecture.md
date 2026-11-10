@@ -9,7 +9,8 @@ Unknown save identifiers fall back to the Frontier profile.
 
 Road appearance uses the `roadStyle` capability and `data/roadStyles.js`.
 The styles progress from worn dirt and gravel through brick, concrete and marked
-asphalt to contemporary paved crossings. `roadColor` remains an optional tint
+asphalt to contemporary paved crossings. A style may add an `inlay` colour: two thin
+rails down the lanes, as New Hollow Rising's `ring-lane` does. `roadColor` remains an optional tint
 override. `RoadDetails` prepares flat surface strips once per topology/era change;
 WebGL merges them into the existing static scenery batch. Junctions and short building approaches remain unmarked.
 The bridge owns its raised surface: `roadBridge` enables a continuous road deck

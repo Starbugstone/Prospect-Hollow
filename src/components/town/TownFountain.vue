@@ -93,6 +93,31 @@
       <path d="M-4-74q10-14 22-4" v-bind="jet" />
       <path v-if="grand" d="M-30-28q-8-14-2-22M30-28q8-14 2-22" v-bind="jet" />
     </template>
+    <template v-else-if="design === 'ring-roads'">
+      <ellipse cy="-20" rx="41" ry="15" :fill="future.twin.shell" />
+      <ellipse
+        cy="-24"
+        rx="36"
+        ry="11"
+        :fill="water"
+        :stroke="future.twin.light"
+        stroke-width="2"
+      />
+      <path d="M-21-46v20q21 9 42 0v-20Z" v-bind="veil" />
+      <path d="M-19-46v16q19 7 38 0v-16Z" :fill="future.twin.shell" />
+      <ellipse cy="-46" rx="20" ry="6.5" :fill="water" :stroke="earthlight" stroke-width="2.5" />
+      <path d="M-10-46a10 11 0 0 1 20 0Z" :fill="future.twin.shell" stroke="#c9c4b6" />
+      <path d="M0-57v-20" :stroke="future.twin.deep" stroke-width="2.5" />
+      <circle cy="-84" r="8" :fill="earthlight" />
+      <path d="M-5-87q4-3 7 1" :stroke="future.twin.green" stroke-width="3" fill="none" />
+      <g v-for="x in grand ? [1, -1] : [1]" :key="x" :transform="`translate(${x * 24} -13)`">
+        <rect x="-8" y="-5" width="16" height="8" rx="2" :fill="earthlight" />
+        <path d="M-9-6h18" :stroke="future.twin.light" stroke-width="2.5" />
+      </g>
+      <template v-if="grand">
+        <path v-for="x in [-14, 14]" :key="x" :d="`M${x}-46v-11`" v-bind="jet" />
+      </template>
+    </template>
     <template v-else-if="design === 'victorian-iron'">
       <polygon :points="ring(38, 16, -24, 8)" fill="#8f8c82" />
       <polygon :points="ring(38, 16, -32, 8)" fill="#c4c0b3" />
@@ -359,7 +384,10 @@
 import { computed } from 'vue';
 import { fountainDesign } from '../../data/fountains';
 import { cozyAppearance } from '../../data/cozyArchitecture';
-import { FUTURE_PALETTES as future } from '../../data/futureArchitecture';
+import {
+  EARTHLIGHT_BLUE as earthlight,
+  FUTURE_PALETTES as future,
+} from '../../data/futureArchitecture';
 
 // Flat counterparts of TownFountains.js for the SVG fallback, drawn around the
 // same center point used by the square.

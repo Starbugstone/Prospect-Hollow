@@ -236,6 +236,25 @@ const WARDROBES = {
       ['#f0c45a', '#5b6f73', '#d9dbe4', '#f1eee6', '#8db383'],
     ],
   },
+  // New Hollow Rising: travel wear for the Moon's new tram line. Moon-white coats,
+  // Earthlight blue caps and lantern-gold collars.
+  tramline: {
+    skirtLength: 0.4,
+    crown: 'cap',
+    hat: 'cap',
+    trim: '#f0c45a',
+    trousers: '#46587c',
+    boots: '#f1eee6',
+    coat: 0.43,
+    patrol: true,
+    resident: 'garden',
+    guest: ['#8f3f7a', '#3a3350', '#e9c4dc', '#f6f1ea', '#f0c45a'],
+    palettes: [
+      ['#f1eee6', '#46587c', '#5b8fc9', '#e9e2d2', '#f0c45a'],
+      ['#5b8fc9', '#55607a', '#f1eee6', '#f1eee6', '#bcdde4'],
+      ['#e7b94f', '#4d6283', '#5b8fc9', '#e9e2d2', '#f1eee6'],
+    ],
+  },
   // Homestead flight suits: patched work jackets, gold visors and barn-red scarves.
   moonward: {
     skirtLength: 0.32,

@@ -420,11 +420,12 @@ export const ERAS = continueSupplyTiers(
       id: 'hollow-rising',
       evolution: {
         ...FUTURE_CITY_EVOLUTION,
-        // The valley keeps its Twin Hollows look: only New Hollow changes.
+        // The valley keeps its Twin Hollows buildings: only New Hollow changes. Its small
+        // touches (clothes, fountain, road inlay) wear the Moon tram's livery.
         architecture: 'twin',
-        wardrobe: 'twin',
-        fountain: 'twin-globes',
-        roadStyle: 'twin-lane',
+        wardrobe: 'tramline',
+        fountain: 'ring-roads',
+        roadStyle: 'ring-lane',
         moonSettlement: true,
         prices: [20000, 22600, 25200],
         newBuildingPrices: [33750, 37500, 41250],
