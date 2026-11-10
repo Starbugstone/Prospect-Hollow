@@ -50,7 +50,8 @@ function ringArc(from, to, ring = MOON_RING_ROAD, { lap = true } = {}) {
   const radius = ring + (delta > 0 ? -LANE : LANE);
   const steps = delta ? Math.max(1, Math.ceil(Math.abs(delta) / RING_STEP)) : 0;
   return Array.from({ length: steps + 1 }, (_, n) => {
-    const a = from + (delta * n) / steps;
+    // A path that ends exactly on a spoke has no arc to walk: it is the one point.
+    const a = steps ? from + (delta * n) / steps : from;
     return [Math.cos(a) * radius, MOON_ROAD_LIFT, Math.sin(a) * radius];
   });
 }

@@ -140,6 +140,131 @@ const MOON_LOT_TABLE = Object.freeze({
     ],
     face: 'in',
   },
+  // New Hollow Rising: the outer ring's lots stand on a circle of radius 55, beyond the outer
+  // road, and face inward so each hatch looks onto it. The Earthview Terraces keep their backs
+  // to the road instead: their glass fronts look at Earth (toward -z).
+  ringTram: {
+    at: [53.9, -10.7],
+    pad: 6.2,
+    arrival: [
+      [0, -0.95],
+      [0, 0.9],
+      [-4.3, 0.9],
+      [-4.9, 4.9],
+    ],
+    face: 'in',
+    ring: 1,
+  },
+  dewfallCistern: {
+    at: [30.6, 45.7],
+    pad: 5,
+    arrival: [
+      [0, 0.95],
+      [0, 6],
+    ],
+    face: 'in',
+    ring: 1,
+  },
+  orchardVaults: {
+    at: [-30.6, 45.7],
+    pad: 6,
+    arrival: [
+      [0, 3.36],
+      [0, 6],
+    ],
+    face: 'in',
+    ring: 1,
+  },
+  lanternRow: {
+    at: [-53.9, -10.7],
+    pad: 6,
+    arrival: [
+      [0, 2.26],
+      [0, 6],
+    ],
+    face: 'in',
+    ring: 1,
+  },
+  ringMarket: {
+    at: [53.9, 10.7],
+    pad: 5.6,
+    arrival: [
+      [0, 1.75],
+      [0, 6],
+    ],
+    face: 'in',
+    ring: 1,
+  },
+  craterSchool: {
+    at: [-53.9, 10.7],
+    pad: 5.4,
+    arrival: [
+      [0, 0.45],
+      [0, 6],
+    ],
+    face: 'in',
+    ring: 1,
+  },
+  earthviewTerraces: {
+    at: [-45.7, -30.6],
+    pad: 5.6,
+    arrival: [
+      [0, 1.4],
+      [0, 6],
+    ],
+    face: 0,
+    ring: 1,
+  },
+  expeditionGarage: {
+    at: [45.7, -30.6],
+    pad: 5.6,
+    arrival: [
+      [0.75, -0.44],
+      [0.75, 6],
+    ],
+    face: 'in',
+    ring: 1,
+  },
+  craterInn: {
+    at: [45.7, 30.6],
+    pad: 5.4,
+    arrival: [
+      [0, 1.15],
+      [0, 6],
+    ],
+    face: 'in',
+    ring: 1,
+  },
+  starwatchDish: {
+    at: [-10.7, -53.9],
+    pad: 5,
+    arrival: [
+      [0, 0.15],
+      [0, 6],
+    ],
+    face: 'in',
+    ring: 1,
+  },
+  moonballField: {
+    at: [-45.7, 30.6],
+    pad: 6,
+    arrival: [
+      [0, 3.16],
+      [0, 6],
+    ],
+    face: 'in',
+    ring: 1,
+  },
+  craterPondGarden: {
+    at: [10.7, -53.9],
+    pad: 5,
+    arrival: [
+      [0, 3.46],
+      [0, 6],
+    ],
+    face: 'in',
+    ring: 1,
+  },
 });
 const lotEntry = (id) => (Object.hasOwn(MOON_LOT_TABLE, id) ? MOON_LOT_TABLE[id] : null);
 

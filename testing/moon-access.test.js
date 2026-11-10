@@ -6,6 +6,7 @@ import {
   MOON_PAD_TOP,
   MOON_PATH_LIFT,
   MOON_RING_ROAD,
+  MOON_ROADS,
   MOON_ROAD_LIFT,
   moonApproach,
   moonApproachHeight,
@@ -27,7 +28,14 @@ it('connects all authored arrivals to the ring without crossing another parcel o
   for (const route of routes) {
     expect(route.clear, route.id).toBe(true);
     expect(route.points[0]).toEqual(route.entry);
-    expect(Math.hypot(...route.points.at(-1)), route.id).toBeCloseTo(MOON_RING_ROAD, 8);
+    // Each path ends on its own ring road: the inner ring, or the outer one beyond it.
+    expect(MOON_ROADS.rings, route.id).toContain(route.ring);
+    expect(route.ring, route.id).toBe(
+      Math.hypot(...MOON_LOTS[route.id]) > MOON_ROADS.rings.at(-1)
+        ? MOON_ROADS.rings.at(-1)
+        : MOON_RING_ROAD,
+    );
+    expect(Math.hypot(...route.points.at(-1)), route.id).toBeCloseTo(route.ring, 8);
     for (let n = route.apronSegments; n < route.points.length - 1; n++) {
       const a = route.points[n],
         b = route.points[n + 1];
@@ -130,10 +138,24 @@ it('uses one bounded static entrance mesh with supported pad ramps and compatibl
 });
 
 it('preserves existing lot poses, filters unbuilt lots and extends safely to a new lot', () => {
+  const outer = MOON_ROADS.rings.at(-1);
   for (const [id, [x, z]] of Object.entries(MOON_LOTS)) {
-    const expected =
-      id === 'ribbonLanding' ? 0 : Math.atan2(-x, -(z + 8)) + (id === 'saucerPad' ? 0 : Math.PI);
-    expect(moonLotPose(id).rotation).toBe(expected);
+    const { rotation } = moonLotPose(id);
+    if (Math.hypot(x, z) < outer) {
+      // The first lots keep the poses they shipped with.
+      const expected =
+        id === 'ribbonLanding' ? 0 : Math.atan2(-x, -(z + 8)) + (id === 'saucerPad' ? 0 : Math.PI);
+      expect(rotation, id).toBe(expected);
+      continue;
+    }
+    // Beyond the outer road a lot fronts it: its hatch side looks inward. The Earthview
+    // Terraces turn their glass to Earth (-z) instead, and still open toward the road.
+    if (id === 'earthviewTerraces') expect(rotation).toBe(0);
+    const toRoad = [-x / Math.hypot(x, z), -z / Math.hypot(x, z)];
+    const front = [Math.sin(rotation), Math.cos(rotation)];
+    expect(front[0] * toRoad[0] + front[1] * toRoad[1], id).toBeGreaterThan(
+      id === 'earthviewTerraces' ? 0.5 : 0.95,
+    );
   }
   expect(moonApproaches({})).toEqual([]);
   expect(moonApproaches({ willowkinDome: 1 })[0].entry).not.toEqual(

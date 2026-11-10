@@ -1,5 +1,10 @@
 <template>
-  <g stroke-linejoin="round" stroke-linecap="round" :data-moon-form="kind">
+  <g
+    stroke-linejoin="round"
+    stroke-linecap="round"
+    :data-moon-form="kind"
+    :data-moon-finish="finishArt ? `${finishArt.era}:${finishArt.level}` : undefined"
+  >
     <ellipse cy="6" rx="122" ry="18" :fill="p.deep" />
     <ellipse cy="2" rx="112" ry="14" :fill="p.shell" />
     <template v-if="!level">
@@ -7,6 +12,7 @@
       <circle v-for="x in [-80, 80]" :key="`l${x}`" :cx="x" cy="-28" r="4" :fill="p.light" />
     </template>
     <template v-else>
+      <MoonShapes v-if="finishArt" :shapes="finishArt.behind" />
       <g v-if="kind === 'saucerPad'" data-landing-ring="lit">
         <ellipse cy="-7" rx="65" ry="18" fill="none" :stroke="p.glass" stroke-width="5" />
         <path d="M-16-7h32M-10-13v12M10-13v12" :stroke="p.light" stroke-width="3" />
@@ -174,6 +180,7 @@
           <path :d="`M${part.x}-86l26 8-26 8Z`" :fill="p.flower" />
         </template>
       </g>
+      <MoonShapes v-if="drawing" :shapes="drawing" />
       <g v-if="kind === 'earthriseLookout'" data-stair-access="connected">
         <path d="M-48 0v-8h6v-8h6v-8h6v-8h6v-16h12v48Z" :fill="p.timber" />
         <path d="M-54-9-24-58M-54 0v-9M-24-48v-10" :stroke="p.deep" stroke-width="2" />
@@ -188,6 +195,7 @@
       <g v-if="kind === 'earthlightGreenhouse'" data-visible-crops="sealed-glazing">
         <circle v-for="x in [-65, -40, -15, 10]" :key="x" :cx="x" cy="-25" r="6" :fill="p.green" />
       </g>
+      <MoonShapes v-if="finishArt" :shapes="finishArt.front" />
     </template>
   </g>
 </template>
@@ -195,12 +203,25 @@
 import { heritageUpgrade } from '../../data/heritageUpgrades';
 import { computed } from 'vue';
 import { MOON_PALETTE as p } from '../../data/futureArchitecture';
+import { finishDrawing, risingDrawing } from './moonRisingDrawings';
+import MoonShapes from './TownMoonShapes.vue';
 
 // Front-view drawings of New Hollow's buildings, for building cards and the
 // accessible Moon map. They follow the 3D lunar kit: glass domes, ceramic
 // modules, gables, tanks and rovers, in the shared Moon palette.
-const props = defineProps({ kind: String, level: { type: Number, default: 3 } });
+// `finish` is the building's modernized finish, `{ era, level }` (era level 0 to 3). Without
+// one, or at era level 0, the building is drawn as built.
+const props = defineProps({
+  kind: String,
+  level: { type: Number, default: 3 },
+  finish: { type: Object, default: null },
+});
 const purpose = computed(() => heritageUpgrade(props.kind));
+// The outer ring's buildings are drawn from plain shapes (moonRisingDrawings.js).
+const drawing = computed(() => risingDrawing(props.kind, props.level));
+const finishArt = computed(() =>
+  props.level > 0 ? finishDrawing(props.kind, props.finish) : null,
+);
 const drum = (x, r, h) =>
   `M${x - r} 0v${-h}a${r} ${r * 0.22} 0 0 1 ${r * 2} 0v${h}a${r} ${r * 0.22} 0 0 1 ${-r * 2} 0Z`;
 const dome = (x, r, h = 40, solid = false) => ({ type: 'dome', x, r, h, solid });
@@ -286,7 +307,7 @@ const parts = computed(() => {
     case 'earthriseLookout':
       return [...at(3, dome(-86, 28, 18)), ...at(2, { type: 'lamp', x: 96 })];
     default:
-      return [dome(0, 50)];
+      return drawing.value ? [] : [dome(0, 50)];
   }
 });
 </script>
