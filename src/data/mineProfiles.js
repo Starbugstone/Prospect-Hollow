@@ -136,8 +136,9 @@ export const MINE_PROFILES = {
   stargazer: { inherits: 'skysail', portal: 'dome-arch' },
   moonward: { inherits: 'stargazer', portal: 'homestead-arch' },
   'twin-hollows': { inherits: 'moonward', portal: 'twin-arch' },
-  // New Hollow Rising changes only the Moon: the valley's mine keeps its homecoming arch.
-  'hollow-rising': { inherits: 'twin-hollows' },
+  // New Hollow Rising changes only the Moon: the valley's mine keeps its homecoming gable
+  // and hangs New Hollow's two ring roads over it.
+  'hollow-rising': { inherits: 'twin-hollows', portal: 'ring-arch' },
 };
 const portals = new Set(Object.values(MINE_PROFILES).map((p) => p.portal));
 const works = new Set(Object.values(MINE_PROFILES).map((p) => p.works));

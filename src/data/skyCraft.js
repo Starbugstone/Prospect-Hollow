@@ -1,6 +1,6 @@
 import { ROUNDED_PALETTE } from './roundedArchitecture';
 import { COZY_PALETTES } from './cozyArchitecture';
-import { FUTURE_PALETTES } from './futureArchitecture';
+import { EARTHLIGHT_BLUE, FUTURE_PALETTES } from './futureArchitecture';
 import { eraEvolution } from './eras';
 import { moonSettlement } from './moonSettlement';
 
@@ -44,6 +44,18 @@ export const SKY_SAUCERS = Object.freeze({
   // Twin lanterns, teal for the valley and gold for the Moon. Twin Hollows does not
   // modernize the airport, so a real Twin Hollows town flies the Moonward saucer.
   'twin-hollows': saucer(T.shell, T.light, T.glass, T.deep, T.light, 'twin-lanterns', T.flower),
+  // New Hollow's tram livery: moon-white with an Earthlight blue rim and window band and
+  // a gold destination board at the bow. Like Twin Hollows, the era does not modernize
+  // the airport, so this saucer flies once an airport is finished in the era.
+  'hollow-rising': saucer(
+    T.shell,
+    EARTHLIGHT_BLUE,
+    T.glass,
+    T.deep,
+    T.light,
+    'tram-livery',
+    EARTHLIGHT_BLUE,
+  ),
 });
 
 /** The saucer for an airport era; an era without its own flies the Tomorrow saucer. */

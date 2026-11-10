@@ -135,6 +135,19 @@
         <circle cx="-12" cy="-80" r="8" :fill="future.twin.flower" />
         <circle cx="12" cy="-79" r="6" :fill="future.twin.shell" />
       </g>
+      <g v-if="profile.portal === 'ring-arch'">
+        <path d="M-62-38 0-64 62-38Z" :fill="future.twin.roof" />
+        <path d="M0-62v-6" :stroke="future.twin.deep" stroke-width="3" />
+        <circle
+          cy="-86"
+          r="18"
+          :fill="future.twin.shell"
+          :stroke="EARTHLIGHT_BLUE"
+          stroke-width="3.5"
+        />
+        <circle cy="-86" r="11" fill="none" :stroke="future.twin.light" stroke-width="3" />
+        <circle cy="-86" r="5" :fill="future.twin.shell" />
+      </g>
       <g v-if="profile.portal === 'rounded-arch'">
         <path d="M-60-16a60 34 0 0 1 120 0Z" fill="#a6d3d4" stroke="#6d9f98" stroke-width="5" />
       </g>
@@ -206,7 +219,11 @@
 <script setup>
 import { computed } from 'vue';
 import { mineAppearance, mineProfile } from '../../data/mineEvolution';
-import { FUTURE_MINE_PORTALS, FUTURE_PALETTES as future } from '../../data/futureArchitecture';
+import {
+  EARTHLIGHT_BLUE,
+  FUTURE_MINE_PORTALS,
+  FUTURE_PALETTES as future,
+} from '../../data/futureArchitecture';
 import { mineGrowth } from '../../data/mineGrowth';
 import { t } from '../../i18n';
 const props = defineProps({

@@ -79,6 +79,7 @@ describe('Era town square fountains', () => {
       'orrery',
       'first-well',
       'twin-globes',
+      'ring-roads',
     ]);
   });
 

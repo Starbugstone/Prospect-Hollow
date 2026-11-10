@@ -100,6 +100,16 @@ const ROAD_STYLES = Object.freeze(
         crossing: 'pavers',
         crossingColor: '#d9b866',
       },
+      // New Hollow Rising: the Moon's second ring road, inlaid as two faint Earthlight rails.
+      'ring-lane': {
+        color: '#a9abab',
+        edge: '#efece3',
+        line: 'dash',
+        paint: '#f0c45a',
+        inlay: '#7fa6da',
+        crossing: 'pavers',
+        crossingColor: '#86a6cf',
+      },
       'glow-lane': {
         color: '#a2aba6',
         edge: '#dcd6c4',
