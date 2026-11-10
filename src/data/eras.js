@@ -429,7 +429,9 @@ export const ERAS = continueSupplyTiers(
         moonSettlement: true,
         prices: [20000, 22600, 25200],
         newBuildingPrices: [33750, 37500, 41250],
+        // In the valley only the town square changes, for its ring-roads fountain.
         modernizes: [
+          'square',
           'ribbonLanding',
           'craterIceWell',
           'earthlightGreenhouse',
@@ -442,8 +444,8 @@ export const ERAS = continueSupplyTiers(
         moonFarm: [16, 32, 48],
         upgradeTitle: 'Rising level {level}: {name}',
         upgradeDescriptions: [
-          'Raise a second wing in moon-white ceramic, joined by a glazed walk.',
-          'Crown it with a lantern cupola that New Hollow can see from the outer ring.',
+          'Add moon-white paving and tram-blue lanterns, one for each of New Hollow’s rings.',
+          'Finish it with gold ring-road inlays and a little tram on the crest.',
         ],
         cityDescription:
           'New Hollow grows up: a tram on the outer ring, orchards under glass and a school bell.',
