@@ -67,7 +67,14 @@
           :key="lot.id"
           :transform="`translate(${lot.x} ${lot.y}) scale(.07)`"
         >
-          <TownMoonBuilding :kind="lot.id" :level="town.buildings[lot.id] ?? 0" />
+          <TownMoonBuilding
+            :kind="lot.id"
+            :level="town.buildings[lot.id] ?? 0"
+            :finish="{
+              era: town.buildingEras?.[lot.id],
+              level: town.buildingEraLevels?.[lot.id] ?? 0,
+            }"
+          />
           <TownMoonConstruction v-if="town.projects?.[lot.id]" :project="town.projects[lot.id]" />
         </g>
         <g

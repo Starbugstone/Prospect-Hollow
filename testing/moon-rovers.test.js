@@ -4,6 +4,7 @@ import { TownPrimitives } from '../src/game/town/TownPrimitives';
 import { moonRover } from '../src/game/town/buildings/moon';
 import { MoonScene } from '../src/game/town/moon/MoonScene';
 import { MOON_RING_ROAD } from '../src/data/moonSettlement';
+import { outerRingRovers } from '../src/data/moonModernizations';
 
 describe.each([-1, 1])('Moon rovers travelling in direction %s', (dir) => {
   it('points its actual cabin along the road with wheel axles across its motion', () => {
@@ -35,4 +36,18 @@ describe.each([-1, 1])('Moon rovers travelling in direction %s', (dir) => {
       });
     }
   });
+});
+
+// The rover depot's last upgrade sends rovers out on the outer ring too.
+it('puts rovers on the outer ring only once the rover depot is fully upgraded', () => {
+  const town = (era, level) => ({
+    buildings: { roverBarn: 3 },
+    buildingEras: { roverBarn: era },
+    buildingEraLevels: { roverBarn: level },
+  });
+  expect(outerRingRovers(town('twin-hollows', 3))).toBe(0);
+  expect(outerRingRovers(town('hollow-rising', 2))).toBe(0);
+  expect(outerRingRovers(town('hollow-rising', 3))).toBe(2);
+  expect(outerRingRovers({ ...town('hollow-rising', 3), buildings: { roverBarn: 0 } })).toBe(0);
+  expect(outerRingRovers(undefined)).toBe(0);
 });

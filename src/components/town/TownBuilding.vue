@@ -11,7 +11,13 @@
       :era="era"
       :level="eraLevel"
     />
-    <component :is="settlementArt" v-else-if="settlementArt" :kind="kind" :level="stage" />
+    <component
+      :is="settlementArt"
+      v-else-if="settlementArt"
+      :kind="kind"
+      :level="stage"
+      :finish="{ era, level: eraLevel }"
+    />
     <TownFutureBuilding
       v-else-if="
         built && isFutureEra(era) && (futureForm(kind) || ['bridge', 'airport'].includes(kind))

@@ -444,3 +444,27 @@ it('reveals a finished upgrade and a later era finish, but not on load or in red
     view.upgradeGlow.dispose();
   }
 });
+
+// A modernized Moon building wears its era's finish on the map, and an unmodernized one
+// looks exactly as before.
+it('draws a modernized Moon building with its era finish', () => {
+  const vertices = (town) => {
+    const scene = builtScene(town);
+    let count = 0;
+    scene.buildings.traverse((part) => {
+      if (part.isMesh) count += part.geometry.attributes.position.count;
+    });
+    scene.upgradeGlow.dispose();
+    return count;
+  };
+  const town = moonTown();
+  town.buildings.roverBarn = 3;
+  town.buildingEras = { ...town.buildingEras, roverBarn: 'twin-hollows' };
+  town.buildingEraLevels = { ...town.buildingEraLevels, roverBarn: 1 };
+  const plain = vertices(town);
+  expect(vertices(structuredClone(town))).toBe(plain);
+  const depot = structuredClone(town);
+  depot.buildingEras.roverBarn = 'hollow-rising';
+  depot.buildingEraLevels.roverBarn = 3;
+  expect(vertices(depot)).toBeGreaterThan(plain);
+});

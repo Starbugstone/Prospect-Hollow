@@ -6,6 +6,7 @@ import { INDUSTRIAL_VARIANTS } from '../../data/industrial';
 import { MOTOR_AGE_VARIANTS } from '../../data/motorAge';
 import { cityVariant, cityBuildingPrice, isMajorCityBuilding } from '../../data/city';
 import { buildingSupply } from './TownNeeds';
+import { moonModernization } from '../../data/moonModernizations';
 
 /** @typedef {{name: string, description: string}} ModernizationAppearance */
 /** @typedef {(building: Object, era: string) => ModernizationAppearance|null} AppearanceProvider */
@@ -43,8 +44,11 @@ const benefit = (town, building, level) => {
  */
 export function createModernizationOffer(town, building, level) {
   const profile = eraEvolution(town.era);
-  const appearance =
-    building.kind === 'watermill'
+  // A Moon building describes its own new piece at every level.
+  const moon = moonModernization(town.era, building.kind);
+  const appearance = moon
+    ? { name: moon.name, description: moon.steps[0] }
+    : building.kind === 'watermill'
       ? watermillAppearance(town.era)
       : APPEARANCES[profile.style]?.(building, town.era);
   if (!appearance) return null;
@@ -57,8 +61,9 @@ export function createModernizationOffer(town, building, level) {
     cost: city ? cityBuildingPrice(building.id, profile.prices[level]) : profile.prices[level],
     runs: level === 0 && !(city && isMajorCityBuilding(building.id)) ? 2 : 1,
     name: appearance.name,
-    description:
-      level === 0 || (!city && building.id === 'horseField')
+    description: moon
+      ? moon.steps[level]
+      : level === 0 || (!city && building.id === 'horseField')
         ? appearance.description
         : level === 2 && ['river-rail', 'industrial'].includes(profile.style)
           ? heritageDescription(building.kind)

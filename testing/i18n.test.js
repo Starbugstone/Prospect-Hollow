@@ -8,6 +8,7 @@ import fr from '../src/i18n/fr.json';
 import { generateLevelConfigs } from '../src/game/engine/LevelGenerator';
 import { LEVEL_NAMES } from '../src/data/levelNames';
 import { PROTOTYPE_BOARDS, prototypeName } from '../src/data/prototypeBoards';
+import { MOON_MODERNIZATIONS } from '../src/data/moonModernizations';
 import { CHAPTERS, POWERS, CHEST_LABELS } from '../src/data/campaign';
 import { CHEST_DROPS } from '../src/data/rewards';
 import { FUSION_STYLES } from '../src/game/engine/BonusFusion';
@@ -86,6 +87,9 @@ describe('One browser language across the game and town', () => {
       ...LEVEL_NAMES,
       ...Object.values(CITY_DESCRIPTIONS).flat(),
       ...generateLevelConfigs().map((level) => level.tip),
+      ...Object.values(MOON_MODERNIZATIONS).flatMap((era) =>
+        Object.values(era).flatMap(({ name, steps }) => [name, ...steps]),
+      ),
       ...PROTOTYPE_BOARDS.flatMap((board) => [
         board.chapterName,
         prototypeName(board.key),

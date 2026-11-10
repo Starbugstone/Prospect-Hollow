@@ -40,9 +40,11 @@ import {
   eraBuildingLevel,
   finishEra,
   isEraComplete,
+  modernization,
   modernizesInEra,
   plotInEra,
 } from '../src/game/town/TownEras';
+import { moonModernization } from '../src/data/moonModernizations';
 import { normalizeTown, purchase, upgradeOffer } from '../src/game/town/TownRules';
 import { PLOTS, visiblePlots } from '../src/game/town/TownLayout';
 import TownBuilding from '../src/components/town/TownBuilding.vue';
@@ -131,6 +133,34 @@ describe('Twin Hollows: the Moon is the new frontier', () => {
     expect(modernizesInEra('twin-hollows', 'home')).toBe(false);
     expect(modernizesInEra('twin-hollows', 'square')).toBe(true);
     expect(modernizesInEra('moonward', 'home')).toBe(true);
+  });
+
+  it('describes each modernized Moon building, and adds New Hollow’s own water and food', () => {
+    const town = twinTown();
+    town.era = 'hollow-rising';
+    for (const id of eraEvolution('hollow-rising').modernizes) {
+      if (id === 'square') continue;
+      const entry = moonModernization('hollow-rising', id);
+      expect(entry, id).toBeTruthy();
+      for (const level of [0, 1, 2]) {
+        const copy = structuredClone(town);
+        copy.buildingEras[id] = level ? 'hollow-rising' : 'twin-hollows';
+        copy.buildingEraLevels[id] = level || 1;
+        const offer = modernization(copy, id);
+        expect(offer, `${id} ${level}`).toMatchObject({
+          name: entry.name,
+          description: entry.steps[level],
+          eraLevel: level + 1,
+          cost: expect.any(Number),
+        });
+      }
+    }
+    // The ice well and greenhouse modernize into supply; the others are for looks.
+    const well = modernization(town, 'craterIceWell');
+    expect(well.benefit).toMatch(/^Adds water/);
+    expect(well.benefitValues.count).toBe(16);
+    expect(modernization(town, 'earthlightGreenhouse').benefit).toMatch(/^Adds food/);
+    expect(modernization(town, 'newHollowCommons').benefit).toMatch(/^Visual/);
   });
 
   it('rejects an invalid modernizes list when the catalog loads', () => {

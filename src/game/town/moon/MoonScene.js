@@ -41,6 +41,7 @@ import {
   moonClimberArrival,
   moonClimberLift,
 } from './MoonVips';
+import { outerRingRovers } from '../../../data/moonModernizations';
 import {
   MOON_FLOOR_RADIUS,
   MOON_LOTS,
@@ -633,6 +634,11 @@ export class MoonScene extends TownPrimitives {
     this.requestFrame();
     // Building lots only: monument sites add labels to this.lots but draw separately.
     const levels = Object.keys(MOON_LOTS).map((id) => town?.buildings?.[id] ?? 0);
+    // A modernized building wears its era's finish (renderMoonBuilding's `finish`).
+    const finishOf = (id) => ({
+      era: town?.buildingEras?.[id],
+      level: town?.buildingEraLevels?.[id] ?? 0,
+    });
     const finishes = Object.keys(MOON_LOTS).map((id) => finishKey(town ?? {}, id));
     const venues = moonCommissionVenues(town);
     // A later era's lots stay off the map: no pad, building or tap target.
@@ -660,12 +666,16 @@ export class MoonScene extends TownPrimitives {
       const { x, z, rotation } = moonLotPose(id);
       const lot = this.d.group(finished.has(id) ? this.scene : this.buildings, x, 0, z);
       lot.rotation.y = rotation;
-      renderMoonBuilding(this.d, lot, id, levels[n]);
+      renderMoonBuilding(this.d, lot, id, levels[n], finishOf(id));
       if (id === 'ribbonLanding') this.climber = lot.getObjectByName(MOON_CLIMBER) ?? null;
       // A tap over a low building reaches the lot behind it, as on screen.
       (this.roofs ??= {})[id] = moonRoofHeight(lot);
-      if (finished.has(id)) this.revealLot(id, lot, this.previousLevels?.[n] ?? 0);
+      if (finished.has(id))
+        this.revealLot(id, lot, this.previousLevels?.[n] ?? 0, this.previousFinishes?.[id]);
     });
+    this.previousFinishes = Object.fromEntries(
+      Object.keys(MOON_LOTS).map((id) => [id, finishOf(id)]),
+    );
     this.access.geometry.dispose();
     this.access.geometry = moonAccessGeometry([
       ...moonApproaches(town?.buildings ?? {}),
@@ -680,11 +690,11 @@ export class MoonScene extends TownPrimitives {
   }
   // The finished lot's new pieces (those its previous model lacked) settle top-down under
   // the swinging hammer, exactly as a finished valley building does.
-  revealLot(id, lot, previousLevel) {
+  revealLot(id, lot, previousLevel, previousFinish = null) {
     const before = new THREE.Group();
     before.position.copy(lot.position);
     before.rotation.copy(lot.rotation);
-    renderMoonBuilding(this.d, before, id, previousLevel);
+    renderMoonBuilding(this.d, before, id, previousLevel, previousFinish);
     const parts = constructionParts(before);
     this.d.clearGroup(before);
     lot.userData.plot = id;
@@ -732,6 +742,15 @@ export class MoonScene extends TownPrimitives {
           dir: 1,
         });
       }
+      // A rover depot sends some out on the outer ring, the other way round.
+      for (let n = 0; n < outerRingRovers(town); n++)
+        this.walkers.push({
+          root: moonRover(this.d, this.life),
+          radius: MOON_ROADS.rings.at(-1),
+          speed: 0.06,
+          phase: 1 + n * Math.PI,
+          dir: -1,
+        });
     }
     this.move(this.elapsed);
   }
