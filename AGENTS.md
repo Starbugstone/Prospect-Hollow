@@ -6,6 +6,10 @@ Follow [the game development workflow](docs/development-workflow.md) for changes
 Use the stages relevant to the task; documentation changes need content, link and
 formatting checks rather than a gameplay run. All local checks still run in Docker.
 
+For in-game cinematic videos, camera shots, monument unveilings and incident or VIP
+insets, use [the shared cinematic skill](.agents/skills/prospect-hollow-cinematics/SKILL.md).
+It applies to every agent working on these scenes, on the valley, Moon and future maps.
+
 - Define the player-visible result and a check that can fail before implementing.
 - When fixing a recurring mistake or protecting a permanent rule, add the smallest
   useful lint rule, shared contract or regression check. Demonstrate that it rejects
