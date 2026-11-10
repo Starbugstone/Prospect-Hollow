@@ -241,3 +241,34 @@ journeys finished without page errors. The two-move 60 fps motion scenario
 sampled 176 frames, with zero overlaps and zero stutters. Trial run-log replay
 passed, as did the completed-marker renderer regression. Honour/save/public
 catalog exports were rerun and left the shipped catalogs unchanged.
+
+## Crossgrain implementation
+
+`i` marks a Crossgrain crystal. A two-bit remaining-crack mask belongs to its
+floor tile; both resolver and hints read match objects with their directions.
+Horizontal and vertical matches seal their corresponding crack, in either order.
+A T/L can seal both; repeated directions do nothing. A blast seals just one
+remaining crack (horizontal first when both remain), at most once per move.
+Repeated bonuses can therefore rescue even a crystal in a narrow passage.
+The picture is a faceted crystal with two dark branching cracks: each healed
+crack disappears, and the entire picture leaves after both are healed.
+
+The trial's one-cell neck deliberately prevents horizontal matches at two of
+its three crystals. Decide whether to match vertically first and aim a bonus
+later, or blast the horizontal crack first and prepare a vertical alignment.
+The broad head and foot provide crafting space. This replaces the first,
+too-easy three-cell-neck draft (median three moves).
+
+| Trial                    | Slot | Moves p10 / median / p90 / max | Median score | Chest (80%) | Reshuffles | Rule mattered                                  |
+| ------------------------ | ---: | ------------------------------ | -----------: | ----------: | ---------: | ---------------------------------------------- |
+| `crossgrain-narrow-neck` |  554 | 5 / 14 / 39 / 64               |       13,400 |      10,720 |          0 | Median 3 directional splits and 3 blast splits |
+
+All 60 seeds finished. Verdict: the missing horizontal space forces the crystal's
+mixed match-and-bonus rule; it cannot be solved by repeating vertical matches.
+
+Crossgrain browser evidence: viewed the phone start and healed-crack state;
+start, mid-play and activation captures exist at both required sizes. Both
+seeded journeys finished with no page errors. The three-move 60 fps motion
+scenario sampled 179 frames: zero overlaps, zero stutters. The shared prototype
+store test completes beyond 100 moves after its optional speed target, without
+saving or giving rewards; its seeded run replays exactly.

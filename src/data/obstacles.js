@@ -4,6 +4,15 @@ import { mineSignalAppearance, mineRelicAppearance } from './mineThemes.js';
 // DEEP_MINE_SPRITES instead.
 export const OBSTACLES = [
   {
+    id: 'crossgrain',
+    name: 'Crossgrain crystal',
+    art: '/art/obstacles/crossgrain.svg',
+    texture: 'tile-crossgrain',
+    instruction:
+      'Match on the crystal horizontally and vertically, in either order. Each match seals its crack; repeating that direction does nothing. A direct blast seals one remaining crack, at most once per move. Seal both and the crystal vanishes. Neighbouring matches do not count.',
+    present: (tile) => tile.signal === 'crossgrain',
+  },
+  {
     id: 'trace-twins',
     name: 'Trace twins',
     art: '/art/obstacles/trace.svg',

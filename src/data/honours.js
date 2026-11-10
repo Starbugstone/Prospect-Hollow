@@ -208,6 +208,7 @@ export const MINE_ELEMENTS = Object.freeze([
 export const NON_MASTERY_ELEMENTS = Object.freeze([
   // Trial-only crystal mechanics have no campaign mastery tally yet.
   'trace-twins',
+  'crossgrain',
   'encased-fossil',
   'fossil',
   'spore',

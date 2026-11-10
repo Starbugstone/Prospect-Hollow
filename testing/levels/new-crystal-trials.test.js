@@ -2,7 +2,7 @@ import { expect, it } from 'vitest';
 import { prototypeConfig } from '../../src/data/prototypeBoards';
 import { simulateCampaignLevel } from '../helpers/campaignSimulation';
 
-const KEYS = ['trace-twins-first-impression'];
+const KEYS = ['trace-twins-first-impression', 'crossgrain-narrow-neck'];
 const at = (values, q) => values.toSorted((a, b) => a - b)[Math.floor((values.length - 1) * q)];
 it.each(KEYS)(
   'finishes every one of 60 hint-led seeds: %s',
@@ -17,6 +17,14 @@ it.each(KEYS)(
           runs.map((run) => run.turns),
           q,
         ),
+      ),
+      medianDirectionSplits: at(
+        runs.map((run) => run.grainDirectionSplits),
+        0.5,
+      ),
+      medianBlastSplits: at(
+        runs.map((run) => run.grainBlastSplits),
+        0.5,
       ),
       medianScore: at(
         runs.map((run) => run.score),

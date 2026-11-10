@@ -126,6 +126,19 @@ BOARDS.push({
   },
 });
 
+BOARDS.push({
+  key: 'crossgrain-narrow-neck',
+  id: 554,
+  trial: 'crystal-seams',
+  stop: 'Across the grain',
+  level: {
+    board: '......./......./...i.../___i___/___i___/_....._/......./......./.......',
+    ice: 0,
+    chestTarget: 10720,
+    tip: 'The crystal neck has no room for horizontal matches. Match down its spine to seal vertical cracks, then aim a bonus at the remaining cracks. In the wide chamber either direction can be matched. Each blast seals only one crack per move.',
+  },
+});
+
 export const PROTOTYPE_BOARDS = BOARDS.map((board) => ({
   ...board,
   chapterName: TRIAL_CHAPTERS[board.trial].name,

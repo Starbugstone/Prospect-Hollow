@@ -42,6 +42,8 @@ export function simulateCampaignLevel(level, seed, { observe } = {}) {
       sporeBursts = 0,
       traceActivations = 0,
       traceGateHits = 0,
+      grainDirectionSplits = 0,
+      grainBlastSplits = 0,
       blastOnlyHits = 0,
       diagonalPearlDrops = 0;
     const blastHealth = tiles.map((tile) => (tile.bonusOnly ? tile.health : 0));
@@ -105,6 +107,11 @@ export function simulateCampaignLevel(level, seed, { observe } = {}) {
         craftedBonuses += (step.bonuses ?? []).filter((bonus) => bonus.core === undefined).length;
         coreBonuses += (step.bonuses ?? []).filter((bonus) => bonus.core !== undefined).length;
         sporeBursts += step.sporeBursts?.length ?? 0;
+        for (const change of step.crystalChanges ?? [])
+          if (change.signal === 'crossgrain') {
+            if (change.blast) grainBlastSplits += change.before - change.after;
+            else grainDirectionSplits += change.before - change.after;
+          }
         traceActivations += step.traceCopies?.length ?? 0;
         const copied = new Set((step.traceCopies ?? []).flatMap((copy) => copy.targets));
         diagonalPearlDrops += (step.drops ?? []).filter(
@@ -137,6 +144,8 @@ export function simulateCampaignLevel(level, seed, { observe } = {}) {
       sporeBursts,
       traceActivations,
       traceGateHits,
+      grainDirectionSplits,
+      grainBlastSplits,
       blastOnlyHits,
       diagonalPearlDrops,
     };

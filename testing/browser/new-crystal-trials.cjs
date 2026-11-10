@@ -110,6 +110,10 @@ const folder = 'output/new-mechanics';
             });
           }
           await page.waitForFunction(() => window.__moveDone, null, { timeout: 60000 });
+          if (!captured && (await page.evaluate(() => window.__crystalEvents.length > 0))) {
+            await shot('acts');
+            captured = true;
+          }
           if (turn === 1) await shot('mid');
         }
         await shot('complete');

@@ -136,12 +136,15 @@ describe('the dice rule', () => {
   });
 });
 
-it.each(['trace-twins-first-impression'])('replays a crystal trial exactly: %s', async (key) => {
-  const live = fresh(1);
-  expect(live.startLevel(key, 'prototype', { seed: 871 })).toBe(true);
-  await play(live, 60);
-  expect(live.levelCleared).toBe(true);
-  const log = JSON.parse(JSON.stringify(runReport(live)));
-  const again = fresh(1);
-  expect(await replayRun(again, log)).toBe(log.fingerprint);
-});
+it.each(['trace-twins-first-impression', 'crossgrain-narrow-neck'])(
+  'replays a crystal trial exactly: %s',
+  async (key) => {
+    const live = fresh(1);
+    expect(live.startLevel(key, 'prototype', { seed: 871 })).toBe(true);
+    await play(live, 60);
+    expect(live.levelCleared).toBe(true);
+    const log = JSON.parse(JSON.stringify(runReport(live)));
+    const again = fresh(1);
+    expect(await replayRun(again, log)).toBe(log.fingerprint);
+  },
+);

@@ -1,9 +1,11 @@
 import { isPlayableCell } from './BoardTopology.js';
 import { GEM_TYPES } from './GemFactory.js';
 
-export const isCrystalSignal = (tile) => tile?.signal === 'trace';
+export const isCrystalSignal = (tile) => ['trace', 'crossgrain'].includes(tile?.signal);
 
 export function applyCrystalSpec(tiles, spec) {
+  for (const index of spec.crossgrains ?? [])
+    Object.assign(tiles[index], { signal: 'crossgrain', signalHealth: 2, grainRemaining: 3 });
   for (const { cells, facet } of spec.tracePairs ?? []) {
     for (const [side, index] of cells.entries())
       Object.assign(tiles[index], {
@@ -63,4 +65,36 @@ export function traceCopies(tiles, matches, cols, rows, directSwap) {
     spent.add(to);
   }
   return copies;
+}
+
+// Direction stays on each match, rather than being flattened into hit cells.
+// The same pure rule values missing cracks in hints and resolves actual hits.
+export function crystalHits(tiles, matches, blastIndices, blockedBlasts = new Set()) {
+  const blasts = new Set(blastIndices);
+  const updates = [];
+  for (const [index, tile] of tiles.entries()) {
+    if (
+      tile?.signal !== 'crossgrain' ||
+      !tile.signalHealth ||
+      !isPlayableCell(tile) ||
+      tile.state === 'FROZEN'
+    )
+      continue;
+    let remaining = tile.grainRemaining;
+    for (const match of matches) {
+      if (!GEM_TYPES.includes(match.type) || !match.indices.includes(index)) continue;
+      if (match.orientation === 'horizontal') remaining &= ~1;
+      if (match.orientation === 'vertical') remaining &= ~2;
+    }
+    const blast = blasts.has(index) && !blockedBlasts.has(index) && remaining > 0;
+    if (blast) remaining &= remaining - 1;
+    if (remaining === tile.grainRemaining) continue;
+    updates.push({
+      index,
+      grainRemaining: remaining,
+      signalHealth: Number(!!(remaining & 1)) + Number(!!(remaining & 2)),
+      crystalBlast: blast,
+    });
+  }
+  return updates;
 }

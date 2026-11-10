@@ -1284,7 +1284,7 @@ export class BoardAnimator {
     const signal = tile?.signalHealth === 0 ? null : tile?.signal;
     // A phase seal shows the colour its gem becomes after the next move.
     const phase = tile?.phaseSeal && tile.health > 0 ? tile.phaseNext : null;
-    const key = `${layers}-${frozen}-${sealColor ?? ''}-${chained}-${!!exit}-${!!tile?.hatch}-${tile?.signal ?? ''}-${tile?.signalHealth}-${tile?.surveyOrder}-${tile?.rootGroup ?? ''}-${tile?.bonusOnly}-${tile?.sporeAxis}-${tile?.health}-${tile?.maxHealth}-${phase ?? ''}-${this.theme}-${this.cellSize}`;
+    const key = `${layers}-${frozen}-${sealColor ?? ''}-${chained}-${!!exit}-${!!tile?.hatch}-${tile?.signal ?? ''}-${tile?.signalHealth}-${tile?.grainRemaining}-${tile?.surveyOrder}-${tile?.rootGroup ?? ''}-${tile?.bonusOnly}-${tile?.sporeAxis}-${tile?.health}-${tile?.maxHealth}-${phase ?? ''}-${this.theme}-${this.cellSize}`;
     let overlay = this.tileOverlays.get(index);
     if (overlay?.__tileKey === key) return;
     overlay?.destroy();
@@ -1352,10 +1352,17 @@ export class BoardAnimator {
       overlay.add(this.drawCracks(size));
     if (signal) {
       const skin = mineSignalAppearance(this.theme, signal);
-      const ref = spriteRef(skin?.texture ?? `tile-${signal}`, this.scene.textures);
+      const texture =
+        signal === 'crossgrain' && tile.grainRemaining !== 3
+          ? `tile-crossgrain-${tile.grainRemaining === 1 ? 'horizontal' : 'vertical'}`
+          : (skin?.texture ?? `tile-${signal}`);
+      const ref = spriteRef(texture, this.scene.textures);
       const marker = this.scene.add
         .image(-size * 0.3, size * 0.29, ref.key, ref.frame)
-        .setDisplaySize(size * 0.43, size * 0.43);
+        .setDisplaySize(
+          size * (signal === 'crossgrain' ? 0.6 : 0.43),
+          size * (signal === 'crossgrain' ? 0.6 : 0.43),
+        );
       overlay.add(marker);
       if (signal === 'trace')
         addLabel(size * 0.28, size * 0.31, tile.traceFacet === 'hexagon' ? '⬡' : '◇', {

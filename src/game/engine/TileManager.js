@@ -1,4 +1,4 @@
-import { traceCopies } from './CrystalMechanics.js';
+import { traceCopies, crystalHits } from './CrystalMechanics.js';
 import { MatchEngine } from './MatchEngine.js';
 import { BASE_GEM_TYPES, createGem, randomGemType, GEM_TYPES } from './GemFactory.js';
 import { detectBonusFromMatches } from './MatchPatterns.js';
@@ -71,6 +71,7 @@ export class TileManager {
     let totalLayersCleared = 0;
     // A charge core gains at most one charge per move, however long the cascade.
     const chargedCores = new Set();
+    const blastedCrystals = new Set();
     let relicsCollected = 0;
     let queuedSpores = [];
     let phased = false;
@@ -187,6 +188,30 @@ export class TileManager {
           : {}),
       };
 
+      const crystalUpdates = crystalHits(
+        tiles,
+        pendingMatches,
+        pendingMatches
+          .filter((match) => !GEM_TYPES.includes(match.type))
+          .flatMap((match) => match.indices),
+        blastedCrystals,
+      );
+      for (const update of crystalUpdates) {
+        const { index, crystalBlast, ...state } = update;
+        totalLayersCleared += tiles[index].signalHealth - state.signalHealth;
+        if (crystalBlast) blastedCrystals.add(index);
+        step.crystalChanges ??= [];
+        step.crystalChanges.push({
+          index,
+          signal: tiles[index].signal,
+          before: tiles[index].signalHealth,
+          after: state.signalHealth,
+          blast: crystalBlast,
+        });
+        Object.assign(tiles[index], state);
+        step.tileUpdates.push({ index, ...state });
+      }
+
       for (const copy of traceCopies(
         tiles,
         pendingMatches,
@@ -204,9 +229,18 @@ export class TileManager {
       }
 
       for (const index of hasSignals
-        ? signalTargets(tiles, [...impacted, ...protectedIndices], totalCols, totalRows, [
-            ...matchedIndices,
-          ])
+        ? signalTargets(
+            tiles,
+            [...impacted, ...protectedIndices],
+            totalCols,
+            totalRows,
+            pendingMatches
+              .filter((match) => GEM_TYPES.includes(match.type))
+              .map((match) => ({
+                ...match,
+                indices: match.indices.filter((index) => matchedIndices.has(index)),
+              })),
+          )
         : []) {
         const core = isChargeCore(tiles[index]);
         if (core && chargedCores.has(index)) continue;

@@ -1,4 +1,4 @@
-import { traceCopies } from './CrystalMechanics.js';
+import { traceCopies, crystalHits } from './CrystalMechanics.js';
 import { MatchEngine } from './MatchEngine.js';
 import { BonusActivator } from './BonusActivator.js';
 import { BOARD_BONUSES, canSwapGem, neighborsOf } from './TileRules.js';
@@ -57,6 +57,10 @@ export class HintEngine {
         hitsSwitch = indices.some((index) => isGravitySwitch(tiles[index])),
       } = {},
     ) => {
+      const crystalValue = crystalHits(tiles, ordinaryMatches, usesBonus ? indices : []).reduce(
+        (sum, update) => sum + (tiles[update.index].signalHealth - update.signalHealth) * 260,
+        0,
+      );
       const copies = traceCopies(tiles, ordinaryMatches, cols, rows, !!swap);
       const copied = new Set(copies.flatMap((copy) => copy.targets));
       indices = [...new Set([...indices, ...copied])];
@@ -122,6 +126,7 @@ export class HintEngine {
       ).length;
       const flips = switches && usesBonus && hitsSwitch ? flipValue : 0;
       return (
+        crystalValue +
         copies.length * 380 +
         flips +
         Number(usesBonus) * 50 +
@@ -134,15 +139,7 @@ export class HintEngine {
         nearbyBlocks.size * 180 +
         relicPaths * 90 +
         indices.length +
-        (hasSignals
-          ? signalTargets(
-              tiles,
-              indices,
-              cols,
-              rows,
-              ordinaryMatches.flatMap((match) => match.indices),
-            ).length * 190
-          : 0) +
+        (hasSignals ? signalTargets(tiles, indices, cols, rows, ordinaryMatches).length * 190 : 0) +
         (requested.size
           ? indices.filter((index) =>
               requested.has(

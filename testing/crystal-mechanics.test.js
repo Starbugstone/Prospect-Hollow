@@ -121,3 +121,19 @@ it('consumes simultaneous twins once, and preserves both copied footprints', () 
     result.steps.flatMap((step) => step.tileUpdates).filter((update) => update.signalHealth === 0),
   ).toHaveLength(2);
 });
+
+it('crossgrain needs two distinct axes, and a blast seals only one crack', async () => {
+  const { crystalHits } = await import('../src/game/engine/CrystalMechanics');
+  const tiles = [{ ...plain(), signal: 'crossgrain', signalHealth: 2, grainRemaining: 3 }];
+  const h = { type: 'ruby', indices: [0], orientation: 'horizontal' },
+    v = { ...h, orientation: 'vertical' };
+  const [first] = crystalHits(tiles, [h], []);
+  expect(first.signalHealth).toBe(1);
+  Object.assign(tiles[0], first);
+  expect(crystalHits(tiles, [h], [])).toEqual([]);
+  expect(crystalHits(tiles, [v], [])[0].signalHealth).toBe(0);
+  tiles[0].grainRemaining = 3;
+  tiles[0].signalHealth = 2;
+  expect(crystalHits(tiles, [], [0])[0].signalHealth).toBe(1);
+  expect(crystalHits(tiles, [h, v], [])[0].signalHealth).toBe(0);
+});

@@ -7,6 +7,13 @@ import { OBSTACLES } from '../src/data/obstacles';
 // in the obstacle registry needs a sample here, so a new obstacle cannot ship
 // without this check.
 const ACTIVE = {
+  crossgrain: {
+    type: 'standard',
+    health: 0,
+    signal: 'crossgrain',
+    signalHealth: 1,
+    grainRemaining: 2,
+  },
   'trace-twins': {
     type: 'standard',
     health: 0,
