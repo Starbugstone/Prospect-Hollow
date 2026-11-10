@@ -15,7 +15,7 @@ The release is finished when:
 
 - a player at either ending has something new to do: new boards if the mine ran out first, new
   places to build if the town did;
-- three commissions and at least 18 new boards are live, each with its letters, art and French text;
+- three commissions and 60 new boards are live, each with its letters, art and French text;
 - commissions have an honours family, and the economy evidence has been rerun;
 - both commissions and the new boards have been played on a real phone;
 - New Hollow Rising, the sixteenth era, is playable to its end on the Moon (see its section below);
@@ -79,7 +79,7 @@ above the multiple shown no longer replays before the town finishes.
 | 36         | 92–97    | about 19.1M           | 1.31×                      |
 | 60         | 92–101   | about 21.0M           | 1.19×                      |
 
-At the optional speed target, 18 late boards last about 40 minutes. Real play is slower, but boards
+At the optional speed target, 18 late boards last about 40 minutes, so 60 last about two hours. Real play is slower, but boards
 are consumed quickly, so a pack alone cannot carry the release.
 
 ### What commissions cost
@@ -177,11 +177,13 @@ were lost when `/tmp` was cleared. Keep them under `output/next-release/`.
 
 **Decisions this sets**
 
-| Median multiple | Board count                                                   |
-| --------------- | ------------------------------------------------------------- |
-| 1.41× or above  | 18 boards                                                     |
-| 1.31–1.41×      | 36 boards                                                     |
-| Below 1.31×     | 36 boards now, and consider a second pack in the next release |
+The owner has set the board count at 60 (see Decisions). The income figures still decide prices,
+and whether a second pack should follow in the next release:
+
+| Median multiple | What it means with 60 boards and both eras                   |
+| --------------- | ------------------------------------------------------------ |
+| 1.33× or above  | Typical players finish without replays                       |
+| Below 1.33×     | They replay; size the next release's pack from the shortfall |
 
 | What the towns show                        | Change to prices                                       |
 | ------------------------------------------ | ------------------------------------------------------ |
@@ -191,14 +193,19 @@ were lost when `/tmp` was cleared. Keep them under `output/next-release/`.
 
 Prices only change before release: once shipped, receipts and server replay depend on them.
 
-**Done when** the board count and price are written in Decisions below, with the sample size.
+**Done when** the stage price and the income figures are written in Decisions below, with the sample size.
 
 ## Step 3: new boards
 
 **Size: large. This is the main remaining work.**
 
-Default until step 2 says otherwise: **18 boards, chapters 92–94, levels 547–564**, paying the 92×–94×
-depth multipliers.
+**60 boards, chapters 92–101, levels 547–606** (owner, 10 November 2026), paying the 92×–101× depth
+multipliers. Two eras of new town in this release raise the required town to about 28M coins; with 60
+boards a player needs about 1.33× the mine's coins for town and mine to run out together, instead of
+about 1.58× with 18. Step 2 no longer sets the count, only the prices.
+
+Ten chapters fill act V (chapters 92–97, levels 547–582) and start act VI (chapters 98–101, levels
+583–606), so the act colour sets rotate at chapter 98 as they do every six chapters.
 
 ### Content rules
 
@@ -216,11 +223,22 @@ depth multipliers.
 
 Provisional: each pairing has to prove fun and solvable on the board first.
 
-| Chapter | Name             | Mechanics                                    | Idea                                       |
-| ------- | ---------------- | -------------------------------------------- | ------------------------------------------ |
-| 92      | Echo gallery     | Lens mirrors, starglass, portals             | Beams and gems take different routes       |
-| 93      | Turning orchard  | Moon dials, floatstones, root knots          | Free a root, then turn gravity to carry it |
-| 94      | The deep lantern | Breakthrough chambers, phase seals, lanterns | Break in, then light what was sealed away  |
+| Chapter | Levels  | Name             | Mechanics                                    | Idea                                             |
+| ------- | ------- | ---------------- | -------------------------------------------- | ------------------------------------------------ |
+| 92      | 547–552 | Echo gallery     | Lens mirrors, starglass, portals             | Beams and gems take different routes             |
+| 93      | 553–558 | Turning orchard  | Moon dials, floatstones, root knots          | Free a root, then turn gravity to carry it       |
+| 94      | 559–564 | The deep lantern | Breakthrough chambers, phase seals, lanterns | Break in, then light what was sealed away        |
+| 95      | 565–570 | Shifting survey  | Survey markers, phase seals                  | Follow a numbered trail while the colours shift  |
+| 96      | 571–576 | Ember sidings    | Charge cores, portals, moon gems             | Cores' bombs open the gates on a portal siding   |
+| 97      | 577–582 | Buried routes    | Fossils, route chambers                      | Two ways into a fossil bed; act V finale         |
+| 98      | 583–588 | Frost relays     | Frozen gems, spore relays, lanterns          | Bursts thaw a path to the lanterns               |
+| 99      | 589–594 | Tidal pearls     | Twin gravity, pearls, ore orders             | Pearls above and below a seam, one order to fill |
+| 100     | 595–600 | Rooted vault     | Root knots, breakthrough chambers, chains    | Cut the roots that hold a sealed chamber shut    |
+| 101     | 601–606 | The far seam     | Lenses, moon dials, route chambers           | The pack's finale: every way in, every way round |
+
+Chapters 95–101 are proposals: each needs a board on trial, played on a phone, before its chapter is
+authored, as 92–94 have. None of these pairings has shared a board yet, and a pairing that doesn't play
+well is swapped for another existing one rather than forced.
 
 The Echo gallery pairing has been checked on its prototype. A beam passes over a portal pad as it
 does over a void, and does not come out of the pad's pair. A player could expect either, so the
@@ -240,11 +258,13 @@ explained first.
         out and one moon dial. All 60 seeds finish (median 21 moves). Not yet played on a phone
   - [ ] Play all three on a phone and decide which pairings go ahead. On `preprod` they are
         listed under Boards on trial in Settings (More options), from the village
+  - [ ] Chapters 95–101: one board on trial each, measured on 60 hint-led seeds like the first three,
+        then played on a phone
 - [ ] Add the chapters to `PLANS` in `src/data/hollowMineLevels.js`, with names, stops and tips.
       Consider a new file if this one, already 1,720 lines, gets harder to read
 - [ ] Add French names, stops and tips to `src/i18n/fr.json`
 - [ ] Measure with 30 seeds: `node scripts/measure-campaign.mjs . 30`, then
-      `node scripts/calibrate-star-targets.mjs <file> 547 564`
+      `node scripts/calibrate-star-targets.mjs <file> 547 606`
 - [ ] Set chest targets at 80% of the median score and add the star targets
 - [ ] Hold out seeds 101–120 and lower any star target leaving under a third of runs with three stars
 - [ ] Extend `testing/hollow-mine-levels.test.js`: the append, names, reachable cargo, reachable
@@ -253,7 +273,7 @@ explained first.
       `node scripts/export-public-content.mjs`
 - [ ] Update hardcoded counts: `scripts/measure-economy-balance.mjs` (546), `docs/README.md`,
       `docs/town-demo.md`, `docs/settlement-eras.md`
-- [ ] Add a guide section for levels 547–564, in `docs/hollow-mine-levels.md` or its own page
+- [ ] Add a guide for levels 547–606, its own page beside `docs/hollow-mine-levels.md`
 
 ### What to check beyond the boards
 
@@ -262,7 +282,7 @@ explained first.
       that nothing earned or displayed goes backwards
 - [ ] Seam Explorer lists levels 1–546 by name. Leave it: shipped ranks don't change, and new levels
       earn it nothing
-- [ ] Chest coins and VIP spending at chapters 92–94 still pass the server's checks
+- [ ] Chest coins and VIP spending at chapters 92–101 still pass the server's checks
 - [ ] Each new level adds three workshop credits, so moonstone supply rises slightly
 
 ### Checks
@@ -270,7 +290,7 @@ explained first.
 `npm run verify`, `npm run test:levels`, `testing/chapter-progression.test.js`, and the board motion
 check if any board uses a new shape.
 
-**Done when** all 18 boards complete on held-out seeds, the targets are calibrated and a player on the
+**Done when** all 60 boards complete on held-out seeds, the targets are calibrated and a player on the
 old last level can carry on.
 
 ## Step 4: third commission
@@ -514,6 +534,8 @@ the next release should lean on boards and new mechanics.
 - **A sixteenth era after all, on the Moon only** (owner, 10 November 2026). Playing the endgame, the
   owner found too little to do or build, especially on the Moon. New Hollow Rising joins this release.
   It replaces the earlier "not a sixteenth era yet": it does not re-art the valley.
+- **60 new boards** (owner, 10 November 2026): chapters 92–101, levels 547–606, sized for two new eras
+  of town rather than waiting for step 2's income figures.
 - **The Quiet Signal joins this release too** (owner, 10 November 2026): the era after New Hollow
   Rising, built around a black monolith on the Moon, planned in the owner's "Plan the Moon's Monolith
   Era" thread. It adds required town on top of New Hollow Rising, so the board pack and the economy
