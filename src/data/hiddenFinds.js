@@ -59,12 +59,12 @@ export const HIDDEN_FIND_WORDS = {
     collected: 'Found the wandering pair: {coins} coins!',
     collectedUnknown: 'Found the wandering pair: coins for your town!',
     already:
-      'You already found the wandering pair. They stroll somewhere new, here or on the Moon, after your next puzzle.',
+      'You already found the wandering pair. They stroll somewhere new, in the valley or on the Moon, after your next puzzle.',
     empty: 'You found the wandering pair! Their reward is an hour of your saloon takings.',
     zoom: 'Zoom in closer to see who is out walking.',
     redeemed: 'You found a wandering pair while visiting another town: {coins} coins.',
     visitInvite:
-      'Find the raccoon out walking with its Willowkin, here or on the Moon: your own town earns half an hour of saloon takings.',
+      'Find the raccoon out walking with its Willowkin, in the valley or on the Moon: your own town earns half an hour of saloon takings.',
     visitFound: 'You found the wandering pair! {town} receives half an hour of its saloon takings.',
     visitOwn: 'This is your own town: find its wandering pair from your game for your reward.',
     visitTaken: "A visitor found this town's wandering pair recently. Come back in {hours} h.",
