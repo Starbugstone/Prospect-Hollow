@@ -19,6 +19,7 @@
 //   W / Y  one-/two-hit cracked wall of chamber a; w the wall of chamber b. A level's
 //      `chambers` list seals whole rows ({ id, rows: [first, last] }) until the
 //      matching wall is broken
+//   t / j  pairs of trace stamps, linked by diamond / hexagon facets
 // Levels whose goal is lighting lanterns or delivering cargo carry no ice.
 // Moves are unlimited; difficulty comes only from these layouts and goals.
 import { parseMineBoard } from './deepMineLevels.js';

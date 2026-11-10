@@ -385,6 +385,7 @@ const themes = {
 // Every deeper chapter uses the same names and pictures when a familiar goal
 // returns in another cavern. Scenery changes; the player's learned rule does not.
 const deepSignals = {
+  trace: { id: 'trace-twins', texture: 'tile-trace' },
   spore: themes['glowshroom-grotto'].signals.spore,
   core: themes['geothermal-forge'].signals.core,
 };

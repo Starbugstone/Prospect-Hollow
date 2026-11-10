@@ -7,6 +7,14 @@ import { OBSTACLES } from '../src/data/obstacles';
 // in the obstacle registry needs a sample here, so a new obstacle cannot ship
 // without this check.
 const ACTIVE = {
+  'trace-twins': {
+    type: 'standard',
+    health: 0,
+    signal: 'trace',
+    signalHealth: 1,
+    tracePeer: 0,
+    traceFacet: 'diamond',
+  },
   'encased-fossil': {
     type: 'blocker',
     bonusOnly: true,

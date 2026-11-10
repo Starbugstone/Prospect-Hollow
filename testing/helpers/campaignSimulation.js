@@ -40,6 +40,8 @@ export function simulateCampaignLevel(level, seed, { observe } = {}) {
       craftedBonuses = 0,
       coreBonuses = 0,
       sporeBursts = 0,
+      traceActivations = 0,
+      traceGateHits = 0,
       blastOnlyHits = 0,
       diagonalPearlDrops = 0;
     const blastHealth = tiles.map((tile) => (tile.bonusOnly ? tile.health : 0));
@@ -103,12 +105,16 @@ export function simulateCampaignLevel(level, seed, { observe } = {}) {
         craftedBonuses += (step.bonuses ?? []).filter((bonus) => bonus.core === undefined).length;
         coreBonuses += (step.bonuses ?? []).filter((bonus) => bonus.core !== undefined).length;
         sporeBursts += step.sporeBursts?.length ?? 0;
+        traceActivations += step.traceCopies?.length ?? 0;
+        const copied = new Set((step.traceCopies ?? []).flatMap((copy) => copy.targets));
         diagonalPearlDrops += (step.drops ?? []).filter(
           (drop) => drop.gem?.type === 'relic' && drop.from % cols !== drop.to % cols,
         ).length;
         for (const update of step.tileUpdates ?? []) {
           if (update.health === undefined || !tiles[update.index].bonusOnly) continue;
-          blastOnlyHits += Math.max(0, blastHealth[update.index] - update.health);
+          const damage = Math.max(0, blastHealth[update.index] - update.health);
+          blastOnlyHits += damage;
+          if (copied.has(update.index)) traceGateHits += damage;
           blastHealth[update.index] = update.health;
         }
         score += clearScore(step, index);
@@ -129,6 +135,8 @@ export function simulateCampaignLevel(level, seed, { observe } = {}) {
       craftedBonuses,
       coreBonuses,
       sporeBursts,
+      traceActivations,
+      traceGateHits,
       blastOnlyHits,
       diagonalPearlDrops,
     };

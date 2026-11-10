@@ -4044,5 +4044,10 @@
   "Lay the outer ring": "Tracer l’anneau extérieur",
   "Homes for the first Moon-born": "Des foyers pour les premiers enfants de la Lune",
   "Open New Hollow to visitors": "Ouvrir New Hollow aux visiteurs",
-  "A town that feeds itself": "Une ville qui se nourrit elle-même"
+  "A town that feeds itself": "Une ville qui se nourrit elle-même",
+  "Trace twins": "Empreintes jumelles",
+  "The matching facets link two stamps. Make a swap that matches on either stamp: every matching line through it is copied onto its twin as a blast, then both stamps vanish. Cascades and direct blasts do not fire stamps. Copied cells do not form a beam, so lenses do not turn them.": "Les facettes identiques relient deux empreintes. Faites un échange qui aligne des gemmes sur une empreinte : chaque ligne qui la traverse est copiée sur sa jumelle sous forme d’explosion, puis les deux disparaissent. Les cascades et explosions directes ne les activent pas. La copie n’est pas un rayon : les lentilles ne la dévient pas.",
+  "Crystal seams: First impression": "Veines de cristal : Première empreinte",
+  "Two matching diamond facets link the stamps. Make a horizontal match on the upper stamp: its copy lands across the lower stamp and the two dark gates beside it. Only your swap fires a stamp; cascades leave it waiting. A vertical match sends a column instead.": "Deux facettes en losange relient les empreintes. Alignez horizontalement sur celle du haut : la copie touche celle du bas et les deux portes sombres à côté. Seul votre échange active une empreinte ; les cascades la laissent intacte. Un alignement vertical copie une colonne.",
+  "Crystal seams": "Veines de cristal"
 }

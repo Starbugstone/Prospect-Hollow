@@ -1,3 +1,4 @@
+import { isCrystalSignal } from './CrystalMechanics.js';
 import { neighborsOf, isAnchored } from './TileRules.js';
 import { GEM_TYPES } from './GemFactory.js';
 import { isPlayableCell } from './BoardTopology.js';
@@ -22,6 +23,7 @@ export function signalTargets(tiles, impacted, cols, rows, ordinaryIndices = imp
     (index) =>
       isPlayableCell(tiles[index]) &&
       tiles[index]?.signalHealth > 0 &&
+      !isCrystalSignal(tiles[index]) &&
       (tiles[index].signal !== 'lantern' || hit.has(index)) &&
       (tiles[index].signal !== 'spore' || sporeTouched.has(index)) &&
       (!tiles[index].surveyOrder || tiles[index].surveyOrder === survey),

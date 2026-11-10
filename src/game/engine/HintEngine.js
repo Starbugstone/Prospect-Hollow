@@ -1,3 +1,4 @@
+import { traceCopies } from './CrystalMechanics.js';
 import { MatchEngine } from './MatchEngine.js';
 import { BonusActivator } from './BonusActivator.js';
 import { BOARD_BONUSES, canSwapGem, neighborsOf } from './TileRules.js';
@@ -56,6 +57,9 @@ export class HintEngine {
         hitsSwitch = indices.some((index) => isGravitySwitch(tiles[index])),
       } = {},
     ) => {
+      const copies = traceCopies(tiles, ordinaryMatches, cols, rows, !!swap);
+      const copied = new Set(copies.flatMap((copy) => copy.targets));
+      indices = [...new Set([...indices, ...copied])];
       const nearbyBlocks = new Set();
       for (const index of new Set(ordinaryMatches.flatMap((match) => match.indices))) {
         if (tiles[index]?.state === 'FROZEN') continue;
@@ -73,7 +77,7 @@ export class HintEngine {
           Number(
             (tiles[index]?.health ?? 0) > 0 &&
               !(routeOpen && tiles[index]?.routeWall) &&
-              (!tiles[index]?.bonusOnly || usesBonus) &&
+              (!tiles[index]?.bonusOnly || usesBonus || copied.has(index)) &&
               (!tiles[index]?.lensOnly || !!bent?.has(index)) &&
               (!tiles[index]?.sealColor ||
                 usesBonus ||
@@ -83,11 +87,13 @@ export class HintEngine {
           ),
         0,
       );
-      const blastHits = usesBonus
-        ? indices.filter(
-            (index) => blastTarget(tiles[index]) && (!tiles[index].lensOnly || !!bent?.has(index)),
-          ).length
-        : 0;
+      const blastHits =
+        usesBonus || copied.size
+          ? indices.filter(
+              (index) =>
+                blastTarget(tiles[index]) && (!tiles[index].lensOnly || !!bent?.has(index)),
+            ).length
+          : 0;
       // Sealed beds and throat gates need deliberately aimed bonuses. Reward
       // a useful earned bonus too, rather than firing every blast at easy dust.
       const planned = hasBlastTargets && evaluation?.bonuses.length ? lensLog() : null;
@@ -116,6 +122,7 @@ export class HintEngine {
       ).length;
       const flips = switches && usesBonus && hitsSwitch ? flipValue : 0;
       return (
+        copies.length * 380 +
         flips +
         Number(usesBonus) * 50 +
         Number(usesFusion) * 150 +

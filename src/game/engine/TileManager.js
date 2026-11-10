@@ -1,3 +1,4 @@
+import { traceCopies } from './CrystalMechanics.js';
 import { MatchEngine } from './MatchEngine.js';
 import { BASE_GEM_TYPES, createGem, randomGemType, GEM_TYPES } from './GemFactory.js';
 import { detectBonusFromMatches } from './MatchPatterns.js';
@@ -36,6 +37,7 @@ export class TileManager {
     rows,
     bonuses = [],
     pendingBonus = null,
+    swap = null,
     gemTypes = BASE_GEM_TYPES,
   }) {
     if (!matches?.length) {
@@ -63,6 +65,7 @@ export class TileManager {
       orientation: match.orientation,
       fusion: match.fusion,
       sporeBursts: match.sporeBursts,
+      traceCopies: match.traceCopies,
       blasts: match.blasts,
     }));
     let totalLayersCleared = 0;
@@ -179,7 +182,26 @@ export class TileManager {
           ? { sporeBursts: pendingMatches.flatMap((match) => match.sporeBursts ?? []) }
           : {}),
         ...(lensBeams.length ? { lensBeams } : {}),
+        ...(pendingMatches.some((match) => match.traceCopies)
+          ? { traceCopies: pendingMatches.flatMap((match) => match.traceCopies ?? []) }
+          : {}),
       };
+
+      for (const copy of traceCopies(
+        tiles,
+        pendingMatches,
+        totalCols,
+        totalRows,
+        steps.length === 0 && !!swap,
+      )) {
+        queuedSpores.push({ ...copy, kind: 'trace', targets: copy.targets });
+        for (const index of [copy.from, copy.to]) {
+          if (!tiles[index].signalHealth) continue;
+          tiles[index].signalHealth = 0;
+          totalLayersCleared++;
+          step.tileUpdates.push({ index, signalHealth: 0 });
+        }
+      }
 
       for (const index of hasSignals
         ? signalTargets(tiles, [...impacted, ...protectedIndices], totalCols, totalRows, [
@@ -350,7 +372,15 @@ export class TileManager {
           targets: bursts.flatMap((burst) => burst.targets),
           blasts,
         });
-        pendingMatches = [{ type: 'spore-burst', indices, sporeBursts: bursts, blasts }];
+        pendingMatches = [
+          {
+            type: bursts.some((burst) => burst.kind === 'trace') ? 'trace-copy' : 'spore-burst',
+            indices,
+            blasts,
+            sporeBursts: bursts.filter((burst) => burst.kind !== 'trace'),
+            traceCopies: bursts.filter((burst) => burst.kind === 'trace'),
+          },
+        ];
         continue;
       }
 

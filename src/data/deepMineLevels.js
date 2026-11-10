@@ -278,6 +278,7 @@ export function parseMineBoard(
         : `Mine boards must be ${cols} × ${rowCount}`,
     );
   const cells = [...rows.join('')];
+  const traceGroups = new Map();
   const cores = [];
   const signals = [];
   const spores = [];
@@ -295,6 +296,9 @@ export function parseMineBoard(
         if (root.knot !== undefined) throw new Error('A root group must have one knot');
         root.knot = index;
       } else root.bindings.push(index);
+    } else if (symbol === 't' || symbol === 'j') {
+      if (!traceGroups.has(symbol)) traceGroups.set(symbol, []);
+      traceGroups.get(symbol).push(index);
     } else if (symbol === 'o') cores.push(index);
     else if (symbol === 'l') signals.push(index);
     else if (symbol === 'h' || symbol === 'v')
@@ -331,6 +335,15 @@ export function parseMineBoard(
     map: Array.from({ length: rowCount }, (_, row) =>
       map.slice(row * cols, row * cols + cols).join(''),
     ).join('/'),
+    ...(traceGroups.size
+      ? {
+          tracePairs: [...traceGroups].map(([symbol, cells]) => {
+            if (cells.length !== 2)
+              throw new Error('Trace twins need exactly two stamps per facet');
+            return { cells, facet: symbol === 't' ? 'diamond' : 'hexagon' };
+          }),
+        }
+      : {}),
     cores,
     signals,
     spores,

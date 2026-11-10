@@ -4,6 +4,15 @@ import { mineSignalAppearance, mineRelicAppearance } from './mineThemes.js';
 // DEEP_MINE_SPRITES instead.
 export const OBSTACLES = [
   {
+    id: 'trace-twins',
+    name: 'Trace twins',
+    art: '/art/obstacles/trace.svg',
+    texture: 'tile-trace',
+    instruction:
+      'The matching facets link two stamps. Make a swap that matches on either stamp: every matching line through it is copied onto its twin as a blast, then both stamps vanish. Cascades and direct blasts do not fire stamps. Copied cells do not form a beam, so lenses do not turn them.',
+    present: (tile) => tile.signal === 'trace',
+  },
+  {
     id: 'encased-fossil',
     name: 'Encased fossils',
     art: '/art/obstacles/fossil.svg',

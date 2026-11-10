@@ -38,6 +38,15 @@ const TRIAL_CHAPTERS = {
   },
 };
 
+TRIAL_CHAPTERS['crystal-seams'] = {
+  chapter: 91,
+  plan: 24,
+  name: 'Crystal seams',
+  theme: 'starfall-cavern',
+  motif: 'pocket',
+  rows: 9,
+};
+
 const BOARDS = [
   {
     key: 'deep-lantern-routes',
@@ -103,6 +112,19 @@ const BOARDS = [
     },
   },
 ];
+
+BOARDS.push({
+  key: 'trace-twins-first-impression',
+  id: 548,
+  trial: 'crystal-seams',
+  stop: 'First impression',
+  level: {
+    board: '......./......./...t.../......./......./......./..BtB../......./.......',
+    ice: 0,
+    chestTarget: 7760,
+    tip: 'Two matching diamond facets link the stamps. Make a horizontal match on the upper stamp: its copy lands across the lower stamp and the two dark gates beside it. Only your swap fires a stamp; cascades leave it waiting. A vertical match sends a column instead.',
+  },
+});
 
 export const PROTOTYPE_BOARDS = BOARDS.map((board) => ({
   ...board,

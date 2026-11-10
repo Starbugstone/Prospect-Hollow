@@ -5,9 +5,26 @@ These are proposals written before implementation, on branch
 levels 1–546, their rewards and the campaign count stay fixed. No proposal
 uses a move budget or a hard timer. Free reshuffling remains available.
 
-Implementation is paused after this proposal for the owner’s Opus/Fable review.
-“Recommended” means my proposed build order, not approval to build. No mechanic,
-shape or trial board has been implemented or measured.
+The owner approved Trace twins, Crossgrain crystal and Chord crystal after review
+(10 November 2026). Trace twins copy only a player's direct swap matches; copied
+cells are discrete blast cells, never beams, so lenses do not turn the copy.
+Crossgrain blasts split one remaining side. Chord counts only matches on its own
+cell; a blast fills one empty socket with white light, at most once per move.
+Repeating a remembered colour adds nothing; a new colour fills another socket.
+White light is a wildcard, not a gem colour. All three disappear when complete.
+
+Echo twins was considered and not built: colour memory at two distant ends adds
+more tracking and is less immediately readable than the owner's Chord crystal.
+Colour kiln was considered and not built: it overlaps colour memory and cores.
+Counterweight seam was considered and not built: its bespoke falls carry too much
+cargo/motion risk. Crystal shutters was considered and not built: it largely
+repeats breakthrough routes. Keyhole is not a separate new shape; its neck may
+teach Crossgrain. The approved shapes are Arrowhead (renamed Crystal stair,
+clearing only) and Twin windows with two-row windows and useful crafting space.
+
+The candidate paragraphs below preserve the initial proposals for the review
+record. The implementation rules above supersede their original blast rules and
+presentation sketches.
 
 ## Existing engine and design space
 
@@ -196,3 +213,31 @@ footprint generation checks, 259 test files / 4,912 tests, production build and
 bundle budgets. The gzipped first download measured 458,391 / 480,000 bytes.
 Output: `output/new-mechanics/proposal-verify.log` (local, ignored).
 This validates the unchanged baseline, not the unimplemented proposals.
+
+## Trace twins implementation
+
+`t` and `j` each author exactly two stamps with diamond and hexagon facets.
+Only ordinary matches containing a stamp on the first resolution step of a real
+swap fire it; cascades, phase shifts, reshuffles and direct blasts do not. Every
+line through it contributes, including both lines of a T/L. Both ends matching
+simultaneously copy from one snapshot, then consume the pair once. Off-board and
+void destinations are clipped by coordinates. Trace receipts use the relay's
+pre-gravity blast queue and trigger ordinary bonus chains, but have their own
+moving facet and per-cell flashes. The teaching board contains no lenses.
+
+| Trial                          | Slot | Moves p10 / median / p90 / max | Median score | Chest (80%) | Reshuffles | Rule mattered                                    |
+| ------------------------------ | ---: | ------------------------------ | -----------: | ----------: | ---------: | ------------------------------------------------ |
+| `trace-twins-first-impression` |  548 | 3 / 6 / 16 / 44                |        9,700 |       7,760 |          0 | 60/60 copies damaged a gate; median 1 gate layer |
+
+All 60 hint-led seeds finished. Verdict: a short introduction that rewards a
+horizontal footprint; the hint previews remote cells instead of spending the
+stamp on an unhelpful column. These are simulator results, not human fun ratings.
+The first two behavioural tests failed on the old engine (remote gate remained;
+a neighbouring match wrongly consumed the marker) and pass with the new rules.
+
+Trace browser evidence: viewed start, mid-play and activation captures at
+375 × 740 and 1440 × 900 under `output/new-mechanics/`. Both seeded browser
+journeys finished without page errors. The two-move 60 fps motion scenario
+sampled 176 frames, with zero overlaps and zero stutters. Trial run-log replay
+passed, as did the completed-marker renderer regression. Honour/save/public
+catalog exports were rerun and left the shipped catalogs unchanged.

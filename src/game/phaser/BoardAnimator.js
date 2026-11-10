@@ -435,6 +435,7 @@ export class BoardAnimator {
       await this.bonuses.play(step);
       if (step.phaseShifts?.length) await this.playPhaseShifts(step.phaseShifts);
       await this.playSporeBursts(step.sporeBursts ?? []);
+      if (step.traceCopies?.length) await this.playTraceCopies(step.traceCopies);
       if (step.lensBeams?.length) await this.playLensBeams(step.lensBeams);
       if (generation !== this.generation) return;
       // A floatstone this step sets moving lights up its route as the match clears.
@@ -897,6 +898,34 @@ export class BoardAnimator {
     );
   }
 
+  async playTraceCopies(copies) {
+    await Promise.all(
+      copies.flatMap(({ from, to, targets }) => {
+        const origin = this.position(from),
+          destination = this.position(to);
+        const stamp = this.scene.add
+          .rectangle(origin.x, origin.y, this.cellSize * 0.55, this.cellSize * 0.55, 0xa9eaff, 0.65)
+          .setAngle(45);
+        const flight = this.effect(stamp, {
+          x: destination.x,
+          y: destination.y,
+          alpha: 0,
+          duration: this.reducedMotion ? 90 : 340,
+          ease: 'Cubic.easeInOut',
+        });
+        const marks = targets.map((index) => {
+          const p = this.position(index);
+          const mark = this.scene.add
+            .rectangle(p.x, p.y, this.cellSize * 0.7, this.cellSize * 0.7, 0xa9eaff, 0.18)
+            .setStrokeStyle(2, 0xd5f6ff, 1)
+            .setAngle(45);
+          return this.effect(mark, { alpha: 0, duration: this.reducedMotion ? 90 : 400 });
+        });
+        return [flight, ...marks];
+      }),
+    );
+  }
+
   async playSporeBursts(bursts) {
     await Promise.all(
       bursts.map(({ index, axis, targets }) => {
@@ -1328,6 +1357,13 @@ export class BoardAnimator {
         .image(-size * 0.3, size * 0.29, ref.key, ref.frame)
         .setDisplaySize(size * 0.43, size * 0.43);
       overlay.add(marker);
+      if (signal === 'trace')
+        addLabel(size * 0.28, size * 0.31, tile.traceFacet === 'hexagon' ? '⬡' : '◇', {
+          fontSize: `${Math.max(16, size * 0.32)}px`,
+          color: '#e4f8ff',
+          backgroundColor: '#17384b',
+          padding: { x: 2, y: 0 },
+        });
       if (signal === 'spore')
         addLabel(size * 0.16, size * 0.32, tile.sporeAxis === 'column' ? '↕' : '↔', {
           fontSize: `${Math.max(17, size * 0.34)}px`,

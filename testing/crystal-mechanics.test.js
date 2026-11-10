@@ -1,0 +1,123 @@
+import { expect, it } from 'vitest';
+import { TileManager } from '../src/game/engine/TileManager';
+import { createGem } from '../src/game/engine/GemFactory';
+
+const manager = new TileManager();
+const plain = () => ({ type: 'standard', health: 0, state: 'PLAYABLE' });
+const fixture = () => {
+  const tiles = Array.from({ length: 63 }, plain);
+  for (const [index, peer] of [
+    [17, 45],
+    [45, 17],
+  ])
+    Object.assign(tiles[index], {
+      signal: 'trace',
+      signalHealth: 1,
+      tracePeer: peer,
+      traceFacet: 'diamond',
+    });
+  tiles[44] = { ...plain(), type: 'blocker', health: 1, maxHealth: 1, bonusOnly: true };
+  const board = tiles.map((tile, i) =>
+    tile.type === 'blocker'
+      ? null
+      : createGem(
+          ['ruby', 'sapphire', 'emerald', 'topaz', 'amethyst'][(i + Math.floor(i / 7)) % 5],
+        ),
+  );
+  return {
+    tiles,
+    board,
+    cols: 7,
+    rows: 9,
+    swap: { aIndex: 10, bIndex: 17 },
+    gemTypes: ['ruby', 'sapphire', 'emerald', 'topaz', 'amethyst'],
+  };
+};
+it('copies a swap match to its twin and breaks a remote gate before gravity', () => {
+  const input = fixture();
+  const result = manager.getResolution({
+    ...input,
+    matches: [{ type: 'ruby', indices: [16, 17, 18], orientation: 'horizontal' }],
+  });
+  expect(input.tiles[44].health).toBe(0);
+  expect(input.tiles[17].signalHealth).toBe(0);
+  expect(input.tiles[45].signalHealth).toBe(0);
+  expect(result.steps.flatMap((step) => step.traceCopies ?? [])).toEqual([
+    expect.objectContaining({ from: 17, to: 45, targets: [44, 45, 46] }),
+  ]);
+});
+it('does not spend a stamp on a neighbouring match or a direct blast', () => {
+  for (const match of [
+    { type: 'ruby', indices: [9, 10, 11], orientation: 'horizontal' },
+    { type: 'bonus-activation', indices: [17] },
+  ]) {
+    const input = fixture();
+    manager.getResolution({ ...input, matches: [match] });
+    expect(input.tiles[17].signalHealth).toBe(1);
+    expect(input.tiles[45].signalHealth).toBe(1);
+  }
+});
+
+it('copies both lines of a T, clips by coordinates, and never fills voids', async () => {
+  const { traceCopies } = await import('../src/game/engine/CrystalMechanics');
+  const input = fixture();
+  input.tiles[46] = { type: 'void', health: 0 };
+  const matches = [
+    { type: 'ruby', indices: [16, 17, 18], orientation: 'horizontal' },
+    { type: 'ruby', indices: [10, 17, 24], orientation: 'vertical' },
+  ];
+  expect(traceCopies(input.tiles, matches, 7, 9, true)[0].targets).toEqual([44, 45, 38, 52]);
+  expect(traceCopies(input.tiles, matches, 7, 9, false)).toEqual([]);
+  input.tiles[17].tracePeer = 42;
+  input.tiles[42] = { ...input.tiles[45], tracePeer: 17 };
+  expect(traceCopies(input.tiles, matches, 7, 9, true)[0].targets).not.toContain(41);
+});
+it('requires a real swap, so shuffle matches cannot fire stamps', () => {
+  const input = fixture();
+  manager.getResolution({
+    ...input,
+    swap: null,
+    matches: [{ type: 'ruby', indices: [16, 17, 18], orientation: 'horizontal' }],
+  });
+  expect(input.tiles[17].signalHealth).toBe(1);
+});
+it('rejects an unpaired trace facet during authoring', async () => {
+  const { parseMineBoard } = await import('../src/data/deepMineLevels');
+  expect(() => parseMineBoard('t../.../...', { cols: 3, rows: 3 })).toThrow(/exactly two/);
+});
+
+it('does not turn a copied footprint at a lens', () => {
+  const input = fixture();
+  input.tiles[48] = { type: 'void', health: 0, lens: 'n' };
+  input.board[48] = null;
+  input.tiles[41] = {
+    ...plain(),
+    type: 'blocker',
+    health: 1,
+    maxHealth: 1,
+    bonusOnly: true,
+    lensOnly: true,
+  };
+  input.board[41] = null;
+  const result = manager.getResolution({
+    ...input,
+    matches: [{ type: 'ruby', indices: [14, 15, 16, 17, 18, 19, 20], orientation: 'horizontal' }],
+  });
+  expect(input.tiles[41].health).toBe(1);
+  expect(result.steps.flatMap((step) => step.lensBeams ?? [])).toEqual([]);
+});
+
+it('consumes simultaneous twins once, and preserves both copied footprints', () => {
+  const input = fixture();
+  const result = manager.getResolution({
+    ...input,
+    matches: [
+      { type: 'ruby', indices: [16, 17, 18], orientation: 'horizontal' },
+      { type: 'sapphire', indices: [38, 45, 52], orientation: 'vertical' },
+    ],
+  });
+  expect(result.steps.flatMap((step) => step.traceCopies ?? [])).toHaveLength(2);
+  expect(
+    result.steps.flatMap((step) => step.tileUpdates).filter((update) => update.signalHealth === 0),
+  ).toHaveLength(2);
+});
