@@ -209,8 +209,13 @@ Ten chapters fill act V (chapters 92–97, levels 547–582) and start act VI (c
 
 ### Content rules
 
-- **No new mechanics in this pack.** Fresh combinations of existing ones avoid a new obstacle guide,
-  honours family and engine work, and make this the cheapest way to add discovery.
+- **New mechanics and board shapes join the pack** (owner, 10 November 2026), alongside fresh
+  pairings of existing ones. Each new mechanic must be original (not another game's signature piece),
+  readable from its first board, and come with everything a mechanic needs: an entry in the obstacle
+  guide (`src/data/obstacles.js`, art, French), a completed-board-marker sample (completed obstacles
+  leave no icon), an honours decision (a mine element family or `NON_MASTERY_ELEMENTS`), engine tests,
+  hint support so the hint-led player can finish it, and the board motion check. New shapes get the
+  motion check too.
 - **Append only.** Levels 1–546 keep their hashes, targets and rewards.
 - **The text never assumes a town building exists**, because the mine isn't gated by the town era.
   Chapters can't mention New Hollow or a commission. Explain caverns through the crystal.
@@ -237,7 +242,8 @@ Provisional: each pairing has to prove fun and solvable on the board first.
 | 101     | 601–606 | The far seam     | Lenses, moon dials, route chambers           | The pack's finale: every way in, every way round |
 
 Chapters 95–101 are proposals: each needs a board on trial, played on a phone, before its chapter is
-authored, as 92–94 have. None of these pairings has shared a board yet, and a pairing that doesn't play
+authored, as 92–94 have. Chapters that introduce a new mechanic or shape replace some of these
+pairings once their trial boards are in; the new mechanics are on trial first, as below. None of these pairings has shared a board yet, and a pairing that doesn't play
 well is swapped for another existing one rather than forced.
 
 The Echo gallery pairing has been checked on its prototype. A beam passes over a portal pad as it
@@ -260,6 +266,8 @@ explained first.
         listed under Boards on trial in Settings (More options), from the village
   - [ ] Chapters 95–101: one board on trial each, measured on 60 hint-led seeds like the first three,
         then played on a phone
+  - [ ] New mechanics and board shapes: candidates proposed, the best three mechanics built with a
+        board on trial each, and new board shapes tried, then played on a phone
 - [ ] Add the chapters to `PLANS` in `src/data/hollowMineLevels.js`, with names, stops and tips.
       Consider a new file if this one, already 1,720 lines, gets harder to read
 - [ ] Add French names, stops and tips to `src/i18n/fr.json`
@@ -534,6 +542,8 @@ the next release should lean on boards and new mechanics.
 - **A sixteenth era after all, on the Moon only** (owner, 10 November 2026). Playing the endgame, the
   owner found too little to do or build, especially on the Moon. New Hollow Rising joins this release.
   It replaces the earlier "not a sixteenth era yet": it does not re-art the valley.
+- **New mechanics and board shapes in the pack** (owner, 10 November 2026), not only pairings of
+  existing mechanics.
 - **60 new boards** (owner, 10 November 2026): chapters 92–101, levels 547–606, sized for two new eras
   of town rather than waiting for step 2's income figures.
 - **The Quiet Signal joins this release too** (owner, 10 November 2026): the era after New Hollow
