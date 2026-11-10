@@ -21,7 +21,9 @@ it('loads exactly the board sprites the game always drew, from their definitions
       ...['chain', 'seal', 'exit', 'seal-ruby', 'seal-sapphire', 'seal-emerald'].map(
         (type) => `tile-${type}`,
       ),
-      ...['lantern', 'survey', 'core'].map((type) => `tile-${type}`),
+      ...['lantern', 'survey', 'core', 'trace', 'crossgrain', 'chord'].map(
+        (type) => `tile-${type}`,
+      ),
       ...['stone', 'reinforced', 'cracked'].map((type) => `block-${type}`),
       ...['frost', 'cracked'].map((type) => `ice-${type}`),
     ].sort(),

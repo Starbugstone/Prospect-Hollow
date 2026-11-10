@@ -38,12 +38,13 @@ const boardCenterIndex = (cols, rows) => {
   return Math.min(Math.floor(cells / 2), cells - 1);
 };
 
-function resolveMatches(store, { board, tiles, matches, bonuses, pendingBonus }) {
+function resolveMatches(store, { board, tiles, matches, bonuses, pendingBonus, swap }) {
   return tileManager.getResolution({
     gemTypes: store.currentBoardLayout?.gemTypes ?? BASE_GEM_TYPES,
     board,
     tiles,
     matches,
+    swap,
     cols: store.boardCols,
     rows: store.boardRows,
     ...(bonuses ? { bonuses } : {}),
@@ -334,6 +335,7 @@ export async function resolveSwap(store, aIndex, bIndex, { activateInPlace = fal
       matches: evaluation.matches,
       bonuses: evaluation.bonuses,
       pendingBonus: evaluation.pendingBonus,
+      swap: evaluation.swap,
     });
     if (resolution.steps.length && evaluation.bonusSwap) {
       const activation = resolution.steps.find((step) =>

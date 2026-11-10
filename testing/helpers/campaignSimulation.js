@@ -40,6 +40,14 @@ export function simulateCampaignLevel(level, seed, { observe } = {}) {
       craftedBonuses = 0,
       coreBonuses = 0,
       sporeBursts = 0,
+      traceActivations = 0,
+      traceGateHits = 0,
+      grainDirectionSplits = 0,
+      grainBlastSplits = 0,
+      chordColourFills = 0,
+      chordWildFills = 0,
+      internalRefills = 0,
+      lowerWingRefills = 0,
       blastOnlyHits = 0,
       diagonalPearlDrops = 0;
     const blastHealth = tiles.map((tile) => (tile.bonusOnly ? tile.health : 0));
@@ -103,12 +111,29 @@ export function simulateCampaignLevel(level, seed, { observe } = {}) {
         craftedBonuses += (step.bonuses ?? []).filter((bonus) => bonus.core === undefined).length;
         coreBonuses += (step.bonuses ?? []).filter((bonus) => bonus.core !== undefined).length;
         sporeBursts += step.sporeBursts?.length ?? 0;
+        for (const change of step.crystalChanges ?? [])
+          if (change.signal === 'crossgrain') {
+            if (change.blast) grainBlastSplits += change.before - change.after;
+            else grainDirectionSplits += change.before - change.after;
+          } else if (change.signal === 'chord') {
+            if (change.blast) chordWildFills += change.before - change.after;
+            else chordColourFills += change.before - change.after;
+          }
+        for (const spawn of step.spawns ?? []) {
+          const entry = spawn.path?.[0];
+          if (entry >= cols && tiles[entry - cols]?.type === 'void') internalRefills++;
+          if (entry === 6 * cols || entry === 6 * cols + 1) lowerWingRefills++;
+        }
+        traceActivations += step.traceCopies?.length ?? 0;
+        const copied = new Set((step.traceCopies ?? []).flatMap((copy) => copy.targets));
         diagonalPearlDrops += (step.drops ?? []).filter(
           (drop) => drop.gem?.type === 'relic' && drop.from % cols !== drop.to % cols,
         ).length;
         for (const update of step.tileUpdates ?? []) {
           if (update.health === undefined || !tiles[update.index].bonusOnly) continue;
-          blastOnlyHits += Math.max(0, blastHealth[update.index] - update.health);
+          const damage = Math.max(0, blastHealth[update.index] - update.health);
+          blastOnlyHits += damage;
+          if (copied.has(update.index)) traceGateHits += damage;
           blastHealth[update.index] = update.health;
         }
         score += clearScore(step, index);
@@ -129,6 +154,14 @@ export function simulateCampaignLevel(level, seed, { observe } = {}) {
       craftedBonuses,
       coreBonuses,
       sporeBursts,
+      traceActivations,
+      traceGateHits,
+      grainDirectionSplits,
+      grainBlastSplits,
+      chordColourFills,
+      chordWildFills,
+      internalRefills,
+      lowerWingRefills,
       blastOnlyHits,
       diagonalPearlDrops,
     };

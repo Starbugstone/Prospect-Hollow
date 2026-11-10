@@ -385,6 +385,9 @@ const themes = {
 // Every deeper chapter uses the same names and pictures when a familiar goal
 // returns in another cavern. Scenery changes; the player's learned rule does not.
 const deepSignals = {
+  chord: { id: 'chord', texture: 'tile-chord' },
+  crossgrain: { id: 'crossgrain', texture: 'tile-crossgrain' },
+  trace: { id: 'trace-twins', texture: 'tile-trace' },
   spore: themes['glowshroom-grotto'].signals.spore,
   core: themes['geothermal-forge'].signals.core,
 };
@@ -398,6 +401,8 @@ export const mineRelicAppearance = (theme) => themes[theme]?.relic ?? relic;
 
 // One sprite catalog drives both build-time rasterization and SVG recovery.
 export const DEEP_MINE_SPRITES = [
+  ['tile-crossgrain-horizontal', 'obstacles/crossgrain-horizontal.svg'],
+  ['tile-crossgrain-vertical', 'obstacles/crossgrain-vertical.svg'],
   ['tile-dust', 'obstacles/dust.svg'],
   ['tile-fossil', 'obstacles/fossil.svg'],
   ['tile-root-knot', 'obstacles/root-knot.svg'],

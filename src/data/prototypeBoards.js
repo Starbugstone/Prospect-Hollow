@@ -38,6 +38,15 @@ const TRIAL_CHAPTERS = {
   },
 };
 
+TRIAL_CHAPTERS['crystal-seams'] = {
+  chapter: 91,
+  plan: 24,
+  name: 'Crystal seams',
+  theme: 'starfall-cavern',
+  motif: 'pocket',
+  rows: 9,
+};
+
 const BOARDS = [
   {
     key: 'deep-lantern-routes',
@@ -103,6 +112,72 @@ const BOARDS = [
     },
   },
 ];
+
+BOARDS.push({
+  key: 'trace-twins-first-impression',
+  id: 548,
+  trial: 'crystal-seams',
+  stop: 'First impression',
+  level: {
+    board: '......./......./...t.../......./......./......./..BtB../......./.......',
+    ice: 0,
+    chestTarget: 7760,
+    tip: 'Two matching diamond facets link the stamps. Make a horizontal match on the upper stamp: its copy lands across the lower stamp and the two dark gates beside it. Only your swap fires a stamp; cascades leave it waiting. A vertical match sends a column instead.',
+  },
+});
+
+BOARDS.push({
+  key: 'crossgrain-narrow-neck',
+  id: 554,
+  trial: 'crystal-seams',
+  stop: 'Across the grain',
+  level: {
+    board: '......./......./...i.../___i___/___i___/_....._/......./......./.......',
+    ice: 0,
+    chestTarget: 10720,
+    tip: 'The crystal neck has no room for horizontal matches. Match down its spine to seal vertical cracks, then aim a bonus at the remaining cracks. In the wide chamber either direction can be matched. Each blast seals only one crack per move.',
+  },
+});
+
+BOARDS.push({
+  key: 'chord-changing-colours',
+  id: 560,
+  trial: 'crystal-seams',
+  stop: 'A changing chord',
+  level: {
+    board: '......./......./......./..szs../......./......./......./......./.......',
+    ice: 0,
+    chestTarget: 8000,
+    tip: 'Fill each crystal’s three sockets with different colours by matching on it. A repeated colour does nothing. The phase seal between them changes its gem after each move: watch its next colour to prepare a new chord. A direct blast adds one white wildcard socket, once per move.',
+  },
+});
+
+BOARDS.push(
+  {
+    key: 'arrowhead-inner-spring',
+    id: 549,
+    trial: 'crystal-seams',
+    stop: 'The inner spring',
+    level: {
+      board: '...____/.....__/......./__...../____.../__...../......./.....__/...____',
+      ice: 26,
+      chestTarget: 10480,
+      tip: 'The cavern points like a crystal arrowhead. Clear the ice on both wings and the point. The lower-left wing refills from its own spring inside the cavern; gems never cross the missing cells. Craft in the broad shelves to reach the narrow ends.',
+    },
+  },
+  {
+    key: 'twin-windows-crafting-spine',
+    id: 555,
+    trial: 'crystal-seams',
+    stop: 'Between two windows',
+    level: {
+      board: '......./......./......./._..._./._..._./......./......./......./.......',
+      ice: 30,
+      chestTarget: 14240,
+      tip: 'Two short windows leave a three-cell-wide crystal spine. Craft matches in the spine or the broad chambers above and below. Each column below a window refills on its own; use the open sides to reach the remaining ice.',
+    },
+  },
+);
 
 export const PROTOTYPE_BOARDS = BOARDS.map((board) => ({
   ...board,

@@ -1,3 +1,4 @@
+import { traceCopies, crystalHits } from './CrystalMechanics.js';
 import { MatchEngine } from './MatchEngine.js';
 import { BASE_GEM_TYPES, createGem, randomGemType, GEM_TYPES } from './GemFactory.js';
 import { detectBonusFromMatches } from './MatchPatterns.js';
@@ -36,6 +37,7 @@ export class TileManager {
     rows,
     bonuses = [],
     pendingBonus = null,
+    swap = null,
     gemTypes = BASE_GEM_TYPES,
   }) {
     if (!matches?.length) {
@@ -63,11 +65,13 @@ export class TileManager {
       orientation: match.orientation,
       fusion: match.fusion,
       sporeBursts: match.sporeBursts,
+      traceCopies: match.traceCopies,
       blasts: match.blasts,
     }));
     let totalLayersCleared = 0;
     // A charge core gains at most one charge per move, however long the cascade.
     const chargedCores = new Set();
+    const blastedCrystals = new Set();
     let relicsCollected = 0;
     let queuedSpores = [];
     let phased = false;
@@ -179,12 +183,64 @@ export class TileManager {
           ? { sporeBursts: pendingMatches.flatMap((match) => match.sporeBursts ?? []) }
           : {}),
         ...(lensBeams.length ? { lensBeams } : {}),
+        ...(pendingMatches.some((match) => match.traceCopies)
+          ? { traceCopies: pendingMatches.flatMap((match) => match.traceCopies ?? []) }
+          : {}),
       };
 
+      const crystalUpdates = crystalHits(
+        tiles,
+        pendingMatches,
+        pendingMatches
+          .filter((match) => !GEM_TYPES.includes(match.type))
+          .flatMap((match) => match.indices),
+        blastedCrystals,
+      );
+      for (const update of crystalUpdates) {
+        const { index, crystalBlast, ...state } = update;
+        totalLayersCleared += tiles[index].signalHealth - state.signalHealth;
+        if (crystalBlast) blastedCrystals.add(index);
+        step.crystalChanges ??= [];
+        step.crystalChanges.push({
+          index,
+          signal: tiles[index].signal,
+          before: tiles[index].signalHealth,
+          after: state.signalHealth,
+          blast: crystalBlast,
+        });
+        Object.assign(tiles[index], state);
+        step.tileUpdates.push({ index, ...state });
+      }
+
+      for (const copy of traceCopies(
+        tiles,
+        pendingMatches,
+        totalCols,
+        totalRows,
+        steps.length === 0 && !!swap,
+      )) {
+        queuedSpores.push({ ...copy, kind: 'trace', targets: copy.targets });
+        for (const index of [copy.from, copy.to]) {
+          if (!tiles[index].signalHealth) continue;
+          tiles[index].signalHealth = 0;
+          totalLayersCleared++;
+          step.tileUpdates.push({ index, signalHealth: 0 });
+        }
+      }
+
       for (const index of hasSignals
-        ? signalTargets(tiles, [...impacted, ...protectedIndices], totalCols, totalRows, [
-            ...matchedIndices,
-          ])
+        ? signalTargets(
+            tiles,
+            [...impacted, ...protectedIndices],
+            totalCols,
+            totalRows,
+            pendingMatches
+              .filter((match) => GEM_TYPES.includes(match.type))
+              .map((match) => ({
+                ...match,
+                indices: match.indices.filter((index) => matchedIndices.has(index)),
+              })),
+          )
         : []) {
         const core = isChargeCore(tiles[index]);
         if (core && chargedCores.has(index)) continue;
@@ -350,7 +406,15 @@ export class TileManager {
           targets: bursts.flatMap((burst) => burst.targets),
           blasts,
         });
-        pendingMatches = [{ type: 'spore-burst', indices, sporeBursts: bursts, blasts }];
+        pendingMatches = [
+          {
+            type: bursts.some((burst) => burst.kind === 'trace') ? 'trace-copy' : 'spore-burst',
+            indices,
+            blasts,
+            sporeBursts: bursts.filter((burst) => burst.kind !== 'trace'),
+            traceCopies: bursts.filter((burst) => burst.kind === 'trace'),
+          },
+        ];
         continue;
       }
 

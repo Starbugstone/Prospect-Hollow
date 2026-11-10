@@ -1,3 +1,4 @@
+import { isCrystalSignal } from './CrystalMechanics.js';
 import { neighborsOf, isAnchored } from './TileRules.js';
 import { GEM_TYPES } from './GemFactory.js';
 import { isPlayableCell } from './BoardTopology.js';
@@ -5,7 +6,10 @@ import { isPlayableCell } from './BoardTopology.js';
 // Floor markers never anchor gems or obstruct gravity. A lantern lights only when a
 // match or blast clears its own cell. Survey markers light in numbered order, from a
 // match or blast on or beside them; ordinary lanterns can be lit in any order.
-export function signalTargets(tiles, impacted, cols, rows, ordinaryIndices = impacted) {
+export function signalTargets(tiles, impacted, cols, rows, ordinaryMatches = null) {
+  const ordinaryIndices = ordinaryMatches
+    ? ordinaryMatches.flatMap((match) => match.indices)
+    : impacted;
   const survey = tiles.reduce(
     (next, tile) =>
       tile.signalHealth && tile.surveyOrder ? Math.min(next, tile.surveyOrder) : next,
@@ -22,6 +26,7 @@ export function signalTargets(tiles, impacted, cols, rows, ordinaryIndices = imp
     (index) =>
       isPlayableCell(tiles[index]) &&
       tiles[index]?.signalHealth > 0 &&
+      !isCrystalSignal(tiles[index]) &&
       (tiles[index].signal !== 'lantern' || hit.has(index)) &&
       (tiles[index].signal !== 'spore' || sporeTouched.has(index)) &&
       (!tiles[index].surveyOrder || tiles[index].surveyOrder === survey),

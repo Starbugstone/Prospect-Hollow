@@ -206,6 +206,10 @@ export const MINE_ELEMENTS = Object.freeze([
 // Every other mine element is deliberately not a mastery family: common obstacles, or
 // too few levels. A new obstacle must join MINE_ELEMENTS or this list.
 export const NON_MASTERY_ELEMENTS = Object.freeze([
+  // Trial-only crystal mechanics have no campaign mastery tally yet.
+  'trace-twins',
+  'crossgrain',
+  'chord',
   'encased-fossil',
   'fossil',
   'spore',

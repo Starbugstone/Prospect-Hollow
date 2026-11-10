@@ -1,3 +1,4 @@
+import { applyCrystalSpec } from './CrystalMechanics.js';
 import { createGem } from './GemFactory.js';
 import { MatchEngine } from './MatchEngine.js';
 import { LEVEL_COUNT, CHAPTERS, getLevelGemTypes } from '../../data/campaign.js';
@@ -372,6 +373,7 @@ function buildExpansionLevel(id, spec, trial) {
   const iceCellCount = Math.min(iceCells.length, Math.ceil(spec.ice * 0.75));
   layIce(tiles, iceCells, rng, (cell) => iceRank(cell, cols, rows, motif), iceCellCount, spec);
   applyDeepMineSpec(tiles, spec);
+  applyCrystalSpec(tiles, spec);
   if (spec.gravity === 'funnel') {
     for (let row = 0; row < rows - 1; row++) {
       const nextCols = Array.from({ length: cols }, (_, col) => col).filter((col) =>

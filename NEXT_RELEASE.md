@@ -266,8 +266,9 @@ explained first.
         listed under Boards on trial in Settings (More options), from the village
   - [ ] Chapters 95–101: one board on trial each, measured on 60 hint-led seeds like the first three,
         then played on a phone
-  - [ ] New mechanics and board shapes: candidates proposed, the best three mechanics built with a
-        board on trial each, and new board shapes tried, then played on a phone
+  - [x] New mechanics and board shapes: candidates proposed; Trace twins, Crossgrain crystal and
+        Chord crystal built with a board on trial each; Arrowhead and fixed Twin windows tried
+  - [ ] Play the five new mechanic/shape trials on a real phone and confirm the teaching boards
 - [ ] Add the chapters to `PLANS` in `src/data/hollowMineLevels.js`, with names, stops and tips.
       Consider a new file if this one, already 1,720 lines, gets harder to read
 - [ ] Add French names, stops and tips to `src/i18n/fr.json`
@@ -282,6 +283,29 @@ explained first.
 - [ ] Update hardcoded counts: `scripts/measure-economy-balance.mjs` (546), `docs/README.md`,
       `docs/town-demo.md`, `docs/settlement-eras.md`
 - [ ] Add a guide for levels 547–606, its own page beside `docs/hollow-mine-levels.md`
+
+### Approved new mechanics and shapes
+
+Owner, 10 November 2026: **Trace twins, Crossgrain crystal, Chord crystal**;
+**Crystal stair renamed Arrowhead**, clearing only, and **Twin windows fixed**
+(two-row windows, three-wide spine). Echo twins and the other proposals are not
+being built. [Rules, tradeoffs and measurements](docs/new-mechanics.md) keep the
+review record.
+
+Five debug-only trials use slots 548, 554, 560, 549 and 555. All 300 hint-led
+runs (60 per board) finish; medians are 6 / 14 / 6 / 15 / 12 moves respectively.
+Chest targets are exactly 80% of median score. Trace copies damage a gate in
+60/60 runs, Crossgrain needs both direction and blast progress in its narrow
+neck, and Chord fills a median five of six sockets by changing colours. The
+shapes retain a possible three-cell match line at every playable cell. All five
+motion scenarios pass; physical phone play remains unchecked above.
+
+Trace copies only the player's swap matches on the stamp, including every line
+of a T/L. Cascades and blasts do not spend it. Copies are discrete cells, not
+beams: **lenses do not turn them**. Its trial contains no lenses. Crossgrain
+blasts seal only one crack per move. Chord counts only matches on its own cell;
+a blast fills one white wildcard socket per move. Each completed marker leaves
+an ordinary cell. The three trial-only elements are deliberately non-mastery.
 
 ### What to check beyond the boards
 
