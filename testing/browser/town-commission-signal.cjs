@@ -1,5 +1,5 @@
 // A player can see a commission from the moment it arrives until it stands, in the real game
-// at desktop and phone sizes, in English and French. Needs `npm run demo:eras` first, then the
+// at desktop and phone sizes, in English and French. One real puzzle is won on the way. Needs `npm run demo:eras` first, then the
 // Docker Vite/Playwright setup of moon-input.cjs. PH_SCREENSHOT_DIR saves captures.
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -70,13 +70,69 @@ const finishWork = (page, site) =>
     work.wins = landmarkLevel(work.level).puzzles;
     window.campaign.importSave(createSaveFile(profile));
   }, site);
+// Wins the next level in the real mine, taking the hint each move as the level simulations do.
+// Moves stay unlimited: the count below only stops a broken run from hanging the check.
+async function winPuzzle(page) {
+  await page.evaluate(() => {
+    const stores = document.querySelector('#app').__vue_app__.config.globalProperties.$pinia._s;
+    window.game = stores.get('game');
+    return window.game.startLevel(window.campaign.nextLevel, 'normal');
+  });
+  await page.waitForFunction(() => window.game.renderer && !window.game.animationInProgress);
+  const guide = page.locator('dialog[open].obstacle-guide');
+  if (await guide.count()) await guide.locator('.icon-button').click();
+  for (let moves = 0; moves < 600;) {
+    const step = await page.evaluate(async () => {
+      const game = window.game;
+      if (game.levelCleared) return 'cleared';
+      if (game.animationInProgress || game.inputPaused) return 'busy';
+      game.computeHintMove();
+      const hint = game.hintMove;
+      if (!hint) return 'busy';
+      if (hint.activateInPlace) await game.activateBonusGem(hint.swap.aIndex);
+      else await game.resolveSwap(hint.swap.aIndex, hint.swap.bIndex);
+      return 'moved';
+    });
+    if (step === 'cleared') break;
+    if (step === 'moved') moves++;
+    else await page.waitForTimeout(200);
+  }
+  assert.ok(await page.evaluate(() => window.game.levelCleared), 'the puzzle was won');
+  await page.evaluate(() => window.game.exitLevel());
+  await page.locator(PILL).waitFor();
+}
+// Taps the pill of a finished work and sees its unveiling through.
+async function unveil(page) {
+  const before = await page.locator(PILL).getAttribute('aria-label');
+  await page.locator(PILL).click();
+  await page.waitForFunction(
+    ({ pill, before }) => {
+      [...document.querySelectorAll('button')]
+        .find((button) => button.textContent.trim() === 'Skip cinematic')
+        ?.click();
+      const now = document.querySelector(pill)?.getAttribute('aria-label');
+      return !!now && now !== before;
+    },
+    { pill: PILL, before },
+    { polling: 500 },
+  );
+}
+const count = (page) => page.locator(`${PILL} b`).innerText();
 const state = (page, expected) =>
   page.locator(`${PILL}[data-commission-state="${expected}"]`).waitFor({ timeout: 20000 });
 async function assertPillClear(page, viewport, label) {
   const box = await page.locator(PILL).boundingBox();
   assert.ok(box.x >= 0 && box.x + box.width <= viewport.width, `${label}: within the width`);
   assert.ok(box.height >= 44, `${label}: large enough to tap`);
-  for (const selector of ['.town-project-goal:not(.town-commission-goal)', '.town-map-notice']) {
+  // The pill draws over the map's other controls, so "nothing covers the pill" cannot see it
+  // hiding one of them: the Moon's header wraps to a second row on a phone.
+  for (const selector of [
+    '.town-project-goal:not(.town-commission-goal)',
+    '.town-map-notice',
+    '.town-map-wallet',
+    '.town-moon-back',
+    '.town-moon-title',
+  ]) {
     const other = page.locator(`.town-map-frame ${selector}`);
     if (await other.count()) {
       const bounds = await other.first().boundingBox();
@@ -135,11 +191,27 @@ async function run(browser, viewport, name) {
   await assertPillClear(page, viewport, `${name} work`);
   await save(page, `${name}-work`);
 
+  // A real puzzle, won in the mine, builds both commissions and moves the pill on.
+  assert.match(await count(page), /^0\//, `${name}: no puzzle built yet`);
+  await winPuzzle(page);
+  await state(page, 'work');
+  assert.match(await count(page), /^1\//, `${name}: one won puzzle shows on the pill`);
+
   await finishWork(page, 'earthlight-conservatory');
   await state(page, 'ready');
   await page.locator(`${PILL} img[src*="builder-hammer"]`).waitFor();
   await assertPillClear(page, viewport, `${name} ready`);
   await save(page, `${name}-ready`);
+
+  // Unveiled, each commission has four more stages to pay for: the pill counts them.
+  await finishWork(page, 'homecoming-commons');
+  await unveil(page);
+  await state(page, 'ready');
+  await unveil(page);
+  await state(page, 'funding');
+  assert.equal(await count(page), '1/5', `${name}: one stage of five stands`);
+  await assertPillClear(page, viewport, `${name} funding`);
+  await save(page, `${name}-funding`);
 
   assert.deepEqual(errors, [], `${name}: page errors`);
   await page.close();

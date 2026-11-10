@@ -154,7 +154,8 @@
 
     <template v-else>
       <p v-if="commission" class="monument-intro" data-commission-request>
-        {{ t(commission.request) }} <small>{{ t(commission.writer) }}</small>
+        {{ t(commission.request) }}
+        <small class="monument-writer">{{ t(commission.writer) }}</small>
       </p>
       <p class="monument-intro">
         {{
@@ -378,6 +379,17 @@ onBeforeUnmount(() => emit('preview', null));
   color: #5f6d5f;
   font-size: 13px;
   line-height: 1.5;
+}
+/* A letter is signed on its own line, not run on after its last sentence. */
+.monument-writer {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  font-style: italic;
+  text-align: right;
+}
+.monument-writer::before {
+  content: '— ';
 }
 .monument-note {
   display: flex;

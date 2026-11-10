@@ -159,6 +159,7 @@
             tourOpen
           "
           :next-level="campaign.nextLevel"
+          :replays="!campaign.newLevelsLeft"
           :raid="playingRaid"
           :raid-defense-ids="readyRaidDefenses"
           :construction="construction"
@@ -390,9 +391,13 @@
           @mine="goMining"
           @advance-era="beginEra"
         />
-        <p v-if="!directoryPlots.length" role="status">
+        <p v-if="!directoryPlots.length" class="town-build-empty" role="status">
           {{
-            t('No purchases available. Earn coins in the mine or finish your current construction.')
+            t(
+              townBuilt
+                ? 'Every building is built. Monuments and commissions are optional.'
+                : 'No purchases available. Earn coins in the mine or finish your current construction.',
+            )
           }}
         </p>
         <section class="town-building-list" :aria-label="t('Available buildings')">
@@ -914,6 +919,11 @@ const goal = computed(() => campaign.townGoal);
 const gate = computed(() => eraGate(town.value));
 const directoryPlots = computed(() =>
   availableParcels(town.value, campaign.builderHammers, campaign.openOffers),
+);
+// Nothing left to buy because everything stands, rather than for want of coins: the same
+// test as the next step's "Your village is complete".
+const townBuilt = computed(
+  () => !goal.value && !gate.value.available && !activeProjects.value.length,
 );
 // During the tutorial Build lists only the next building and finished constructions, so a
 // new player meets one clear choice instead of a column of free plots.

@@ -66,14 +66,19 @@ const LIST = {
 // `{ kind, text }` for a building, or null when a read-only visitor sees nothing.
 // `kind` is the state, so a view can choose its markup: the construction count also
 // carries a `title`. `context: 'list'` gives the Build tab's wording. The valley's labels
-// add the mine (`nextLevel`) and the visitor view (`readOnly`), which shows levels only.
+// add the mine (`nextLevel`, or none once every level is done and the mine offers replays)
+// and the visitor view (`readOnly`), which shows levels only.
 export function buildingStatus(
   town,
   id,
   { context = 'map', readOnly = false, nextLevel, ...state } = {},
 ) {
   if (readOnly) return town.buildings?.[id] ? { kind: 'built', text: MAP.built(town, id) } : null;
-  if (id === 'mine') return { kind: 'mine', text: t('Level {level}', { level: nextLevel }) };
+  if (id === 'mine')
+    return {
+      kind: 'mine',
+      text: nextLevel == null ? t('Replay levels') : t('Level {level}', { level: nextLevel }),
+    };
   const kind = buildingState(town, id, state);
   const wording = (context === 'list' && LIST[kind]) || MAP[kind];
   const status = { kind, text: wording(town, id, state.need) };

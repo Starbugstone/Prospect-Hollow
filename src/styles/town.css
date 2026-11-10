@@ -1043,7 +1043,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 8px 16px 8px 22px;
-  background: #fbf8effa;
+  /* Opaque: a see-through heading showed the lines scrolling under it as ghost text. */
+  background: #fbf8ef;
   border-bottom: 1px solid #dfdccd;
   font-size: 12px;
 }
@@ -1753,6 +1754,12 @@ html:has(.town-museum[open]) {
   border-bottom: 1px solid #e6dfcb;
   background: none;
 }
+.town-build-empty {
+  margin: 0 0 14px;
+  color: #5f6d5f;
+  font-size: 13px;
+  line-height: 1.5;
+}
 .town-show-all {
   width: 100%;
   margin: 2px 0 14px;
@@ -2078,6 +2085,13 @@ html:has(.town-museum[open]) {
 @media (max-width: 599px) {
   .town-map-frame:has(.town-moon-header) .town-visitor-notice {
     top: max(164px, calc(env(safe-area-inset-top) + 164px));
+  }
+  /* The goal pills would cover the header's second row, so they start below it. */
+  .town-map-frame:has(.town-moon-header) .town-project-goal {
+    top: calc(max(12px, env(safe-area-inset-top)) + 152px);
+  }
+  .town-map-frame:has(.town-moon-header) .town-project-goal + .town-commission-goal {
+    top: calc(max(12px, env(safe-area-inset-top)) + 202px);
   }
 }
 .town-moon-back,

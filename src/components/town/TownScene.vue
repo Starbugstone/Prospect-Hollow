@@ -273,6 +273,8 @@ const props = defineProps({
   reducedMotion: Boolean,
   paused: Boolean,
   nextLevel: Number,
+  // Every level is done: the mine's label offers replays instead of naming the last level.
+  replays: Boolean,
   raid: Object,
   raidDefenseIds: { type: Array, default: () => [] },
   construction: Object,
@@ -457,7 +459,7 @@ const labelStatus = computed(() =>
       id,
       buildingStatus(props.town, id, {
         readOnly: props.readOnly,
-        nextLevel: props.nextLevel,
+        nextLevel: props.replays ? null : props.nextLevel,
         indicator: indicators.value[id],
         available: availableIds.value.includes(id),
         need: needHints.value[id],
@@ -479,9 +481,10 @@ const actionLabel = (id) =>
 const placeName = (id) => (id === 'mine' ? t('Mine') : buildingName(id));
 const plotLabel = (id) => {
   if (props.readOnly) return t(id === 'mine' ? 'Mine' : BUILDING_BY_ID[id].name);
-  return id === 'mine'
-    ? t('Enter the mine: play level {level}', { level: props.nextLevel })
-    : t('Choose {building}', { building: t(BUILDING_BY_ID[id].name) });
+  if (id !== 'mine') return t('Choose {building}', { building: t(BUILDING_BY_ID[id].name) });
+  return props.replays
+    ? t('Enter the mine: replay levels')
+    : t('Enter the mine: play level {level}', { level: props.nextLevel });
 };
 // Labels sit at the scene's top-left corner and move with `translate`, which the
 // browser composites without laying out the page on every camera frame.
