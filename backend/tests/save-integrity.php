@@ -692,8 +692,18 @@ assertIntegrity(
     'a paid fifth service stage from version 1 refunds once during recovery',
 );
 $extended = $rules;
-$lastEra = end($rules['eraOrder']);
-$extended['eraOrder'][] = 'orbital';
+// The last playable era: an era still being built is in the catalog but not enabled.
+$playableEras = array_values(
+    array_filter(
+        $rules['eraOrder'],
+        static fn(string $era): bool => $rules['eras'][$era]['enabled'],
+    ),
+);
+$lastEra = $playableEras[count($playableEras) - 1];
+$extended['eraOrder'] = array_merge(
+    array_slice($rules['eraOrder'], 0, array_search($lastEra, $rules['eraOrder'], true) + 1),
+    ['orbital'],
+);
 $extended['eras']['orbital'] = $rules['eras'][$lastEra];
 $extendedValidator = new SaveIntegrity($extended);
 $future = integrityData($before);
@@ -716,7 +726,7 @@ assertIntegrity(
 );
 // An era with a `modernizes` list leaves its other buildings in their earlier finish.
 $modernizes = $rules['eras'][$lastEra]['modernizes'] ?? null;
-$previousEra = $rules['eraOrder'][count($rules['eraOrder']) - 2];
+$previousEra = $playableEras[count($playableEras) - 2];
 assertIntegrity(
     is_array($modernizes) && in_array('square', $modernizes, true),
     'the latest era lists the landmarks it modernizes',
@@ -2008,7 +2018,7 @@ assertIntegrity(
 );
 
 // Version 3 chests follow the town era, while queued older receipts keep version 2.
-$latestEra = end($rules['eraOrder']);
+$latestEra = $lastEra;
 $eraChest = $chestCoins($deepLevel, 3, $latestEra);
 $frontierChest = $chestCoins($deepLevel, 3, $overflowBefore['town']['era']);
 assertIntegrity(
