@@ -136,7 +136,10 @@ export class BoardAnimator {
   get reducedMotion() {
     return this.settings?.reducedMotion ?? false;
   }
+  // The level's own theme when the store names one. A board on trial is numbered past the
+  // campaign, so its chapter cannot be looked up from its id.
   get theme() {
+    if (this.levelTheme) return this.levelTheme;
     const level = this.levelId ?? 1;
     if (this.themeLevel !== level) {
       this.themeLevel = level;

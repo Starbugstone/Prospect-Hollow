@@ -152,6 +152,24 @@
         {{ t('Copy this puzzle for a bug report') }}
       </button>
       <p v-if="runCopied" role="status">{{ t('Puzzle copied. Paste it into your bug report.') }}</p>
+      <div v-if="trialBoards.length" class="trial-boards">
+        <h3>{{ t('Boards on trial') }}</h3>
+        <p>
+          {{
+            t(
+              'Play a board before it joins the mine. Nothing is saved: no rewards, records or powers.',
+            )
+          }}
+        </p>
+        <button
+          v-for="board in trialBoards"
+          :key="board.key"
+          type="button"
+          @click="playTrial(board.key)"
+        >
+          {{ t(prototypeName(board.key)) }}
+        </button>
+      </div>
       <div class="keyboard-guide">
         <h3>{{ t('Keyboard controls') }}</h3>
         <p>
@@ -190,6 +208,7 @@ import { useCampaignStore } from '../stores/campaignStore';
 import { useGameStore } from '../stores/gameStore';
 import { settledRunReport } from '../stores/game/runLog';
 import { debugToolsAllowed } from '../services/debugTools';
+import { PROTOTYPE_BOARDS, prototypeName } from '../data/prototypeBoards';
 import { downloadSaveFile, saveFileName } from '../services/saveTransfer';
 import { privacyUrl } from '../services/appRoute';
 import { useSaveImport } from '../composables/useSaveImport';
@@ -235,13 +254,24 @@ const game = useGameStore();
 const canCopyRun = computed(() => debugToolsAllowed() && !!game.runLog);
 const runCopied = ref(false);
 async function copyRun() {
-  const text = JSON.stringify(await settledRunReport(game));
+  const report = await settledRunReport(game);
+  // The puzzle ended while its last move settled: there is no run left to copy.
+  if (!report) return;
+  const text = JSON.stringify(report);
   try {
     await navigator.clipboard.writeText(text);
     runCopied.value = true;
   } catch {
     window.prompt(t('Copy this puzzle for a bug report'), text);
   }
+}
+// Preprod only too: boards on trial, so they can be played on a phone, which has no console.
+// Offered from the village, where starting one cannot cut a running puzzle short.
+const trialBoards = computed(() =>
+  debugToolsAllowed() && !game.sessionActive && !campaign.readOnly ? PROTOTYPE_BOARDS : [],
+);
+function playTrial(key) {
+  if (game.startLevel(key, 'prototype')) emit('close');
 }
 const confirmReset = ref(false);
 function resetProgress() {
@@ -647,6 +677,30 @@ input[type='checkbox'] {
   display: block;
   margin-top: 10px;
   line-height: 1.6;
+}
+.trial-boards {
+  display: grid;
+  gap: 8px;
+  margin: 24px 0;
+}
+.trial-boards h3,
+.trial-boards p {
+  margin: 0;
+}
+.trial-boards p {
+  color: #d6c4db;
+  font-size: 12px;
+  line-height: 1.7;
+}
+.trial-boards button {
+  min-height: 44px;
+  padding: 10px;
+  border: 1px solid #93789c;
+  border-radius: 6px;
+  background: transparent;
+  color: #ead3e4;
+  font-size: 12px;
+  text-align: left;
 }
 .keyboard-guide {
   border-top: 1px solid var(--line);

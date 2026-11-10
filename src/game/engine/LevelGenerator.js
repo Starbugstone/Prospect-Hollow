@@ -397,8 +397,17 @@ function buildExpansionLevel(id, spec, trial) {
       )
         tile.fall = 'up';
   // A route may be left closed, so nothing behind its wall may count toward the goal.
+  // Cargo waiting there, or the exit it must reach, would make that route required too.
   const routes = new Set(tiles.flatMap((tile) => (tile.routeWall ? [tile.waist] : [])));
-  if (tiles.some((tile) => tile.sealed && routes.has(tile.chamber) && layerCount(tile) > 0))
+  const cargo = new Set(layout.initialTilePlacements.map((cell) => cell.y * cols + cell.x));
+  if (
+    tiles.some(
+      (tile, index) =>
+        tile.sealed &&
+        routes.has(tile.chamber) &&
+        (layerCount(tile) > 0 || tile.exit || cargo.has(index)),
+    )
+  )
     throw new Error(`Level ${id}: a route chamber must hold nothing the goal counts`);
   const totalLayers = tiles.reduce((sum, tile) => sum + layerCount(tile), 0);
   const relicCount = layout.initialTilePlacements.length;

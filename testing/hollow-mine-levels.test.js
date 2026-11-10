@@ -9,33 +9,25 @@ import { HOLLOW_MINE_CHAPTERS, HOLLOW_MINE_LEVELS } from '../src/data/hollowMine
 import { obstaclesInLevel } from '../src/data/obstacles';
 import { generateLevelConfigs } from '../src/game/engine/LevelGenerator';
 import { cargoPath, cargoReachesExit } from '../src/game/engine/GravityFrames';
-import { bentBeams } from '../src/game/engine/LensBeams';
 import { HintEngine } from '../src/game/engine/HintEngine';
 import { PlayClock } from '../src/game/engine/PlayClock';
 import { layerCount } from '../src/game/engine/TileRules';
 import { useGameStore } from '../src/stores/gameStore';
 import { useCampaignStore } from '../src/stores/campaignStore';
+import {
+  flipped,
+  iceLayers as ice,
+  isExtraction as extraction,
+  opened,
+  strandedCargo,
+  unreachableStarglass,
+} from './helpers/boardRules';
 import { simulateCampaignLevel } from './helpers/campaignSimulation';
 
 const FIRST = 403;
 const levels = generateLevelConfigs();
 const hollow = levels.slice(FIRST - 1);
 const hints = new HintEngine();
-const ice = (tile) =>
-  tile.type !== 'blocker' && !tile.sealColor && !tile.phaseSeal && tile.fossilGroup == null
-    ? tile.health
-    : 0;
-// The board as it is once every sealed chamber has been broken into.
-const opened = (tiles) => tiles.map((tile) => ({ ...tile, sealed: false }));
-// The board after a gravity switch turns it over.
-const flipped = (tiles) =>
-  tiles.map((tile) =>
-    tile.type === 'void' ? tile : { ...tile, fall: tile.fall === 'up' ? undefined : 'up' },
-  );
-const extraction = (level) =>
-  level.board.some((gem) => gem?.type === 'relic') ||
-  level.tiles.some((tile) => tile.signal === 'lantern' || tile.signal === 'survey');
-
 beforeEach(() => setActivePinia(createPinia()));
 afterEach(() => {
   useGameStore().cancelHint();
@@ -143,20 +135,7 @@ describe('append-only floating seam chapters', () => {
   });
 
   it('gives every cargo piece a route to an exit once every chamber is open', () => {
-    for (const level of hollow) {
-      const { board, boardCols: cols, boardRows: rows } = level;
-      const tiles = opened(level.tiles);
-      // With a moon dial either gravity will do; a moon lock leaves gravity flipped.
-      const dial = tiles.some((tile) => tile.gravitySwitch === 'dial');
-      const lock = tiles.some((tile) => tile.gravitySwitch === 'lock');
-      const states = dial ? [tiles, flipped(tiles)] : lock ? [flipped(tiles)] : [tiles];
-      for (const [index, gem] of board.entries())
-        if (gem?.type === 'relic')
-          expect(
-            states.some((state) => cargoReachesExit(board, state, index, cols, rows)),
-            `level ${level.id} cell ${index}`,
-          ).toBe(true);
-    }
+    for (const level of hollow) expect(strandedCargo(level), `level ${level.id}`).toEqual([]);
   });
 
   it('keeps five colors per board except the chosen six-color levels', () => {
@@ -181,17 +160,8 @@ describe('append-only floating seam chapters', () => {
   it('lets some row or column beam reach every starglass through the lenses', () => {
     const lensLevels = hollow.filter((level) => level.tiles.some((tile) => tile.lensOnly));
     expect(lensLevels.length).toBeGreaterThan(0);
-    for (const level of lensLevels) {
-      const { boardCols: cols, boardRows: rows } = level;
-      const tiles = opened(level.tiles);
-      const lines = [
-        ...Array.from({ length: rows }, (_, index) => ({ axis: 'row', index })),
-        ...Array.from({ length: cols }, (_, index) => ({ axis: 'column', index })),
-      ];
-      const reach = new Set(lines.flatMap((line) => bentBeams(tiles, cols, rows, [line]).cells));
-      for (const [index, tile] of tiles.entries())
-        if (tile.lensOnly) expect(reach.has(index), `level ${level.id} cell ${index}`).toBe(true);
-    }
+    for (const level of lensLevels)
+      expect(unreachableStarglass(level), `level ${level.id}`).toEqual([]);
   });
 
   // Three full games per level need headroom on slower Docker workers.

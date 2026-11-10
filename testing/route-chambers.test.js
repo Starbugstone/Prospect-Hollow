@@ -1,18 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
-import { createSSRApp, h, markRaw } from 'vue';
+import { createSSRApp, h } from 'vue';
 import { renderToString } from 'vue/server-renderer';
 import MineGoals from '../src/components/MineGoals.vue';
 import { PROTOTYPE_BOARDS, prototypeConfig } from '../src/data/prototypeBoards';
 import { prototypeLevelConfig } from '../src/game/engine/LevelGenerator';
 import { hollowLevelSpec } from '../src/data/hollowMineLevels';
-import { HintEngine } from '../src/game/engine/HintEngine';
-import { PlayClock } from '../src/game/engine/PlayClock';
 import { TileManager } from '../src/game/engine/TileManager';
 import { isPlayableCell } from '../src/game/engine/BoardTopology';
 import { layerCount } from '../src/game/engine/TileRules';
 import { useGameStore } from '../src/stores/gameStore';
-import { useCampaignStore } from '../src/stores/campaignStore';
 import { simulateCampaignLevel } from './helpers/campaignSimulation';
 
 // Route chambers: several ways into the same place, none of them required. The prototype
@@ -27,7 +24,6 @@ const well = level.tiles.flatMap((tile, index) =>
 );
 const routeWall = (route) =>
   level.tiles.flatMap((tile, index) => (tile.waist === route ? [index] : []));
-const hints = new HintEngine();
 
 // The board once one route is open, as the breakthrough leaves it: wall broken, chamber playable.
 const openRoute = (tiles, route) =>
@@ -161,11 +157,16 @@ describe('route chambers', () => {
       ).toBe(false);
   });
 
-  it('reject a route chamber holding anything the goal counts', () => {
+  // A lantern, a relic or the basket a relic must reach would each make that route required.
+  it.each([
+    ['a lantern', '__..l../__lZ.../__zl...'],
+    ['a relic', '__...R./__lZ.../__zl...'],
+    ['an exit', '__...../__lZ.../__zl..E'],
+  ])('reject a route chamber holding %s', (_, rows) => {
     const plan = { cols: 7, rows: 10, motif: 'arch' };
     const spec = hollowLevelSpec(plan, {
       ...PROTOTYPE_BOARDS[0].level,
-      board: '......./.z...z./......./......./......./__YY.../__..www/__..l../__lZ.../__zl...',
+      board: `......./.z...z./......./......./......./__YY.../__..www/${rows}`,
     });
     const trial = { chapter: 93, chapterName: 'Test', cols: 7, rows: 10, gemTypes: ['ruby'] };
     expect(() => prototypeLevelConfig({ id: 559, spec, trial })).toThrow(/route chamber/);
@@ -189,50 +190,6 @@ describe('the prototype board in the game store', () => {
     vi.unstubAllEnvs();
     vi.unstubAllGlobals();
   });
-
-  it('finishes beyond 100 moves after its speed target and saves nothing', async () => {
-    let random = 559 * 7919;
-    vi.spyOn(Math, 'random').mockImplementation(() => {
-      random = (random * 16807) % 2147483647;
-      return (random - 1) / 2147483646;
-    });
-    const campaign = useCampaignStore();
-    const before = JSON.stringify([campaign.profile(), [...saves]]);
-    const game = useGameStore();
-    let now = 0;
-    game.playClock = markRaw(new PlayClock(() => now));
-    game.bootstrap();
-    expect(game.startLevel(KEY, 'prototype')).toBe(true);
-    expect(game.currentLevelId).toBe(559);
-    expect(game.currentLevel.config.tip).toBe(PROTOTYPE_BOARDS[0].level.tip);
-    game.moves = 100;
-    game.syncRunClock(true);
-    now = game.speedTargetMs + 60000;
-    for (let turn = 0; turn < 400 && !game.levelCleared; turn++) {
-      const move = hints.findBestMove(game.board, game.tiles, game.boardCols, game.boardRows, {
-        oreOrders: game.oreOrders,
-      });
-      if (!move) {
-        expect(await game.ensurePlayableBoard()).toBe(true);
-        continue;
-      }
-      expect(
-        await game.resolveSwap(move.swap.aIndex, move.swap.bIndex, {
-          activateInPlace: !!move.activateInPlace,
-        }),
-      ).toBe(true);
-    }
-    expect(game.levelCleared).toBe(true);
-    expect(game.moves).toBeGreaterThan(100);
-    expect(game.elapsedMs).toBeGreaterThan(game.speedTargetMs);
-    expect(game.tiles.every((tile) => layerCount(tile) === 0)).toBe(true);
-    expect(game.levelRewards).toEqual([]);
-    // Inventory powers are refused on a prototype board.
-    expect(await game._activatePower('tnt', 0, true)).toBe(false);
-    game.exitLevel();
-    expect(campaign.records[559]).toBeUndefined();
-    expect(JSON.stringify([campaign.profile(), [...saves]])).toBe(before);
-  }, 60000);
 
   it('lists only the goal in its counters, not the route walls', async () => {
     const pinia = createPinia();

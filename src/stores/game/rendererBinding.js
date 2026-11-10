@@ -126,6 +126,7 @@ export function refreshBoardVisuals(store, forceRedraw = false) {
   if (!store.renderer || !store.currentBoardLayout) return;
   const { boardContainer, scene, animator } = store.renderer;
   animator.levelId = store.currentLevelId;
+  animator.levelTheme = store.currentLevel?.config?.theme;
   const scale = scene?.scale;
   const viewWidth =
     scale?.gameSize?.width ??

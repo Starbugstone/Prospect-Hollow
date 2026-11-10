@@ -221,8 +221,10 @@ of a board, so they suit only levels that would otherwise need heavy collection 
 
 A new board can be played before it joins the campaign. `src/data/prototypeBoards.js` lists
 them in the level grammar of this file. They sit outside `LEVEL_COUNT` and the save. Only
-the debug tools (development, preprod and `VITE_DEBUG_TOOLS=true` builds) open one, with
-`prospectDebug.playPrototype('<key>')` in the console. A banner marks the run, powers are
+the debug tools (development, preprod and `VITE_DEBUG_TOOLS=true` builds) open one: tap it
+under **Boards on trial** in Settings (More options) from the village, which works on a
+phone, or call `prospectDebug.playPrototype('<key>')` in the console. The public game has
+neither. A banner marks the run, powers are
 hidden, and finishing records nothing: no reward, record, honour or obstacle seen. A board
 keeps the level number it would take (its id also seeds its layout), so appending it there
 gives the same board.
@@ -247,3 +249,51 @@ seeds per variant (`npm run test:levels`).
 With both routes available, the shaft opened first in 33 runs and the side chamber in 23
 (median move 20 and 12), and every run finished. The "lit by" columns count each hit
 that lit a lantern or wore down a seal in the well.
+
+### Pairing prototypes: chapters 92 and 93
+
+Two more boards try the mechanic pairings proposed for the next chapters. Both use only
+shipped mechanics and art, and borrow a shipped chapter's backdrop and cargo until theirs
+exist.
+
+**`echo-gallery-crossing`** ("Echo gallery: Crossed paths", level 547's slot) pairs lens
+mirrors and starglass with portals, which had never shared a board. Two moon gems ride the
+siding through the portal and drop down the middle column, where two panes of starglass
+stand between the exit pad and the basket. The beams come from the other side: the column
+relay on the right wall bursts on to both corner mirrors, and each diagonal crosses a pane.
+The thick pane needs a second turned beam, and a floor core gives crosses in line with the
+lower mirror.
+
+How beams and portals meet was the open question for this pairing. A portal pad fills its
+cell like a void, so a beam passes over a pad and does not come out of its pair. A player
+could reasonably expect either, so this board keeps every beam's path clear of both pads
+and the question never arises. `testing/prototype-boards.test.js` holds it to that. A
+later board that wants a beam to cross a pad needs that rule decided, shown and explained
+first.
+
+**`turning-orchard-both-ways`** ("Turning orchard: Up and down", level 553's slot) pairs
+the moon dial with floatstones held by root knots. Each floatstone has one way out, and
+they are opposite: a sky hatch above the left one and a basket below the right one. A
+floatstone moves against gravity, so one leaves as the cavern stands and the other only
+after a bonus blast turns the dial. The knots sit beside the floatstones, clear of both
+ways out.
+
+`testing/prototype-boards.test.js` runs the shipped layout rules on every board on trial
+(no ice on extraction boards, a route for all cargo, reachable starglass), checks that
+each one finishes in the game store beyond 100 moves after its speed target and saves
+nothing, and that the renderer draws it with its own chapter's art. A board on trial is
+numbered past the campaign, so the renderer takes the theme from the level itself.
+`testing/levels/prototype-pairings.test.js` measures 60 hint-led seeds
+(`npm run test:levels`):
+
+| 60 seeds (hint-led)          | Moves: 10th / median / 90th / max | Median score | What happened first                                                 |
+| ---------------------------- | --------------------------------- | -----------: | ------------------------------------------------------------------- |
+| Echo gallery: Crossed paths  | 9 / 16 / 25 / 56                  |       31,100 | Both panes gone by move 4, moon gems home by moves 8 and 10         |
+| Turning orchard: Up and down | 10 / 21 / 37 / 81                 |       37,200 | Knots cut by move 4, first home at 6, dial turned at 12, done at 21 |
+
+Every run finished without a reshuffle. No moon gem was delivered while a pane stood, and
+every orchard run turned the dial at least once. Chest targets are 80% of the median
+score (25,000 and 30,000). The hint-led player always takes the hint, so these counts
+show that the pairings are solvable and roughly how long they run. Whether they are fun
+is for a person to judge on a phone. The board motion check reports no overlaps or
+stutters on all three boards over eight hinted moves.

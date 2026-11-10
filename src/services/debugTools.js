@@ -28,7 +28,8 @@ export function createDebugTools() {
     },
     // Plays a board on trial (src/data/prototypeBoards.js) in the mine, e.g.
     // `prospectDebug.playPrototype('deep-lantern-routes')`. The run records nothing: no
-    // reward, record, power or honour, and Exit mine leaves the save as it was.
+    // reward, record, power or honour, and Exit mine leaves the save as it was. Settings
+    // lists the same boards for phones.
     playPrototype(key = PROTOTYPE_BOARDS[0]?.key) {
       return useGameStore().startLevel(key, 'prototype');
     },
