@@ -33,6 +33,7 @@ On `preprod` after `e8d7191f`; nothing below has reached `main`.
 | Real phone test                                                  | Not yet                                  |
 | Residents visibly using each outcome                             | Prototype on `preprod`                   |
 | Route-choice board prototype (chapter 94)                        | Prototype on `preprod`, debug tools only |
+| Pairing prototypes (chapters 92 and 93)                          | Prototype on `preprod`, debug tools only |
 | New boards                                                       | Not yet                                  |
 | Third commission                                                 | Not yet                                  |
 | Honours family, economy rerun, release notes                     | Not yet                                  |
@@ -110,7 +111,9 @@ Steps 3 and 4 do not depend on each other. Boards come first because they serve 
 
 Phone test on `preprod`, using a town in Twin Hollows:
 
-- [ ] The pill reads clearly and doesn't crowd the other map controls
+- [ ] The pill reads clearly and doesn't crowd the other map controls. On a phone it covered the
+      Moon's "New Hollow" header; it now sits below it, and the browser check fails if it overlaps
+      the header or the wallet
 - [ ] The letter over each site is easy to spot and tap, on both maps
 - [ ] All six outcomes look right at each stage
 - [ ] Settlers reach the Moon door and come out carrying the outcome's item; valley villagers enter the
@@ -119,11 +122,12 @@ Phone test on `preprod`, using a town in Twin Hollows:
 
 Things the checks have not covered:
 
-- [ ] Play a real puzzle and watch the pill advance. The browser check loads a save to reach `ready`
-      rather than playing one. Unit tests cover the advance itself
-- [ ] Find out why setting `campaign.town` from the browser check did not advance the work. It may
-      only be how the test wrote to the store, but a real puzzle in the step above settles it
-- [ ] Add the `funding` state ("2/5") to `testing/browser/town-commission-signal.cjs`
+- [x] Play a real puzzle and watch the pill advance. The browser check now wins a real level with
+      the hint and expects the pill to move from 0 to 1
+- [x] Find out why setting `campaign.town` from the browser check did not advance the work. Real
+      wins advance both commissions, so it was how the check wrote to the store
+- [x] Add the `funding` state to `testing/browser/town-commission-signal.cjs`: it unveils both
+      commissions and expects "1/5"
 - [ ] Re-capture Wild Meadow at stage 5, since its sign moved after the last capture
 - [ ] Watch the valley visitors moving. The Bandstand and Story Hall bring Willowkin residents, the
       only resident visitors a valley site has, rather than ordinary villagers
@@ -212,8 +216,11 @@ Provisional: each pairing has to prove fun and solvable on the board first.
 | 93      | Turning orchard  | Moon dials, floatstones, root knots          | Free a root, then turn gravity to carry it |
 | 94      | The deep lantern | Breakthrough chambers, phase seals, lanterns | Break in, then light what was sealed away  |
 
-Check the Echo gallery pairing first. Lenses and portals have never shared a level, so beams and
-portal cells may not interact as a player expects. If so, swap in spores and lenses.
+The Echo gallery pairing has been checked on its prototype. A beam passes over a portal pad as it
+does over a void, and does not come out of the pad's pair. A player could expect either, so the
+prototype keeps every beam clear of the pads, and a test holds it to that. Lenses and portals can
+stay together under that rule. A board where a beam must cross a pad needs the rule decided and
+explained first.
 
 ### Tasks
 
@@ -221,7 +228,12 @@ portal cells may not interact as a player expects. If so, swap in spores and len
   - [x] Chapter 94: `deep-lantern-routes`, a route-choice board, on trial behind the debug
         tools (`prospectDebug.playPrototype()`, see
         [boards on trial](docs/hollow-mine-levels.md#boards-on-trial)). Not yet played on a phone
-  - [ ] Chapters 92 and 93
+  - [x] Chapter 92: `echo-gallery-crossing`, lenses and starglass across a portal route. All
+        60 hint-led seeds finish (median 16 moves). Not yet played on a phone
+  - [x] Chapter 93: `turning-orchard-both-ways`, two moored floatstones with opposite ways
+        out and one moon dial. All 60 seeds finish (median 21 moves). Not yet played on a phone
+  - [ ] Play all three on a phone and decide which pairings go ahead. On `preprod` they are
+        listed under Boards on trial in Settings (More options), from the village
 - [ ] Add the chapters to `PLANS` in `src/data/hollowMineLevels.js`, with names, stops and tips.
       Consider a new file if this one, already 1,720 lines, gets harder to read
 - [ ] Add French names, stops and tips to `src/i18n/fr.json`
