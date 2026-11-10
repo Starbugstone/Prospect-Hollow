@@ -4,6 +4,15 @@ import { mineSignalAppearance, mineRelicAppearance } from './mineThemes.js';
 // DEEP_MINE_SPRITES instead.
 export const OBSTACLES = [
   {
+    id: 'chord',
+    name: 'Chord crystal',
+    art: '/art/obstacles/chord.svg',
+    texture: 'tile-chord',
+    instruction:
+      'Match on the crystal with three different colours to fill its three sockets. Repeated colours and neighbouring matches do nothing. A direct blast fills one empty socket with white light, at most once per move. White light is a wildcard; any new colour can fill another socket. The full crystal vanishes.',
+    present: (tile) => tile.signal === 'chord',
+  },
+  {
     id: 'crossgrain',
     name: 'Crossgrain crystal',
     art: '/art/obstacles/crossgrain.svg',

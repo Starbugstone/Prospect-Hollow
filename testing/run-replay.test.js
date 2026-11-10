@@ -136,7 +136,7 @@ describe('the dice rule', () => {
   });
 });
 
-it.each(['trace-twins-first-impression', 'crossgrain-narrow-neck'])(
+it.each(['trace-twins-first-impression', 'crossgrain-narrow-neck', 'chord-changing-colours'])(
   'replays a crystal trial exactly: %s',
   async (key) => {
     const live = fresh(1);

@@ -272,3 +272,32 @@ seeded journeys finished with no page errors. The three-move 60 fps motion
 scenario sampled 179 frames: zero overlaps, zero stutters. The shared prototype
 store test completes beyond 100 moves after its optional speed target, without
 saving or giving rewards; its seeded run replays exactly.
+
+## Chord implementation
+
+`s` authors a Chord crystal with three sockets. Only an ordinary match on its
+own cell fills a coloured socket, including a cascade match. A colour already
+remembered there does nothing. Each direct blast fills one empty socket with
+white light, at most once per move; white is a wildcard and does not reserve a
+colour. Any as-yet-unrecorded colour can fill another empty socket. The third
+socket completes the crystal and removes its entire icon and socket strip.
+
+The tile stores a primitive colour list and white-light count, so move copies
+and replay fingerprints own all state. The three-pronged crystal and socket
+strip distinguish it from a brazier/core; the shared static pip drawing handles
+filled colours and empty sockets. Hints score a genuinely new colour, not a
+repeated hit; no random roll chooses a wildcard's colour.
+
+| Trial                    | Slot | Moves p10 / median / p90 / max | Median score | Chest (80%) | Reshuffles | Rule mattered                                         |
+| ------------------------ | ---: | ------------------------------ | -----------: | ----------: | ---------: | ----------------------------------------------------- |
+| `chord-changing-colours` |  560 | 4 / 6 / 9 / 19                 |       10,000 |       8,000 |          0 | Median 5 colour fills / 1 white fill across 6 sockets |
+
+All 60 seeds finished. Verdict: the changing gem between two chords helps prepare
+a different colour, while the results show colour changes doing most of the work.
+
+Chord browser evidence: viewed both phone socket states and the desktop mid-play
+state. The three-pronged icon reads separately from the core; coloured sockets
+and white wildcard sockets use the shared pip renderer. Both browser journeys
+finished without page errors. Its three-move motion scenario sampled 196 frames,
+with zero overlaps and zero stutters. The goal panel now counts each new crystal's
+remaining stamps, cracks or sockets, with an SSR regression for all three.

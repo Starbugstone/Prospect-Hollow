@@ -209,6 +209,7 @@ export const NON_MASTERY_ELEMENTS = Object.freeze([
   // Trial-only crystal mechanics have no campaign mastery tally yet.
   'trace-twins',
   'crossgrain',
+  'chord',
   'encased-fossil',
   'fossil',
   'spore',

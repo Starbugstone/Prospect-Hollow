@@ -278,6 +278,7 @@ export function parseMineBoard(
         : `Mine boards must be ${cols} × ${rowCount}`,
     );
   const cells = [...rows.join('')];
+  const chords = [];
   const crossgrains = [];
   const traceGroups = new Map();
   const cores = [];
@@ -297,7 +298,8 @@ export function parseMineBoard(
         if (root.knot !== undefined) throw new Error('A root group must have one knot');
         root.knot = index;
       } else root.bindings.push(index);
-    } else if (symbol === 'i') crossgrains.push(index);
+    } else if (symbol === 's') chords.push(index);
+    else if (symbol === 'i') crossgrains.push(index);
     else if (symbol === 't' || symbol === 'j') {
       if (!traceGroups.has(symbol)) traceGroups.set(symbol, []);
       traceGroups.get(symbol).push(index);
@@ -337,6 +339,7 @@ export function parseMineBoard(
     map: Array.from({ length: rowCount }, (_, row) =>
       map.slice(row * cols, row * cols + cols).join(''),
     ).join('/'),
+    ...(chords.length ? { chords } : {}),
     ...(crossgrains.length ? { crossgrains } : {}),
     ...(traceGroups.size
       ? {

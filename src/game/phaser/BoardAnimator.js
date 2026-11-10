@@ -1284,7 +1284,7 @@ export class BoardAnimator {
     const signal = tile?.signalHealth === 0 ? null : tile?.signal;
     // A phase seal shows the colour its gem becomes after the next move.
     const phase = tile?.phaseSeal && tile.health > 0 ? tile.phaseNext : null;
-    const key = `${layers}-${frozen}-${sealColor ?? ''}-${chained}-${!!exit}-${!!tile?.hatch}-${tile?.signal ?? ''}-${tile?.signalHealth}-${tile?.grainRemaining}-${tile?.surveyOrder}-${tile?.rootGroup ?? ''}-${tile?.bonusOnly}-${tile?.sporeAxis}-${tile?.health}-${tile?.maxHealth}-${phase ?? ''}-${this.theme}-${this.cellSize}`;
+    const key = `${layers}-${frozen}-${sealColor ?? ''}-${chained}-${!!exit}-${!!tile?.hatch}-${tile?.signal ?? ''}-${tile?.signalHealth}-${tile?.grainRemaining}-${tile?.chordColors}-${tile?.chordWilds}-${tile?.surveyOrder}-${tile?.rootGroup ?? ''}-${tile?.bonusOnly}-${tile?.sporeAxis}-${tile?.health}-${tile?.maxHealth}-${phase ?? ''}-${this.theme}-${this.cellSize}`;
     let overlay = this.tileOverlays.get(index);
     if (overlay?.__tileKey === key) return;
     overlay?.destroy();
@@ -1380,15 +1380,24 @@ export class BoardAnimator {
           backgroundColor: '#153a38',
         });
       // Charge pips: one small static dot per charge, rebuilt only when the charge changes.
-      if (signal === 'core')
-        for (let pip = 0, pips = tile.coreCharges ?? CORE_CHARGES; pip < pips; pip++)
+      if (signal === 'core' || signal === 'chord')
+        for (
+          let pip = 0, pips = signal === 'chord' ? 3 : (tile.coreCharges ?? CORE_CHARGES);
+          pip < pips;
+          pip++
+        )
           overlay.add(
             this.scene.add
               .circle(
                 -size * 0.06 + pip * size * 0.11,
                 size * 0.41,
                 Math.max(2.5, size * 0.04),
-                pip < pips - tile.signalHealth ? 0xffd36e : 0x1d3f55,
+                signal === 'chord'
+                  ? (GEM_COLORS[(tile.chordColors ?? '').split(',').filter(Boolean)[pip]] ??
+                      (pip < 3 - tile.signalHealth ? 0xffffff : 0x182e42))
+                  : pip < pips - tile.signalHealth
+                    ? 0xffd36e
+                    : 0x1d3f55,
                 1,
               )
               .setStrokeStyle(1.5, 0xbff6ff, 0.95),

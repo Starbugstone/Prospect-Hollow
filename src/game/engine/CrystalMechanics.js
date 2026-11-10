@@ -1,9 +1,16 @@
 import { isPlayableCell } from './BoardTopology.js';
 import { GEM_TYPES } from './GemFactory.js';
 
-export const isCrystalSignal = (tile) => ['trace', 'crossgrain'].includes(tile?.signal);
+export const isCrystalSignal = (tile) => ['trace', 'crossgrain', 'chord'].includes(tile?.signal);
 
 export function applyCrystalSpec(tiles, spec) {
+  for (const index of spec.chords ?? [])
+    Object.assign(tiles[index], {
+      signal: 'chord',
+      signalHealth: 3,
+      chordColors: '',
+      chordWilds: 0,
+    });
   for (const index of spec.crossgrains ?? [])
     Object.assign(tiles[index], { signal: 'crossgrain', signalHealth: 2, grainRemaining: 3 });
   for (const { cells, facet } of spec.tracePairs ?? []) {
@@ -74,12 +81,36 @@ export function crystalHits(tiles, matches, blastIndices, blockedBlasts = new Se
   const updates = [];
   for (const [index, tile] of tiles.entries()) {
     if (
-      tile?.signal !== 'crossgrain' ||
+      !['crossgrain', 'chord'].includes(tile?.signal) ||
       !tile.signalHealth ||
       !isPlayableCell(tile) ||
       tile.state === 'FROZEN'
     )
       continue;
+    if (tile.signal === 'chord') {
+      const colors = (tile.chordColors ?? '').split(',').filter(Boolean);
+      let wilds = tile.chordWilds ?? 0;
+      for (const match of matches)
+        if (
+          GEM_TYPES.includes(match.type) &&
+          match.indices.includes(index) &&
+          !colors.includes(match.type) &&
+          colors.length + wilds < 3
+        )
+          colors.push(match.type);
+      const blast = blasts.has(index) && !blockedBlasts.has(index) && colors.length + wilds < 3;
+      if (blast) wilds++;
+      const health = Math.max(0, 3 - colors.length - wilds);
+      if (health !== tile.signalHealth)
+        updates.push({
+          index,
+          chordColors: colors.join(','),
+          chordWilds: wilds,
+          signalHealth: health,
+          crystalBlast: blast,
+        });
+      continue;
+    }
     let remaining = tile.grainRemaining;
     for (const match of matches) {
       if (!GEM_TYPES.includes(match.type) || !match.indices.includes(index)) continue;

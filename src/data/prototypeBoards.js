@@ -139,6 +139,19 @@ BOARDS.push({
   },
 });
 
+BOARDS.push({
+  key: 'chord-changing-colours',
+  id: 560,
+  trial: 'crystal-seams',
+  stop: 'A changing chord',
+  level: {
+    board: '......./......./......./..szs../......./......./......./......./.......',
+    ice: 0,
+    chestTarget: 8000,
+    tip: 'Fill each crystal’s three sockets with different colours by matching on it. A repeated colour does nothing. The phase seal between them changes its gem after each move: watch its next colour to prepare a new chord. A direct blast adds one white wildcard socket, once per move.',
+  },
+});
+
 export const PROTOTYPE_BOARDS = BOARDS.map((board) => ({
   ...board,
   chapterName: TRIAL_CHAPTERS[board.trial].name,

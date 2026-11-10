@@ -58,7 +58,10 @@ export class HintEngine {
       } = {},
     ) => {
       const crystalValue = crystalHits(tiles, ordinaryMatches, usesBonus ? indices : []).reduce(
-        (sum, update) => sum + (tiles[update.index].signalHealth - update.signalHealth) * 260,
+        (sum, update) =>
+          sum +
+          (tiles[update.index].signalHealth - update.signalHealth) *
+            (tiles[update.index].signal === 'chord' && update.crystalBlast ? 100 : 260),
         0,
       );
       const copies = traceCopies(tiles, ordinaryMatches, cols, rows, !!swap);

@@ -137,3 +137,18 @@ it('crossgrain needs two distinct axes, and a blast seals only one crack', async
   expect(crystalHits(tiles, [], [0])[0].signalHealth).toBe(1);
   expect(crystalHits(tiles, [h, v], [])[0].signalHealth).toBe(0);
 });
+
+it('chord remembers different colours, ignores repeats and accepts a white wildcard', async () => {
+  const { crystalHits } = await import('../src/game/engine/CrystalMechanics');
+  const tiles = [{ ...plain(), signal: 'chord', signalHealth: 3, chordColors: '', chordWilds: 0 }];
+  const match = (type) => ({ type, indices: [0], orientation: 'horizontal' });
+  Object.assign(tiles[0], crystalHits(tiles, [match('ruby')], [])[0]);
+  expect(tiles[0].signalHealth).toBe(2);
+  expect(crystalHits(tiles, [match('ruby')], [])).toEqual([]);
+  Object.assign(tiles[0], crystalHits(tiles, [], [0])[0]);
+  expect(tiles[0].chordWilds).toBe(1);
+  expect(crystalHits(tiles, [], [0], new Set([0]))).toEqual([]);
+  const [last] = crystalHits(tiles, [match('sapphire')], []);
+  expect(last.signalHealth).toBe(0);
+  expect(last.chordColors).toBe('ruby,sapphire');
+});

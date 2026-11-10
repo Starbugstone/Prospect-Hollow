@@ -44,6 +44,8 @@ export function simulateCampaignLevel(level, seed, { observe } = {}) {
       traceGateHits = 0,
       grainDirectionSplits = 0,
       grainBlastSplits = 0,
+      chordColourFills = 0,
+      chordWildFills = 0,
       blastOnlyHits = 0,
       diagonalPearlDrops = 0;
     const blastHealth = tiles.map((tile) => (tile.bonusOnly ? tile.health : 0));
@@ -111,6 +113,9 @@ export function simulateCampaignLevel(level, seed, { observe } = {}) {
           if (change.signal === 'crossgrain') {
             if (change.blast) grainBlastSplits += change.before - change.after;
             else grainDirectionSplits += change.before - change.after;
+          } else if (change.signal === 'chord') {
+            if (change.blast) chordWildFills += change.before - change.after;
+            else chordColourFills += change.before - change.after;
           }
         traceActivations += step.traceCopies?.length ?? 0;
         const copied = new Set((step.traceCopies ?? []).flatMap((copy) => copy.targets));
@@ -146,6 +151,8 @@ export function simulateCampaignLevel(level, seed, { observe } = {}) {
       traceGateHits,
       grainDirectionSplits,
       grainBlastSplits,
+      chordColourFills,
+      chordWildFills,
       blastOnlyHits,
       diagonalPearlDrops,
     };
