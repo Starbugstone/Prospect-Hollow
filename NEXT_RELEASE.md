@@ -470,6 +470,192 @@ These wait until the era's content is built:
    (expeditions), with `HONOURS_VERSION` 7.
 7. Late projects that pay a builder hammer.
 
+## The Quiet Signal (the seventeenth era)
+
+**Size: medium. Joins release 1.3.0 with New Hollow Rising (owner, 10 November 2026).** Era id
+`quiet-signal`, 2370. A black stone stands beyond the far rim of the crater. A neighbourhood grows
+round it to listen, to understand and to answer. The era is built and kept `enabled: false` on the
+branch `t3/quiet-signal-era`; captures are in `output/next-era/quiet-signal/` (git-ignored).
+
+Tone: sincere, no jokes. The stone is never decorated, upgraded, bought or explained. Who made it,
+and what it is to the Willowkin, stays open.
+
+### Where it stands: the Far Rim
+
+The stone stands at `[34.5, -93.8]`, 100 from the landing, on the straight line from the default
+camera `(0, 26, 66)` to the risen Earth. In the first view of the Moon the road, the stone and Earth
+stand one above the other, and the slab's top cuts Earth's lower edge
+(`layout/overview-1440x900.png`). Seen from the Signal Terrace, Earth hangs over the slab
+(`layout/district-1440x900.png`). It is 5.2 wide, 11.7 high and 1.3 deep (4 : 9 : 1), unlit and
+unfogged, so it is the same black at every distance.
+
+- **New ground, gated by the era.** `MOON_DISTRICTS.farRim` levels a round hollow of radius 36 round
+  the stone and a strip along its road; the rim is cut where they cross it. `moonHeight(x, z,
+districts)` takes the districts a town has opened: without any it is today's ground. A town before
+  the era sees today's Moon exactly.
+- **Unchanged for every existing town.** A snapshot of all 23 existing lots (position, pose, pad),
+  every public path, the ground on a 4-unit grid out to 260, fourteen settlers' days and the saucer's
+  flight line was taken before the change and compared after it: identical. The crater scatter now
+  reads only the crater's own lots, sites and paths, so a district never moves a crater elsewhere.
+- **Roads.** One straight road leaves the end of the outer ring's 315° spoke, crosses the empty lot
+  under the saucer's flight line (slot 13) and joins a ring road of radius 16 round the stone.
+  Nothing stands inside that ring. Settlers walk it through one shared route (`moonDistrictWalk`).
+- **Lots** stand 26.5 from the stone and face it. The side toward Earth stays empty.
+
+| Turn from the New Hollow side | Position         | Use                             |
+| ----------------------------- | ---------------- | ------------------------------- |
+| 0° (on the sight line)        | `[28.9, -67.9]`  | Signal Terrace (low and open)   |
+| 32° (ring radius 16)          | `[39.9, -78.7]`  | The road arrives                |
+| -38°                          | `[14.1, -76.8]`  | Voyagers' Court (monument site) |
+| 66°                           | `[55.9, -78.2]`  | Pattern Garden (optional)       |
+| -76°                          | `[8, -93]`       | Stillwater Basin                |
+| 104°                          | `[61, -94.6]`    | Resonance Workshop              |
+| -114°                         | `[13.1, -109.4]` | Listening House                 |
+| 142°                          | `[54.9, -110.8]` | Far Rim Homes                   |
+| -152°                         | `[27.3, -119.3]` | Tonewood Conservatory           |
+
+Two things change only once the era is reached, and are open decisions below: in portrait the haze
+moves back with the camera so the district is not lost in it, and the sun's shadows follow the
+camera's target into the district (they cover the crater only).
+
+### Buildings
+
+Six required and one optional, `settlement: 'moon'`, three levels each. Prices continue the ladder:
+36,000 / 39,750 / 43,500 to build, 21,600 / 24,200 / 26,800 to modernize.
+
+| Building              | Effects per level     | Unlocks after                     |
+| --------------------- | --------------------- | --------------------------------- |
+| Listening House       | 2 visitors, 3 comfort | Era start                         |
+| Stillwater Basin      | 14 water, 1 comfort   | Era start                         |
+| Tonewood Conservatory | 14 food, 1 comfort    | Era start                         |
+| Far Rim Homes         | 6 homes, 1 comfort    | Listening House 1                 |
+| Resonance Workshop    | 2 visitors, 2 comfort | Listening House 1, Conservatory 1 |
+| Signal Terrace        | 4 visitors, 2 comfort | Workshop 2, Far Rim Homes 1       |
+| Pattern Garden        | 3 comfort, optional   | Conservatory 2, Basin 1           |
+
+At level 3 the required six add 42 demand (18 residents, 24 visitor places), 42 water, 42 food and 30
+comfort (25.2 needed): the era carries itself, as New Hollow Rising does. Changes to the owner's list,
+and why:
+
+- **The conservatory is a new building.** The Earthlight Conservatory is an optional commission with
+  three designs, so a required era cannot expand it. The Tonewood Conservatory stands in the Far Rim
+  instead: its plants lean toward the stone and it grows the wood for the resonators.
+- **Stillwater Basin added**, so the Far Rim has its own water. Each pulse draws one ring on it.
+- **Pattern Garden added, optional:** the Willowkin root garden where the roots repeat a shape.
+- **Two modernizations only:** the town square (its still pool, the valley's one change) and the
+  Starwatch Dish, which becomes the Stonewatch Dish and turns a second dish to the stone.
+
+Every Moon lot still earns a moonstone per level, so the era adds up to 21.
+
+### Cost, next to New Hollow Rising
+
+| Era               | Required buildings    | Modernizations       | Required total | Late puzzles |
+| ----------------- | --------------------- | -------------------- | -------------- | ------------ |
+| New Hollow Rising | 10 × 112,500          | as shipped           | about 1.48M    | about 20     |
+| The Quiet Signal  | 6 × 119,250 = 715,500 | 2 × 72,600 = 145,200 | **860,700**    | about 12     |
+| Both              |                       |                      | about 2.34M    | about 32     |
+
+Optional: Pattern Garden 119,250; Voyagers' Court 2.59M to 2.73M for all five levels.
+
+Effect on "What the numbers say", by the same ratio (required town over mine coins), not a simulator
+rerun: the required town rises from about 26.5M with New Hollow Rising to about **27.4M**. The
+crossover moves from 1.62× to about **1.68×** on today's 546 levels, and from 1.50× to about
+**1.55×** with the 18 new boards (1.43× with 36, 1.30× with 60). Two eras in one release push the
+typical player further from finishing the town, so the board pack matters more, as the decision
+above says. The economy rerun in step 6 must include both eras.
+
+### The stone, the story and the two who noticed
+
+- **The Quiet Stone** is a fixed landmark of the district, not a building or a site: no price, no
+  level, no label until it is tapped. A tap shows its name and one line that follows the story
+  (`quietSignal.js`): "Still and silent", "A pulse, every ninety-one seconds", "The pattern of the
+  valley's crystals", "New Hollow is preparing its answer", "It answered".
+- **Osier**, a Willowkin, keeper of the orchard vaults, and **Maren Voss**, a human instrument maker.
+  Both names are original. They sign the story letters; Osier's first observation opens the era.
+- The story is read from building levels, so nothing new is saved:
+
+| Stage      | Reached when                     | Letters                                                                        |
+| ---------- | -------------------------------- | ------------------------------------------------------------------------------ |
+| Arrival    | The era begins                   | Osier: the greenhouse instruments pulse together. Maren: a house for listening |
+| Listen     | Listening House 1, then 2        | Engineers measure, children hum a tune; the long pattern                       |
+| Understand | Listening House 2 and Workshop 1 | The pattern matches the valley's crystal seams; which came first stays open    |
+| Answer     | Signal Terrace 1, then 2         | Answer in the same shape; a resonator for every family                         |
+| Answered   | Signal Terrace 3                 | Osier and Maren send it together; the ribbon of light and the star map         |
+
+- **The finale** is that last level, with no cinematic: a thin ribbon of light runs from the stone's
+  foot along the sight line toward New Hollow, and stars appear in the ground beside it with one path
+  drawn through them. It draws itself once (7 seconds) if the Moon is open, and stays. Nothing gates
+  it but the building.
+- Residents: Far Rim Homes add suited settlers, and a Willowkin walks out from the homes, the
+  conservatory, the garden and the workshop. They keep to the district. At the terrace nobody steps
+  indoors: visitors stand at its marker and face the stone.
+- Small motion: dishes follow the stone, and instrument lamps swell every 91 seconds with a ring on
+  the basin. It stops with reduced motion.
+
+### Voyagers' Court (optional monument site)
+
+Apart from the stone, on the other side of the terrace from the road, facing the usual camera. Coins,
+on the monument ladder (37,000 / 38,000 / 39,000 base). Three designs in moon-white ceramic, navy and
+gold on an octagonal base, each developed over five levels:
+
+1. **Steady Lens Pavilion:** a dark panel with one steady red lens under a flat navy canopy. Then
+   instrument wings, a lit court, memory stacks, a glazed lantern and mast. The lens never blinks.
+2. **Twin Wheel Station:** one wheel on an axle over a sculpted support. Then the second wheel as an
+   open gold frame, clad and turning from level 3, the full docking structure with a waiting shuttle,
+   and a terrace.
+3. **Ivory Work Pod:** a round pod in a cradle over a crystal sample. Then its two arms, work lights,
+   the bay hoop and sample cases, a railed terrace and dish.
+
+No film names, quotes or logos are used.
+
+### Honours
+
+- **Far Rim Listener:** 1, 9 and 18 of 21 Far Rim building levels (bronze, silver, gold), with
+  `HONOURS_VERSION` 7. Gold needs every required level, or some with the optional garden.
+- Through the Ages still ends on its diamond: `quiet-signal` joins `NON_MILESTONE_ERAS`.
+- Voyagers' Court adds no rank: Landmark Patron's site list shipped fixed (`NON_MONUMENT_HONOURS`).
+- Not yet calibrated with the campaign simulator or recorded in `docs/honours.md`.
+
+### Valley touches
+
+Fountain `still-pool` (a dark still pool, then one line of light), road style `signal-lane`,
+wardrobe `listening`, a navy-rimmed saucer and the `signal-arch` mine portal (the mine's crystals
+set in the order their seams branch).
+
+### Tasks
+
+- [x] Layout: district, era-gated ground, roads, lots, the stone, snapshot of the existing Moon
+- [x] Era, buildings, prices, needs, letters, projects, honours family, French text
+- [x] Art: 3D and SVG for seven buildings at three levels, the Stonewatch finish, three monument
+      designs at five levels, the SVG map of the district
+- [x] The ribbon of light and star map
+- [x] Regression tests (`testing/quiet-signal.test.js`, with the crater snapshot in
+      `testing/fixtures/moon-crater-snapshot.json`), server catalogs, integrity fixtures and
+      the backend's honours version 7
+- [ ] To enable: set `enabled: true`, then run `npm run assets:footprints`,
+      `npm run export:save-rules`, `node scripts/export-public-content.mjs`,
+      `npm run export:integrity-fixtures` and `npm run demo:eras`, and add `quiet-signal` to the
+      playable-era list in `testing/town-eras.test.js`. With the era on in scratch, those were the
+      only failing checks (save rules, that list, the mine sign and setback catalogs)
+- [ ] Docs (`docs/future-eras.md`, `docs/era-architecture.md`, `docs/honours.md`) and the
+      campaign-simulator calibration of Far Rim Listener
+- [ ] Phone pass on a real device: the district in portrait, the haze, the stone's label
+- [ ] The SVG fallback map already clips the outer ring's southern lots (its box ends at the
+      crater floor); the district is inside the widened box, the old clipping is unchanged
+
+### Decisions still open
+
+1. The stone's name in the game: "The Quiet Stone", and whether it should have any label at all.
+2. Era size: six required buildings and 0.86M, or more of them.
+3. The finale as a derived, permanent effect (as built) or a full cinematic on the shared timeline.
+4. Portrait haze and shadows that follow the camera: for towns in the era only (as built), or for
+   every town.
+5. The ground appears with the era, so the rim opens when the stone does. The alternative is to show
+   the hollow to every town, as the crater widening was.
+6. Far Rim Listener's goals, and a rank for Voyagers' Court.
+7. Whether the two named characters should also walk the district as recognisable figures.
+8. The "resonance pairs" board mechanic stays out of scope.
+
 ## Step 6: economy rerun and documentation
 
 **Size: small to medium.**
