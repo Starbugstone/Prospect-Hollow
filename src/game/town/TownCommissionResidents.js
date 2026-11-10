@@ -14,6 +14,7 @@ import {
 } from './TownCommissionUse';
 import { swingLimbs, VILLAGER_WALK_SPEED } from './TownGait';
 import { groundHeight } from './TownLandscape';
+import { finishWork, scheduleWork } from '../PresentationWork';
 import { PLOTS, segmentDistance, townTracks } from './TownLayout';
 
 // Townsfolk who use a finished valley commission. Each leaves a real home through its
@@ -223,11 +224,20 @@ function* residentWalk(d, town, home, area, court) {
   return null;
 }
 
+// What the townsfolk depend on: each finished valley commission and its chosen outcome.
+const residentsKey = (town) =>
+  finishedCommissions(town, HOME_SETTLEMENT)
+    .map(({ site, area }) => `${site}:${areaChoice(town, area)}`)
+    .join('|');
+
 /**
  * Adds the townsfolk of every finished valley commission, in resumable steps of village
  * life. Nothing is saved: the saved outcome and stage decide who comes and what they do.
  */
 export function* addCommissionResidents(d, town) {
+  d.commissionResidentsFor = residentsKey(town);
+  // A newer call takes over from one still planning its walks.
+  const run = (d.commissionResidentsRun = {});
   if (!d.itineraries) return;
   const homes = valleyHomes(town);
   if (!homes.length) return;
@@ -245,6 +255,7 @@ export function* addCommissionResidents(d, town) {
       const home = nearest[n % Math.min(3, nearest.length)];
       const court = commissionGrounds(form, use, n, area.radius);
       const out = yield* residentWalk(d, town, home, area, court);
+      if (d.commissionResidentsRun !== run) return;
       if (!out) continue;
       const day = commissionResidentDay({
         out,
@@ -260,6 +271,35 @@ export function* addCommissionResidents(d, town) {
       yield;
     }
   }
+}
+
+/**
+ * Brings the townsfolk in line with a town that changed without a rebuild: a commission
+ * unveiled on the map changes only the saved outcome. Village life that is still being
+ * populated adds them itself, from the same town.
+ */
+export function syncCommissionResidents(d, town) {
+  if (d.commissionResidentsFor === undefined || d.commissionResidentsFor === residentsKey(town))
+    return;
+  const leaving = d.commissionResidents ?? [];
+  const motions = new Set(leaving.map(({ motion }) => motion));
+  d.motions = d.motions.filter((motion) => !motions.has(motion));
+  for (const { actor } of leaving) d.clearGroup(actor.root);
+  d.commissionResidents = [];
+  // A rebuilt village populates itself; this work is for the world it started in.
+  const world = d.world;
+  const isCurrent = () => d.world === world && !d.disposed;
+  const settle = () => {
+    if (!isCurrent()) return;
+    d.rebuildActors?.();
+    d.render?.();
+  };
+  if (leaving.length) settle();
+  const work = addCommissionResidents(d, town);
+  if (typeof requestAnimationFrame === 'undefined') {
+    finishWork(work);
+    settle();
+  } else scheduleWork(work, { budget: 8, isCurrent, complete: settle });
 }
 
 const SKINS = ['#d5ad88', '#9e7559', '#c99d78', '#edc7a4'];

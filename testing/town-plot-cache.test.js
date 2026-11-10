@@ -13,6 +13,14 @@ import { TownStatics } from '../src/game/town/TownStatics';
 import { TownUpgradeGlow } from '../src/game/town/TownUpgradeGlow';
 import { eraIndex } from '../src/game/town/TownEras';
 import { BUILDINGS, createTown } from '../src/data/town';
+import {
+  AREA_BY_ID,
+  advanceMonumentWorks,
+  landmarkOffer,
+  monumentWork,
+  purchaseLandmark,
+  unveilLandmark,
+} from '../src/data/townLandmarks';
 import { PLOTS, segmentDistance, townTracks } from '../src/game/town/TownLayout';
 
 const views = [];
@@ -509,4 +517,71 @@ it('changes the crest and mine badge without rebuilding plots, navigation or ani
   expect(plaque.parent).toBeNull();
   expect(navigation).not.toHaveBeenCalled();
   expect(repair).not.toHaveBeenCalled();
+});
+
+// A commission changes the valley without a rebuild: its site opens at a building level (a
+// plot swap) and its outcome is unveiled by a tap (no plot changes at all).
+function commissionValley() {
+  const { view, labels } = fixture();
+  const town = createTown();
+  town.era = 'twin-hollows';
+  town.coins = 1e9;
+  for (const id of Object.keys(PLOTS)) town.buildings[id] = 1;
+  town.buildings.homecomingHall = 2;
+  return { view, town, labels };
+}
+const COMMONS = AREA_BY_ID['homecoming-commons'];
+function unveiledCommons(town) {
+  let next = purchaseLandmark(town, {
+    id: COMMONS.id,
+    slot: 0,
+    value: 'bandstand',
+    ...landmarkOffer(town, COMMONS, 'bandstand'),
+  });
+  while (!monumentWork(next, COMMONS).ready) next = advanceMonumentWorks(next);
+  return unveilLandmark(next, COMMONS.id, 1);
+}
+const siteAnchor = (view) => view.anchors.find((anchor) => anchor.site && anchor.id === COMMONS.id);
+
+it('hangs the action icon over a commission site that opens with a plot swap', () => {
+  const { view, town, labels } = commissionValley();
+  view.update(town, labels);
+  expect(siteAnchor(view)).toBeUndefined();
+  const rebuild = vi.spyOn(view, 'update');
+  const opened = { ...town, buildings: { ...town.buildings, homecomingHall: 3 } };
+  view.changeTown(opened, labels, 0, null, { instant: true });
+  while (view.tryActivatePlot() === false);
+  expect(rebuild).not.toHaveBeenCalled();
+  expect(siteAnchor(view)).toBeDefined();
+  // A fresh village hangs it in the same place, and neither lists it twice.
+  const { view: fresh } = fixture();
+  fresh.update(opened, labels);
+  expect(siteAnchor(view).position.toArray()).toEqual(siteAnchor(fresh).position.toArray());
+  expect(view.anchors.filter((anchor) => anchor.site).length).toBe(
+    fresh.anchors.filter((anchor) => anchor.site).length,
+  );
+});
+
+it('sends townsfolk to a commission unveiled on the map, as a fresh village would', () => {
+  const { view, town, labels } = commissionValley();
+  town.buildings.homecomingHall = 3;
+  view.update(town, labels);
+  expect(view.commissionResidents).toHaveLength(0);
+  const rebuild = vi.spyOn(view, 'update');
+  const unveiled = unveiledCommons(town);
+  view.changeTown(unveiled, labels, 0, null, { keepCamera: true });
+  expect(rebuild).not.toHaveBeenCalled();
+  const { view: fresh } = fixture();
+  fresh.update(unveiled, labels);
+  expect(fresh.commissionResidents.length).toBeGreaterThan(0);
+  expect(view.commissionResidents).toHaveLength(fresh.commissionResidents.length);
+  // They are in the world and animated like the rest of village life, once each.
+  for (const { actor, motion } of view.commissionResidents) {
+    expect(actor.root.parent).toBe(view.world);
+    expect(view.motions.filter((entry) => entry === motion)).toHaveLength(1);
+  }
+  // The same town again changes nothing; a later stage keeps the same people.
+  const residents = [...view.commissionResidents];
+  view.changeTown({ ...unveiled }, labels, 0, null);
+  expect(view.commissionResidents).toEqual(residents);
 });

@@ -137,9 +137,10 @@ export function* populateLife(d, town) {
     // Each beat leaves the office door, walks the patrol and returns for a short rest.
     Object.assign(sheriff, { home: 'sheriff', patrol: true });
   }
-  // Townsfolk walk out to use a finished commission the way its outcome promises.
+  // Townsfolk walk out to use a finished commission the way its outcome promises. The
+  // village may have changed in place since this population began: `d.town` is current.
   d.commissionResidents = [];
-  yield* addCommissionResidents(d, town);
+  yield* addCommissionResidents(d, d.town ?? town);
   if (town.buildings.stable && !motorTraffic(town)) {
     d.horse(...atPlot('stable', 2.25, 0.9), 0.5);
     d.horse(...atPlot('stable', 2.65, -0.9), -0.9, 0.85);

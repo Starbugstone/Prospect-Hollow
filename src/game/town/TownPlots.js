@@ -1,4 +1,5 @@
 import { townLabelWidth } from './TownLabelLayout';
+import { syncCommissionResidents } from './TownCommissionResidents';
 import { TownItineraries } from './TownItineraries';
 
 import {
@@ -360,6 +361,7 @@ export function changeTown(
       d.buildingRenderer.sync(d.world.children.filter((child) => child.userData.static));
       if (sceneryChanges.some(sceneryAffectsNavigation)) d.repairAnimalLife();
     }
+    syncSiteLife(d);
     if (expanded && d.overview && !d.keepCamera) d.frameTown();
     d.keepCamera = false;
     // No plot will activate to retire a construction cue shown for this change.
@@ -376,6 +378,7 @@ export function changeTown(
     d.plotCache.get('mine').signature = signatures.get('mine');
     d.buildingRenderer.sync(d.world.children.filter((child) => child.userData.static));
     d.repairAnimalLife();
+    syncSiteLife(d);
     d.render();
     d.keepCamera = false;
     record('mine');
@@ -707,6 +710,7 @@ export function tryActivatePlot(d) {
   // A first opening can extend frontage paving or overhead service wires. Refresh
   // only those scenery roots here instead of leaving them stale until a full rebuild.
   const scenery = timeTown('activate-scenery', () => refreshScenery(d));
+  syncSiteLife(d);
   const actors = walkers(d);
   const view = d,
     generation = d.generation;
@@ -794,6 +798,26 @@ export function* repairRoute(d, actor) {
 export function plotsPending(d) {
   const work = plotWork(d);
   return !!work.active || work.queue.length > 0;
+}
+
+// Monument and commission sites have no label, only an action icon over the middle of the
+// site. A site can open without a rebuild (a building level opens a commission), so every
+// town change brings the list up to date.
+function syncSiteAnchors(d, town) {
+  d.anchors ??= [];
+  for (let n = d.anchors.length - 1; n >= 0; n--) if (d.anchors[n].site) d.anchors.splice(n, 1);
+  for (const area of areasForSettlement()) {
+    if (!areaUnlocked(town, area)) continue;
+    const [x, z] = area.positions[0];
+    const centre = point(x, groundHeight(x, z) + 2, z);
+    d.anchors.push({ id: area.id, site: true, width: 0, position: centre, collection: centre });
+  }
+}
+// What follows the saved monument sites rather than a plot. A change that swaps plots in
+// place, or changes none, never rebuilds the village, so it brings these up to date itself.
+function syncSiteLife(d) {
+  syncSiteAnchors(d, d.town);
+  syncCommissionResidents(d, d.town);
 }
 
 function refreshScenery(d) {
@@ -966,6 +990,10 @@ export function rebuildTown(
   for (const a of d.retainedAnimals.values()) d.world.add(a.root);
   d.trafficActors = [];
   d.motions = [];
+  // Village life adds the commissions' townsfolk again for the rebuilt world.
+  d.commissionResidents = [];
+  d.commissionResidentsFor = undefined;
+  d.commissionResidentsRun = null;
   d.visitorTransports = new Map();
   d.targets = [];
   d.anchors = [];
@@ -1033,13 +1061,7 @@ export function rebuildTown(
       d.construction = new TownConstruction(d, group, movingPart?.rotor, previousParts, partKeys);
     d.plotCache.set(id, { signature: signatures.get(id), group, movingPart, parts });
   }
-  // Monument sites have no label, only an action icon over the middle of the site.
-  for (const area of areasForSettlement()) {
-    if (!areaUnlocked(town, area)) continue;
-    const [x, z] = area.positions[0];
-    const centre = point(x, groundHeight(x, z) + 2, z);
-    d.anchors.push({ id: area.id, site: true, width: 0, position: centre, collection: centre });
-  }
+  syncSiteAnchors(d, town);
   recordTownTiming('update-plots', plotsStarted);
   if (prepared && prepared !== adopted) d.clearGroup(prepared.group);
   // Model preparation can be expensive. Start the reveal clock on its first visible frame.
