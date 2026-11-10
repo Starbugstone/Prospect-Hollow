@@ -48,6 +48,22 @@ describe('a puzzle replays exactly from its seed and moves', () => {
     expect(await replayRun(again, log)).toBe(log.fingerprint);
   });
 
+  it('leaves out a power the board refused, so the log still replays', async () => {
+    const live = fresh(55);
+    expect(live.startLevel(55, 'normal', { seed: 11 })).toBe(true);
+    const relic = live.board.findIndex((gem) => gem?.type === 'relic');
+    expect(relic).toBeGreaterThanOrEqual(0);
+    // A color wand has no color to take from a relic: the power is refused and not spent.
+    expect(await live._activatePower('color-wand', relic, false)).toBe(false);
+    expect(live.runLog.actions).toEqual([]);
+    const target = live.board.findIndex((gem) => gem && gem.type !== 'relic');
+    expect(await live._activatePower('tnt', target, false)).toBe(true);
+    expect(live.runLog.actions).toEqual([{ type: 'power', name: 'tnt', index: target }]);
+    const log = JSON.parse(JSON.stringify(runReport(live)));
+    const again = fresh(55);
+    expect(await replayRun(again, log)).toBe(log.fingerprint);
+  });
+
   it('replays the player shuffle and powers, which roll the same dice', async () => {
     const live = fresh(12);
     // A fixed seed: about one in ten clears level 12 before the shuffle, and a cleared level
