@@ -5,6 +5,7 @@ import { horizonMaterial } from './TownAtmosphere';
 import { catGeometries, pigeonGeometries } from './TownAnimalGeometries';
 import { gardenAnimalModel } from './GardenAnimalModels';
 import { flyingAnimal } from '../../data/townAnimals';
+import { strideRaccoon, uprightRaccoon } from './TownWanderers';
 
 function finishModel(d, model, costume = null) {
   const { root, head, species } = model;
@@ -69,6 +70,7 @@ export function animalModel(d, species, variant = 0, costume = null, parent = d.
   root.userData.animated = true;
   root.userData.species = species;
   if (species === 'cat') return catModel(d, root, costume);
+  if (TOWN_ANIMALS[species].model === 'wanderers') return wanderersModel(d, root, costume);
   if (TOWN_ANIMALS[species].model === 'garden')
     return finishModel(d, { ...gardenAnimalModel(d, species, root), species }, costume);
   if (flyingAnimal(species)) pigeonGeometries(d);
@@ -144,6 +146,33 @@ export function animalModel(d, species, variant = 0, costume = null, parent = d.
         d.ball(tail, 0, -0.02, z, [0.143, 0.143, 0.045], '#535b54');
   }
   return finishModel(d, { root, body, head, legs, wings, tail, species }, costume);
+}
+
+// The wandering pair as one walker: the raccoon on the right of its Willowkin, a step
+// apart. `body` holds both, so a hop (the Moon's stride) lifts them together.
+function wanderersModel(d, root, costume) {
+  const body = d.group(root);
+  const raccoon = uprightRaccoon(d, body, costume === 'space-helmet' ? helmetGlass(d) : null);
+  raccoon.root.position.set(-0.3, 0, 0.06);
+  const willowkin = animalModel(d, 'willowkinResident', 0, costume, body);
+  willowkin.root.position.x = 0.3;
+  root.userData.costume = costume;
+  root.traverse((object) => {
+    if (object.isMesh) object.castShadow = false;
+  });
+  return {
+    root,
+    body,
+    head: raccoon.head,
+    headRest: raccoon.head.position.clone(),
+    legs: [],
+    wings: [],
+    tail: raccoon.tail,
+    shadow: null,
+    raccoon,
+    willowkin,
+    species: 'wanderers',
+  };
 }
 
 const SUIT = '#ece5d3',
@@ -367,6 +396,11 @@ function addSpaceSuit(d, { root, body, head, legs, species }) {
 }
 
 export function animateAnimal(model, time, state, moving) {
+  if (model.raccoon) {
+    // The pair keep step: one stride clock for the raccoon's gait and the Willowkin's.
+    strideRaccoon(model.raccoon, time * 7, moving, time);
+    return animateAnimal(model.willowkin, time, state, moving);
+  }
   const { species, body, head, legs, wings, tail } = model;
   const bird = species === 'hen' || flyingAnimal(species);
   const feeding = state === 'feeding' || state === 'pecking' || state === 'foraging';

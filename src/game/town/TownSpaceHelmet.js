@@ -2,7 +2,8 @@ import { SPACE_HELMET, TOWN_ANIMALS } from '../../data/townAnimals';
 import { spaceHelmetOut } from './TownRules';
 import { animalModel } from './TownAnimalModels';
 import { smooth01 } from './TownMath';
-import { FIND_HINT_SCALE, FIND_SCALE, hiddenFindTap } from './TownHiddenFinds';
+import { placeWanderers } from './TownWanderers';
+import { FIND_HINT_SCALE, FIND_SCALE, findHash as hash, hiddenFindTap } from './TownHiddenFinds';
 
 const COSTUME = 'space-helmet',
   // Seconds to shrink the old outfit away, then to grow the new one back.
@@ -10,12 +11,6 @@ const COSTUME = 'space-helmet',
   // Seconds for a wild wearer to come out, or to go back to its own visits.
   STAY = 2;
 
-// An integer hash, so the owner's and every visitor's browser agree exactly.
-function hash(n) {
-  let x = Math.imul(n ^ 0x9e3779b9, 0x85ebca6b);
-  x = Math.imul(x ^ (x >>> 13), 0xc2b2ae35);
-  return (x ^ (x >>> 16)) >>> 0;
-}
 function shuffled(list, round) {
   const order = [...list];
   for (let n = order.length - 1; n > 0; n--) {
@@ -73,7 +68,7 @@ export { FIND_SCALE as HELMET_FIND_SCALE, FIND_HINT_SCALE as HELMET_HINT_SCALE }
 export function spaceHelmetTargets(d) {
   if (!spaceHelmetOut(d.helmetTown ?? d.town)) return [];
   return (d.animals ?? [])
-    .filter((animal) => !animal.companion)
+    .filter((animal) => !animal.companion && !animal.townsfolk)
     .map((animal) => ({
       root: animal.root,
       height: TOWN_ANIMALS[animal.species]?.height ?? 1,
@@ -115,6 +110,7 @@ export function dressSpaceHelmet(d, town, { animate = false, rebuild = true } = 
   // A finished puzzle changes no building, so the scene can keep an older town object;
   // later animal refreshes dress for this latest one instead.
   d.helmetTown = town;
+  placeWanderers(d, town);
   const animals = d.animals ?? [];
   const species = spaceHelmetWearer(town, new Set(animals.map((a) => a.species)));
   const candidates = animals.filter((a) => a.species === species);

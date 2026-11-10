@@ -4,7 +4,15 @@ import {
   moonMonumentPresentation,
   syncMoonMonuments,
 } from './MoonMonuments';
-import { animateMoonSettler, createMoonSettlers, moonSuitFigure } from './MoonSettlers';
+import {
+  animateMoonSettler,
+  createMoonSettlers,
+  createMoonWanderers,
+  moonSuitFigure,
+} from './MoonSettlers';
+import { hiddenFindTap } from '../TownHiddenFinds';
+import { pairTargets, wanderersPlace } from '../TownWanderers';
+import { MOON_SETTLEMENT } from '../../../data/settlements';
 import { areaUnlocked } from '../../../data/townLandmarks';
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
@@ -437,6 +445,8 @@ export class MoonScene extends TownPrimitives {
       onVipSpend = () => {},
       onVillagerLabel = () => {},
       onUnavailable = () => {},
+      onFind = () => {},
+      onFindZoom = () => {},
       reducedMotion = false,
       vipsHidden = false,
     } = {},
@@ -448,6 +458,9 @@ export class MoonScene extends TownPrimitives {
     this.onLabels = onLabels;
     this.onEarth = onEarth;
     this.onSelect = onSelect;
+    // Hidden finds answer taps here as in the valley (`hiddenFindTap`).
+    this.onFind = onFind;
+    this.onFindZoom = onFindZoom;
     // A lost context or a failed draw goes to the owner's shared graphics recovery.
     this.onUnavailable = onUnavailable;
     // The camera floor, focus moves and the unveiling read the Moon's own ground.
@@ -630,6 +643,7 @@ export class MoonScene extends TownPrimitives {
     // A worksite's gantries and crane rise above an empty pad: they answer taps too.
     this.refitLots();
     this.saucer.update(town, this.elapsed, this.reducedMotion);
+    this.placeWanderers(town);
     this.requestFrame();
     // Building lots only: monument sites add labels to this.lots but draw separately.
     const levels = Object.keys(MOON_LOTS).map((id) => town?.buildings?.[id] ?? 0);
@@ -742,6 +756,7 @@ export class MoonScene extends TownPrimitives {
     this.moveTransports(time);
     this.monuments?.userData.update(this.reducedMotion ? 0 : time);
     for (const settler of this.settlers ?? []) animateMoonSettler(settler, time);
+    if (this.wanderers) animateMoonSettler(this.wanderers, time);
     // Rovers circle the ring road.
     for (const w of this.walkers ?? []) {
       const a = w.phase + w.dir * time * w.speed;
@@ -901,11 +916,34 @@ export class MoonScene extends TownPrimitives {
    * It never moves the camera.
    */
   tap(event) {
+    // As in the valley: a find wins over people and parcels, and asking to zoom in only
+    // answers a tap nothing else does.
+    const find = hiddenFindTap(this, this.findTargets(), event.clientX, event.clientY);
+    if (find && !find.zoom) {
+      this.onFind(find);
+      return null;
+    }
     if (showVillager(this, event.clientX, event.clientY, true)) return null;
     if (this.hitsEarth(event)) return this.onEarth();
     const id = this.pick(event);
     if (id) this.onSelect(id);
+    else if (find?.zoom) this.onFindZoom(find.find);
     return id;
+  }
+  // Everything on the Moon a hidden find can be mistaken for: the wandering pair.
+  findTargets() {
+    return this.wanderers ? pairTargets(this.wanderers) : [];
+  }
+  /** The wandering pair walk the ring road while this town's completed puzzles put them
+   * on the Moon. They stand apart from the settlers, so a rebuilt settlement keeps them. */
+  placeWanderers(town) {
+    const here = wanderersPlace(town) === MOON_SETTLEMENT,
+      runs = here ? (town.completedRuns ?? 0) : null;
+    if (runs === this.wanderersRuns) return;
+    this.wanderersRuns = runs;
+    if (this.wanderers) this.d.clearGroup(this.wanderers.root);
+    this.wanderers = here ? createMoonWanderers(this.d, this.scene, town) : null;
+    if (this.wanderers) animateMoonSettler(this.wanderers, this.elapsed ?? 0);
   }
   /** The lot or open monument site under a pointer event, nearest first. */
   pick(event) {

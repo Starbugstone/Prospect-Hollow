@@ -54,7 +54,7 @@ export const PRIVACY_DATA = [
     kept: 'Until you change them or delete your account; your visits then stay in other towns without your name',
   },
   {
-    data: 'Astronauts you found in other towns',
+    data: 'Astronauts and wandering pairs you found in other towns',
     why: 'To give the reward to your own town and allow one find every 12 hours.',
     basis: 'Providing the account you asked for',
     kept: '{helmetFinds}, or until you delete your account',

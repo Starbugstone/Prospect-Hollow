@@ -76,6 +76,7 @@ import { plotUnlocked } from './TownRules';
 import { AREA_BY_ID, areaUnlocked } from '../../data/townLandmarks';
 import { spaceHelmetTargets } from './TownSpaceHelmet';
 import { hiddenFindTap } from './TownHiddenFinds';
+import { wanderersTargets } from './TownWanderers';
 import { buildLandscape, groundHeight, keepCameraAboveTerrain } from './TownLandscape';
 
 import { PLOTS } from './TownLayout';
@@ -420,7 +421,7 @@ export class TownDiorama extends TownPrimitives {
   }
   // Everything on the map a hidden find can be mistaken for (see `hiddenFindTap`).
   findTargets() {
-    return spaceHelmetTargets(this);
+    return [...wanderersTargets(this.animals), ...spaceHelmetTargets(this)];
   }
   // Names a villager or opens a plot, site or plaque under the tap; false when none.
   pickTown(clientX, clientY) {

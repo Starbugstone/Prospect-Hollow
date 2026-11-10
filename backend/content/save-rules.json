@@ -55289,6 +55289,13 @@
           "owner": 1,
           "visitor": 0.5
         }
+      },
+      "wanderers": {
+        "debut": "hollow-rising",
+        "rewardHours": {
+          "owner": 1,
+          "visitor": 0.5
+        }
       }
     }
   },
@@ -55648,6 +55655,8 @@
     "saloonVisitAt": 0,
     "helmetRun": 0,
     "helmetVisitAt": 0,
+    "wanderersRun": 0,
+    "wanderersVisitAt": 0,
     "guestVip": null,
     "progressionVersion": 2
   },
@@ -56031,6 +56040,8 @@
       "saloonVisitAt": 0,
       "helmetRun": 0,
       "helmetVisitAt": 0,
+      "wanderersRun": 0,
+      "wanderersVisitAt": 0,
       "guestVip": null,
       "progressionVersion": 2
     },
@@ -56057,5 +56068,5 @@
       "seenGeneration": 6
     }
   },
-  "contentDigest": "b9613cd115bef6a4dc4bb1e999325fa6efdd7f934317f5a8ba21ba6cc4f09a70"
+  "contentDigest": "506953107d0359fc213efd8d00cc6a048187905b17b152d861cd7b2a81ce90cd"
 }

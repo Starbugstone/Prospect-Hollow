@@ -195,6 +195,8 @@
       @close="closeSettlement"
       @vip-spend="emit('vip-spend', $event)"
       @villager-label="showSettlementVillagerLabel"
+      @find="emit('find', $event)"
+      @find-zoom="emit('find-zoom', $event)"
     />
   </div>
 </template>

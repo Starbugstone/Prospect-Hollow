@@ -218,6 +218,9 @@ const emit = defineEmits([
   // The valley's VIP flow: a purchase receipt, and the named VIP's tag for the shared label.
   'vip-spend',
   'villager-label',
+  // Hidden finds, as on the valley map (TownScene).
+  'find',
+  'find-zoom',
 ]);
 const canvas = ref(null);
 const viewElement = ref(null);
@@ -433,6 +436,8 @@ async function start() {
       // A tapped lot or monument site opens like its label.
       onSelect: (id) => choose(id),
       onVipSpend: (receipt) => emit('vip-spend', receipt),
+      onFind: (tap) => emit('find', tap),
+      onFindZoom: (find) => emit('find-zoom', find),
       onVillagerLabel: (label) => emit('villager-label', label),
       onUnavailable: (error, contextLost) => !disposed && recovery.recover(error, contextLost),
       // A shared town is only a view: VIP guests visit the owner's own game.
@@ -463,6 +468,15 @@ const visual = computed(() =>
   ]),
 );
 watch(visual, () => scene?.update(props.town));
+// A completed puzzle changes no lot, yet it may bring the wandering pair here or send
+// them back to the valley.
+watch(
+  () => props.town.completedRuns,
+  () => {
+    scene?.placeWanderers(props.town);
+    scene?.requestFrame();
+  },
+);
 watch(() => [props.indicators, props.upgradeIds], updateGlow);
 watch(selectedLot, (id) => scene?.setSelected(id ?? null));
 watch(() => [props.active, props.paused], updateMotion);

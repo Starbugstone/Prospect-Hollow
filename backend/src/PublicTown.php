@@ -344,22 +344,20 @@ final class PublicTown
                 }
                 // A row is one player's find at one second, whatever its kind: a second kind
                 // found within the same second takes the next one. The player lock above
-                // makes the read safe, and the rest still starts now.
+                // makes the read safe. Rests count from the stored second.
                 $latest = $db->fetchOne(
                     'SELECT MAX(found_at) FROM helmet_finds WHERE player_id=?',
                     [$session['player_id']],
                 );
+                $at = max($now, $latest === null || $latest === false ? 0 : (int) $latest + 1);
                 $db->insert('helmet_finds', [
                     'player_id' => $session['player_id'],
-                    'found_at' => max(
-                        $now,
-                        $latest === null || $latest === false ? 0 : (int) $latest + 1,
-                    ),
+                    'found_at' => $at,
                     'town_id' => $home,
                     'host_town_id' => $host['id'],
                     'kind' => $find,
                 ]);
-                return ['readyAt' => $now + self::FIND_REST];
+                return ['readyAt' => $at + self::FIND_REST];
             });
     }
     public static function saloonReadyAt(mixed $at): int

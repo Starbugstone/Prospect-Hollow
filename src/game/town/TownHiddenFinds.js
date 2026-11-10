@@ -8,6 +8,13 @@ import { Vector3 } from 'three';
 export const FIND_SCALE = 40,
   FIND_HINT_SCALE = 30;
 
+// An integer hash for placing finds, so the owner's and every visitor's browser agree.
+export function findHash(n) {
+  let x = Math.imul(n ^ 0x9e3779b9, 0x85ebca6b);
+  x = Math.imul(x ^ (x >>> 13), 0xc2b2ae35);
+  return (x ^ (x >>> 16)) >>> 0;
+}
+
 const feet = new Vector3(),
   head = new Vector3(),
   view = new Vector3();

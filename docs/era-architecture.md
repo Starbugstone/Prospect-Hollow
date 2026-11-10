@@ -1025,5 +1025,10 @@ the helmet's state, persistence or server code.
   `PublicTown::findHidden` keeps each find's limits (one per host town and one per player
   per 12 hours, per kind) in `helmet_finds`, whose `kind` column (migration 25) defaults
   to `helmet` for earlier rows.
+- The wandering pair (`wanderers`, from New Hollow Rising) is the second definition: an
+  upright raccoon and its Willowkin (`TownWanderers.js`). `wanderersPlace` puts them in the
+  valley or on the Moon from `completedRuns`; the valley casts them as one sidewalk walker
+  that `placeWanderers` hides while they are away, and `MoonScene.placeWanderers` walks
+  them round the ring road in suits. `testing/wanderers.test.js` covers both maps.
 - Each find is separate: finding one never uses up another.
   `testing/hidden-finds.test.js` runs the contract for every definition.
