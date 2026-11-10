@@ -43,6 +43,8 @@ final class Database
         // Sync events: corrected uploads beside rejected ones, with their findings and the
         // client build, and the correction the owner's game adopts from the cloud save.
         24 => '/schema-sync-corrections',
+        // Which hidden find a `helmet_finds` row is; every earlier row is a space helmet.
+        25 => '/schema-find-kinds',
     ];
     /** Tries of one outermost transaction, the first included, before a deadlock surfaces. */
     public const DEADLOCK_ATTEMPTS = 4;

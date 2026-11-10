@@ -55282,10 +55282,21 @@
       "coinShare": 10,
       "keepCoins": 50
     },
-    "spaceHelmetDebut": "tomorrow",
-    "spaceHelmetRewardHours": {
-      "owner": 1,
-      "visitor": 0.5
+    "hiddenFinds": {
+      "helmet": {
+        "debut": "tomorrow",
+        "rewardHours": {
+          "owner": 1,
+          "visitor": 0.5
+        }
+      },
+      "wanderers": {
+        "debut": "hollow-rising",
+        "rewardHours": {
+          "owner": 1,
+          "visitor": 0.5
+        }
+      }
     }
   },
   "honours": {
@@ -55644,6 +55655,8 @@
     "saloonVisitAt": 0,
     "helmetRun": 0,
     "helmetVisitAt": 0,
+    "wanderersRun": 0,
+    "wanderersVisitAt": 0,
     "guestVip": null,
     "progressionVersion": 2
   },
@@ -56027,6 +56040,8 @@
       "saloonVisitAt": 0,
       "helmetRun": 0,
       "helmetVisitAt": 0,
+      "wanderersRun": 0,
+      "wanderersVisitAt": 0,
       "guestVip": null,
       "progressionVersion": 2
     },
@@ -56053,5 +56068,5 @@
       "seenGeneration": 6
     }
   },
-  "contentDigest": "16552e5afbb38f0cc0320e1b12401bc3058746ab7c36fe3f9621fca30257cf5d"
+  "contentDigest": "506953107d0359fc213efd8d00cc6a048187905b17b152d861cd7b2a81ce90cd"
 }

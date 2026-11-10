@@ -175,8 +175,8 @@
           @camera-distance="cameraDistance = $event"
           @vip-spend="collectVipSpending"
           @guest-vip="campaign.markGuestSeen"
-          @helmet="findHelmet"
-          @helmet-zoom="zoomForHelmet"
+          @find="findHidden"
+          @find-zoom="zoomForFind"
         />
         <TownResourceCollection
           v-if="collection"
@@ -810,7 +810,7 @@ const {
   enqueue: enqueueVisitorNotice,
 } = useTownVisitors(() => props.active, {
   collectSaloon: (at) => (campaign.readOnly ? null : campaign.collectSaloonForVisitor(at)),
-  redeemHelmet: (find) => (campaign.readOnly ? null : campaign.redeemHelmetVisit(find)),
+  redeemFind: (id, find) => (campaign.readOnly ? null : campaign.redeemHiddenFind(id, find)),
   recordSocial: (counts) => !campaign.readOnly && campaign.recordTownSocial(counts),
 });
 async function findVisitor(id) {
@@ -1500,25 +1500,26 @@ function collectVipSpending(receipt) {
     origin: townScene.value?.collectionOrigin(receipt.building),
   });
 }
-// The space-helmet wearer pays an hour of saloon takings once per completed puzzle.
-function findHelmet(origin) {
+// A hidden find (the space-helmet wearer, ...) pays an hour of saloon takings once per
+// completed puzzle. `tap` is `{ find, x, y }` from either settlement's map.
+function findHidden({ find, x, y }) {
   if (campaign.readOnly) return;
-  const coins = campaign.findSpaceHelmet();
+  const coins = campaign.findHidden(find);
   if (!coins) {
-    enqueueVisitorNotice([{ kind: coins === null ? 'helmet-found' : 'helmet-empty' }]);
+    enqueueVisitorNotice([{ kind: `${find}-${coins === null ? 'found' : 'empty'}` }]);
     return;
   }
   closeDialog();
   collection.value = {
-    resource: 'helmet-coins',
+    resource: `${find}-coins`,
     amount: coins,
     serial: ++collectionSerial,
-    origin,
+    origin: { x, y },
   };
 }
-// An animal tapped from far away: the wearer is only found close enough to see it.
-function zoomForHelmet() {
-  if (!campaign.readOnly) enqueueVisitorNotice([{ kind: 'helmet-zoom' }]);
+// A possible find tapped from far away: it is only found close enough to see it.
+function zoomForFind(find) {
+  if (!campaign.readOnly) enqueueVisitorNotice([{ kind: `${find}-zoom` }]);
 }
 function collectMoonstones() {
   const amount = campaign.collectMoonstones();

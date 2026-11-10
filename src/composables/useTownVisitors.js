@@ -4,10 +4,11 @@ import { townStorage } from '../services/townStorage';
 import { createVisitorPoller } from '../services/visitorPresence';
 import { townVisitors } from '../services/visitorApi';
 import { visitorChanges } from '../data/liveVisitors';
+import { HIDDEN_FIND_IDS } from '../data/hiddenFinds';
 
 export function useTownVisitors(
   active,
-  { collectSaloon = () => null, redeemHelmet = () => null, recordSocial = () => false } = {},
+  { collectSaloon = () => null, redeemFind = () => null, recordSocial = () => false } = {},
 ) {
   const snapshot = shallowRef(null),
     notices = shallowRef([]),
@@ -39,11 +40,15 @@ export function useTownVisitors(
     const coins = collectSaloon(at);
     if (coins > 0) enqueue([{ kind: 'collection', coins }]);
   }
-  // Space helmets found while visiting as this town: the campaign skips redeemed ones.
-  function applyHelmets(finds) {
-    for (const find of Array.isArray(finds) ? finds : []) {
-      const coins = redeemHelmet(find);
-      if (coins !== null && coins !== undefined) enqueue([{ kind: 'helmet', coins }]);
+  // Hidden finds made while visiting as this town (`helmetFinds`, ...): the campaign
+  // skips redeemed ones.
+  function applyFinds(result) {
+    for (const id of HIDDEN_FIND_IDS) {
+      const finds = result[`${id}Finds`];
+      for (const find of Array.isArray(finds) ? finds : []) {
+        const coins = redeemFind(id, find);
+        if (coins !== null && coins !== undefined) enqueue([{ kind: id, coins }]);
+      }
     }
   }
   function scheduleNotice() {
@@ -71,7 +76,7 @@ export function useTownVisitors(
           confirmed = result.present;
           enqueue(changes);
           applyCollection(result.saloonCollectedAt);
-          applyHelmets(result.helmetFinds);
+          applyFinds(result);
           // Town Honours count different signed-in visitors and villages visited from this
           // town; the campaign keeps the highest of each.
           recordSocial({ visitors: result.uniqueVisitors, travels: result.townsVisited });

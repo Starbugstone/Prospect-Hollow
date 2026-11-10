@@ -474,8 +474,8 @@ export function createIntegrityFixtures() {
         profile.town.helmetRun = 11;
       },
       (campaign) => {
-        if (!(campaign.findSpaceHelmet() > 0)) throw new Error('The helmet paid nothing.');
-        if (campaign.findSpaceHelmet() !== null) throw new Error('The helmet paid twice.');
+        if (!(campaign.findHidden('helmet') > 0)) throw new Error('The helmet paid nothing.');
+        if (campaign.findHidden('helmet') !== null) throw new Error('The helmet paid twice.');
       },
     );
     fixture(

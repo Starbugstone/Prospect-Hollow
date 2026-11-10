@@ -78,13 +78,14 @@ import {
   COIN_TIERS,
 } from '../data/rewards';
 import { createTown, BANDIT_EVENT } from '../data/town';
+import { HIDDEN_FINDS, hiddenFindCommands, hiddenFindFields } from '../data/hiddenFinds';
 import { advanceEra } from '../game/town/TownEras';
 import {
   normalizeTown,
   saloonIncomeRate,
   settleSaloonIncome,
-  spaceHelmetFindable,
-  spaceHelmetReward,
+  hiddenFindable,
+  hiddenFindReward,
   collectionCooldownRemaining,
   raidBounty,
   miningPayout,
@@ -871,36 +872,45 @@ export const useCampaignStore = defineStore('campaign', {
         ? coins
         : null;
     },
-    // Finding the space-helmet wearer pays an hour of saloon takings, once per completed
-    // puzzle. Returns the coins (0 without saloon takings), or null when already found.
-    findSpaceHelmet(now = Date.now()) {
-      if (!Number.isSafeInteger(now) || !spaceHelmetFindable(this.town)) return null;
+    // Making a hidden find (`HIDDEN_FINDS`: the space-helmet wearer, ...) pays an hour of
+    // saloon takings, once per completed puzzle. Returns the coins (0 without saloon
+    // takings), or null when already found or not out yet.
+    findHidden(id, now = Date.now()) {
+      if (!Number.isSafeInteger(now) || !hiddenFindable(this.town, id)) return null;
       const town = this.town,
         run = town.completedRuns,
-        coins = Math.min(spaceHelmetReward(town, 'owner'), Number.MAX_SAFE_INTEGER - town.coins);
+        coins = Math.min(hiddenFindReward(town, id, 'owner'), Number.MAX_SAFE_INTEGER - town.coins);
       return this.commit(
-        { town: { ...town, coins: town.coins + coins, helmetRun: run } },
-        { kind: 'helmet-find', data: { at: now, run } },
+        { town: { ...town, coins: town.coins + coins, [hiddenFindFields(id).run]: run } },
+        { kind: hiddenFindCommands(id).find, data: { at: now, run } },
       )
         ? coins
         : null;
     },
-    // A space helmet this player found in another town, redeemed here with the server's
+    // A hidden find this player made in another town, redeemed here with the server's
     // signed receipt for half an hour of this town's saloon takings. Older finds than the
     // last one redeemed are ignored, so every poll may offer the same list again.
-    redeemHelmetVisit(find, now = Date.now()) {
+    redeemHiddenFind(id, find, now = Date.now()) {
+      const field = HIDDEN_FINDS[id] && hiddenFindFields(id).visitAt;
       if (
+        !field ||
         !Number.isSafeInteger(find?.at) ||
-        find.at <= this.town.helmetVisitAt ||
+        find.at <= this.town[field] ||
         typeof find.receipt !== 'string' ||
         !Number.isSafeInteger(now)
       )
         return null;
       const town = this.town,
-        coins = Math.min(spaceHelmetReward(town, 'visitor'), Number.MAX_SAFE_INTEGER - town.coins);
+        coins = Math.min(
+          hiddenFindReward(town, id, 'visitor'),
+          Number.MAX_SAFE_INTEGER - town.coins,
+        );
       return this.commit(
-        { town: { ...town, coins: town.coins + coins, helmetVisitAt: find.at } },
-        { kind: 'helmet-visitor', data: { at: now, foundAt: find.at, receipt: find.receipt } },
+        { town: { ...town, coins: town.coins + coins, [field]: find.at } },
+        {
+          kind: hiddenFindCommands(id).visitor,
+          data: { at: now, foundAt: find.at, receipt: find.receipt },
+        },
       )
         ? coins
         : null;

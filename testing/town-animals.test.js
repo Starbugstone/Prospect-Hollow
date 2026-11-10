@@ -872,7 +872,7 @@ it('only finds the space-helmet wearer close enough to see it', () => {
   const found = vi.fn(),
     zoom = vi.fn(),
     town = vi.fn(() => false);
-  Object.assign(d, { onHelmet: found, onHelmetZoom: zoom, pickTown: town });
+  Object.assign(d, { onFind: found, onFindZoom: zoom, pickTown: town });
   wearer.root.visible = true;
   other.root.visible = false;
   look(far);

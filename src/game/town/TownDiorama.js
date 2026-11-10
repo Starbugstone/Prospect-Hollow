@@ -74,7 +74,9 @@ import { TownEraIncident } from './TownEraIncident';
 import { eventKind } from '../../data/townEvents';
 import { plotUnlocked } from './TownRules';
 import { AREA_BY_ID, areaUnlocked } from '../../data/townLandmarks';
-import { spaceHelmetTap } from './TownSpaceHelmet';
+import { spaceHelmetTargets } from './TownSpaceHelmet';
+import { hiddenFindTap } from './TownHiddenFinds';
+import { wanderersTargets } from './TownWanderers';
 import { buildLandscape, groundHeight, keepCameraAboveTerrain } from './TownLandscape';
 
 import { PLOTS } from './TownLayout';
@@ -88,8 +90,8 @@ const point = (x, y, z) => new THREE.Vector3(x, y, z);
 // Original geometry shares static scenery batches and animated actor instances.
 export class TownDiorama extends TownPrimitives {
   // `options` holds the owner's callbacks (onSelect, onLabels, onCameraDistance,
-  // onUnavailable, onVillagerLabel, onEventInset, onVipSpend, onGuestVip, onHelmet,
-  // onHelmetZoom, onFirstFrame)
+  // onUnavailable, onVillagerLabel, onEventInset, onVipSpend, onGuestVip, onFind,
+  // onFindZoom, onFirstFrame)
   // and `vipsHidden` for a read-only shared town.
   constructor(canvas, options = {}) {
     super();
@@ -411,11 +413,15 @@ export class TownDiorama extends TownPrimitives {
     this.render();
   }
   pick(clientX, clientY) {
-    // The space-helmet wearer is small and easily covered, so finding it wins over people
-    // and plots. Asking to zoom in never does: only a tap nothing else answers shows it.
-    const helmet = spaceHelmetTap(this, clientX, clientY);
-    if (helmet && !helmet.zoom) this.onHelmet?.(helmet);
-    else if (!this.pickTown(clientX, clientY) && helmet?.zoom) this.onHelmetZoom?.();
+    // A hidden find is small and easily covered, so finding it wins over people and
+    // plots. Asking to zoom in never does: only a tap nothing else answers shows it.
+    const tap = hiddenFindTap(this, this.findTargets(), clientX, clientY);
+    if (tap && !tap.zoom) this.onFind?.(tap);
+    else if (!this.pickTown(clientX, clientY) && tap?.zoom) this.onFindZoom?.(tap.find);
+  }
+  // Everything on the map a hidden find can be mistaken for (see `hiddenFindTap`).
+  findTargets() {
+    return [...wanderersTargets(this.animals), ...spaceHelmetTargets(this)];
   }
   // Names a villager or opens a plot, site or plaque under the tap; false when none.
   pickTown(clientX, clientY) {

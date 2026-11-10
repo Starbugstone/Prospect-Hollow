@@ -39,9 +39,9 @@ $db->executeStatement('DELETE FROM admin_sessions WHERE expires_at<? OR used_at<
     time(),
     time() - 3600,
 ]);
-// Space-helmet finds are redeemed within this window and only rest the finder for 12 hours.
+// Hidden finds are redeemed within this window and only rest the finder for 12 hours.
 $db->executeStatement('DELETE FROM helmet_finds WHERE found_at<?', [
-    time() - App\PublicTown::HELMET_KEEP,
+    time() - App\PublicTown::FIND_KEEP,
 ]);
 // Blocked uploads kept for the admin sync log; each town also keeps only its latest few.
 App\SyncRejections::expire($db);

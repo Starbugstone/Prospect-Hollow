@@ -100,6 +100,20 @@ export const TOWN_ANIMALS = {
     companion: true,
     resident: true,
   },
+  // The wandering pair (the `wanderers` hidden find): an upright raccoon and its Willowkin,
+  // one walker on the public sidewalks. Not part of any era's ambient cast.
+  wanderers: {
+    name: 'Wandering pair',
+    speed: 0.5,
+    radius: 0.8,
+    height: 2.05,
+    rest: 5,
+    idle: 'looking around',
+    model: 'wanderers',
+    // Townsfolk rather than animals: no feeding, no helmet, no fleeing from people.
+    townsfolk: true,
+    resident: true,
+  },
 };
 
 // The space-helmet easter egg debuts on the village dog in Tomorrow City and moves

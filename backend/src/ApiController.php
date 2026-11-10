@@ -193,9 +193,14 @@ final class ApiController
             SaveService::keys($b, []);
             return $this->directory->favourite($r, $m[1], $r->isMethod('PUT'));
         }
-        if ($r->isMethod('POST') && preg_match('~^villages/([a-f0-9]{32})/helmet$~D', $path, $m)) {
+        // A hidden find by its ID: `villages/{id}/helmet`, `villages/{id}/wanderers`.
+        if (
+            $r->isMethod('POST') &&
+            preg_match('~^villages/([a-f0-9]{32})/([a-z]+)$~D', $path, $m) &&
+            in_array($m[2], $this->public->hiddenFinds(), true)
+        ) {
             SaveService::keys($b, ['townId']);
-            return $this->public->findHelmet($r, $m[1], $b);
+            return $this->public->findHidden($r, $m[1], $m[2], $b);
         }
         if ($r->isMethod('POST') && preg_match('~^villages/([a-f0-9]{32})/saloon$~D', $path, $m)) {
             SaveService::keys($b, []);

@@ -28,7 +28,7 @@ import {
 import { FRONTIER_ERA, eraEvolution, forgeProductionRuns } from '../../data/eras';
 import { needProviders, townNeeds, townSupply } from './TownNeeds';
 import { plotInEra, modernization, normalizeEraState, eraGate, eraIndex } from './TownEras';
-import { SPACE_HELMET } from '../../data/townAnimals';
+import { HIDDEN_FINDS, HIDDEN_FIND_IDS, hiddenFindFields } from '../../data/hiddenFinds';
 import { BUILDINGS, BUILDING_BY_ID, INTRO_ORDER, BANDIT_EVENT, createTown } from '../../data/town';
 import {
   COMBO_COIN_STEP,
@@ -107,7 +107,8 @@ export function normalizeTown(saved) {
     const at = saved?.lastCollections?.[id];
     if (intIn(at, 0)) town.lastCollections[id] = at;
   }
-  for (const key of ['saloonVisitAt', 'helmetRun', 'helmetVisitAt'])
+  const findFields = HIDDEN_FIND_IDS.flatMap((id) => Object.values(hiddenFindFields(id)));
+  for (const key of ['saloonVisitAt', ...findFields])
     if (intIn(saved?.[key], 1)) town[key] = saved[key];
   town.guestVip = normalizeGuestVip(saved?.guestVip);
   // Missing or malformed additions leave existing v3 receipts intact.
@@ -368,17 +369,22 @@ export const saloonIncomeRate = (town) =>
       (1 + (town.buildings.diner ?? 0) * SALOON_INCOME.dinerBonus)) /
       100,
   );
-// The space helmet is out from its debut era on. Finding its wearer pays saloon takings
-// (`SPACE_HELMET.rewardHours`), once each time a completed puzzle moves the helmet.
-export const spaceHelmetOut = (town) => {
-  const index = eraIndex(town?.era);
-  return index >= 0 && index >= eraIndex(SPACE_HELMET.debut);
+// A hidden find (`HIDDEN_FINDS`) is out from its debut era on. Finding it pays saloon
+// takings (`rewardHours`), once each time a completed puzzle moves it.
+export const hiddenFindOut = (town, id) => {
+  const index = eraIndex(town?.era),
+    debut = eraIndex(HIDDEN_FINDS[id]?.debut);
+  return index >= 0 && debut >= 0 && index >= debut;
 };
-export const spaceHelmetFindable = (town) =>
-  spaceHelmetOut(town) && town.completedRuns > town.helmetRun;
+export const hiddenFindable = (town, id) =>
+  hiddenFindOut(town, id) && town.completedRuns > town[hiddenFindFields(id).run];
 // The coins a find pays this town, for the owner's own find or a find while visiting.
-export const spaceHelmetReward = (town, finder) =>
-  Math.floor(saloonIncomeRate(town) * SPACE_HELMET.rewardHours[finder]);
+export const hiddenFindReward = (town, id, finder) =>
+  Math.floor(saloonIncomeRate(town) * HIDDEN_FINDS[id].rewardHours[finder]);
+// The space helmet is the first hidden find.
+export const spaceHelmetOut = (town) => hiddenFindOut(town, 'helmet');
+export const spaceHelmetFindable = (town) => hiddenFindable(town, 'helmet');
+export const spaceHelmetReward = (town, finder) => hiddenFindReward(town, 'helmet', finder);
 // Remainder is stored as coin-milliseconds, avoiding rounding loss between visits.
 // Settle BEFORE changing buildings, so their new rates never apply to old time.
 export function settleSaloonIncome(town, now) {

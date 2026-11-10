@@ -245,3 +245,13 @@ honours as `honours: null`, so visits trust that absence without reading the sav
 projected before honours existed lack the field and are re-projected from the saved
 profile on each visit, like level awards, until the owner's next save or sharing
 change stores a new projection.
+
+## Hidden finds share one contract
+
+The space helmet above is one hidden find; the wandering pair (`wanderers`, from New Hollow
+Rising) is another, under the same rules and counted separately. For a find `X`:
+`POST /api/v1/villages/{publicId}/X` with `{townId}` stores a `helmet_finds` row of `kind` X
+(migration 25; earlier rows are `helmet`), with 409 `no_X`, `X_taken` or `X_resting`; the
+shared town carries `XReadyAt`; the owner poll returns `XFinds: [{at, receipt}]`, the
+receipt signed with the find's ID; and the save replays `X-find` and `X-visitor` against the
+town fields `XRun` and `XVisitAt`. See `docs/era-architecture.md` ("Hidden finds").

@@ -11,6 +11,7 @@ import { animalModel, animateAnimal } from '../TownAnimalModels';
 import { addCarriedItem, holdCarried, routineDay, routinePose } from '../TownCommissionUse';
 import { hash01 as hash } from '../TownMath';
 import { walkPath } from '../TownNavigation';
+import { WANDERERS } from '../TownWanderers';
 
 // New Hollow's settlers: suited figures who leave one building's hatch, walk its
 // public path to the ring road, cross to another building and step inside. Each
@@ -250,6 +251,23 @@ function strideMoonWillowkin(model, distance, walking = true) {
   const step = (distance / STRIDE) * TAU;
   animateAnimal(model, step / 7, walking ? 'walking' : 'idle', walking);
   model.body.position.y = walking ? Math.abs(Math.sin(step)) * HOP : 0;
+}
+
+// The wandering pair lap the ring road side by side, suited like the Moon's Willowkin.
+// They never step indoors, so they can always be found.
+export const moonWanderersPlan = (town) => ({
+  ring: true,
+  phase: hash((town?.completedRuns ?? 0) + 311) * TAU,
+  speed: 0.045,
+  dir: 1,
+});
+/** The valley's pair on the Moon: the same model in suits, at the Moon's stride. */
+export function createMoonWanderers(d, parent, town) {
+  return {
+    ...animalModel(d, WANDERERS, 0, 'space-helmet', parent),
+    plan: moonWanderersPlan(town),
+    stride: strideMoonWillowkin,
+  };
 }
 
 /** Completed homes add neighbors. A construction project alone never spawns them. */
