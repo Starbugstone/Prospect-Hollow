@@ -37542,6 +37542,7 @@
       ],
       "chestCoinCap": 11300,
       "modernizes": [
+        "square",
         "ribbonLanding",
         "craterIceWell",
         "earthlightGreenhouse",
@@ -37874,9 +37875,30 @@
             }
           ],
           "modernization": [
-            null,
-            null,
-            null
+            {
+              "stage": 3,
+              "cost": 20000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 4,
+              "cost": 22600,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 5,
+              "cost": 25200,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "hollow-rising"
+            }
           ]
         },
         "watermill": {
@@ -56035,5 +56057,5 @@
       "seenGeneration": 6
     }
   },
-  "contentDigest": "20b3d389b721078b28706239f30fa8072231b1557946e2e7f53e6e31354d9acd"
+  "contentDigest": "b9613cd115bef6a4dc4bb1e999325fa6efdd7f934317f5a8ba21ba6cc4f09a70"
 }

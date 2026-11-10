@@ -123,9 +123,11 @@ describe('Twin Hollows: the Moon is the new frontier', () => {
     for (const id of list) expect(BUILDING_BY_ID[id], id).toBeTruthy();
     // Every era before it still modernizes every building.
     for (const era of ERAS.slice(0, at)) expect(eraEvolution(era.id).modernizes).toBeNull();
-    // New Hollow Rising modernizes Moon buildings only.
+    // New Hollow Rising modernizes Moon buildings, and in the valley only the town square.
     for (const id of eraEvolution('hollow-rising').modernizes)
-      expect(BUILDING_BY_ID[id].settlement, id).toBe('moon');
+      if (id !== 'square') expect(BUILDING_BY_ID[id].settlement, id).toBe('moon');
+    expect(modernizesInEra('hollow-rising', 'square')).toBe(true);
+    expect(modernizesInEra('hollow-rising', 'home')).toBe(false);
     expect(modernizesInEra('twin-hollows', 'home')).toBe(false);
     expect(modernizesInEra('twin-hollows', 'square')).toBe(true);
     expect(modernizesInEra('moonward', 'home')).toBe(true);
@@ -199,6 +201,8 @@ describe('New Hollow buildings', () => {
       expect(b.settlement).toBe('moon');
       expect(PLOTS[b.id], b.id).toBeUndefined();
       expect(MOON_LOTS[b.id], b.id).toBeTruthy();
+      // New Hollow Rising's outer ring has its own unlock order.
+      if (b.introducedEra === 'hollow-rising') continue;
       expect(b.introducedEra).toBe('twin-hollows');
       expect(b.unlock).toEqual(
         b.id === 'saucerPad'
