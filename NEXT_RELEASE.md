@@ -18,7 +18,8 @@ The release is finished when:
 - three commissions and at least 18 new boards are live, each with its letters, art and French text;
 - commissions have an honours family, and the economy evidence has been rerun;
 - both commissions and the new boards have been played on a real phone;
-- New Hollow Rising, the sixteenth era, is playable to its end on the Moon (see its section below).
+- New Hollow Rising, the sixteenth era, is playable to its end on the Moon (see its section below);
+- The Quiet Signal, the seventeenth era (the black monolith), is playable to its end as well.
 
 ## Where things stand
 
@@ -513,6 +514,10 @@ the next release should lean on boards and new mechanics.
 - **A sixteenth era after all, on the Moon only** (owner, 10 November 2026). Playing the endgame, the
   owner found too little to do or build, especially on the Moon. New Hollow Rising joins this release.
   It replaces the earlier "not a sixteenth era yet": it does not re-art the valley.
+- **The Quiet Signal joins this release too** (owner, 10 November 2026): the era after New Hollow
+  Rising, built around a black monolith on the Moon, planned in the owner's "Plan the Moon's Monolith
+  Era" thread. It adds required town on top of New Hollow Rising, so the board pack and the economy
+  rerun matter even more.
 - **New Hollow grows by widening its crater** (owner, 10 November 2026), not by a second Moon map or
   a second crater. One map keeps every map contract in one place. The rim and the small craters move
   for every player, Twin Hollows towns included; the owner accepted this.
