@@ -298,6 +298,131 @@ show that the pairings are solvable and roughly how long they run. Whether they 
 is for a person to judge on a phone. The board motion check reports no overlaps or
 stutters on all three boards over eight hinted moves.
 
+### Pairing prototypes: chapters 95–101
+
+One board on trial for each remaining chapter of the release 1.3.0 plan, in each chapter's
+first level slot (565, 571, 577, 583, 589, 595 and 601). Chapters 98–101 open act VI, so
+those boards use its first color set (plan 30 onwards in `chapterPalettes`). Each borrows a
+shipped chapter's backdrop and cargo art.
+
+**`shifting-survey-stars`** ("Shifting survey: Shifting stars") pairs survey markers with
+phase seals. Eight markers make a trail from the bottom left corner, up the left side,
+across the top and down the right, and a double phase seal sits beside each marker. A
+marker lights from a match on or beside it, so most matches that light one run through its
+seal, whose gem changes color after every move. A change that lines up a match beside the
+next marker lights it; beside a later marker it lights nothing yet. A sapphire order of 40
+fills as the trail is lit.
+
+**`ember-sidings-gates`** ("Ember sidings: Banked fires") pairs charge cores with portals
+and moon gems. Two moon gems ride the siding through the portal and drop down the middle
+column, where two thick gates stand between the exit pad and the basket. A brazier sits
+either side of that column between the gates. Its bomb lands on its own cell, and the blast
+reaches both gates and no portal pad. A sapphire order of 40 sets the pace.
+
+**`buried-routes-bed`** ("Buried routes: Shaft or gallery") pairs dust fossils with route
+chambers. Two fossils lie either side of a sealed one-cell shaft and under a sealed
+gallery, where no swap reaches them. The shaft opens behind one thick block, and matches
+across its foot brush both fossils from the side. The gallery opens behind four thin walls,
+and matches there brush them from above. Unlike the chapter 94 well, each route reaches
+both fossils, so the choice is between a narrow way in that costs two hits and a wide one
+that costs four.
+
+**`frost-relays-chain`** ("Frost relays: Relay chain") pairs frozen gems with spore relays.
+Four bands of frozen gems alternate with free rows. The column relay in the middle bursts
+down its column through both row relays, which burst along the free rows, and every cell a
+burst clears thaws the frozen gems beside it. A burst never breaks the ice under a frozen
+gem, since a frozen cell is never part of the clear: once thawed, that ice still takes a
+match, as on every frozen gem.
+
+The plan paired these with lanterns, but a frozen gem sits on ice (it is an ice layer in
+`testing/helpers/boardRules.js`) and a lantern board carries no ice. Lanterns and frozen
+gems cannot share a board under the content rules, so this board leaves the lanterns out
+and keeps ordinary ice.
+
+**`tidal-pearls-pairs`** ("Tidal pearls: Ebb and flow") pairs twin gravity with pearls and
+one ore order. Two pairs of pearls meet at the seam, back to back. The upper pearl of each
+pair rises to a hatch and the lower one sinks to a basket, while refills pour out of the
+seam between them. An emerald order of 40 fills meanwhile.
+
+**`rooted-vault-knots`** ("Rooted vault: Bound shut") pairs root knots with a breakthrough
+chamber and chains. Three knots and their vines fill the row above the chamber's cracked
+wall, so no gem there can be swapped until a knot is cut. Each knot is cut by a match
+beside it, and a vine also breaks on its own when matched. Behind the wall, the chamber
+holds three chained gems.
+
+**`far-seam-either-way`** ("The far seam: Either way out") pairs lenses with a moon dial
+and route chambers. A floatstone waits between two sealed one-cell shafts: a thick wall
+above leads to the hatch, a thin wall below to the basket. A floatstone moves against
+gravity, so the way up works as the cavern stands. The way down works only once a bonus
+blast turns the dial in the bottom-left corner. Gold prisms in the four corners turn row
+beams diagonally on to the walls: the top pair on to the thick one, the bottom pair on to
+the thin one. A floor brazier gives crosses along the bottom pair's row.
+
+A player could not predict two interactions here, so no beam on this board meets either.
+A turned beam hits only playable cells (`bentBeams` in `engine/LensBeams.js`), so one
+passing over the dial would not turn it, though a straight sweep does. A beam also passes
+over a sealed shaft without touching it. `testing/prototype-boards.test.js` holds every
+turned beam clear of the dial and of both shafts, and holds each wall on two prisms' lines.
+
+The same test file checks each board's own rules: a seal beside every marker and a trail
+that starts in the corner, both gates inside each brazier's bomb, a fossil bed out of
+every swap's reach that both routes open on to, a relay chain that thaws every frozen gem,
+pearl pairs that part across the seam, roots over the whole row above the wall, and a
+floatstone with one way out in each gravity. `testing/levels/prototype-pairings-95-101.test.js`
+measures 60 hint-led seeds per board, plus variants that take the pairing apart:
+
+| 60 seeds (hint-led)             | Moves: 10th / median / 90th / max | Median score | Reshuffles | Bonuses made | What the pairing did                                                                    |
+| ------------------------------- | --------------------------------- | -----------: | ---------: | -----------: | --------------------------------------------------------------------------------------- |
+| Shifting survey: Shifting stars | 11 / 15 / 20 / 27                 |       35,800 |          0 |            7 | Of 480 markers lit, 295 by a match through their seal, 46 by a phase shift (in 30 runs) |
+| Ember sidings: Banked fires     | 12 / 19 / 30 / 62                 |       32,700 |          0 |            9 | 2 brazier bombs a run; gates gone by move 6, moon gems home by moves 10 and 12          |
+| … without braziers              | 14 / 23 / 37 / 77                 |       31,500 |          2 |            8 | Gates gone by move 13, moon gems home by moves 16 and 17                                |
+| Buried routes: Shaft or gallery | 12 / 22 / 37 / 66                 |       37,500 |          0 |           11 | Shaft opened first in 43 runs (move 12), gallery in 17 (move 14); both in 51            |
+| … shaft only                    | 15 / 36 / 80 / 116                |       41,800 |          2 |           13 |                                                                                         |
+| … gallery only                  | 17 / 31 / 58 / 102                |       47,300 |          1 |           14 |                                                                                         |
+| … neither route (bonuses only)  | 22 / 48 / 112 / 153               |       54,500 |          3 |           17 |                                                                                         |
+| Frost relays: Relay chain       | 10 / 14 / 23 / 38                 |       29,500 |          0 |            6 | Of 1,200 frozen gems, 900 thawed by a burst and 300 by a match                          |
+| … without relays                | 11 / 17 / 25 / 44                 |       29,600 |          0 |            8 | 404 thawed by a bonus and 796 by a match                                                |
+| Tidal pearls: Ebb and flow      | 16 / 21 / 34 / 44                 |       30,200 |          0 |            8 | First pearl home by move 2, last by 19; order filled at 19, last in 29 runs             |
+| Rooted vault: Bound shut        | 13 / 25 / 42 / 61                 |       43,400 |          0 |           14 | Knots cut by move 9, chamber open at 12 (after the last knot in 34 runs)                |
+| … without roots                 | 6 / 19 / 55 / 86                  |       38,400 |          0 |           11 | Chamber open at move 6                                                                  |
+| The far seam: Either way out    | 7 / 14 / 28 / 48                  |       13,900 |          2 |            3 | Out through the top in 25 runs, through the floor in 35; 24 of 145 wall hits by a prism |
+
+Moves and the move numbers in the last column are medians unless marked. Every run
+finished, and reshuffles are the free ones of a board with no match. Chest targets are 80%
+of the median score, rounded to 500: 28,500, 26,000, 30,000, 23,500, 24,000, 34,500 and
+11,000.
+
+What the numbers say about each pairing, before anyone plays them on a phone:
+
+- **Survey markers and phase seals** work together: three in five markers light through
+  their seal, and half the runs see a shift light one. Keep.
+- **Braziers, portals and moon gems** work: the bombs halve the time the gates stand, and
+  the 90th percentile drops from 37 to 30 moves. Keep.
+- **Fossils and route chambers** is the strongest pairing. Either route alone takes a
+  median of 31–36 moves, both together 22, and players take both. Keep.
+- **Frozen gems and spore relays** work, three thaws in four come from bursts, but one
+  match beside the middle mushroom thaws the whole board. Later boards should hide relays
+  inside the bands. Lanterns cannot join them (see above). Phase seals or chains could be
+  the third mechanic: Comet frost already pairs frozen gems with phase seals.
+- **Twin gravity, pearls and one order** plays well but adds little: Twin gravity's
+  Twin pearls and Gated rims already pair the three, and only the single order is new.
+  Either keep it as a quiet remix chapter or swap the order for a mechanic twin gravity
+  has not met, such as chained pearls.
+- **Root knots, a breakthrough chamber and chains** work: the roots hold the chamber
+  shut for twice as long (move 12 against 6) and, by keeping play above the wall, shorten
+  the slow tail (90th percentile 42 against 55). Keep.
+- **Lenses, a moon dial and route chambers**: the dial and the routes work, with both
+  ways out taken. The prisms are the weak part: only one wall hit in six comes through
+  one, because ordinary bonuses beside the walls do the job. Starglass beside the
+  floatstone made the prisms necessary, but in a 20-seed trial it took a median of 57
+  moves (90th percentile 143), too long for a first level. Later boards can put the walls
+  out of reach of nearby bonuses. This board is also the shortest of the seven.
+
+The board motion check reports no overlaps or stutters on all seven boards over eight
+hinted moves. On its seed, `rooted-vault-knots` cleared in seven, so the check reported
+"only 7 hinted moves" for it. Screenshots at 375 × 740 (start and after six hinted
+moves) were taken for each board; none has been played on a phone yet.
+
 ## Crystal seam mechanics and shape trials
 
 The owner approved three original crystal behaviours for the 1.3.0 trials

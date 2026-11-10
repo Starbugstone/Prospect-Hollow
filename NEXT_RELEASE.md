@@ -246,6 +246,13 @@ authored, as 92–94 have. Chapters that introduce a new mechanic or shape repla
 pairings once their trial boards are in; the new mechanics are on trial first, as below. None of these pairings has shared a board yet, and a pairing that doesn't play
 well is swapped for another existing one rather than forced.
 
+Chapter 98's lanterns cannot join frozen gems: a frozen gem sits on ice, and a lantern board
+carries none. Its board on trial pairs frozen gems with spore relays and ordinary ice. Phase
+seals or chains could be the third mechanic. Chapter 99's pairing already ships in Twin
+gravity, apart from the single order. Chapter 101's prisms are only a helper on its first
+board. [The boards on trial](docs/hollow-mine-levels.md#pairing-prototypes-chapters-95101)
+give the numbers.
+
 The Echo gallery pairing has been checked on its prototype. A beam passes over a portal pad as it
 does over a void, and does not come out of the pad's pair. A player could expect either, so the
 prototype keeps every beam clear of the pads, and a test holds it to that. Lenses and portals can
@@ -264,8 +271,17 @@ explained first.
         out and one moon dial. All 60 seeds finish (median 21 moves). Not yet played on a phone
   - [ ] Play all three on a phone and decide which pairings go ahead. On `preprod` they are
         listed under Boards on trial in Settings (More options), from the village
-  - [ ] Chapters 95–101: one board on trial each, measured on 60 hint-led seeds like the first three,
-        then played on a phone
+  - [x] Chapters 95–101: one board on trial each, measured on 60 hint-led seeds like the first
+        three (see [the measurements](docs/hollow-mine-levels.md#pairing-prototypes-chapters-95101)).
+        All 420 runs finish, with medians of 14–25 moves:
+        `shifting-survey-stars` (15), `ember-sidings-gates` (19), `buried-routes-bed` (22),
+        `frost-relays-chain` (14), `tidal-pearls-pairs` (21), `rooted-vault-knots` (25) and
+        `far-seam-either-way` (14). The pairings of chapters 95, 96, 97 and 100 work as
+        proposed. Chapter 98 cannot have lanterns, so its board pairs frozen gems with spore
+        relays only. Chapter 99 repeats shipped Twin gravity content, and chapter 101's prisms
+        barely matter on its first board
+  - [ ] Play chapters 95–101 on a phone, then settle chapter 98's third mechanic and whether
+        chapters 99 and 101 keep their pairings
   - [x] New mechanics and board shapes: candidates proposed; Trace twins, Crossgrain crystal and
         Chord crystal built with a board on trial each; Arrowhead and fixed Twin windows tried
   - [ ] Play the five new mechanic/shape trials on a real phone and confirm the teaching boards
