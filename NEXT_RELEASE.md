@@ -429,8 +429,12 @@ with the 18 new boards).
 - [ ] The era and its ten required buildings: definition, lots, art (3D and SVG), letters, projects,
       French text, a needs test that the finished era houses everyone, an era demo fixture, exports,
       and an era transition that opens the Moon. Keep the era `enabled: false` until the next task
-- [ ] Moon modernization: art finishes, offer text, the two supply tiers, rovers on the outer ring.
-      Then enable the era
+- [x] Moon modernization: art finishes, offer text, the two supply tiers, rovers on the outer ring
+- [x] The town square modernizes in this era, so its ring-roads fountain shows (owner, 10 November)
+- [x] The era cinematic hands over to the Moon map, since every new building stands there
+- [x] The wandering pair: a raccoon on its hind legs and a Willowkin, found in the valley or on the
+      Moon with the astronaut's rewards, through one shared hidden-find contract (owner, 10 November)
+- [ ] Enable the era after a phone pass
 - [ ] The optional buildings, the tram and child settlers
 - [ ] The moonstone monument site, then the two commissions
 - [ ] Rover expeditions: client, server replay, presentation and an economy rerun

@@ -4,6 +4,7 @@ import { BUILDINGS, BUILDING_BY_ID, MOON_BUILDINGS, createTown } from '../src/da
 import { TOWN_PRESENTATIONS, queueBuildingPresentations } from '../src/data/townPresentations';
 import {
   canPresentEvent,
+  eraSettlement,
   eventSettlement,
   townEventStage,
 } from '../src/game/town/TownEventSettlement';
@@ -152,4 +153,14 @@ it('extends to a future settlement definition and safely ignores incomplete defi
   const town = { presentations: { 'future-moon': 'pending' } };
   expect(stage(town, 'moon', { definitions }).presentation).toBe(definitions.future);
   expect(stage(town, 'valley', { definitions }).waiting.settlement).toBe('moon');
+});
+
+// New Hollow Rising builds only on the Moon, so its cinematic hands over to the Moon map;
+// an era that builds in the valley, or in both places, stays in the valley.
+it('hands an era cinematic over to the settlement where all its new buildings stand', () => {
+  expect(eraSettlement('hollow-rising')).toBe('moon');
+  expect(eraSettlement('twin-hollows')).toBeNull();
+  expect(eraSettlement('moonward')).toBeNull();
+  expect(eraSettlement('frontier')).toBeNull();
+  expect(eraSettlement('no-such-era')).toBeNull();
 });

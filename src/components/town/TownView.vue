@@ -680,7 +680,11 @@
 </template>
 <script setup>
 import TownSettlementNotice from './TownSettlementNotice.vue';
-import { placeSettlement, townEventStage } from '../../game/town/TownEventSettlement';
+import {
+  eraSettlement,
+  placeSettlement,
+  townEventStage,
+} from '../../game/town/TownEventSettlement';
 import { HOME_SETTLEMENT, settlementId } from '../../data/settlements';
 import { TOWN_PRESENTATIONS } from '../../data/townPresentations';
 import TownPersonalise from './TownPersonalise.vue';
@@ -1131,8 +1135,11 @@ function playEraSound(cue) {
 }
 function completeEraCinematic() {
   eraRevealed.value = true;
-  if (campaign.acknowledgeEra())
-    nextTick(() => mapFrame.value?.querySelector('canvas')?.focus({ preventScroll: true }));
+  if (!campaign.acknowledgeEra()) return;
+  // An era built entirely on another settlement opens its map once the cinematic ends.
+  const away = eraSettlement(town.value.era);
+  if (away) townScene.value?.showSettlement(away);
+  nextTick(() => mapFrame.value?.querySelector('canvas')?.focus({ preventScroll: true }));
 }
 // The one-second collection clock. Only its readers (cooldown checks in the scene and
 // building card) re-render each second; this view sees derived values that rarely change.

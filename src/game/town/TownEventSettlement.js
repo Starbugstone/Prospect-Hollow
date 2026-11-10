@@ -1,4 +1,4 @@
-import { BUILDING_BY_ID } from '../../data/town';
+import { BUILDINGS, BUILDING_BY_ID } from '../../data/town';
 import { AREA_BY_ID } from '../../data/townLandmarks';
 import { HOME_SETTLEMENT, settlementId, shownSettlement } from '../../data/settlements';
 
@@ -13,6 +13,19 @@ export function eventSettlement(definition) {
   return shownSettlement(
     definition?.settlement ?? BUILDING_BY_ID[definition?.building]?.settlement,
   );
+}
+/**
+ * Where an era's new buildings all stand, when that is not the valley: the place its era
+ * cinematic hands over to. Null for an era that builds in the valley, or in several places.
+ */
+export function eraSettlement(era) {
+  const places = new Set(
+    BUILDINGS.filter((building) => building.introducedEra === era).map((building) =>
+      shownSettlement(building.settlement),
+    ),
+  );
+  const [only] = places;
+  return places.size === 1 && only !== HOME_SETTLEMENT ? only : null;
 }
 export function canPresentEvent(definition, settlement, active = true) {
   return !!definition && active && eventSettlement(definition) === settlement;
