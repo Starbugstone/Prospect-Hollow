@@ -251,6 +251,13 @@ describe('New Hollow buildings', () => {
     town.buildings.willowkinDome = 1;
     expect(moonLetters(town).map(({ id }) => id)).toEqual(['settlerDomes', 'willowkinDome']);
     expect(moonstoneKeepsakes(town)).toBe(3);
+    // Every Moon lot writes home once it is built.
+    for (const id of Object.keys(MOON_LOTS)) town.buildings[id] = 1;
+    expect(
+      moonLetters(town)
+        .map(({ id }) => id)
+        .sort(),
+    ).toEqual(Object.keys(MOON_LOTS).sort());
     // The homestead lights keep growing with the supply era's Moon buildings.
     const before = moonSettlement({ ...town, buildings: { ...town.buildings, settlerDomes: 0 } });
     expect(moonSettlement(town).homesteads).toBeGreaterThanOrEqual(before.homesteads);

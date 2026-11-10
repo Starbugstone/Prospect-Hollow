@@ -37,23 +37,119 @@ const MOON_LIGHTS = Array.from({ length: MOON_SETTLEMENT_LIMIT }, (_, n) => {
   });
 });
 
-// Lots on the Moon map, in the Moon scene's own coordinates. The ribbon lands in
-// the middle of the crater; the camera looks across it toward the risen Earth.
-// Inner lots surround the landing inside the ring road (radius MOON_RING_ROAD);
-// outer homesteads and service pads stand beyond it.
-export const MOON_LOTS = Object.freeze({
-  ribbonLanding: Object.freeze([0, -8]),
-  newHollowCommons: Object.freeze([0, 11]),
-  settlerDomes: Object.freeze([-12, 2]),
-  craterIceWell: Object.freeze([12, 2]),
-  craterHomesteads: Object.freeze([-27, -12]),
-  earthlightGreenhouse: Object.freeze([27, -12]),
-  willowkinDome: Object.freeze([-15, 27]),
-  moonstoneWorkshop: Object.freeze([15, 27]),
-  earthriseLookout: Object.freeze([-30, 12]),
-  roverBarn: Object.freeze([30, 12]),
-  saucerPad: Object.freeze([15, -30]),
+// Every Moon lot, in one place: where it stands (`at`, the Moon scene's own coordinates), its
+// pad's radius, the public path from its hatch (`arrival`, in the lot's own frame, local +z
+// its front apron) and which way it faces. `face` is 'out' by default: the front looks away
+// from the landing. 'in' turns it toward the landing; a number fixes the turn. Lots are
+// listed in the order every map draws and labels them. A new Moon building adds one entry.
+const MOON_LOT_TABLE = Object.freeze({
+  ribbonLanding: {
+    at: [0, -8],
+    pad: 5.2,
+    arrival: [
+      [0, 1.34],
+      [0, 6],
+    ],
+    face: 0,
+  },
+  newHollowCommons: {
+    at: [0, 11],
+    pad: 4.8,
+    arrival: [
+      [0, 0.43],
+      [0, 1.2],
+      [-1.1, 1.4],
+      [-1.1, 5.9],
+    ],
+  },
+  settlerDomes: {
+    at: [-12, 2],
+    pad: 4.6,
+    arrival: [
+      [-1.5, 0.67],
+      [-1.5, 5.81],
+    ],
+  },
+  craterIceWell: {
+    at: [12, 2],
+    pad: 4.4,
+    arrival: [
+      [0, 1.8],
+      [0, 6],
+    ],
+  },
+  craterHomesteads: {
+    at: [-27, -12],
+    pad: 4.8,
+    arrival: [
+      [-1.6, -0.08],
+      [-1.6, 1.4],
+      [0, 1.4],
+      [0, 6],
+    ],
+  },
+  earthlightGreenhouse: {
+    at: [27, -12],
+    pad: 4.6,
+    arrival: [
+      [-2.83, -1.4],
+      [-5.84, -1.4],
+    ],
+  },
+  willowkinDome: {
+    at: [-15, 27],
+    pad: 4.8,
+    arrival: [
+      [0, 1.92],
+      [0, 6],
+    ],
+  },
+  moonstoneWorkshop: {
+    at: [15, 27],
+    pad: 4.4,
+    arrival: [
+      [-0.6, 0.18],
+      [-0.6, 5.97],
+    ],
+  },
+  earthriseLookout: {
+    at: [-30, 12],
+    pad: 4.4,
+    arrival: [
+      [-0.7, 2.62],
+      [-0.7, 5.96],
+    ],
+  },
+  roverBarn: {
+    at: [30, 12],
+    pad: 4.6,
+    arrival: [
+      [-0.8, -0.08],
+      [-0.8, 0.6],
+      [0, 0.9],
+      [0, 6],
+    ],
+  },
+  saucerPad: {
+    at: [15, -30],
+    pad: 6.4,
+    arrival: [
+      [0, 5.32],
+      [0, 7.2],
+    ],
+    face: 'in',
+  },
 });
+const lotEntry = (id) => (Object.hasOwn(MOON_LOT_TABLE, id) ? MOON_LOT_TABLE[id] : null);
+
+// The ribbon lands in the middle of the crater; the camera looks across it toward the risen
+// Earth. Inner lots surround the landing inside the ring road (radius MOON_RING_ROAD); outer
+// homesteads and service pads stand beyond it.
+export const MOON_LOTS = Object.freeze(
+  Object.fromEntries(
+    Object.entries(MOON_LOT_TABLE).map(([id, { at }]) => [id, Object.freeze([...at])]),
+  ),
+);
 export const MOON_RING_ROAD = 20.5;
 // Lots sit inside a crater bowl; footprints stay within this radius of a lot.
 export const MOON_LOT_RADIUS = 5;
@@ -63,20 +159,7 @@ export const MOON_CRATER_RADIUS = 46;
 // bends avoid authored benches, cargo and rovers on each pad. All geometry and
 // the fallback map consume these same routes; no separate navigation is saved.
 const MOON_ACCESS_WIDTH = 0.8;
-const MOON_PAD_RADII = Object.freeze({
-  ribbonLanding: 5.2,
-  newHollowCommons: 4.8,
-  settlerDomes: 4.6,
-  craterIceWell: 4.4,
-  craterHomesteads: 4.8,
-  earthlightGreenhouse: 4.6,
-  willowkinDome: 4.8,
-  moonstoneWorkshop: 4.4,
-  earthriseLookout: 4.4,
-  roverBarn: 4.6,
-  saucerPad: 6.4,
-});
-export const moonPadRadius = (kind) => MOON_PAD_RADII[kind] ?? MOON_LOT_RADIUS;
+export const moonPadRadius = (kind) => lotEntry(kind)?.pad ?? MOON_LOT_RADIUS;
 // Every Moon parcel stands on one octagonal pad: building lots (built or empty) and
 // monument sites, including any added later. The drawn pad, the upgrade glow, tap
 // targets, the selection outline and the path ramps all read this one shape.
@@ -121,68 +204,24 @@ export function moonParcels(lots = MOON_LOTS, sites = areasForSettlement(MOON_SE
     })),
   ];
 }
-const MOON_ARRIVALS = Object.freeze({
-  saucerPad: [
-    [0, 5.32],
-    [0, 7.2],
-  ],
-  ribbonLanding: [
-    [0, 1.34],
-    [0, 6],
-  ],
-  settlerDomes: [
-    [-1.5, 0.67],
-    [-1.5, 5.81],
-  ],
-  craterIceWell: [
-    [0, 1.8],
-    [0, 6],
-  ],
-  earthlightGreenhouse: [
-    [-2.83, -1.4],
-    [-5.84, -1.4],
-  ],
-  willowkinDome: [
-    [0, 1.92],
-    [0, 6],
-  ],
-  newHollowCommons: [
-    [0, 0.43],
-    [0, 1.2],
-    [-1.1, 1.4],
-    [-1.1, 5.9],
-  ],
-  craterHomesteads: [
-    [-1.6, -0.08],
-    [-1.6, 1.4],
-    [0, 1.4],
-    [0, 6],
-  ],
-  moonstoneWorkshop: [
-    [-0.6, 0.18],
-    [-0.6, 5.97],
-  ],
-  roverBarn: [
-    [-0.8, -0.08],
-    [-0.8, 0.6],
-    [0, 0.9],
-    [0, 6],
-  ],
-  earthriseLookout: [
-    [-0.7, 2.62],
-    [-0.7, 5.96],
-  ],
-});
+// Public arrivals use the actual hatch, service forecourt or stair foot. The bends avoid
+// authored benches, cargo and rovers on each pad.
+const DEFAULT_ARRIVAL = Object.freeze([
+  [0, 1],
+  [0, 6],
+]);
+const lotArrival = (id) => lotEntry(id)?.arrival ?? DEFAULT_ARRIVAL;
 
 export function moonLotPose(id, lots = MOON_LOTS) {
   const [x, z] = lots[id] ?? [0, 0];
   const landingZ = lots.ribbonLanding?.[1] ?? -8;
-  // Preserve established lot poses. Local +z is the authored front apron; the
-  // outer Saucer Pad faces inward so pedestrians stay opposite its sky corridor.
+  // Local +z is the authored front apron. A lot faces away from the landing unless its
+  // entry says otherwise: the Saucer Pad faces inward, opposite its sky corridor.
+  const face = lotEntry(id)?.face ?? 'out';
   const rotation =
-    id === 'ribbonLanding'
-      ? 0
-      : Math.atan2(-x, -(z - landingZ)) + (id === 'saucerPad' ? 0 : Math.PI);
+    typeof face === 'number'
+      ? face
+      : Math.atan2(-x, -(z - landingZ)) + (face === 'in' ? 0 : Math.PI);
   return { x, z, rotation };
 }
 
@@ -192,8 +231,7 @@ const moonWorldPoint = ([x, z], pose) => [
 ];
 
 export function moonEntrance(id, level = 3, lots = MOON_LOTS) {
-  const local =
-    id === 'willowkinDome' && level >= 2 ? [0, 2.48] : (MOON_ARRIVALS[id]?.[0] ?? [0, 1]);
+  const local = id === 'willowkinDome' && level >= 2 ? [0, 2.48] : lotArrival(id)[0];
   return moonWorldPoint(local, moonLotPose(id, lots));
 }
 
@@ -212,13 +250,7 @@ export function moonSegmentDistance(x, z, a, b) {
 // a radial spoke through a building or changing its established orientation.
 export function moonApproach(id, level = 3, lots = MOON_LOTS, site = null) {
   const pose = site?.pose ?? moonLotPose(id, lots);
-  const local = (
-    site?.arrival ??
-    MOON_ARRIVALS[id] ?? [
-      [0, 1],
-      [0, 6],
-    ]
-  ).map((point) => [...point]);
+  const local = (site?.arrival ?? lotArrival(id)).map((point) => [...point]);
   if (id === 'willowkinDome' && level >= 2) local[0] = [0, 2.48];
   const padRadius = site?.padRadius ?? moonPadRadius(id),
     rampStart = moonPadApothem(padRadius - 0.25) - 0.05,
@@ -302,7 +334,7 @@ export function moonApproaches(levels = null, lots = MOON_LOTS) {
       .filter(({ id }) => levels[id] > 0)
       .map((route) => {
         if (route.id !== 'willowkinDome' || levels[route.id] >= 2) return route;
-        const entry = moonWorldPoint(MOON_ARRIVALS.willowkinDome[0], route.pose);
+        const entry = moonWorldPoint(lotArrival('willowkinDome')[0], route.pose);
         return { ...route, entry, points: [entry, ...route.points.slice(1)] };
       });
   return Object.keys(lots)
