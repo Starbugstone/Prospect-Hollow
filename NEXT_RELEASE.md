@@ -17,7 +17,8 @@ The release is finished when:
   places to build if the town did;
 - three commissions and at least 18 new boards are live, each with its letters, art and French text;
 - commissions have an honours family, and the economy evidence has been rerun;
-- both commissions and the new boards have been played on a real phone.
+- both commissions and the new boards have been played on a real phone;
+- New Hollow Rising, the sixteenth era, is playable to its end on the Moon (see its section below).
 
 ## Where things stand
 
@@ -37,6 +38,8 @@ On `preprod` after `e8d7191f`; nothing below has reached `main`.
 | New boards                                                       | Not yet                                  |
 | Third commission                                                 | Not yet                                  |
 | Honours family, economy rerun, release notes                     | Not yet                                  |
+| New Hollow Rising: Moon lot table, roads as data, wider crater   | Done on `preprod`                        |
+| New Hollow Rising: the era, its buildings and expeditions        | Not yet                                  |
 
 ## What the numbers say
 
@@ -104,6 +107,8 @@ builds, and both stone monuments need 400 moonstones.
 7. Release.
 
 Steps 3 and 4 do not depend on each other. Boards come first because they serve the larger group.
+New Hollow Rising runs beside them and joins this release (owner, 10 November 2026). It needs the
+boards: it adds about 1.5M coins of required town, so typical players run out of mine sooner.
 
 ## Step 1: close the gaps
 
@@ -271,8 +276,8 @@ old last level can carry on.
 
 **Size: medium. Recommended in the valley, using shared contracts.**
 
-The Moon's flat ground is used up inside radius 41. Making room would change existing terrain or move
-rover traffic, so leave the Moon at one commission for now.
+The Moon's crater is now wider (see New Hollow Rising), but its outer ring belongs to the new era's
+buildings and their two proposed commissions. Keep this third commission in the valley.
 
 ### Proposal
 
@@ -335,6 +340,126 @@ No rank is needed for the boards, because they add no gem, element, era or fusio
 
 **Done when** existing saves catch up once and see the new ranks as new, and the server verifies them.
 
+## New Hollow Rising (the sixteenth era)
+
+**Size: large. Joins this release (owner, 10 November 2026).** Era id `hollow-rising`, 2335. New
+Hollow stops living off the ribbon and becomes a town of its own: its own water and orchards, a
+school for the first Moon-born children and a tram on a second ring road. The valley keeps its Twin
+Hollows look. The full design, with file references, is `output/next-era/moon-expansion-design.md`
+(git-ignored; its decisions are copied here).
+
+Story: "New Hollow has outgrown its first ring. The crater floor is cleared to the rim, a little tram
+circles the new streets, and the first children born under Earthlight are walking to school."
+
+### Where it grows: done
+
+The level floor reaches radius 63, the rim crest 75. An outer ring road at 45 and six spokes (0°,
+45°, 135°, 180°, 225° and 315°, as `Math.atan2(z, x)`) are drawn and walkable. Lots live in one table
+in `src/data/moonSettlement.js`, roads in `MOON_ROADS`, and a lot names the ring its path joins.
+Every existing lot, path and settler route is unchanged.
+
+The outer lots go on a circle of radius 55, one every 22.5° from 11.25°, so none sits on a spoke.
+They join the lot table with their buildings: the tests require the lots to match the Moon buildings.
+
+| Slot | Angle  | Position        | Use                             |
+| ---- | ------ | --------------- | ------------------------------- |
+| 0    | 11.25  | `[53.9, 10.7]`  | Ring Market                     |
+| 1    | 33.75  | `[45.7, 30.6]`  | Crater Inn                      |
+| 2    | 56.25  | `[30.6, 45.7]`  | Dewfall Cistern                 |
+| 3    | 78.75  | `[10.7, 53.9]`  | Commission site A               |
+| 4    | 101.25 | `[-10.7, 53.9]` | Moonstone monument site         |
+| 5    | 123.75 | `[-30.6, 45.7]` | Orchard Vaults                  |
+| 6    | 146.25 | `[-45.7, 30.6]` | Moonball Field (optional)       |
+| 7    | 168.75 | `[-53.9, 10.7]` | Crater School                   |
+| 8    | 191.25 | `[-53.9,-10.7]` | Lantern Row                     |
+| 9    | 213.75 | `[-45.7,-30.6]` | Earthview Terraces              |
+| 10   | 236.25 | `[-30.6,-45.7]` | Commission site B               |
+| 11   | 258.75 | `[-10.7,-53.9]` | Starwatch Dish                  |
+| 12   | 281.25 | `[10.7, -53.9]` | Crater Pond Garden (low)        |
+| 13   | 303.75 | `[30.6, -45.7]` | Empty: the saucer's flight line |
+| 14   | 326.25 | `[45.7, -30.6]` | Expedition Garage               |
+| 15   | 348.75 | `[53.9, -10.7]` | Ring Tram stop                  |
+
+### Buildings (proposal)
+
+Ten required and two optional Moon buildings, `settlement: 'moon'`, three levels each:
+
+| Building           | Effects per level     | Unlocks after            |
+| ------------------ | --------------------- | ------------------------ |
+| Ring Tram stop     | 4 visitors, 1 comfort | Era start                |
+| Dewfall Cistern    | 12 water, 1 comfort   | Era start                |
+| Orchard Vaults     | 12 food, 1 comfort    | Era start                |
+| Lantern Row        | 6 homes, 1 comfort    | Tram 1                   |
+| Ring Market        | 4 visitors, 2 comfort | Tram 1, Vaults 1         |
+| Crater School      | 2 visitors, 3 comfort | Lantern Row 1            |
+| Earthview Terraces | 6 homes, 1 comfort    | Lantern Row 2, Cistern 1 |
+| Expedition Garage  | 2 comfort             | Tram 2                   |
+| Crater Inn         | 4 visitors, 2 comfort | Market 1                 |
+| Starwatch Dish     | 2 visitors, 3 comfort | School 1, Garage 1       |
+| Moonball Field     | 3 comfort, optional   | School 1, Market 1       |
+| Crater Pond Garden | 3 comfort, optional   | Cistern 2, Vaults 2      |
+
+At level 3 they add 84 demand, 84 water, 84 food and 51 comfort, as Twin Hollows did. Five existing
+Moon buildings modernize: the Ribbon Landing (a terminal), the Crater Ice Well and the Earthlight
+Greenhouse (each +16 water or food per level), the Commons (a town hall) and the Rover Barn (rovers on
+the outer ring). Moon art draws by building level only today, so Moon modernization needs a finish
+parameter and its own offer text.
+
+### Things to do (proposal)
+
+- **Rover expeditions:** choose a destination at the Expedition Garage, wait four completed puzzles,
+  tap the returned rover to unload coins, moonstones or a postcard. No clock, never fails.
+- Two Moon commissions on the outer ring (the teachers, the rover crews) and a third moonstone
+  monument.
+- Four Moon projects that each pay a builder hammer, two more VIP spending places, letters home.
+
+### Cost (guess until measured)
+
+Prices on the ladder: 20,000 / 22,600 / 25,200 to modernize, 33,750 / 37,500 / 41,250 to build. The
+required part costs about 1.48M coins, about 20 completed puzzles of late mining; Twin Hollows took 23.
+The required town rises to about 26.5M, which moves the crossover from 1.53× to about 1.62× (1.50×
+with the 18 new boards).
+
+### Tasks
+
+- [x] One table for the Moon lots, with every pose, path and letter unchanged
+- [x] Roads as data: rings, spokes, lots naming their ring, settlers walking between rings
+- [x] The wider crater: floor to 63, rim to 75, outer ring and spokes, craters kept off the roads
+- [ ] Phone check of the wider crater (below)
+- [ ] The era and its ten required buildings: definition, lots, art (3D and SVG), letters, projects,
+      French text, a needs test that the finished era houses everyone, an era demo fixture, exports,
+      and an era transition that opens the Moon. Keep the era `enabled: false` until the next task
+- [ ] Moon modernization: art finishes, offer text, the two supply tiers, rovers on the outer ring.
+      Then enable the era
+- [ ] The optional buildings, the tram and child settlers
+- [ ] The moonstone monument site, then the two commissions
+- [ ] Rover expeditions: client, server replay, presentation and an economy rerun
+- [ ] Honours (below), French text, docs (`docs/future-eras.md`, `docs/era-architecture.md`)
+
+### Phone check of the wider crater
+
+- [ ] The rim and the wider plain look right, and the empty outer ring reads as room to grow
+- [ ] The overview still frames New Hollow as before
+- [ ] On a phone the commission pill now covers part of Earth: it moved below the Moon header in the
+      first gap-closing pass. Earth stays tappable around it, and "Back to the valley" is unchanged.
+      Decide whether the pill or the camera should move
+
+### Decisions still open
+
+These wait until the era's content is built:
+
+1. Five modernized Moon buildings, two adding supply, or modernization for looks only (the cistern
+   and vaults then carry all the new supply).
+2. Era size: 10 required and 2 optional buildings, about 1.48M coins, or larger.
+3. Prices on the ladder above.
+4. Expeditions as the era's own loop, and their rewards.
+5. The two Moon commissions: their price (2M as now, or less) and how they fit the Commissioner
+   family. Its site list is fixed once it ships, so decide before this release.
+6. Through the Ages stops at diamond (the era goes in `NON_MILESTONE_ERAS`) or gains a fifth metal.
+   Proposed new families: Outer Ring Builder (1, 15, 30 of 36 building levels) and Rim Surveyor
+   (expeditions), with `HONOURS_VERSION` 7.
+7. Late projects that pay a builder hammer.
+
 ## Step 6: economy rerun and documentation
 
 **Size: small to medium.**
@@ -371,13 +496,17 @@ Use the admin overview, about two weeks after release:
 | Do players return after level 564? | Active towns by progress | How large the next pack should be        |
 | Which outcomes get chosen?         | Sampled towns            | Which kinds of place to write next       |
 
-If commissions land, the next decision is a sixteenth era as the finale or issue #42's town stories.
-If they don't, the next release should lean on boards and new mechanics.
+If commissions land, the next decision is issue #42's town stories or more on the Moon. If they don't,
+the next release should lean on boards and new mechanics.
 
 ## Decisions
 
-- **Not a sixteenth era yet.** A full era re-arts the whole town and repeats the most repetitive part of
-  the loop.
+- **A sixteenth era after all, on the Moon only** (owner, 10 November 2026). Playing the endgame, the
+  owner found too little to do or build, especially on the Moon. New Hollow Rising joins this release.
+  It replaces the earlier "not a sixteenth era yet": it does not re-art the valley.
+- **New Hollow grows by widening its crater** (owner, 10 November 2026), not by a second Moon map or
+  a second crater. One map keeps every map contract in one place. The rim and the small craters move
+  for every player, Twin Hollows towns included; the owner accepted this.
 - **Any completed puzzle builds a commission**, as monuments already do. Tying builds to new chapters
   would lock out power players still short of level 547.
 - **Commissions open at a finished building level, not at town completion.** Building levels only rise,
