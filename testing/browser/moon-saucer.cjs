@@ -11,7 +11,7 @@ const fixture = fixturePage({
   script: `
 import {MoonScene} from '/src/game/town/moon/MoonScene.js';
 import {MOON_LOTS} from '/src/data/moonSettlement.js';
-window.town={era:'twin-hollows',buildings:{airport:3,spaceElevator:3,...Object.fromEntries(Object.keys(MOON_LOTS).map(id=>[id,3]))},buildingEras:{airport:'moonward'}};
+window.town={era:'twin-hollows',buildings:{airport:3,spaceElevator:3,...Object.fromEntries(Object.keys(MOON_LOTS).map(id=>[id,3]))},buildingEras:{airport:'moonward'},buildingEraLevels:{}};
 window.moon=new MoonScene(document.querySelector('canvas'));
 moon.update(town); moon.renderer.setAnimationLoop(null);moon.render();window.ready=true;
 `,
