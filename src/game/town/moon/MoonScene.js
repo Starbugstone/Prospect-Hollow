@@ -56,6 +56,7 @@ import {
   moonCommissionVenues,
   MOON_PARCEL_SIDES,
   moonLotPose,
+  moonLotsShown,
   moonParcels,
   moonPathDistance,
   moonRoadDistance,
@@ -409,6 +410,8 @@ const labelPoint = new THREE.Vector3();
 // building is drawn).
 const PICK_HEIGHT = 3;
 const PICK_LAYER = 3;
+// A lot of a later era keeps its tap target here, where no ray looks.
+const HIDDEN_LOT_LAYER = 30;
 const lotBounds = new THREE.Box3();
 /** A lot's roof for its tap target. Sky parts (the ribbon and its halo) are left out. */
 export function moonRoofHeight(lot) {
@@ -632,8 +635,11 @@ export class MoonScene extends TownPrimitives {
     const levels = Object.keys(MOON_LOTS).map((id) => town?.buildings?.[id] ?? 0);
     const finishes = Object.keys(MOON_LOTS).map((id) => finishKey(town ?? {}, id));
     const venues = moonCommissionVenues(town);
+    // A later era's lots stay off the map: no pad, building or tap target.
+    const shown = new Set(moonLotsShown(town));
+    this.showLotTargets(shown);
     // A commission first unveiled brings its public path and its visitors.
-    const signature = `${finishes.join('|')}|${venues.map(({ id, visits, use }) => [id, visits.settler, visits.willowkin, use.stay, use.carry])}`;
+    const signature = `${[...shown]}|${finishes.join('|')}|${venues.map(({ id, visits, use }) => [id, visits.settler, visits.willowkin, use.stay, use.carry])}`;
     if (signature === this.signature) return;
     // A lot finished while the Moon is open settles into place with the valley's
     // construction reveal: drawn on its own until then, outside the merged settlement.
@@ -650,6 +656,7 @@ export class MoonScene extends TownPrimitives {
     this.buildings = this.d.group(this.scene);
     this.buildings.name = 'New Hollow buildings';
     Object.keys(MOON_LOTS).forEach((id, n) => {
+      if (!shown.has(id)) return;
       const { x, z, rotation } = moonLotPose(id);
       const lot = this.d.group(finished.has(id) ? this.scene : this.buildings, x, 0, z);
       lot.rotation.y = rotation;
@@ -845,6 +852,12 @@ export class MoonScene extends TownPrimitives {
       this.upgradeGlow.addPolygon(parcel.id, { ...parcel, height: 0 });
       this.addPickTarget(parcel);
     }
+  }
+  // Only the lots the town sees answer taps; a later era's pads are not there yet.
+  showLotTargets(shown) {
+    for (const target of this.pickTargets?.children ?? [])
+      if (MOON_LOTS[target.userData.lot])
+        target.layers.set(shown.has(target.userData.lot) ? PICK_LAYER : HIDDEN_LOT_LAYER);
   }
   // An invisible prism over a parcel's pad: taps on the pad or its building select it.
   addPickTarget({ id, x, z, radius, rotation, sides }) {

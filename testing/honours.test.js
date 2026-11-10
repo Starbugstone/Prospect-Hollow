@@ -611,6 +611,7 @@ describe('Saved honours', () => {
       'quartermaster',
       'monument',
       'new-hollow',
+      'outer-ring',
       'saucer-welcome',
       'moonstone-reserve',
       'landmark-patron',

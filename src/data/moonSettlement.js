@@ -1,9 +1,9 @@
-import { eraEvolution } from './eras';
+import { ERAS, eraEvolution } from './eras';
 import { areasForSettlement, siteYaw } from './townLandmarks';
 import { commissionLetters, commissionUse, finishedCommissions } from './commissions';
 import { MOON_SETTLEMENT } from './settlements';
-// Read inside moonstoneKeepsakes only, after town.js (which needs moonstones.js) loads.
-import { MOONSTONE_BUILDINGS } from './town';
+// Read inside functions only, after town.js (which needs moonstones.js) loads.
+import { BUILDING_BY_ID, MOONSTONE_BUILDINGS } from './town';
 
 // New Hollow, the homesteads on the Moon, grows with the supplies the town sends up
 // the space elevator. It is presentation only: no coins, timers or failure.
@@ -151,6 +151,19 @@ export const MOON_LOTS = Object.freeze(
     Object.entries(MOON_LOT_TABLE).map(([id, { at }]) => [id, Object.freeze([...at])]),
   ),
 );
+const eraAt = (era) => ERAS.findIndex(({ id }) => id === era);
+/**
+ * The Moon lots a town sees: those of its era and every earlier enabled one, in drawing
+ * order. A later era's lots stay hidden, as the valley's future plots do: no pad, label or
+ * tap target. Without a town, every enabled era's lots.
+ */
+export function moonLotsShown(town) {
+  const reached = town ? eraAt(town.era) : ERAS.length - 1;
+  return Object.keys(MOON_LOTS).filter((id) => {
+    const era = ERAS[eraAt(BUILDING_BY_ID[id]?.introducedEra)];
+    return !!era?.enabled && eraAt(era.id) <= reached;
+  });
+}
 // New Hollow's roads: ring roads round the landing (radii, inner first) and straight spokes
 // joining neighbouring rings (angles in radians, measured as Math.atan2(z, x)). Every path,
 // walker and drawing reads this one definition.
@@ -444,6 +457,20 @@ const LETTERS = {
   saucerPad: 'The saucer settled in a puff of moon dust. We saved the pilots a slice of pie.',
   roverBarn: 'The rovers are ready for picnics. Bring a blanket when you visit.',
   earthriseLookout: 'From the lookout we can see the valley lights. Goodnight, Prospect Hollow.',
+  ringTram: 'The tram made its first lap of the outer ring. Nobody wanted to get off.',
+  dewfallCistern: 'The cistern filled overnight with frost-melt. It tastes of morning.',
+  orchardVaults: 'The Willowkin picked the first apples grown on the Moon. They saved you one.',
+  lanternRow: 'Every door on Lantern Row has its own light now. Ours is the blue one.',
+  ringMarket: 'Market day! We traded crater beans for valley honey, and everyone haggled politely.',
+  craterSchool: 'The first class of Moon-born children rang the school bell. Twice.',
+  earthviewTerraces:
+    'From our terrace we watch the valley turn. You look very small and very dear.',
+  expeditionGarage:
+    'The long-range rovers are fuelled. The crews want to see what lies past the rim.',
+  craterInn: 'The inn is open. Pilots, climbers and one very tired Willowkin stayed the night.',
+  starwatchDish: 'The dish heard a star humming. The elders say it is an old friend.',
+  moonballField: 'Moonball final: the children won by a bounce and a half.',
+  craterPondGarden: 'A pond on the Moon! The reeds lean toward Earth, just like the tomatoes.',
 };
 export const moonLetters = (town) => [
   ...Object.entries(LETTERS)

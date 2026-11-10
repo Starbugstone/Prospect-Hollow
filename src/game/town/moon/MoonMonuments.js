@@ -1,6 +1,6 @@
 import { Box3, Vector3 } from 'three';
 import { commissionFor } from '../../../data/commissions';
-import { MOON_LOTS, MOON_SITE_PAD } from '../../../data/moonSettlement';
+import { MOON_LOTS, MOON_SITE_PAD, moonLotsShown } from '../../../data/moonSettlement';
 import {
   areasForSettlement,
   areaChoice,
@@ -19,6 +19,8 @@ export const MOON_MONUMENT_AREAS = areasForSettlement(MOON_SETTLEMENT);
 export const moonMonumentSignature = (town) =>
   JSON.stringify([
     town.personalisation?.crest ?? null,
+    // A new era's lots bring their labels.
+    moonLotsShown(town),
     ...MOON_MONUMENT_AREAS.map((area) => [
       areaUnlocked(town, area),
       areaChoice(town, area),
@@ -28,10 +30,13 @@ export const moonMonumentSignature = (town) =>
   ]);
 /**
  * Where each lot's and open monument site's label hangs: over its building, or lower
- * over a site. Every Moon lot, then each site the town has opened.
+ * over a site. Every Moon lot the town sees, then each site the town has opened.
  */
 export const moonLabelAnchors = (town) => [
-  ...Object.entries(MOON_LOTS).map(([id, [x, z]]) => ({ id, position: new Vector3(x, 3.4, z) })),
+  ...moonLotsShown(town).map((id) => {
+    const [x, z] = MOON_LOTS[id];
+    return { id, position: new Vector3(x, 3.4, z) };
+  }),
   ...MOON_MONUMENT_AREAS.filter((area) => town && areaUnlocked(town, area)).map((area) => ({
     id: area.id,
     position: new Vector3(area.positions[0][0], 2, area.positions[0][1]),

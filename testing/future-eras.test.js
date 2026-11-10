@@ -97,7 +97,10 @@ afterEach(() => delete ERA_BY_ID['future-successor']);
 describe('Skysail, Stargazer and Moonward eras', () => {
   it('follow Riverlight in order, each with its own architecture and story', () => {
     const ids = ERAS.map(({ id }) => id);
-    expect(ids.slice(ids.indexOf('riverlight'))).toEqual(['riverlight', ...FUTURE_ERAS]);
+    expect(ids.slice(ids.indexOf('riverlight'), ids.indexOf('twin-hollows') + 1)).toEqual([
+      'riverlight',
+      ...FUTURE_ERAS,
+    ]);
     expect(FUTURE_ERAS.map((era) => eraEvolution(era).architecture)).toEqual(FUTURE_ARCHITECTURES);
     for (const era of FUTURE_ERAS) {
       expect(isFutureEra(era)).toBe(true);

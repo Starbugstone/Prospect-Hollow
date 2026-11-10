@@ -22,7 +22,7 @@ import { PERSONAL_AREAS } from './townLandmarks';
 // The saved block's shape and the catch-up generation: saves from an older generation
 // are re-evaluated once on load. It is not a requirement version (see `version` on a
 // rank) and a new rank or family raises it so existing saves earn what they prove.
-export const HONOURS_VERSION = 5;
+export const HONOURS_VERSION = 6;
 // Ranks in ladder order. A family may stop early; new ranks only ever append.
 export const RANK_METALS = Object.freeze(['bronze', 'silver', 'gold', 'diamond']);
 const METAL_DIFFICULTY = Object.freeze({
@@ -248,6 +248,8 @@ export const NON_MILESTONE_ERAS = Object.freeze([
   'skysail',
   'stargazer',
   'moonward',
+  // Through the Ages ends on its diamond rank, "Two Towns, One Sky", for now.
+  'hollow-rising',
 ]);
 // Fixed membership is part of a shipped measure. Future content extends the
 // collection through another rank/family, never by silently changing these lists.
@@ -263,6 +265,22 @@ const MOON_HONOUR_BUILDINGS = Object.freeze([
   'roverBarn',
   'saucerPad',
   'earthriseLookout',
+]);
+// New Hollow Rising's buildings on the crater's outer ring: a list of its own, since New
+// Hollow Pioneer's is fixed.
+const OUTER_RING_HONOUR_BUILDINGS = Object.freeze([
+  'ringTram',
+  'dewfallCistern',
+  'orchardVaults',
+  'lanternRow',
+  'ringMarket',
+  'craterSchool',
+  'earthviewTerraces',
+  'expeditionGarage',
+  'craterInn',
+  'starwatchDish',
+  'moonballField',
+  'craterPondGarden',
 ]);
 const HONOUR_MONUMENT_SITES = Object.freeze([
   'meadow',
@@ -654,6 +672,21 @@ export function honourFamilies({
       popup: '{goal} New Hollow building levels completed',
       progress: '{value} / {goal} New Hollow building levels',
       ranks: [1, 15, 30].map((goal, index) => ({ metal: RANK_METALS[index], goal, since: 5 })),
+    },
+    {
+      id: 'outer-ring',
+      tab: 'town',
+      name: 'Outer Ring Builder',
+      art: { image: '/art/rewards/moon-homestead.svg' },
+      measure: {
+        kind: 'buildingLevels',
+        settlement: 'moon',
+        buildings: OUTER_RING_HONOUR_BUILDINGS,
+      },
+      requirement: 'Complete {goal} building levels on New Hollow’s outer ring.',
+      popup: '{goal} outer ring building levels completed',
+      progress: '{value} / {goal} outer ring building levels',
+      ranks: [1, 15, 30].map((goal, index) => ({ metal: RANK_METALS[index], goal, since: 6 })),
     },
     {
       id: 'saucer-welcome',

@@ -261,6 +261,8 @@ export function buildSaveRules(history = readSaveRuleHistory()) {
           incidentGate: era.evolution.incidentGate,
           waterworks: era.evolution.waterworks,
           farmCapacity: era.evolution.farmCapacity,
+          moonWaterworks: era.evolution.moonWaterworks,
+          moonFarm: era.evolution.moonFarm,
           chestCoinCap: chestCoinCap(era.id),
           // Building ids this era modernizes; null modernizes every building.
           modernizes: era.evolution.modernizes ?? null,

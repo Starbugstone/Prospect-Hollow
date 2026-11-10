@@ -114,13 +114,18 @@ function twinTown() {
 
 describe('Twin Hollows: the Moon is the new frontier', () => {
   it('follows Moonward and modernizes only a few homecoming landmarks', () => {
-    expect(ERAS.at(-1).id).toBe('twin-hollows');
-    expect(ERAS.at(-2).id).toBe('moonward');
+    const at = ERAS.findIndex(({ id }) => id === 'twin-hollows');
+    expect(ERAS[at - 1].id).toBe('moonward');
+    // New Hollow Rising follows it, and changes only the Moon.
+    expect(ERAS[at + 1].id).toBe('hollow-rising');
     const list = eraEvolution('twin-hollows').modernizes;
     expect(list).toContain('spaceElevator');
     for (const id of list) expect(BUILDING_BY_ID[id], id).toBeTruthy();
-    // Every other era still modernizes every building.
-    for (const era of ERAS.slice(0, -1)) expect(eraEvolution(era.id).modernizes).toBeNull();
+    // Every era before it still modernizes every building.
+    for (const era of ERAS.slice(0, at)) expect(eraEvolution(era.id).modernizes).toBeNull();
+    // New Hollow Rising modernizes Moon buildings only.
+    for (const id of eraEvolution('hollow-rising').modernizes)
+      expect(BUILDING_BY_ID[id].settlement, id).toBe('moon');
     expect(modernizesInEra('twin-hollows', 'home')).toBe(false);
     expect(modernizesInEra('twin-hollows', 'square')).toBe(true);
     expect(modernizesInEra('moonward', 'home')).toBe(true);
@@ -152,7 +157,9 @@ describe('Twin Hollows: the Moon is the new frontier', () => {
   it('needs New Hollow finished as well as the valley before the era is complete', () => {
     const town = twinTown();
     expect(isEraComplete(town)).toBe(true);
-    for (const b of MOON_BUILDINGS.filter((building) => building.requiredForEraCompletion)) {
+    for (const b of MOON_BUILDINGS.filter(
+      (building) => building.requiredForEraCompletion && building.introducedEra === 'twin-hollows',
+    )) {
       const copy = structuredClone(town);
       copy.buildings[b.id] = 2;
       expect(isEraComplete(copy), b.id).toBe(false);

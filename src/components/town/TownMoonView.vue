@@ -149,6 +149,7 @@ import {
   MOON_LOTS,
   MOON_ROADS,
   moonApproaches,
+  moonLotsShown,
   moonSettlement,
   moonSpokes,
 } from '../../data/moonSettlement';
@@ -245,8 +246,12 @@ const canCollectMoonstones = computed(() =>
 );
 const moon = computed(() => moonSettlement(props.town));
 // The SVG map uses the same lot layout, flattened onto a crater ellipse.
+// A later era's lots stay off the map until the town reaches it.
 const mapLots = computed(() =>
-  Object.entries(MOON_LOTS).map(([id, [x, z]]) => ({ id, x: x * 1.3, y: 6 + z * 1.05 })),
+  moonLotsShown(props.town).map((id) => {
+    const [x, z] = MOON_LOTS[id];
+    return { id, x: x * 1.3, y: 6 + z * 1.05 };
+  }),
 );
 const monumentSites = computed(() =>
   areasForSettlement(MOON_SETTLEMENT).filter((area) => areaUnlocked(props.town, area)),

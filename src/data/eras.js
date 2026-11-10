@@ -416,6 +416,46 @@ export const ERAS = continueSupplyTiers(
       horizon: 'Two towns are about to share one sky.',
       finale: 'Two towns, one sky. Wherever we go, Prospect Hollow is home.',
     },
+    {
+      id: 'hollow-rising',
+      evolution: {
+        ...FUTURE_CITY_EVOLUTION,
+        // The valley keeps its Twin Hollows look: only New Hollow changes.
+        architecture: 'twin',
+        wardrobe: 'twin',
+        fountain: 'twin-globes',
+        roadStyle: 'twin-lane',
+        moonSettlement: true,
+        prices: [20000, 22600, 25200],
+        newBuildingPrices: [33750, 37500, 41250],
+        modernizes: [
+          'ribbonLanding',
+          'craterIceWell',
+          'earthlightGreenhouse',
+          'newHollowCommons',
+          'roverBarn',
+        ],
+        // New Hollow draws more of its own water and food as its ice well and greenhouse
+        // modernize; an era without these fields adds none.
+        moonWaterworks: [16, 32, 48],
+        moonFarm: [16, 32, 48],
+        upgradeTitle: 'Rising level {level}: {name}',
+        upgradeDescriptions: [
+          'Raise a second wing in moon-white ceramic, joined by a glazed walk.',
+          'Crown it with a lantern cupola that New Hollow can see from the outer ring.',
+        ],
+        cityDescription:
+          'New Hollow grows up: a tram on the outer ring, orchards under glass and a school bell.',
+      },
+      label: 'New Hollow Rising',
+      yearLabel: '2335',
+      // Opens once its buildings can be built and modernized to the end.
+      enabled: false,
+      story:
+        'New Hollow has outgrown its first ring. The crater floor is cleared to the rim, a little tram circles the new streets, and the first children born under Earthlight are walking to school.',
+      horizon: 'New Hollow is ready to grow up.',
+      finale: 'A school bell, an orchard and a tram that is never late. New Hollow is a town now.',
+    },
   ].map(defineEra),
 );
 export const ERA_BY_ID = Object.fromEntries(ERAS.map((era) => [era.id, era]));

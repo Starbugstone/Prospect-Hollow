@@ -77,6 +77,7 @@ it('orders rebuilding after Electric and before cars, with two saved, idempotent
     'stargazer',
     'moonward',
     'twin-hollows',
+    'hollow-rising',
   ]);
   for (const from of ['industrial', 'motor-age']) {
     let c = useCampaignStore();
@@ -94,7 +95,8 @@ it('orders rebuilding after Electric and before cars, with two saved, idempotent
     expect(c.town.transition.pending).toBe(false);
   }
 });
-it.each(CITY_ERAS)(
+// Playable eras: an era still being built joins once it is enabled.
+it.each(CITY_ERAS.filter((era) => ERAS[eraIndex(era)].enabled))(
   'preserves every established service during all three %s modernization stages',
   (era) => {
     const prev = ERAS[eraIndex(era) - 1].id;

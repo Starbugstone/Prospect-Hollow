@@ -126,7 +126,10 @@ it('every plot begins in its own era, advances through every later playable era,
       town.transition.pending = false;
     }
   }
-  expect(signatures.size).toBe(BUILDINGS.length);
+  // Every building of a playable era; an era still being built joins once it is enabled.
+  expect(signatures.size).toBe(
+    BUILDINGS.filter((b) => ERAS.find(({ id }) => id === b.introducedEra)?.enabled).length,
+  );
   for (const g of new Set(Object.values(d.geometries))) g.dispose();
   d.materials.forEach((m) => m.dispose());
   d.contactShadowMaterial.dispose();

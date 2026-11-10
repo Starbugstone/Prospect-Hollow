@@ -429,6 +429,143 @@ const twinBuildings = [
 }));
 for (const building of twinBuildings) CITY_FAMILIES[building.kind] = building.family;
 
+// New Hollow Rising: New Hollow grows into a town of its own on the crater's outer ring.
+// The valley keeps its Twin Hollows look; every new building stands on the Moon.
+const risingBuildings = [
+  {
+    id: 'ringTram',
+    name: 'Ring tram stop',
+    shortName: 'Tram stop',
+    purpose: 'A little tram that circles the new streets to the landing',
+    family: 'station',
+    effects: { visitors: 4, comfort: 1 },
+  },
+  {
+    id: 'dewfallCistern',
+    name: 'Dewfall cistern',
+    shortName: 'Cistern',
+    purpose: 'Water for the new streets, drawn from frost the night leaves behind',
+    family: 'water',
+    effects: { water: 12, comfort: 1 },
+  },
+  {
+    id: 'orchardVaults',
+    name: 'Orchard vaults',
+    shortName: 'Orchard vaults',
+    purpose: 'Willowkin-tended fruit trees under long glass vaults',
+    family: 'farm',
+    effects: { food: 12, comfort: 1 },
+  },
+  {
+    id: 'lanternRow',
+    name: 'Lantern Row',
+    shortName: 'Lantern Row',
+    purpose: 'Family homes along a glazed street, a lantern at every door',
+    family: 'residence',
+    effects: { housing: 6, comfort: 1 },
+    unlock: [{ id: 'ringTram', level: 1 }],
+  },
+  {
+    id: 'ringMarket',
+    name: 'Ring market',
+    shortName: 'Market',
+    purpose: 'Stalls full of crater-grown produce',
+    family: 'retail',
+    effects: { visitors: 4, comfort: 2 },
+    unlock: [
+      { id: 'ringTram', level: 1 },
+      { id: 'orchardVaults', level: 1 },
+    ],
+  },
+  {
+    id: 'craterSchool',
+    name: 'Crater school',
+    shortName: 'School',
+    purpose: 'Where the first children born on the Moon learn their letters',
+    family: 'civic',
+    effects: { visitors: 2, comfort: 3 },
+    unlock: [{ id: 'lanternRow', level: 1 }],
+  },
+  {
+    id: 'earthviewTerraces',
+    name: 'Earthview terraces',
+    shortName: 'Terraces',
+    purpose: 'Stepped homes with a window on the valley',
+    family: 'residence',
+    effects: { housing: 6, comfort: 1 },
+    unlock: [
+      { id: 'lanternRow', level: 2 },
+      { id: 'dewfallCistern', level: 1 },
+    ],
+  },
+  {
+    id: 'expeditionGarage',
+    name: 'Expedition garage',
+    shortName: 'Garage',
+    purpose: 'Long-range rovers that explore beyond the crater rim',
+    family: 'depot',
+    effects: { comfort: 2 },
+    unlock: [{ id: 'ringTram', level: 2 }],
+  },
+  {
+    id: 'craterInn',
+    name: 'Crater inn',
+    shortName: 'Inn',
+    purpose: 'Warm beds for guests off the ribbon and the saucer',
+    family: 'culture',
+    effects: { visitors: 4, comfort: 2 },
+    unlock: [{ id: 'ringMarket', level: 1 }],
+  },
+  {
+    id: 'starwatchDish',
+    name: 'Starwatch dish',
+    shortName: 'Starwatch',
+    purpose: 'Listens past the rim while the Willowkin elders name the stars',
+    family: 'research',
+    effects: { visitors: 2, comfort: 3 },
+    unlock: [
+      { id: 'craterSchool', level: 1 },
+      { id: 'expeditionGarage', level: 1 },
+    ],
+  },
+  {
+    id: 'moonballField',
+    name: 'Moonball field',
+    shortName: 'Moonball field',
+    purpose: 'Low-gravity games where the whole crater comes to cheer',
+    family: 'park',
+    effects: { comfort: 3 },
+    requiredForEraCompletion: false,
+    unlock: [
+      { id: 'craterSchool', level: 1 },
+      { id: 'ringMarket', level: 1 },
+    ],
+  },
+  {
+    id: 'craterPondGarden',
+    name: 'Crater pond garden',
+    shortName: 'Pond garden',
+    purpose: 'A Willowkin pond with reeds and stepping stones under open glass',
+    family: 'park',
+    effects: { comfort: 3 },
+    requiredForEraCompletion: false,
+    unlock: [
+      { id: 'dewfallCistern', level: 2 },
+      { id: 'orchardVaults', level: 2 },
+    ],
+  },
+].map(({ id, ...building }) => ({
+  id,
+  kind: id,
+  introducedEra: 'hollow-rising',
+  color: '#a9b8c9',
+  settlement: MOON_SETTLEMENT,
+  // The outer ring opens once New Hollow's first landing stands.
+  unlock: [{ id: 'ribbonLanding', level: 1 }],
+  ...building,
+}));
+for (const building of risingBuildings) CITY_FAMILIES[building.kind] = building.family;
+
 // Each level's benefit line follows the building's effects, so a balance change
 // can never leave an outdated number in the text.
 export function cityBenefit({ housing, visitors, food, water, comfort }, level) {
@@ -685,6 +822,7 @@ export const CITY_BUILDINGS = [
   },
   ...skywardBuildings,
   ...twinBuildings,
+  ...risingBuildings,
 ].map((building) => ({
   ...building,
   stages: [

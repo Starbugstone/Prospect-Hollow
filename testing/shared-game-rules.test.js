@@ -93,6 +93,7 @@ describe('new building prices', () => {
     stargazer: [26250, 30000, 33750],
     moonward: [29250, 33000, 36750],
     'twin-hollows': [31500, 35250, 39000],
+    'hollow-rising': [33750, 37500, 41250],
   };
 
   it('prices every plot an era introduces from that era alone, landmarks with their premium', () => {

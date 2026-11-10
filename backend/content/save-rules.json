@@ -26,7 +26,8 @@
     "skysail",
     "stargazer",
     "moonward",
-    "twin-hollows"
+    "twin-hollows",
+    "hollow-rising"
   ],
   "eras": {
     "frontier": {
@@ -37511,6 +37512,3029 @@
           ]
         }
       }
+    },
+    "hollow-rising": {
+      "enabled": false,
+      "style": "city",
+      "requiresPower": false,
+      "electricity": true,
+      "incident": "storm-cleanup",
+      "incidentGate": null,
+      "waterworks": [
+        307,
+        317,
+        327
+      ],
+      "farmCapacity": [
+        268,
+        278,
+        288
+      ],
+      "moonWaterworks": [
+        16,
+        32,
+        48
+      ],
+      "moonFarm": [
+        16,
+        32,
+        48
+      ],
+      "chestCoinCap": 11300,
+      "modernizes": [
+        "ribbonLanding",
+        "craterIceWell",
+        "earthlightGreenhouse",
+        "newHollowCommons",
+        "roverBarn"
+      ],
+      "buildingOffers": {
+        "well": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 75,
+              "runs": 0,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 210,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 390,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "farm": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 75,
+              "runs": 0,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 255,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 450,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "home": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 75,
+              "runs": 0,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 225,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 420,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "saloon": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 150,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 330,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 525,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "stable": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 150,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 315,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 495,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "sheriff": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 150,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 345,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 540,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "museum": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 180,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 315,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 495,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "armory": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 180,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 330,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 525,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "bank": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 150,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 345,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 540,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "shop": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 150,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 330,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 525,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "square": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 120,
+              "runs": 0,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 240,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 480,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "watermill": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 150,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 270,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 450,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "fisherman": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 150,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 270,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 435,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "blacksmith": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 180,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 330,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 525,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "school": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 180,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 315,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 495,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "doctor": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 180,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 315,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 495,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "bridge": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 800,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 1200,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 1400,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "riverPort": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 800,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 1200,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 1400,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "railDepot": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 800,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 1200,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 1400,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "post": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 800,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 1200,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 1400,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "warehouse": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 800,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 1200,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 1400,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "hotel": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 800,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 1200,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 1400,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "home5": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 800,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 1200,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 1400,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "market": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 800,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 1200,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 1400,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "powerHouse": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 1400,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 1850,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 2300,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "fireStation": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 1400,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 1850,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 2300,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "rowHouses": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 1400,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 1850,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 2300,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "mill": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 1400,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 1850,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 2300,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "garage": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 6480,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 9000,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 11880,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "busDepot": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 6480,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 9000,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 11880,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "gardenCourt": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 6480,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 9000,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 11880,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "diner": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 6480,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 9000,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 11880,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "teaHouse": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 17250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 21000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 24750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "blossomAtelier": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 17250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 21000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 24750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "orchardCottages": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 17250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 21000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 24750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "glassworks": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 20250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 24000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 27750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "springsRetreat": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 20250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 24000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 27750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "riverlightPavilion": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 20250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 24000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 27750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "airport": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 15000,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 18750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 22500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "radioTower": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 12000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 15000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 18000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "concertHall": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 12000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 15000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 18000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "television": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 12000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 15000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 18000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "skyline": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 15000,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 18750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 22500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "cityHall": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 4500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 6000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 7500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "apartments": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 4500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 6000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 7500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "supermarket": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 4500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 6000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 7500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "waterPlant": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 4500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 6000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 7500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "transitHub": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 12000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 15000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 18000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "library": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 12000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 15000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 18000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "crystalLab": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 12000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 15000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 18000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "cityHomes": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 15000,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 18750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 22500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "riverPark": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 12000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 15000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 18000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "skyPods": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 18750,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 23438,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 28125,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "biodome": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 15000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 18750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 22500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "maglevStation": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 15000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 18750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 22500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "skyHarbour": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 23250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 27000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 30750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "cloudOrchard": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 23250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 27000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 30750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "windsongLofts": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 23250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 27000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 30750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "greatTelescope": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 26250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 30000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 33750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "dewlightGardens": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 26250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 30000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 33750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "starlightTerraces": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 26250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 30000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 33750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "spaceElevator": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 36563,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 41250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 45938,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "moonpost": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 29250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 33000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 36750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "missionHomesteads": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 29250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 33000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 36750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "homecomingHall": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 31500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 35250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 39000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "ribbonLanding": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 39375,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 44063,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 48750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 25000,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 4,
+              "cost": 28250,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 5,
+              "cost": 31500,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "hollow-rising"
+            }
+          ]
+        },
+        "settlerDomes": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 31500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 35250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 39000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "craterIceWell": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 31500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 35250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 39000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 20000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 4,
+              "cost": 22600,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 5,
+              "cost": 25200,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "hollow-rising"
+            }
+          ]
+        },
+        "earthlightGreenhouse": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 31500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 35250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 39000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 20000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 4,
+              "cost": 22600,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 5,
+              "cost": 25200,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "hollow-rising"
+            }
+          ]
+        },
+        "willowkinDome": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 31500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 35250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 39000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "newHollowCommons": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 31500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 35250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 39000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 20000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 4,
+              "cost": 22600,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 5,
+              "cost": 25200,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "hollow-rising"
+            }
+          ]
+        },
+        "craterHomesteads": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 31500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 35250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 39000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "moonstoneWorkshop": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 31500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 35250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 39000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "roverBarn": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 31500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 35250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 39000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            {
+              "stage": 3,
+              "cost": 20000,
+              "runs": 2,
+              "requiresPower": false,
+              "eraLevel": 1,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 4,
+              "cost": 22600,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 2,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 5,
+              "cost": 25200,
+              "runs": 1,
+              "requiresPower": false,
+              "eraLevel": 3,
+              "targetEra": "hollow-rising"
+            }
+          ]
+        },
+        "saucerPad": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 31500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 35250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 39000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "earthriseLookout": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 31500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 35250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 39000,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "ringTram": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 33750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 37500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 41250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "dewfallCistern": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 33750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 37500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 41250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "orchardVaults": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 33750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 37500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 41250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "lanternRow": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 33750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 37500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 41250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "ringMarket": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 33750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 37500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 41250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "craterSchool": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 33750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 37500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 41250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "earthviewTerraces": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 33750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 37500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 41250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "expeditionGarage": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 33750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 37500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 41250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "craterInn": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 33750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 37500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 41250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "starwatchDish": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 33750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 37500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 41250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "moonballField": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 33750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 37500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 41250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "craterPondGarden": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 33750,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 37500,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 41250,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "horseField": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 1400,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 1850,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 2300,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "park": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 6480,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 9000,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 11880,
+              "runs": 2,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "home2": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 113,
+              "runs": 0,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 338,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 630,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "home3": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 150,
+              "runs": 0,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 450,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 840,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "home4": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 188,
+              "runs": 0,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 563,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 1050,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "well2": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 113,
+              "runs": 0,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 315,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 585,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "farm2": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 113,
+              "runs": 0,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 383,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 675,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        },
+        "farm3": {
+          "normal": [
+            {
+              "stage": 0,
+              "cost": 150,
+              "runs": 0,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 1,
+              "cost": 510,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            },
+            {
+              "stage": 2,
+              "cost": 900,
+              "runs": 1,
+              "requiresPower": false,
+              "targetEra": "hollow-rising"
+            }
+          ],
+          "modernization": [
+            null,
+            null,
+            null
+          ]
+        }
+      }
     }
   },
   "buildings": {
@@ -40608,6 +43632,518 @@
         }
       ]
     },
+    "ringTram": {
+      "kind": "ringTram",
+      "introducedEra": "hollow-rising",
+      "maxLevel": 3,
+      "legacyMaxLevel": 3,
+      "shortSince": 0,
+      "legacyUpgradeCosts": [],
+      "requiredForEraCompletion": true,
+      "unlock": [
+        {
+          "id": "ribbonLanding",
+          "level": 1
+        }
+      ],
+      "serviceLevels": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "upgrades": [
+        {
+          "cost": 33750,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 0
+        },
+        {
+          "cost": 37500,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 1
+        },
+        {
+          "cost": 41250,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 2
+        }
+      ]
+    },
+    "dewfallCistern": {
+      "kind": "dewfallCistern",
+      "introducedEra": "hollow-rising",
+      "maxLevel": 3,
+      "legacyMaxLevel": 3,
+      "shortSince": 0,
+      "legacyUpgradeCosts": [],
+      "requiredForEraCompletion": true,
+      "unlock": [
+        {
+          "id": "ribbonLanding",
+          "level": 1
+        }
+      ],
+      "serviceLevels": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "upgrades": [
+        {
+          "cost": 33750,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 0
+        },
+        {
+          "cost": 37500,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 1
+        },
+        {
+          "cost": 41250,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 2
+        }
+      ]
+    },
+    "orchardVaults": {
+      "kind": "orchardVaults",
+      "introducedEra": "hollow-rising",
+      "maxLevel": 3,
+      "legacyMaxLevel": 3,
+      "shortSince": 0,
+      "legacyUpgradeCosts": [],
+      "requiredForEraCompletion": true,
+      "unlock": [
+        {
+          "id": "ribbonLanding",
+          "level": 1
+        }
+      ],
+      "serviceLevels": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "upgrades": [
+        {
+          "cost": 33750,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 0
+        },
+        {
+          "cost": 37500,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 1
+        },
+        {
+          "cost": 41250,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 2
+        }
+      ]
+    },
+    "lanternRow": {
+      "kind": "lanternRow",
+      "introducedEra": "hollow-rising",
+      "maxLevel": 3,
+      "legacyMaxLevel": 3,
+      "shortSince": 0,
+      "legacyUpgradeCosts": [],
+      "requiredForEraCompletion": true,
+      "unlock": [
+        {
+          "id": "ringTram",
+          "level": 1
+        }
+      ],
+      "serviceLevels": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "upgrades": [
+        {
+          "cost": 33750,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 0
+        },
+        {
+          "cost": 37500,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 1
+        },
+        {
+          "cost": 41250,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 2
+        }
+      ]
+    },
+    "ringMarket": {
+      "kind": "ringMarket",
+      "introducedEra": "hollow-rising",
+      "maxLevel": 3,
+      "legacyMaxLevel": 3,
+      "shortSince": 0,
+      "legacyUpgradeCosts": [],
+      "requiredForEraCompletion": true,
+      "unlock": [
+        {
+          "id": "ringTram",
+          "level": 1
+        },
+        {
+          "id": "orchardVaults",
+          "level": 1
+        }
+      ],
+      "serviceLevels": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "upgrades": [
+        {
+          "cost": 33750,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 0
+        },
+        {
+          "cost": 37500,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 1
+        },
+        {
+          "cost": 41250,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 2
+        }
+      ]
+    },
+    "craterSchool": {
+      "kind": "craterSchool",
+      "introducedEra": "hollow-rising",
+      "maxLevel": 3,
+      "legacyMaxLevel": 3,
+      "shortSince": 0,
+      "legacyUpgradeCosts": [],
+      "requiredForEraCompletion": true,
+      "unlock": [
+        {
+          "id": "lanternRow",
+          "level": 1
+        }
+      ],
+      "serviceLevels": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "upgrades": [
+        {
+          "cost": 33750,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 0
+        },
+        {
+          "cost": 37500,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 1
+        },
+        {
+          "cost": 41250,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 2
+        }
+      ]
+    },
+    "earthviewTerraces": {
+      "kind": "earthviewTerraces",
+      "introducedEra": "hollow-rising",
+      "maxLevel": 3,
+      "legacyMaxLevel": 3,
+      "shortSince": 0,
+      "legacyUpgradeCosts": [],
+      "requiredForEraCompletion": true,
+      "unlock": [
+        {
+          "id": "lanternRow",
+          "level": 2
+        },
+        {
+          "id": "dewfallCistern",
+          "level": 1
+        }
+      ],
+      "serviceLevels": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "upgrades": [
+        {
+          "cost": 33750,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 0
+        },
+        {
+          "cost": 37500,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 1
+        },
+        {
+          "cost": 41250,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 2
+        }
+      ]
+    },
+    "expeditionGarage": {
+      "kind": "expeditionGarage",
+      "introducedEra": "hollow-rising",
+      "maxLevel": 3,
+      "legacyMaxLevel": 3,
+      "shortSince": 0,
+      "legacyUpgradeCosts": [],
+      "requiredForEraCompletion": true,
+      "unlock": [
+        {
+          "id": "ringTram",
+          "level": 2
+        }
+      ],
+      "serviceLevels": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "upgrades": [
+        {
+          "cost": 33750,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 0
+        },
+        {
+          "cost": 37500,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 1
+        },
+        {
+          "cost": 41250,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 2
+        }
+      ]
+    },
+    "craterInn": {
+      "kind": "craterInn",
+      "introducedEra": "hollow-rising",
+      "maxLevel": 3,
+      "legacyMaxLevel": 3,
+      "shortSince": 0,
+      "legacyUpgradeCosts": [],
+      "requiredForEraCompletion": true,
+      "unlock": [
+        {
+          "id": "ringMarket",
+          "level": 1
+        }
+      ],
+      "serviceLevels": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "upgrades": [
+        {
+          "cost": 33750,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 0
+        },
+        {
+          "cost": 37500,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 1
+        },
+        {
+          "cost": 41250,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 2
+        }
+      ]
+    },
+    "starwatchDish": {
+      "kind": "starwatchDish",
+      "introducedEra": "hollow-rising",
+      "maxLevel": 3,
+      "legacyMaxLevel": 3,
+      "shortSince": 0,
+      "legacyUpgradeCosts": [],
+      "requiredForEraCompletion": true,
+      "unlock": [
+        {
+          "id": "craterSchool",
+          "level": 1
+        },
+        {
+          "id": "expeditionGarage",
+          "level": 1
+        }
+      ],
+      "serviceLevels": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "upgrades": [
+        {
+          "cost": 33750,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 0
+        },
+        {
+          "cost": 37500,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 1
+        },
+        {
+          "cost": 41250,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 2
+        }
+      ]
+    },
+    "moonballField": {
+      "kind": "moonballField",
+      "introducedEra": "hollow-rising",
+      "maxLevel": 3,
+      "legacyMaxLevel": 3,
+      "shortSince": 0,
+      "legacyUpgradeCosts": [],
+      "requiredForEraCompletion": false,
+      "unlock": [
+        {
+          "id": "craterSchool",
+          "level": 1
+        },
+        {
+          "id": "ringMarket",
+          "level": 1
+        }
+      ],
+      "serviceLevels": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "upgrades": [
+        {
+          "cost": 33750,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 0
+        },
+        {
+          "cost": 37500,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 1
+        },
+        {
+          "cost": 41250,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 2
+        }
+      ]
+    },
+    "craterPondGarden": {
+      "kind": "craterPondGarden",
+      "introducedEra": "hollow-rising",
+      "maxLevel": 3,
+      "legacyMaxLevel": 3,
+      "shortSince": 0,
+      "legacyUpgradeCosts": [],
+      "requiredForEraCompletion": false,
+      "unlock": [
+        {
+          "id": "dewfallCistern",
+          "level": 2
+        },
+        {
+          "id": "orchardVaults",
+          "level": 2
+        }
+      ],
+      "serviceLevels": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "upgrades": [
+        {
+          "cost": 33750,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 0
+        },
+        {
+          "cost": 37500,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 1
+        },
+        {
+          "cost": 41250,
+          "runs": 1,
+          "requiresPower": false,
+          "stage": 2
+        }
+      ]
+    },
     "horseField": {
       "kind": "horseField",
       "introducedEra": "industrial",
@@ -41013,6 +44549,20 @@
         "eraTiers": "farmCapacity",
         "ids": [
           "farm"
+        ]
+      },
+      {
+        "stat": "water",
+        "eraTiers": "moonWaterworks",
+        "ids": [
+          "craterIceWell"
+        ]
+      },
+      {
+        "stat": "food",
+        "eraTiers": "moonFarm",
+        "ids": [
+          "earthlightGreenhouse"
         ]
       },
       {
@@ -41740,6 +45290,153 @@
         "per": 2,
         "ids": [
           "earthriseLookout"
+        ]
+      },
+      {
+        "stat": "visitors",
+        "per": 4,
+        "ids": [
+          "ringTram"
+        ]
+      },
+      {
+        "stat": "comfort",
+        "per": 1,
+        "ids": [
+          "ringTram"
+        ]
+      },
+      {
+        "stat": "water",
+        "per": 12,
+        "ids": [
+          "dewfallCistern"
+        ]
+      },
+      {
+        "stat": "comfort",
+        "per": 1,
+        "ids": [
+          "dewfallCistern"
+        ]
+      },
+      {
+        "stat": "food",
+        "per": 12,
+        "ids": [
+          "orchardVaults"
+        ]
+      },
+      {
+        "stat": "comfort",
+        "per": 1,
+        "ids": [
+          "orchardVaults"
+        ]
+      },
+      {
+        "stat": "housing",
+        "per": 6,
+        "ids": [
+          "lanternRow"
+        ]
+      },
+      {
+        "stat": "comfort",
+        "per": 1,
+        "ids": [
+          "lanternRow"
+        ]
+      },
+      {
+        "stat": "visitors",
+        "per": 4,
+        "ids": [
+          "ringMarket"
+        ]
+      },
+      {
+        "stat": "comfort",
+        "per": 2,
+        "ids": [
+          "ringMarket"
+        ]
+      },
+      {
+        "stat": "visitors",
+        "per": 2,
+        "ids": [
+          "craterSchool"
+        ]
+      },
+      {
+        "stat": "comfort",
+        "per": 3,
+        "ids": [
+          "craterSchool"
+        ]
+      },
+      {
+        "stat": "housing",
+        "per": 6,
+        "ids": [
+          "earthviewTerraces"
+        ]
+      },
+      {
+        "stat": "comfort",
+        "per": 1,
+        "ids": [
+          "earthviewTerraces"
+        ]
+      },
+      {
+        "stat": "comfort",
+        "per": 2,
+        "ids": [
+          "expeditionGarage"
+        ]
+      },
+      {
+        "stat": "visitors",
+        "per": 4,
+        "ids": [
+          "craterInn"
+        ]
+      },
+      {
+        "stat": "comfort",
+        "per": 2,
+        "ids": [
+          "craterInn"
+        ]
+      },
+      {
+        "stat": "visitors",
+        "per": 2,
+        "ids": [
+          "starwatchDish"
+        ]
+      },
+      {
+        "stat": "comfort",
+        "per": 3,
+        "ids": [
+          "starwatchDish"
+        ]
+      },
+      {
+        "stat": "comfort",
+        "per": 3,
+        "ids": [
+          "moonballField"
+        ]
+      },
+      {
+        "stat": "comfort",
+        "per": 3,
+        "ids": [
+          "craterPondGarden"
         ]
       }
     ],
@@ -51418,7 +55115,19 @@
         "moonstoneWorkshop",
         "roverBarn",
         "saucerPad",
-        "earthriseLookout"
+        "earthriseLookout",
+        "ringTram",
+        "dewfallCistern",
+        "orchardVaults",
+        "lanternRow",
+        "ringMarket",
+        "craterSchool",
+        "earthviewTerraces",
+        "expeditionGarage",
+        "craterInn",
+        "starwatchDish",
+        "moonballField",
+        "craterPondGarden"
       ]
     },
     "hourMs": 3600000,
@@ -51511,6 +55220,10 @@
         14
       ],
       "twin-hollows": [
+        6,
+        14
+      ],
+      "hollow-rising": [
         6,
         14
       ]
@@ -51660,6 +55373,18 @@
       "roverBarn": "frontier",
       "saucerPad": "frontier",
       "earthriseLookout": "frontier",
+      "ringTram": "frontier",
+      "dewfallCistern": "frontier",
+      "orchardVaults": "frontier",
+      "lanternRow": "frontier",
+      "ringMarket": "frontier",
+      "craterSchool": "frontier",
+      "earthviewTerraces": "frontier",
+      "expeditionGarage": "frontier",
+      "craterInn": "frontier",
+      "starwatchDish": "frontier",
+      "moonballField": "frontier",
+      "craterPondGarden": "frontier",
       "horseField": "frontier",
       "park": "frontier",
       "home2": "frontier",
@@ -51746,6 +55471,18 @@
       "roverBarn": 0,
       "saucerPad": 0,
       "earthriseLookout": 0,
+      "ringTram": 0,
+      "dewfallCistern": 0,
+      "orchardVaults": 0,
+      "lanternRow": 0,
+      "ringMarket": 0,
+      "craterSchool": 0,
+      "earthviewTerraces": 0,
+      "expeditionGarage": 0,
+      "craterInn": 0,
+      "starwatchDish": 0,
+      "moonballField": 0,
+      "craterPondGarden": 0,
       "horseField": 0,
       "park": 0,
       "home2": 0,
@@ -51846,6 +55583,18 @@
       "roverBarn": 0,
       "saucerPad": 0,
       "earthriseLookout": 0,
+      "ringTram": 0,
+      "dewfallCistern": 0,
+      "orchardVaults": 0,
+      "lanternRow": 0,
+      "ringMarket": 0,
+      "craterSchool": 0,
+      "earthviewTerraces": 0,
+      "expeditionGarage": 0,
+      "craterInn": 0,
+      "starwatchDish": 0,
+      "moonballField": 0,
+      "craterPondGarden": 0,
       "horseField": 0,
       "park": 0,
       "home2": 0,
@@ -52007,6 +55756,18 @@
         "roverBarn": "frontier",
         "saucerPad": "frontier",
         "earthriseLookout": "frontier",
+        "ringTram": "frontier",
+        "dewfallCistern": "frontier",
+        "orchardVaults": "frontier",
+        "lanternRow": "frontier",
+        "ringMarket": "frontier",
+        "craterSchool": "frontier",
+        "earthviewTerraces": "frontier",
+        "expeditionGarage": "frontier",
+        "craterInn": "frontier",
+        "starwatchDish": "frontier",
+        "moonballField": "frontier",
+        "craterPondGarden": "frontier",
         "horseField": "frontier",
         "park": "frontier",
         "home2": "frontier",
@@ -52093,6 +55854,18 @@
         "roverBarn": 0,
         "saucerPad": 0,
         "earthriseLookout": 0,
+        "ringTram": 0,
+        "dewfallCistern": 0,
+        "orchardVaults": 0,
+        "lanternRow": 0,
+        "ringMarket": 0,
+        "craterSchool": 0,
+        "earthviewTerraces": 0,
+        "expeditionGarage": 0,
+        "craterInn": 0,
+        "starwatchDish": 0,
+        "moonballField": 0,
+        "craterPondGarden": 0,
         "horseField": 0,
         "park": 0,
         "home2": 0,
@@ -52193,6 +55966,18 @@
         "roverBarn": 0,
         "saucerPad": 0,
         "earthriseLookout": 0,
+        "ringTram": 0,
+        "dewfallCistern": 0,
+        "orchardVaults": 0,
+        "lanternRow": 0,
+        "ringMarket": 0,
+        "craterSchool": 0,
+        "earthviewTerraces": 0,
+        "expeditionGarage": 0,
+        "craterInn": 0,
+        "starwatchDish": 0,
+        "moonballField": 0,
+        "craterPondGarden": 0,
         "horseField": 0,
         "park": 0,
         "home2": 0,
@@ -52227,7 +56012,7 @@
     "issuedRun": 0,
     "settledRun": 0,
     "honours": {
-      "version": 5,
+      "version": 6,
       "earned": {},
       "counts": {
         "gems": {},
@@ -52243,8 +56028,8 @@
       },
       "showcase": [],
       "backfilled": 0,
-      "seenGeneration": 5
+      "seenGeneration": 6
     }
   },
-  "contentDigest": "80f03b29a6bf96b4e2fbe8740f29c405bcd3ffd132bf94e3b10ee81c620d5b7e"
+  "contentDigest": "54ba020fc6978452105cba12836379a66789baf823f5ce6f7d12e62b034b2317"
 }

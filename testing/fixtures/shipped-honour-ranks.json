@@ -820,6 +820,72 @@
     },
     "version": 1
   },
+  "outer-ring-bronze": {
+    "goal": 1,
+    "measure": {
+      "kind": "buildingLevels",
+      "settlement": "moon",
+      "buildings": [
+        "ringTram",
+        "dewfallCistern",
+        "orchardVaults",
+        "lanternRow",
+        "ringMarket",
+        "craterSchool",
+        "earthviewTerraces",
+        "expeditionGarage",
+        "craterInn",
+        "starwatchDish",
+        "moonballField",
+        "craterPondGarden"
+      ]
+    },
+    "version": 1
+  },
+  "outer-ring-silver": {
+    "goal": 15,
+    "measure": {
+      "kind": "buildingLevels",
+      "settlement": "moon",
+      "buildings": [
+        "ringTram",
+        "dewfallCistern",
+        "orchardVaults",
+        "lanternRow",
+        "ringMarket",
+        "craterSchool",
+        "earthviewTerraces",
+        "expeditionGarage",
+        "craterInn",
+        "starwatchDish",
+        "moonballField",
+        "craterPondGarden"
+      ]
+    },
+    "version": 1
+  },
+  "outer-ring-gold": {
+    "goal": 30,
+    "measure": {
+      "kind": "buildingLevels",
+      "settlement": "moon",
+      "buildings": [
+        "ringTram",
+        "dewfallCistern",
+        "orchardVaults",
+        "lanternRow",
+        "ringMarket",
+        "craterSchool",
+        "earthviewTerraces",
+        "expeditionGarage",
+        "craterInn",
+        "starwatchDish",
+        "moonballField",
+        "craterPondGarden"
+      ]
+    },
+    "version": 1
+  },
   "saucer-welcome-bronze": {
     "goal": 1,
     "measure": {

@@ -91,7 +91,10 @@ describe('water and food keep pace with every era', () => {
   });
 
   it('houses everyone and welcomes every visitor once an era is finished', () => {
-    expect(finishedEras.map((town) => town.era)).toEqual(ERAS.map((era) => era.id));
+    // Every playable era; an era still being built joins once it is enabled.
+    expect(finishedEras.map((town) => town.era)).toEqual(
+      ERAS.filter((era) => era.enabled).map((era) => era.id),
+    );
     for (const town of finishedEras) {
       const needs = townNeeds(town);
       expect(needs.water, town.era).toBeGreaterThanOrEqual(needs.demand);
