@@ -1003,3 +1003,27 @@ their cabin and wheel axles therefore agree with the heading sampled by the map.
 using the canvas/container dimensions and fixed label widths to keep lot and
 monument controls separate. Neither settlement creates its own purchase,
 construction or unveiling state machine for these new sites.
+
+## Hidden finds
+
+The space-helmet animal is one definition of a shared hidden-find contract
+(`src/data/hiddenFinds.js`); a later find is another definition, never a second copy of
+the helmet's state, persistence or server code.
+
+- A find `X` is out from its `debut` era on and is placed from the public town alone
+  (`completedRuns`), so the owner and every visitor agree with nothing stored.
+- It saves `XRun` and `XVisitAt` on the town, journals `X-find` and `X-visitor`, is found by
+  a visitor through `POST /villages/{publicId}/X`, rests until `XReadyAt` on a shared town
+  and arrives on the owner poll as `XFinds`. The helmet's saves, journals, receipts and
+  API predate the contract and already have this shape, so nothing was migrated.
+- Rules: `hiddenFindOut`, `hiddenFindable` and `hiddenFindReward` (`TownRules.js`); the
+  store's `findHidden` and `redeemHiddenFind`; the shared tap test `hiddenFindTap`
+  (`TownHiddenFinds.js`: find distance, zoom hint, never moving the camera); words in
+  `HIDDEN_FIND_WORDS`.
+- Server: the definitions are exported as `economy.hiddenFinds` in the save rules.
+  `SaveIntegrity` replays every find's commands and signs receipts with the find's ID;
+  `PublicTown::findHidden` keeps each find's limits (one per host town and one per player
+  per 12 hours, per kind) in `helmet_finds`, whose `kind` column (migration 25) defaults
+  to `helmet` for earlier rows.
+- Each find is separate: finding one never uses up another.
+  `testing/hidden-finds.test.js` runs the contract for every definition.

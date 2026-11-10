@@ -5,7 +5,7 @@ import { renderToString } from 'vue/server-renderer';
 import VillageVisit from '../src/components/community/VillageVisit.vue';
 import TownResourceCollection from '../src/components/town/TownResourceCollection.vue';
 import TownVisitorNotice from '../src/components/town/TownVisitorNotice.vue';
-import { cloud, tapHelmet } from '../src/services/cloudProfile';
+import { cloud, tapHiddenFind } from '../src/services/cloudProfile';
 import { loadVisitorProfile } from '../src/services/visitorApi';
 import { townStorage } from '../src/services/townStorage';
 import { createTown } from '../src/data/town';
@@ -69,7 +69,9 @@ async function visit(extra = {}) {
 it('claims through the visit session without starting account sync', async () => {
   await loadVisitorProfile();
   expect(cloud.account).toBeNull();
-  await expect(tapHelmet('shared-town', home.townId)).resolves.toEqual({ readyAt: 44_200 });
+  await expect(tapHiddenFind('shared-town', 'helmet', home.townId)).resolves.toEqual({
+    readyAt: 44_200,
+  });
   expect(fetch).toHaveBeenLastCalledWith(
     '/api/v1/villages/shared-town/helmet',
     expect.objectContaining({
@@ -84,20 +86,20 @@ it('claims through the visit session without starting account sync', async () =>
 it('bursts coins and confirms the rewarded town after a direct-link find', async () => {
   await visit();
   expect(cloud.account).toBeNull();
-  await state.findHelmet(origin);
+  await state.findHidden({ find: 'helmet', ...origin });
   expect(fetch).toHaveBeenCalledTimes(2);
-  expect(state.helmetNote.value).toEqual({ kind: 'found', town: home.name });
-  expect(state.helmetMessage.value).toContain('Silver Creek receives half an hour');
-  expect(state.helmetBurst.value).toMatchObject({ amount: null, origin });
+  expect(state.finds.helmet.note).toEqual({ kind: 'found', town: home.name });
+  expect(state.findMessage.value).toContain('Silver Creek receives half an hour');
+  expect(state.findBurst.value).toMatchObject({ amount: null, origin });
   const html = await renderToString(
     createSSRApp({
       render: () =>
-        h(TownResourceCollection, { resource: 'helmet-coins', ...state.helmetBurst.value }),
+        h(TownResourceCollection, { resource: 'helmet-coins', ...state.findBurst.value }),
     }),
   );
   expect(html).toContain('collection-particles');
   expect(html).toContain('Found the astronaut: coins for your town!');
-  await state.findHelmet(origin);
+  await state.findHidden({ find: 'helmet', ...origin });
   expect(fetch).toHaveBeenCalledTimes(2);
 });
 
@@ -109,9 +111,9 @@ it('counts cached town takings on a direct link without changing either save', a
   const before = localStorage.getItem(townStorage.selectedKey());
   const saved = townStorage.get(home.townId, 'owner');
   await visit();
-  await state.findHelmet(origin);
-  expect(state.helmetBurst.value?.amount).toBe(spaceHelmetReward(town, 'visitor'));
-  expect(state.helmetBurst.value?.amount).toBeGreaterThan(0);
+  await state.findHidden({ find: 'helmet', ...origin });
+  expect(state.findBurst.value?.amount).toBe(spaceHelmetReward(town, 'visitor'));
+  expect(state.findBurst.value?.amount).toBeGreaterThan(0);
   expect(townStorage.get(home.townId, 'owner')).toEqual(saved);
   expect(localStorage.getItem(townStorage.selectedKey())).toBe(before);
 });
@@ -119,21 +121,21 @@ it('counts cached town takings on a direct link without changing either save', a
 it('does not claim for signed-out visitors or owners visiting their own town', async () => {
   visitor = { profile: null, towns: [] };
   await visit();
-  await state.findHelmet(origin);
-  expect(state.helmetNote.value).toEqual({ kind: 'signed-out' });
+  await state.findHidden({ find: 'helmet', ...origin });
+  expect(state.finds.helmet.note).toEqual({ kind: 'signed-out' });
   expect(state.visitNotice.value.message).toContain('Sign in with a town of your own');
-  expect(state.helmetBurst.value).toBeNull();
+  expect(state.findBurst.value).toBeNull();
   state.homeTown.value = { own: true };
-  await state.findHelmet(origin);
-  expect(state.helmetNote.value).toEqual({ kind: 'own' });
+  await state.findHidden({ find: 'helmet', ...origin });
+  expect(state.finds.helmet.note).toEqual({ kind: 'own' });
   expect(state.visitNotice.value.message).toContain('This is your own town');
   expect(fetch).toHaveBeenCalledTimes(1);
 });
 
 it('announces a known cooldown on each tap without sending another claim', async () => {
   await visit({ helmetReadyAt: 44_200 });
-  await state.findHelmet(origin);
-  expect(state.helmetBurst.value).toBeNull();
+  await state.findHidden({ find: 'helmet', ...origin });
+  expect(state.findBurst.value).toBeNull();
   expect(state.visitNotice.value.message).toContain('Come back in 12 h.');
   const html = await renderToString(
     createSSRApp(TownVisitorNotice, { notice: state.visitNotice.value }),
@@ -142,7 +144,7 @@ it('announces a known cooldown on each tap without sending another claim', async
   expect(html).toContain('role="status"');
   await vi.advanceTimersByTimeAsync(6000);
   expect(state.visitNotice.value).toBeNull();
-  await state.findHelmet(origin);
+  await state.findHidden({ find: 'helmet', ...origin });
   expect(state.visitNotice.value.message).toContain('Come back in 12 h.');
   expect(fetch).toHaveBeenCalledTimes(1);
 });
@@ -154,32 +156,32 @@ it.each(['helmet_taken', 'helmet_resting'])('announces a server %s cooldown', as
     status: 409,
     json: async () => ({ code, readyAt: 44_200 }),
   });
-  await state.findHelmet(origin);
-  expect(state.helmetBurst.value).toBeNull();
+  await state.findHidden({ find: 'helmet', ...origin });
+  expect(state.findBurst.value).toBeNull();
   expect(state.visitNotice.value.message).toContain('12 h.');
-  expect(state.helmetBusy.value).toBe(false);
-  await state.findHelmet(origin);
+  expect(state.finds.helmet.busy).toBe(false);
+  await state.findHidden({ find: 'helmet', ...origin });
   expect(fetch).toHaveBeenCalledTimes(2);
 });
 
 it('announces failed claims and lets the player retry', async () => {
   await visit();
   fetch.mockRejectedValueOnce(new Error('Network unavailable.'));
-  await state.findHelmet(origin);
+  await state.findHidden({ find: 'helmet', ...origin });
   expect(state.visitNotice.value.message).toBe('Network unavailable.');
-  expect(state.helmetBurst.value).toBeNull();
-  await state.findHelmet(origin);
-  expect(state.helmetNote.value.kind).toBe('found');
-  expect(state.helmetBurst.value).toMatchObject({ origin });
+  expect(state.findBurst.value).toBeNull();
+  await state.findHidden({ find: 'helmet', ...origin });
+  expect(state.finds.helmet.note.kind).toBe('found');
+  expect(state.findBurst.value).toMatchObject({ origin });
 });
 
 it('keeps the accepted coin burst if the optional local estimate cannot be read', async () => {
   townStorage.account({ id: 'owner' });
   await visit();
   localStorage.setItem('prospect-town-v2:owner:home-town', 'damaged');
-  await state.findHelmet(origin);
-  expect(state.helmetNote.value.kind).toBe('found');
-  expect(state.helmetBurst.value).toMatchObject({ amount: null, origin });
+  await state.findHidden({ find: 'helmet', ...origin });
+  expect(state.finds.helmet.note.kind).toBe('found');
+  expect(state.findBurst.value).toMatchObject({ amount: null, origin });
 });
 
 it('reports a visitor who has left in the dismissible map notice', async () => {

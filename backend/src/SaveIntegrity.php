@@ -11,7 +11,7 @@ namespace App;
 final class SaveIntegrity
 {
     private array $rules;
-    // The town being replayed: a space-helmet receipt is only valid for its own town.
+    // The town being replayed: a hidden-find receipt is only valid for its own town.
     private string $townId = '';
     // The replayed state a rejected or corrected upload was compared with, for the admin sync log.
     private ?array $expected = null;
@@ -56,8 +56,6 @@ final class SaveIntegrity
         'completedRuns',
         'forge',
         'saloonVisitAt',
-        'helmetRun',
-        'helmetVisitAt',
         'income',
         'lastCollections',
         'events',
@@ -485,7 +483,7 @@ final class SaveIntegrity
         if (($p['settledRun'] ?? 0) > ($p['issuedRun'] ?? 0)) {
             self::invalid('settledRun');
         }
-        foreach (['completedRuns', 'saloonVisitAt', 'helmetRun', 'helmetVisitAt'] as $key) {
+        foreach (['completedRuns', 'saloonVisitAt', ...$this->hiddenFindFields()] as $key) {
             if (array_key_exists($key, $town) && !self::integer($town[$key])) {
                 self::invalid('town.' . $key);
             }
@@ -801,7 +799,7 @@ final class SaveIntegrity
             ],
             $p['pendingChests'],
         );
-        foreach (self::PROTECTED_TOWN as $key) {
+        foreach ($this->protectedTown() as $key) {
             $result['town'][$key] = $p['town'][$key];
         }
         $result['town']['landmarks'] = [
@@ -944,8 +942,7 @@ final class SaveIntegrity
                 'completedRuns',
                 'forge',
                 'saloonVisitAt',
-                'helmetRun',
-                'helmetVisitAt',
+                ...$this->hiddenFindFields(),
                 'income',
                 'lastCollections',
                 'events',
@@ -1748,7 +1745,7 @@ final class SaveIntegrity
             }
             $target[$key] = $merged;
         }
-        foreach (self::PROTECTED_TOWN as $key) {
+        foreach ($this->protectedTown() as $key) {
             $target['town'][$key] = $state['town'][$key];
         }
         foreach (['areas', 'areaLevels'] as $key) {
@@ -2014,18 +2011,8 @@ final class SaveIntegrity
         $cost = 0.0;
         $multiplier = 1;
         if (
-            in_array(
-                $kind,
-                [
-                    'victory',
-                    'continuous',
-                    'vip-spend',
-                    'helmet-find',
-                    'helmet-visitor',
-                    'moonstone-sell',
-                ],
-                true,
-            )
+            in_array($kind, ['victory', 'continuous', 'vip-spend', 'moonstone-sell'], true) ||
+            $this->hiddenFindCommand($kind)
         ) {
             if (in_array($kind, ['victory', 'continuous'], true)) {
                 $multiplier = max(1, $this->rules['levels'][$data['levelId']]['miningMultiplier']);
@@ -2224,8 +2211,7 @@ final class SaveIntegrity
             'chest-claim' => ['chestId'],
             'vip-spend' => ['key', 'buildingId'],
             'era-advance' => ['expectedEra'],
-            'helmet-visitor' => ['receipt'],
-            default => [],
+            default => ($this->hiddenFindCommand($kind)[1] ?? '') === 'visitor' ? ['receipt'] : [],
         };
         foreach ($stringFields as $key) {
             if (!is_string($d[$key] ?? null)) {
@@ -2253,6 +2239,11 @@ final class SaveIntegrity
             if (isset($d['chooseRewards']) && !is_bool($d['chooseRewards'])) {
                 self::mismatch('chooseRewards');
             }
+        }
+        $find = $this->hiddenFindCommand($kind);
+        if ($find) {
+            $this->applyHiddenFind($s, $context, $kind, $find[0], $find[1], $d, $now);
+            return;
         }
         switch ($kind) {
             case 'landmark-buy':
@@ -2553,34 +2544,6 @@ final class SaveIntegrity
                     $s['town']['income']['stored'] -= $coins;
                 }
                 $s['town']['saloonVisitAt'] = $visit;
-                break;
-            case 'helmet-find':
-                // Once per completed puzzle, the run that moved the helmet to its wearer.
-                $this->clock($d['at'] ?? null, $context, $now);
-                $run = $this->count($d['run'] ?? null, 'run');
-                if (
-                    !$this->spaceHelmetOut($s['town']['era']) ||
-                    $run !== $s['town']['completedRuns'] ||
-                    $run <= $s['town']['helmetRun']
-                ) {
-                    self::mismatch('helmet-find');
-                }
-                $this->addCoins($s, $this->helmetReward($s['town'], 'owner'));
-                $s['town']['helmetRun'] = $run;
-                break;
-            case 'helmet-visitor':
-                // A find in another town: only the server's receipt for this town proves it.
-                $this->clock($d['at'] ?? null, $context, $now);
-                $found = $this->count($d['foundAt'] ?? null, 'foundAt');
-                if (
-                    $found <= $s['town']['helmetVisitAt'] ||
-                    $this->townId === '' ||
-                    !hash_equals(self::helmetReceipt($this->townId, $found), $d['receipt'])
-                ) {
-                    self::mismatch('helmet-visitor');
-                }
-                $this->addCoins($s, $this->helmetReward($s['town'], 'visitor'));
-                $s['town']['helmetVisitAt'] = $found;
                 break;
             case 'vip-spend':
                 $key = $d['key'] ?? null;
@@ -3089,33 +3052,117 @@ final class SaveIntegrity
                 100,
         );
     }
-    /** Whether a town in this era has a space-helmet wearer to find. */
-    public function spaceHelmetOut(mixed $era): bool
+    /**
+     * Hidden finds (the space-helmet animal, the wandering pair): one contract, defined in
+     * src/data/hiddenFinds.js and exported as `economy.hiddenFinds`. A find `X` keeps the town
+     * fields `XRun` and `XVisitAt`, journals `X-find` and `X-visitor`, and signs its visitor
+     * receipts with its own ID, so the helmet's saves, journals and receipts stay as shipped.
+     * @return array<string, array{debut: string, rewardHours: array<string, int|float>}>
+     */
+    public function hiddenFinds(): array
     {
-        $debut = $this->rules['economy']['spaceHelmetDebut'] ?? null;
+        return $this->rules['economy']['hiddenFinds'] ?? [];
+    }
+    /** @return list<string> every find's saved town fields */
+    private function hiddenFindFields(): array
+    {
+        $fields = [];
+        foreach (array_keys($this->hiddenFinds()) as $id) {
+            array_push($fields, $id . 'Run', $id . 'VisitAt');
+        }
+        return $fields;
+    }
+    /** @return list<string> */
+    private function protectedTown(): array
+    {
+        return [...self::PROTECTED_TOWN, ...$this->hiddenFindFields()];
+    }
+    /** @return array{string, string}|null the find and `find` or `visitor` a journal kind names */
+    private function hiddenFindCommand(string $kind): ?array
+    {
+        foreach (array_keys($this->hiddenFinds()) as $id) {
+            foreach (['find', 'visitor'] as $role) {
+                if ($kind === $id . '-' . $role) {
+                    return [(string) $id, $role];
+                }
+            }
+        }
+        return null;
+    }
+    private function applyHiddenFind(
+        array &$s,
+        array &$context,
+        string $kind,
+        string $id,
+        string $role,
+        array $d,
+        int $now,
+    ): void {
+        $this->clock($d['at'] ?? null, $context, $now);
+        if ($role === 'find') {
+            // Once per completed puzzle, the run that moved the find.
+            $run = $this->count($d['run'] ?? null, 'run');
+            if (
+                !$this->hiddenFindOut($id, $s['town']['era']) ||
+                $run !== $s['town']['completedRuns'] ||
+                $run <= $s['town'][$id . 'Run']
+            ) {
+                self::mismatch($kind);
+            }
+            $this->addCoins($s, $this->hiddenFindReward($id, $s['town'], 'owner'));
+            $s['town'][$id . 'Run'] = $run;
+            return;
+        }
+        // A find in another town: only the server's receipt for this town proves it.
+        $found = $this->count($d['foundAt'] ?? null, 'foundAt');
+        if (
+            $found <= $s['town'][$id . 'VisitAt'] ||
+            $this->townId === '' ||
+            !hash_equals(self::hiddenFindReceipt($id, $this->townId, $found), $d['receipt'])
+        ) {
+            self::mismatch($kind);
+        }
+        $this->addCoins($s, $this->hiddenFindReward($id, $s['town'], 'visitor'));
+        $s['town'][$id . 'VisitAt'] = $found;
+    }
+    /** Whether a town in this era has this hidden find out to be found. */
+    public function hiddenFindOut(string $id, mixed $era): bool
+    {
+        $debut = $this->hiddenFinds()[$id]['debut'] ?? null;
         $index = is_string($era) ? $this->eraIndex($era) : -1;
         return is_string($debut) && $index >= 0 && $index >= $this->eraIndex($debut);
     }
-    /** Mirrors spaceHelmetReward(): the finder's share of an hour of saloon takings. */
-    private function helmetReward(array $town, string $finder): int
+    /** Whether a town in this era has a space-helmet wearer to find. */
+    public function spaceHelmetOut(mixed $era): bool
     {
-        $hours = $this->rules['economy']['spaceHelmetRewardHours'][$finder] ?? null;
+        return $this->hiddenFindOut('helmet', $era);
+    }
+    /** Mirrors hiddenFindReward(): the finder's share of an hour of saloon takings. */
+    private function hiddenFindReward(string $id, array $town, string $finder): int
+    {
+        $hours = $this->hiddenFinds()[$id]['rewardHours'][$finder] ?? null;
         if (!JsonNumber::finite($hours)) {
             self::incompatible();
         }
         return (int) floor($this->incomeRate($town) * $hours);
     }
     /**
-     * Proof that a player found a space helmet while visiting, for the town they visited
-     * as, at a server time in Unix milliseconds. The owner poll hands it to that town.
+     * Proof that a player made a hidden find while visiting, for the town they visited as,
+     * at a server time in Unix milliseconds. The owner poll hands it to that town. The
+     * find's ID is part of the signed text, so one find's receipt never redeems another.
      */
-    public static function helmetReceipt(string $townId, int $foundAt): string
+    public static function hiddenFindReceipt(string $id, string $townId, int $foundAt): string
     {
         return hash_hmac(
             'sha256',
-            'prospect-hollow:helmet-find:v1:' . $townId . ':' . $foundAt,
+            'prospect-hollow:' . $id . '-find:v1:' . $townId . ':' . $foundAt,
             Env::appSecret(),
         );
+    }
+    /** The space helmet's receipt, as signed since its first release. */
+    public static function helmetReceipt(string $townId, int $foundAt): string
+    {
+        return self::hiddenFindReceipt('helmet', $townId, $foundAt);
     }
     private function cooldown(array $town, string $id, int $at): bool
     {

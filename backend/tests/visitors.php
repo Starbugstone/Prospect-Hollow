@@ -527,11 +527,31 @@ try {
         'only the visitor\'s own town can receive the reward',
     );
     $found = status(200, $findHelmet($guest, $originId), 'visitor finds helmet');
-    $foundAt = ($found['readyAt'] - PublicTown::HELMET_REST) * 1000;
+    $foundAt = ($found['readyAt'] - PublicTown::FIND_REST) * 1000;
     check(
-        $found['readyAt'] - time() > PublicTown::HELMET_REST - 60,
+        $found['readyAt'] - time() > PublicTown::FIND_REST - 60,
         'the next helmet reward rests 12 hours',
     );
+    // Rows from before migration 25, and rows an earlier release still writes after a
+    // rollback, carry no kind: they are space helmets and rest the helmet as before.
+    check(
+        $db->get()->fetchOne('SELECT kind FROM helmet_finds WHERE player_id=?', [$guest['id']]) ===
+            'helmet',
+        'a helmet find is stored as a helmet',
+    );
+    $db->get()->executeStatement(
+        'INSERT INTO helmet_finds(player_id,found_at,town_id,host_town_id) VALUES (?,?,?,?)',
+        [$guest['id'], 1, $originId, $hostId],
+    );
+    check(
+        $db
+            ->get()
+            ->fetchOne('SELECT kind FROM helmet_finds WHERE player_id=? AND found_at=1', [
+                $guest['id'],
+            ]) === 'helmet',
+        'a find stored without a kind is a space helmet',
+    );
+    $db->get()->delete('helmet_finds', ['player_id' => $guest['id'], 'found_at' => 1]);
     $taken = status(409, $findHelmet($guest, $originId), 'helmet taken');
     check(
         $taken['code'] === 'helmet_taken' && $taken['readyAt'] === $found['readyAt'],
@@ -587,13 +607,13 @@ try {
     );
     $db->get()->update(
         'helmet_finds',
-        ['found_at' => time() - PublicTown::HELMET_REST, 'host_town_id' => $hostId],
+        ['found_at' => time() - PublicTown::FIND_REST, 'host_town_id' => $hostId],
         ['player_id' => $guest['id']],
     );
     status(200, $findHelmet($guest, $originId), 'a find after the rest');
     $db->get()->executeStatement(
         'UPDATE helmet_finds SET found_at=? WHERE player_id=? AND found_at<?',
-        [time() - PublicTown::HELMET_KEEP - 1, $guest['id'], time() - 3600],
+        [time() - PublicTown::FIND_KEEP - 1, $guest['id'], time() - 3600],
     );
     check(
         count(

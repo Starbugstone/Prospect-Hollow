@@ -1,3 +1,4 @@
+import { createHiddenFindState } from './hiddenFinds';
 import { createMoonstones } from './moonstones';
 import { HOME_SETTLEMENT, MOON_SETTLEMENT, settlementOf, settlementPlaces } from './settlements';
 import { createPersonalisation } from './townPersonalisation';
@@ -653,10 +654,9 @@ export const createTown = () => ({
   lastCollections: { saloon: null, blacksmith: null, moonstoneWorkshop: null },
   // Share-link events: the last visitor saloon collection applied, and the latest guest.
   saloonVisitAt: 0,
-  // Space-helmet finds: the completed puzzle count whose wearer the owner found, and the
-  // latest find while visiting another town that this town has redeemed.
-  helmetRun: 0,
-  helmetVisitAt: 0,
+  // Hidden finds (`helmetRun`, `helmetVisitAt`, ...): the completed puzzle count the owner
+  // found each at, and the latest find while visiting another town that this town redeemed.
+  ...createHiddenFindState(),
   guestVip: null,
   progressionVersion: PROGRESSION_VERSION,
 });

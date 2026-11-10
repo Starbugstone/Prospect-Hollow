@@ -55260,10 +55260,14 @@
       "coinShare": 10,
       "keepCoins": 50
     },
-    "spaceHelmetDebut": "tomorrow",
-    "spaceHelmetRewardHours": {
-      "owner": 1,
-      "visitor": 0.5
+    "hiddenFinds": {
+      "helmet": {
+        "debut": "tomorrow",
+        "rewardHours": {
+          "owner": 1,
+          "visitor": 0.5
+        }
+      }
     }
   },
   "honours": {
@@ -56031,5 +56035,5 @@
       "seenGeneration": 6
     }
   },
-  "contentDigest": "54ba020fc6978452105cba12836379a66789baf823f5ce6f7d12e62b034b2317"
+  "contentDigest": "20b3d389b721078b28706239f30fa8072231b1557946e2e7f53e6e31354d9acd"
 }

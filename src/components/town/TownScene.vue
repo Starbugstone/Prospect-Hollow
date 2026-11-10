@@ -403,10 +403,10 @@ const emit = defineEmits([
   'camera-distance',
   'vip-spend',
   'guest-vip',
-  // The space-helmet wearer was tapped, with its position on the map in percent.
-  'helmet',
-  // An animal was tapped from too far away to tell whether it wears the helmet.
-  'helmet-zoom',
+  // A hidden find was tapped: `{ find, x, y }`, its ID and position on the map in percent.
+  'find',
+  // A possible hidden find was tapped from too far away to tell; carries the find's ID.
+  'find-zoom',
   'presentation-ready',
   'presentation-unavailable',
   'cinematic-ready',
@@ -779,8 +779,8 @@ async function initialize() {
       onUnavailable: recoverGraphics,
       onVipSpend: (receipt) => emit('vip-spend', receipt),
       onGuestVip: (at) => emit('guest-vip', at),
-      onHelmet: (origin) => emit('helmet', origin),
-      onHelmetZoom: () => emit('helmet-zoom'),
+      onFind: (tap) => emit('find', tap),
+      onFindZoom: (find) => emit('find-zoom', find),
       onVillagerLabel: showValleyVillagerLabel,
       onPlaqueLabel: showPlaqueLabel,
       onEventInset: (view) => {

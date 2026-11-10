@@ -51,25 +51,25 @@ describe('the space helmet', () => {
     const c = helmetTown();
     const rate = saloonIncomeRate(c.town);
     expect(rate).toBeGreaterThan(0);
-    expect(c.findSpaceHelmet(5_000)).toBe(rate);
+    expect(c.findHidden('helmet', 5_000)).toBe(rate);
     expect(c.town).toMatchObject({ coins: 100 + rate, helmetRun: 12 });
     expect(lastAction(c)).toMatchObject({ kind: 'helmet-find', data: { at: 5_000, run: 12 } });
     // Found: it waits for the next completed puzzle to move to another animal.
-    expect(c.findSpaceHelmet(6_000)).toBeNull();
+    expect(c.findHidden('helmet', 6_000)).toBeNull();
     expect(c.town.coins).toBe(100 + rate);
     c.town = { ...c.town, completedRuns: 13 };
-    expect(c.findSpaceHelmet(7_000)).toBe(rate);
+    expect(c.findHidden('helmet', 7_000)).toBe(rate);
     expect(c.town).toMatchObject({ coins: 100 + 2 * rate, helmetRun: 13 });
   });
 
   it('marks a find without saloon takings, and has nothing to find before its era', () => {
     const c = helmetTown();
     c.town.buildings.saloon = 0;
-    expect(c.findSpaceHelmet(5_000)).toBe(0);
+    expect(c.findHidden('helmet', 5_000)).toBe(0);
     expect(c.town).toMatchObject({ coins: 100, helmetRun: 12 });
     const early = helmetTown({ era: ERAS[debut - 1].id, completedRuns: 20 });
     const journal = early.integrity.actions.length;
-    expect(early.findSpaceHelmet(6_000)).toBeNull();
+    expect(early.findHidden('helmet', 6_000)).toBeNull();
     expect(early.integrity.actions).toHaveLength(journal);
     expect(early.town).toMatchObject({ coins: 100, helmetRun: 0 });
   });
@@ -82,18 +82,18 @@ describe('the space helmet', () => {
     expect(spaceHelmetReward(c.town, 'visitor')).toBe(rate);
     expect(spaceHelmetReward(c.town, 'owner')).toBe(saloonIncomeRate(c.town));
     const find = { at: 2_000, receipt: 'a'.repeat(64) };
-    expect(c.redeemHelmetVisit(find, 9_000)).toBe(rate);
+    expect(c.redeemHiddenFind('helmet', find, 9_000)).toBe(rate);
     expect(c.town).toMatchObject({ coins: 100 + rate, helmetVisitAt: 2_000 });
     expect(lastAction(c)).toMatchObject({
       kind: 'helmet-visitor',
       data: { at: 9_000, foundAt: 2_000, receipt: find.receipt },
     });
     // Every poll offers the same recent finds; only newer ones pay.
-    expect(c.redeemHelmetVisit(find, 9_000)).toBeNull();
-    expect(c.redeemHelmetVisit({ ...find, at: 1_000 }, 9_000)).toBeNull();
-    expect(c.redeemHelmetVisit({ at: 3_000 }, 9_000)).toBeNull();
-    expect(c.redeemHelmetVisit(null, 9_000)).toBeNull();
-    expect(c.redeemHelmetVisit({ at: 3_000, receipt: 'b'.repeat(64) }, 9_000)).toBe(rate);
+    expect(c.redeemHiddenFind('helmet', find, 9_000)).toBeNull();
+    expect(c.redeemHiddenFind('helmet', { ...find, at: 1_000 }, 9_000)).toBeNull();
+    expect(c.redeemHiddenFind('helmet', { at: 3_000 }, 9_000)).toBeNull();
+    expect(c.redeemHiddenFind('helmet', null, 9_000)).toBeNull();
+    expect(c.redeemHiddenFind('helmet', { at: 3_000, receipt: 'b'.repeat(64) }, 9_000)).toBe(rate);
     expect(c.town).toMatchObject({ coins: 100 + 2 * rate, helmetVisitAt: 3_000 });
   });
 
