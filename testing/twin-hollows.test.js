@@ -324,8 +324,11 @@ describe('New Hollow buildings', () => {
         expect(moonSegmentDistance(x, z, a, b) - radius, id).toBeGreaterThan(2.5);
       expect(Math.abs(Math.hypot(x, z) - outer) - radius, id).toBeGreaterThan(2.5);
     }
-    // The existing paths still join the inner ring; nothing new is required of them.
-    for (const route of moonApproaches()) expect(route.ring).toBe(MOON_RING_ROAD);
+    // The first lots' paths still join the inner ring; lots beyond the outer road join it.
+    for (const route of moonApproaches())
+      expect(route.ring, route.id).toBe(
+        Math.hypot(...MOON_LOTS[route.id]) > outer ? outer : MOON_RING_ROAD,
+      );
   });
 
   it('draws every ring and spoke where the roads are, and nowhere between them', () => {

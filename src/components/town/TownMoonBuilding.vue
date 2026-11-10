@@ -174,6 +174,34 @@
           <path :d="`M${part.x}-86l26 8-26 8Z`" :fill="p.flower" />
         </template>
       </g>
+      <template v-for="(shape, n) in drawing ?? []" :key="`shape${n}`">
+        <rect
+          v-if="shape.t === 'rect'"
+          :x="shape.x"
+          :y="shape.y"
+          :width="shape.w"
+          :height="shape.h"
+          :rx="shape.rx"
+          v-bind="paint(shape)"
+        />
+        <circle
+          v-else-if="shape.t === 'circle'"
+          :cx="shape.cx"
+          :cy="shape.cy"
+          :r="shape.r"
+          :data-airlock="shape.hatch ? 'exposed' : undefined"
+          v-bind="paint(shape)"
+        />
+        <ellipse
+          v-else-if="shape.t === 'ellipse'"
+          :cx="shape.cx"
+          :cy="shape.cy"
+          :rx="shape.rx"
+          :ry="shape.ry"
+          v-bind="paint(shape)"
+        />
+        <path v-else :d="shape.d" v-bind="paint(shape)" />
+      </template>
       <g v-if="kind === 'earthriseLookout'" data-stair-access="connected">
         <path d="M-48 0v-8h6v-8h6v-8h6v-8h6v-16h12v48Z" :fill="p.timber" />
         <path d="M-54-9-24-58M-54 0v-9M-24-48v-10" :stroke="p.deep" stroke-width="2" />
@@ -195,12 +223,22 @@
 import { heritageUpgrade } from '../../data/heritageUpgrades';
 import { computed } from 'vue';
 import { MOON_PALETTE as p } from '../../data/futureArchitecture';
+import { risingDrawing } from './moonRisingDrawings';
 
 // Front-view drawings of New Hollow's buildings, for building cards and the
 // accessible Moon map. They follow the 3D lunar kit: glass domes, ceramic
 // modules, gables, tanks and rovers, in the shared Moon palette.
 const props = defineProps({ kind: String, level: { type: Number, default: 3 } });
 const purpose = computed(() => heritageUpgrade(props.kind));
+// The outer ring's buildings are drawn from plain shapes (moonRisingDrawings.js).
+const drawing = computed(() => risingDrawing(props.kind, props.level));
+const tint = (key) => (key && key !== 'none' ? p[key] : 'none');
+const paint = (shape) => ({
+  fill: tint(shape.fill),
+  'fill-opacity': shape.fo,
+  stroke: shape.stroke ? tint(shape.stroke) : undefined,
+  'stroke-width': shape.sw,
+});
 const drum = (x, r, h) =>
   `M${x - r} 0v${-h}a${r} ${r * 0.22} 0 0 1 ${r * 2} 0v${h}a${r} ${r * 0.22} 0 0 1 ${-r * 2} 0Z`;
 const dome = (x, r, h = 40, solid = false) => ({ type: 'dome', x, r, h, solid });
@@ -286,7 +324,7 @@ const parts = computed(() => {
     case 'earthriseLookout':
       return [...at(3, dome(-86, 28, 18)), ...at(2, { type: 'lamp', x: 96 })];
     default:
-      return [dome(0, 50)];
+      return drawing.value ? [] : [dome(0, 50)];
   }
 });
 </script>
