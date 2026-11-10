@@ -19,16 +19,16 @@ import {
 // planters, awnings, benches and lanterns. Every form keeps its hatch and its public path
 // (MOON_LOT_TABLE) clear at every level, and uses at most eight materials.
 const TAU = Math.PI * 2;
-const GROUND = 0.25;
+export const GROUND = 0.25;
 
 /** A group turned about its own place, so a part can face any way on its pad. */
-function turned(d, g, x, z, turn) {
+export function turned(d, g, x, z, turn) {
   const group = d.group(g, x, 0, z);
   group.rotation.y = turn;
   return group;
 }
 /** A glazed vault along x on a ceramic kerb: the era's glass streets, orchards and wings. */
-function glassVault(d, g, x, z, length, { half = 0.9, height = 0.95 } = {}) {
+export function glassVault(d, g, x, z, length, { half = 0.9, height = 0.95 } = {}) {
   d.box(g, length, 0.3, half * 2, x, 0.4, z, p.shell);
   habitatGlass(
     d,
@@ -36,8 +36,33 @@ function glassVault(d, g, x, z, length, { half = 0.9, height = 0.95 } = {}) {
   );
   vaultFrame(d, g, x, z, length, { half, height });
 }
+/**
+ * A glazed canopy along x on a gold-foil frame, its posts along the back edge: the cover of
+ * a tram platform.
+ */
+export function platformCanopy(d, g, x, z, length, { posts, foot = GROUND, depth = 1.4 } = {}) {
+  const canopy = d.group(g, x, 0, z);
+  canopy.name = 'Tram platform canopy';
+  for (const px of posts) d.rod(canopy, [px, foot, -0.35], [px, 2.02, -0.35], 0.05, p.deep);
+  for (const side of [-1, 1]) {
+    d.box(canopy, length, 0.1, 0.12, 0, 2.05, (side * depth) / 2, p.light).name =
+      'Tram canopy gold edge';
+    d.box(canopy, 0.12, 0.1, depth, (side * (length - 0.12)) / 2, 2.05, 0, p.light);
+  }
+  habitatGlass(
+    d,
+    d.mesh(
+      canopy,
+      futureShape(d, 'dome'),
+      [length / 2 - 0.1, 0.5, depth / 2],
+      [0, 2.08, 0],
+      p.glass,
+    ),
+  );
+  return canopy;
+}
 /** An orchard tree small enough to stand under glass. */
-function orchardTree(d, g, x, z, scale = 1, blossom = false) {
+export function orchardTree(d, g, x, z, scale = 1, blossom = false) {
   d.rod(g, [x, 0.55, z], [x, 0.55 + 0.55 * scale, z], 0.06 * scale, p.timber);
   d.ball(
     g,
@@ -52,7 +77,7 @@ function orchardTree(d, g, x, z, scale = 1, blossom = false) {
     d.ball(g, x + 0.2 * scale, 0.55 + 0.95 * scale, z + 0.2 * scale, 0.08, p.flower, 'rock');
 }
 /** A timber planter with a clipped shrub. */
-function planter(d, g, x, z, scale = 1) {
+export function planter(d, g, x, z, scale = 1) {
   d.box(g, 0.7 * scale, 0.3, 0.7 * scale, x, GROUND + 0.15, z, p.timber);
   d.ball(
     g,
@@ -141,7 +166,7 @@ function dish(d, g, x, y, z, radius, tilt, turn = 0) {
   return mount;
 }
 /** One pressurised tram car, along x. */
-function tramCar(d, g, x, z) {
+export function tramCar(d, g, x, z) {
   d.box(g, 1.5, 0.14, 0.6, x, 0.36, z, p.deep);
   d.box(g, 1.8, 0.7, 0.8, x, 0.78, z, p.shell, true);
   d.box(g, 1.5, 0.26, 0.84, x, 0.9, z, p.glass).name = 'Tram windows';
@@ -170,7 +195,7 @@ function shed(d, g, x, z, w, dep, h, open = false) {
       d.box(g, w - 1, 0.04, 0.08, x, GROUND + (door * n) / 4, z + dep / 2 + 0.02, p.light);
 }
 /** A long-range rover: New Hollow's rover with a crate rack and a lamp bar. */
-function expeditionRover(d, g, x, z, turn = 0) {
+export function expeditionRover(d, g, x, z, turn = 0) {
   const rover = moonRover(d, g, x, z, turn);
   d.box(rover, 0.5, 0.2, 0.42, 0, 0.78, -0.3, p.timber).name = 'Expedition crate rack';
   d.box(rover, 0.26, 0.16, 0.26, -0.08, 0.96, -0.3, p.timber);
@@ -185,11 +210,7 @@ export const RISING_FORMS = {
     dome(d, g, 0, -2.5, 1.5, 1);
     d.box(g, 6.8, 0.16, 1.1, 0, 0.33, 2.55, p.roof).name = 'Tram platform';
     d.box(g, 6.8, 0.05, 0.14, 0, 0.42, 3.03, p.light);
-    for (const x of [-3, -1, 1, 3]) d.rod(g, [x, 0.41, 2.15], [x, 2.02, 2.15], 0.05, p.deep);
-    for (const z of [1.8, 3.2])
-      d.box(g, 7, 0.1, 0.12, 0, 2.05, z, p.light).name = 'Tram canopy gold edge';
-    for (const x of [-3.44, 3.44]) d.box(g, 0.12, 0.1, 1.4, x, 2.05, 2.5, p.light);
-    habitatGlass(d, d.mesh(g, futureShape(d, 'dome'), [3.4, 0.5, 0.7], [0, 2.08, 2.5], p.glass));
+    platformCanopy(d, g, 0, 2.5, 7, { posts: [-3, -1, 1, 3], foot: 0.41 });
     for (const z of [3.7, 4.2]) d.box(g, 6.6, 0.05, 0.08, 0, 0.275, z, p.deep);
     for (const x of level >= 2 ? [-1.95, 0, 1.95] : [-0.975, 0.975]) tramCar(d, g, x, 3.95);
     if (level >= 2) {

@@ -17,6 +17,7 @@ import {
   vaultFrame,
   willowkinTree,
 } from './moonKit';
+import { moonFinish } from './moonFinishes';
 import { RISING_FORMS } from './moonRising';
 
 // New Hollow on the Moon. Every building is drawn from the shared lunar kit (moonKit.js).
@@ -285,16 +286,28 @@ const FIRST_FORMS = {
 const FORMS = { ...FIRST_FORMS, ...RISING_FORMS };
 export const MOON_FORMS = Object.freeze(Object.keys(FORMS));
 
-/** Draw one Moon building at its level, or a marked empty lot before it is built. */
-export function renderMoonBuilding(d, parent, kind, level) {
+/**
+ * Draw one Moon building at its level, or a marked empty lot before it is built. `finish` is
+ * the building's modernized finish, `{ era, level }` (the era's id and its era level, 0 to 3):
+ * it adds that era's pieces on top (moonFinishes.js). Without one, the building is as built.
+ */
+export function renderMoonBuilding(d, parent, kind, level, finish = null) {
   const root = d.group(parent);
   root.name = `Moon ${kind} level ${level}`;
   root.userData.eraLevel = level;
   // Every parcel, built or empty, stands on the shared pad; forms build on top of it.
   const r = moonPadRadius(kind);
   moonParcelPad(d, root, r);
-  if (level > 0 && FORMS[kind]) FORMS[kind](d, root, level);
-  else {
+  if (level > 0 && FORMS[kind]) {
+    FORMS[kind](d, root, level);
+    const modern = moonFinish(kind, finish);
+    if (modern) {
+      const pieces = d.group(root);
+      pieces.name = `Moon finish ${modern.era} level ${modern.level}`;
+      root.userData.finish = { era: modern.era, level: modern.level };
+      modern.draw(d, pieces);
+    }
+  } else {
     // An empty lot: four survey beacons on the rim of its pad.
     for (let n = 0; n < 4; n++) {
       const a = (n * TAU) / 4 + TAU / 8,

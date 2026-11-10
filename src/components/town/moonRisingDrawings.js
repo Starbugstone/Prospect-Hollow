@@ -496,3 +496,165 @@ const RISING = {
 export const risingDrawing = (kind, level) =>
   Object.hasOwn(RISING, kind) ? RISING[kind](level) : null;
 export const RISING_DRAWINGS = Object.freeze(Object.keys(RISING));
+
+// What each modernized finish adds to a first lot's drawing, by era: shapes behind the
+// building and shapes in front of it, one step for each era level (moonFinishes.js).
+const FINISHES = {
+  'hollow-rising': {
+    ribbonLanding: (step) => ({
+      behind: [
+        rect(30, -74, 18, 74, 'shell'),
+        band(39, 11, -74),
+        rect(27, -104, 24, 26, 'shell', { rx: 4 }),
+        rect(26, -84, 26, 5, 'flower'),
+        ...at(step, 2, line('M-116 0v-66M-60 0v-66', 'deep', 2.5)),
+        ...at(step, 3, line('M60 0v-66M116 0v-66', 'deep', 2.5)),
+      ],
+      front: [
+        ...at(
+          step,
+          2,
+          path('M-118 -68a30 12 0 0 1 60 0Z', { fill: 'glass', ...GLASS }),
+          rect(-120, -70, 64, 5, 'light'),
+          tramCar(-88),
+        ),
+        ...at(
+          step,
+          3,
+          path('M58 -68a30 12 0 0 1 60 0Z', { fill: 'glass', ...GLASS }),
+          rect(56, -70, 64, 5, 'light'),
+          rect(-27, -92, 54, 12, 'glass'),
+          band(0, 28, -94, 'light', 3),
+          band(0, 28, -78, 'light', 3),
+        ),
+      ],
+    }),
+    craterIceWell: (step) => ({
+      behind: [
+        line('M-58 0L-28 -150M18 0L-12 -150M-46 0L-24 -150M6 0L-16 -150', 'deep', 3.5),
+        line('M-46 -60H6M-37 -105H-3', 'roof', 2.5),
+        line('M-20 -12V-150', 'glass', 4),
+        rect(-34, -160, 28, 10, 'shell'),
+        circle(-20, -165, 4, 'light'),
+        ...at(
+          step,
+          3,
+          rect(-116, -100, 9, 100, 'shell'),
+          band(-111.5, 5.5, -98),
+          rect(-118, -108, 13, 6, 'roof'),
+        ),
+      ],
+      front: [
+        ...at(
+          step,
+          2,
+          rect(-48, -64, 56, 5, 'roof'),
+          band(-20, 29, -58, 'light', 2),
+          rect(-22, -78, 14, 14, 'shell'),
+          line('M8 -62L52 -58', 'glass', 4),
+        ),
+        ...at(
+          step,
+          3,
+          drum(108, 12, 22),
+          ellipse(108, -23, 9, 3, 'glass'),
+          cap(108, 12, 22, 12),
+          circle(-30, -156, 2.5, 'light'),
+          circle(-10, -156, 2.5, 'light'),
+        ),
+      ],
+    }),
+    earthlightGreenhouse: (step) => ({
+      behind: [
+        ...at(step, 2, rect(-52, -82, 64, 7, 'shell'), cap(-20, 30, 82, 16)),
+        ...at(
+          step,
+          3,
+          ...[-44, -20, 4].map((x) => circle(x, -101, 3, 'light')),
+          drum(-114, 8, 40),
+          band(-114, 8, -38, 'light', 2.5),
+        ),
+      ],
+      front: [
+        rect(86, -8, 34, 8, 'shell'),
+        ...(step >= 2
+          ? tree(103, -8, 9)
+          : [circle(96, -14, 5, 'green'), circle(108, -14, 5, 'green')]),
+        path('M87 -8a16 38 0 0 1 32 0Z', { fill: 'glass', ...GLASS }),
+        path('M93 -8a10 27 0 0 1 20 0', { stroke: 'roof', sw: 1.5 }),
+        ...at(step, 3, circle(103, -49, 3, 'light')),
+      ],
+    }),
+    newHollowCommons: (step) => ({
+      behind: [
+        ...at(
+          step,
+          2,
+          line('M-9 -84v-22M9 -84v-22', 'deep', 2),
+          path('M-16 -104L0 -122L16 -104Z', { fill: 'roof' }),
+          path('M-6 -90l6 -12l6 12Z', { fill: 'light' }),
+          circle(0, -124, 2.5, 'light'),
+        ),
+      ],
+      front: [
+        ...[-52, -22, 22, 52].map((x) =>
+          rect(x - 4, -52, 8, 52, 'shell', { stroke: 'roof', sw: 1.2 }),
+        ),
+        rect(-62, -58, 124, 6, 'shell', { stroke: 'roof', sw: 1.2 }),
+        path('M-62 -58L0 -78L62 -58Z', { fill: 'roof' }),
+        ...[-1, 1].flatMap((side) => [
+          rect(side > 0 ? 14 : -64, -4, 50, 4, 'shell', { stroke: 'roof', sw: 1 }),
+          rect(side > 0 ? 14 : -58, -8, 44, 4, 'shell', { stroke: 'roof', sw: 1 }),
+        ]),
+        ...at(
+          step,
+          3,
+          circle(0, -66, 6, 'shell', { stroke: 'light', sw: 2 }),
+          band(0, 70, -54, 'light', 2.5),
+          lampPost(78, 36),
+          planter(-80),
+          planter(106),
+        ),
+      ],
+    }),
+    roverBarn: (step) => ({
+      behind: [
+        path('M-120 -34a18 9 0 0 1 36 0Z', { fill: 'roof' }),
+        rect(-120, -34, 36, 34, 'shell'),
+        band(-102, 18, -34, 'light', 2.5),
+        rect(-114, -24, 24, 24, 'deep'),
+        ...at(
+          step,
+          3,
+          line('M-26 -93v-40', 'deep', 2.5),
+          path('M-26 -133l22 7-22 7Z', { fill: 'flower' }),
+        ),
+      ],
+      front: [
+        ...at(
+          step,
+          2,
+          line('M-118 4v-58', 'deep', 2.5),
+          rect(-122, -24, 8, 10, 'shell'),
+          circle(-118, -56, 4.5, 'light'),
+          circle(-26, -95, 3.5, 'light'),
+          circle(-48, -80, 3, 'light'),
+          circle(-4, -80, 3, 'light'),
+        ),
+        ...at(step, 3, rover(16)),
+      ],
+    }),
+  },
+};
+const FINISH_LEVELS = 3;
+/**
+ * The shapes a modernized finish (`{ era, level }`) adds to a Moon building's drawing, as
+ * `{ behind, front }`, or null when it adds nothing: no finish, era level 0, another era or
+ * a building the era leaves alone.
+ */
+export function finishDrawing(kind, finish) {
+  const kinds = Object.hasOwn(FINISHES, finish?.era ?? '') ? FINISHES[finish.era] : null,
+    step = Math.min(FINISH_LEVELS, Math.floor(Number(finish?.level) || 0));
+  if (!kinds || !Object.hasOwn(kinds, kind) || step < 1) return null;
+  return { era: finish.era, level: step, ...kinds[kind](step) };
+}

@@ -21,6 +21,7 @@ export const MAP_OVERLAY_FILES = [
   'src/components/town/TownMoon.vue',
   'src/components/town/TownMoonBuilding.vue',
   'src/components/town/TownMoonConstruction.vue',
+  'src/components/town/TownMoonShapes.vue',
   'src/components/town/TownMoonMonument.vue',
   'src/components/town/TownMoonView.vue',
   'src/components/town/TownMoonstoneBalance.vue',
