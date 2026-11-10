@@ -64,6 +64,9 @@ services:
       HOME: /tmp
       PLAYWRIGHT_MODULE: /opt/pw/node_modules/playwright
       PH_TEST_ORIGIN: http://127.0.0.1:5173
+      PH_CINEMATIC_OUTPUT: /app/output/playwright/cinematics
+      PH_CINEMATIC_INJECT_OCCLUSION: ${PH_CINEMATIC_INJECT_OCCLUSION:-0}
+      PH_CINEMATIC_CAPTURE_SITE: ${PH_CINEMATIC_CAPTURE_SITE:-}
       PH_BACKEND_ORIGIN: ${PH_BACKEND_ORIGIN:-http://localhost}
     volumes:
       - ${PH_CHECKOUT}:/app

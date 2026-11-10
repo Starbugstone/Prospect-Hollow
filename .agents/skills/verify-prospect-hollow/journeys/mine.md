@@ -49,6 +49,6 @@ survive exit and reload. It checks English and French at 320, 360, 844 and 1280 
 including visible buttons, counter bounds and phone board separation.
 
 Evidence: `output/playwright/continuous-navigation/result.json` and screenshots
-beside it. Verified 4 November 2026. This controlled journey does not prove a real
+beside it. Verified 10 November 2026. This controlled journey does not prove a real
 player's gem collection or performance on a physical phone. Close the disposable
 browser context and stop the standalone Vite container after the check.

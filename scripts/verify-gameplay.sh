@@ -8,7 +8,7 @@ usage() {
 Usage: bash scripts/verify-gameplay.sh all
        bash scripts/verify-gameplay.sh start
        bash scripts/verify-gameplay.sh doctor RUN_DIRECTORY
-       bash scripts/verify-gameplay.sh run RUN_DIRECTORY [valley|mine|moon-input|moonstones|all]
+       bash scripts/verify-gameplay.sh run RUN_DIRECTORY [valley|mine|moon-input|moonstones|cinematics|all]
        bash scripts/verify-gameplay.sh cleanup RUN_DIRECTORY [--dry-run]
 
 all creates a fresh isolated stack, runs doctor and every journey, and cleans up.
@@ -97,16 +97,17 @@ start() {
 }
 run_journeys() {
   local requested="${1:-all}" failed=0 name script status
-  case "$requested" in valley|mine|moon-input|moonstones|all) ;; *) die "Unknown journey: $requested" ;; esac
+  case "$requested" in valley|mine|moon-input|moonstones|cinematics|all) ;; *) die "Unknown journey: $requested" ;; esac
   doctor >"$PH_RUN/doctor.log" 2>&1 || { cat "$PH_RUN/doctor.log"; return 1; }
   printf 'journey\tstatus\n' >"$PH_RUN/results.tsv"
-  for name in valley mine moon-input moonstones; do
+  for name in valley mine moon-input moonstones cinematics; do
     [[ "$requested" == all || "$requested" == "$name" ]] || continue
     case "$name" in
       valley) script=valley-persistence.cjs ;;
       mine) script=mine-feedback.cjs ;;
       moon-input) script=moon-input.cjs ;;
       moonstones) script=moonstone-resource.cjs ;;
+      cinematics) script=cinematic-terrain.cjs ;;
     esac
     echo "Running $name (log: $PH_RUN/$name.log)"
     if dc run --rm --no-deps browser timeout 20m node "testing/browser/$script" >"$PH_RUN/$name.log" 2>&1; then
@@ -117,6 +118,13 @@ run_journeys() {
       tail -20 "$PH_RUN/$name.log"
     fi
     printf '%s\t%s\n' "$name" "$status" | tee -a "$PH_RUN/results.tsv"
+    if [[ "$status" == failed ]]; then
+      doctor >"$PH_RUN/doctor-after-$name.log" 2>&1 || {
+        cat "$PH_RUN/doctor-after-$name.log"
+        echo 'Doctor failed after the journey; remaining journeys are blocked.'
+        return 1
+      }
+    fi
   done
   return "$failed"
 }
