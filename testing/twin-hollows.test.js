@@ -199,6 +199,8 @@ describe('New Hollow buildings', () => {
       expect(b.settlement).toBe('moon');
       expect(PLOTS[b.id], b.id).toBeUndefined();
       expect(MOON_LOTS[b.id], b.id).toBeTruthy();
+      // New Hollow Rising's outer ring has its own unlock order.
+      if (b.introducedEra === 'hollow-rising') continue;
       expect(b.introducedEra).toBe('twin-hollows');
       expect(b.unlock).toEqual(
         b.id === 'saucerPad'

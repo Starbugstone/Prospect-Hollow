@@ -14,6 +14,7 @@ import {
 import { createTown } from '../src/data/town';
 import {
   MOON_LOTS,
+  moonLotsShown,
   MOON_PARCEL_SIDES,
   MOON_SITE_PAD,
   moonPadApothem,
@@ -267,11 +268,17 @@ it('fits every tap target to its roof and leaves the ribbon above the landing to
     ...Object.fromEntries(Object.keys(MOON_LOTS).map((id) => [id, 3])),
   };
   const scene = builtScene(town);
-  for (const id of Object.keys(MOON_LOTS)) {
+  const shown = moonLotsShown(town);
+  for (const id of shown) {
     const roof = moonRoofHeight(renderMoonBuilding(kit(), new Group(), id, 3));
     const target = scene.pickTargets.children.find((mesh) => mesh.userData.lot === id);
     expect(target.scale.y, id).toBeCloseTo(Math.max(1.2, roof + 0.2));
     expect(target.scale.y, id).toBeLessThan(8);
+  }
+  // A later era's lots are not on the map yet: nothing there answers a tap.
+  for (const id of Object.keys(MOON_LOTS).filter((lot) => !shown.includes(lot))) {
+    const [x, z] = MOON_LOTS[id];
+    expect(tapAt(scene, [x, 30, z + 30], [x, 0.5, z]), id).toBeNull();
   }
   // Sky over the landing is not the landing; the Commons behind it stays reachable.
   expect(tapAt(scene, [0, 12, 40], [0, 20, -8])).toBeNull();
