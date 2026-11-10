@@ -152,3 +152,53 @@ it('chord remembers different colours, ignores repeats and accepts a white wildc
   expect(last.signalHealth).toBe(0);
   expect(last.chordColors).toBe('ruby,sapphire');
 });
+
+it('preserves progress under opposite direction and colour orderings', async () => {
+  const { crystalHits } = await import('../src/game/engine/CrystalMechanics');
+  for (const axes of [
+    ['horizontal', 'vertical'],
+    ['vertical', 'horizontal'],
+    ['horizontal', 'horizontal', 'vertical'],
+  ]) {
+    const tiles = [{ ...plain(), signal: 'crossgrain', signalHealth: 2, grainRemaining: 3 }];
+    let removed = 0;
+    for (const orientation of axes)
+      for (const update of crystalHits(tiles, [{ type: 'ruby', indices: [0], orientation }], [])) {
+        removed += tiles[0].signalHealth - update.signalHealth;
+        Object.assign(tiles[0], update);
+      }
+    expect(removed).toBe(2);
+    expect(tiles[0].signalHealth).toBe(0);
+  }
+  for (const colors of [
+    ['ruby', 'emerald', 'sapphire'],
+    ['sapphire', 'ruby', 'ruby', 'emerald'],
+  ]) {
+    const tiles = [
+      { ...plain(), signal: 'chord', signalHealth: 3, chordColors: '', chordWilds: 0 },
+    ];
+    for (const type of colors)
+      for (const update of crystalHits(
+        tiles,
+        [{ type, indices: [0], orientation: 'horizontal' }],
+        [],
+      ))
+        Object.assign(tiles[0], update);
+    expect(tiles[0].signalHealth).toBe(0);
+    expect(new Set(tiles[0].chordColors.split(',')).size).toBe(3);
+  }
+});
+
+it('a copied cell fires a bonus chain without becoming a spore beam', () => {
+  const input = fixture();
+  input.board[46] = createGem('cross');
+  input.tiles[60] = { ...plain(), type: 'blocker', health: 1, maxHealth: 1, bonusOnly: true };
+  input.board[60] = null;
+  const result = manager.getResolution({
+    ...input,
+    matches: [{ type: 'ruby', indices: [16, 17, 18], orientation: 'horizontal' }],
+  });
+  expect(input.tiles[60].health).toBe(0);
+  expect(result.steps.flatMap((step) => step.sporeBursts ?? [])).toEqual([]);
+  expect(result.steps.flatMap((step) => step.traceCopies ?? [])).toHaveLength(1);
+});

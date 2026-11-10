@@ -152,6 +152,33 @@ BOARDS.push({
   },
 });
 
+BOARDS.push(
+  {
+    key: 'arrowhead-inner-spring',
+    id: 549,
+    trial: 'crystal-seams',
+    stop: 'The inner spring',
+    level: {
+      board: '...____/.....__/......./__...../____.../__...../......./.....__/...____',
+      ice: 26,
+      chestTarget: 10480,
+      tip: 'The cavern points like a crystal arrowhead. Clear the ice on both wings and the point. The lower-left wing refills from its own spring inside the cavern; gems never cross the missing cells. Craft in the broad shelves to reach the narrow ends.',
+    },
+  },
+  {
+    key: 'twin-windows-crafting-spine',
+    id: 555,
+    trial: 'crystal-seams',
+    stop: 'Between two windows',
+    level: {
+      board: '......./......./......./._..._./._..._./......./......./......./.......',
+      ice: 30,
+      chestTarget: 14240,
+      tip: 'Two short windows leave a three-cell-wide crystal spine. Craft matches in the spine or the broad chambers above and below. Each column below a window refills on its own; use the open sides to reach the remaining ice.',
+    },
+  },
+);
+
 export const PROTOTYPE_BOARDS = BOARDS.map((board) => ({
   ...board,
   chapterName: TRIAL_CHAPTERS[board.trial].name,

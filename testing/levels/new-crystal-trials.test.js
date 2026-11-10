@@ -2,7 +2,13 @@ import { expect, it } from 'vitest';
 import { prototypeConfig } from '../../src/data/prototypeBoards';
 import { simulateCampaignLevel } from '../helpers/campaignSimulation';
 
-const KEYS = ['trace-twins-first-impression', 'crossgrain-narrow-neck', 'chord-changing-colours'];
+const KEYS = [
+  'trace-twins-first-impression',
+  'crossgrain-narrow-neck',
+  'chord-changing-colours',
+  'arrowhead-inner-spring',
+  'twin-windows-crafting-spine',
+];
 const at = (values, q) => values.toSorted((a, b) => a - b)[Math.floor((values.length - 1) * q)];
 it.each(KEYS)(
   'finishes every one of 60 hint-led seeds: %s',
@@ -34,6 +40,14 @@ it.each(KEYS)(
         runs.map((run) => run.chordWildFills),
         0.5,
       ),
+      medianInternalRefills: at(
+        runs.map((run) => run.internalRefills),
+        0.5,
+      ),
+      medianLowerWingRefills: at(
+        runs.map((run) => run.lowerWingRefills),
+        0.5,
+      ),
       medianScore: at(
         runs.map((run) => run.score),
         0.5,
@@ -51,6 +65,16 @@ it.each(KEYS)(
     };
     console.log(JSON.stringify(summary));
     expect(summary.completed).toBe(60);
+    expect(level.chestTarget).toBe(summary.medianScore * 0.8);
+    if (key === 'arrowhead-inner-spring') expect(summary.medianLowerWingRefills).toBeGreaterThan(0);
+    if (key === 'twin-windows-crafting-spine')
+      expect(summary.medianInternalRefills).toBeGreaterThan(0);
+    if (key === 'crossgrain-narrow-neck') {
+      expect(summary.medianDirectionSplits).toBeGreaterThan(0);
+      expect(summary.medianBlastSplits).toBeGreaterThan(0);
+    }
+    if (key === 'chord-changing-colours')
+      expect(summary.medianColourFills).toBeGreaterThan(summary.medianWildFills);
     if (key.startsWith('trace-')) {
       expect(summary.medianTraceActivations).toBeGreaterThan(0);
       expect(summary.medianTraceGateHits).toBeGreaterThan(0);

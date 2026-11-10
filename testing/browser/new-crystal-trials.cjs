@@ -6,7 +6,10 @@ const {
   playedProfile,
   testOrigin,
 } = require('./helpers.cjs');
-const keys = (process.env.PH_CRYSTAL_KEYS || 'trace-twins-first-impression').split(',');
+const keys = (
+  process.env.PH_CRYSTAL_KEYS ||
+  'trace-twins-first-impression,crossgrain-narrow-neck,chord-changing-colours,arrowhead-inner-spring,twin-windows-crafting-spine'
+).split(',');
 const folder = 'output/new-mechanics';
 (async () => {
   await mkdir(folder, { recursive: true });
@@ -51,7 +54,9 @@ const folder = 'output/new-mechanics';
                 ? 'trace'
                 : step.crystalChanges?.length
                   ? 'crystal'
-                  : null;
+                  : step.spawns?.some((spawn) => spawn.path?.[0] >= g.boardCols)
+                    ? 'refill'
+                    : null;
               if (event) window.__crystalEvents.push({ event, step });
             }
             return original(steps);
