@@ -154,9 +154,12 @@ export const MOON_LOTS = Object.freeze(
 // New Hollow's roads: ring roads round the landing (radii, inner first) and straight spokes
 // joining neighbouring rings (angles in radians, measured as Math.atan2(z, x)). Every path,
 // walker and drawing reads this one definition.
+// The outer ring and its six spokes leave room for New Hollow to grow beyond its first
+// lots. The spokes avoid the front and the back (toward the camera and toward Earth), where
+// the commission site, Earthrise Plaza and their paths stand.
 export const MOON_ROADS = Object.freeze({
-  rings: Object.freeze([20.5]),
-  spokes: Object.freeze([]),
+  rings: Object.freeze([20.5, 45]),
+  spokes: Object.freeze([0, 45, 135, 180, 225, 315].map((degrees) => (degrees * Math.PI) / 180)),
 });
 // The inner ring road, which the first lots' paths join.
 export const MOON_RING_ROAD = MOON_ROADS.rings[0];
@@ -180,11 +183,15 @@ export function moonRoadDistance(x, z, roads = MOON_ROADS) {
     distance = Math.min(distance, moonSegmentDistance(x, z, a, b));
   return distance;
 }
-/** The radius of the ring road a lot's path joins. */
-export const moonLotRing = (id) => MOON_ROADS.rings[lotEntry(id)?.ring ?? 0] ?? MOON_RING_ROAD;
+// The radius of the ring road a lot's path joins.
+const moonLotRing = (id) => MOON_ROADS.rings[lotEntry(id)?.ring ?? 0] ?? MOON_RING_ROAD;
 // Lots sit inside a crater bowl; footprints stay within this radius of a lot.
 export const MOON_LOT_RADIUS = 5;
-export const MOON_CRATER_RADIUS = 46;
+// The crater floor is level out to MOON_FLOOR_RADIUS, rises to a soft rim whose crest is at
+// MOON_RIM_RADIUS, and everything built stands within MOON_CRATER_RADIUS.
+export const MOON_FLOOR_RADIUS = 63;
+export const MOON_RIM_RADIUS = 75;
+export const MOON_CRATER_RADIUS = 68;
 
 // Public arrivals use the actual hatch, service forecourt or stair foot. The
 // bends avoid authored benches, cargo and rovers on each pad. All geometry and

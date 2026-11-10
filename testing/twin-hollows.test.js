@@ -20,12 +20,22 @@ import {
   MOON_LOTS,
   moonPadRadius,
   MOON_RING_ROAD,
+  MOON_FLOOR_RADIUS,
+  MOON_RIM_RADIUS,
+  MOON_ROADS,
+  MOON_SITE_PAD,
+  moonApproaches,
+  moonSegmentDistance,
+  moonSpokes,
   moonLetters,
   moonSettlement,
   moonstoneKeepsakes,
 } from '../src/data/moonSettlement';
 import { VISITOR_TRANSPORTS } from '../src/data/visitorArrivals';
-import { moonHeight } from '../src/game/town/moon/MoonScene';
+import { moonHeight, roads as moonRoads } from '../src/game/town/moon/MoonScene';
+import { Raycaster, Vector3 } from 'three';
+import { areasForSettlement } from '../src/data/townLandmarks';
+import { MOON_SETTLEMENT } from '../src/data/settlements';
 import {
   eraBuildingLevel,
   finishEra,
@@ -274,19 +284,74 @@ describe('New Hollow buildings', () => {
         [0, -4],
       ])
         expect(Math.abs(moonHeight(x + dx, z + dz)), id).toBeLessThan(0.01);
-    for (let a = 0; a < Math.PI * 2; a += 0.2)
-      expect(
-        Math.abs(moonHeight(Math.cos(a) * MOON_RING_ROAD, Math.sin(a) * MOON_RING_ROAD)),
-      ).toBeLessThan(0.01);
+    // So does every road: each ring and each spoke, out to the edge of the floor.
+    for (const ring of MOON_ROADS.rings)
+      for (let a = 0; a < Math.PI * 2; a += 0.2)
+        for (const across of [-0.8, 0, 0.8])
+          expect(
+            Math.abs(moonHeight(Math.cos(a) * (ring + across), Math.sin(a) * (ring + across))),
+            `ring ${ring}`,
+          ).toBeLessThan(0.01);
+    for (const [[ax, az], [bx, bz]] of moonSpokes())
+      for (let t = 0; t <= 1; t += 0.05)
+        expect(Math.abs(moonHeight(ax + (bx - ax) * t, az + (bz - az) * t))).toBeLessThan(0.01);
     // A soft rim rings the crater, and the land swells gently toward the horizon.
     const rim = Array.from({ length: 24 }, (_, n) =>
-      moonHeight(Math.cos(n / 4) * 53, Math.sin(n / 4) * 53),
+      moonHeight(Math.cos(n / 4) * MOON_RIM_RADIUS, Math.sin(n / 4) * MOON_RIM_RADIUS),
     );
     expect(Math.max(...rim)).toBeGreaterThan(2);
     let steepest = 0;
     for (let x = -200; x < 200; x += 1)
       steepest = Math.max(steepest, Math.abs(moonHeight(x + 1, -150) - moonHeight(x, -150)));
     expect(steepest, 'no boulder cliffs on the horizon').toBeLessThan(1.5);
+  });
+
+  it('runs the outer ring and its spokes clear of every lot, site and pad', () => {
+    expect(MOON_ROADS.rings.length).toBeGreaterThan(1);
+    const outer = MOON_ROADS.rings.at(-1);
+    expect(outer + 0.8).toBeLessThan(MOON_FLOOR_RADIUS);
+    const pads = [
+      ...Object.entries(MOON_LOTS).map(([id, at]) => [id, at, moonPadRadius(id)]),
+      ...areasForSettlement(MOON_SETTLEMENT).map((area) => [
+        area.id,
+        area.positions[0],
+        Math.max(area.radius, MOON_SITE_PAD),
+      ]),
+    ];
+    // The road's half width plus a clear margin.
+    for (const [id, [x, z], radius] of pads) {
+      for (const [a, b] of moonSpokes())
+        expect(moonSegmentDistance(x, z, a, b) - radius, id).toBeGreaterThan(2.5);
+      expect(Math.abs(Math.hypot(x, z) - outer) - radius, id).toBeGreaterThan(2.5);
+    }
+    // The existing paths still join the inner ring; nothing new is required of them.
+    for (const route of moonApproaches()) expect(route.ring).toBe(MOON_RING_ROAD);
+  });
+
+  it('draws every ring and spoke where the roads are, and nowhere between them', () => {
+    const road = moonRoads();
+    road.updateMatrixWorld(true);
+    const ray = new Raycaster();
+    const hits = (x, z) => {
+      ray.set(new Vector3(x, 10, z), new Vector3(0, -1, 0));
+      return ray.intersectObject(road).length > 0;
+    };
+    for (const [[ax, az], [bx, bz]] of moonSpokes())
+      for (const t of [0.1, 0.5, 0.9]) {
+        const x = ax + (bx - ax) * t,
+          z = az + (bz - az) * t;
+        expect(hits(x, z), `spoke at ${x.toFixed(1)}, ${z.toFixed(1)}`).toBe(true);
+        // Beside a spoke, off the road, is bare regolith.
+        const side = [-(bz - az), bx - ax].map((v) => (v / Math.hypot(bx - ax, bz - az)) * 2);
+        expect(hits(x + side[0], z + side[1])).toBe(false);
+      }
+    for (const ring of MOON_ROADS.rings)
+      for (let a = 0.2; a < Math.PI * 2; a += 0.7) {
+        expect(hits(Math.cos(a) * ring, Math.sin(a) * ring), `ring ${ring}`).toBe(true);
+        expect(hits(Math.cos(a) * (ring + 2), Math.sin(a) * (ring + 2))).toBe(false);
+      }
+    road.geometry.dispose();
+    road.material.dispose();
   });
 
   it('brings Moon guests down the elevator once per climber trip', () => {

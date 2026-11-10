@@ -42,8 +42,10 @@ import {
   moonClimberLift,
 } from './MoonVips';
 import {
+  MOON_FLOOR_RADIUS,
   MOON_LOTS,
   MOON_PAD_TOP,
+  MOON_RIM_RADIUS,
   MOON_PATH_LIFT,
   MOON_RING_ROAD,
   MOON_ROADS,
@@ -187,7 +189,7 @@ const CRATERS = (() => {
       r = 8 + hash(n + 300) * 190;
     const x = Math.cos(a) * r,
       z = Math.sin(a) * r;
-    const inside = r < 44;
+    const inside = r < MOON_FLOOR_RADIUS + 3;
     const size = inside ? 1.4 + hash(n + 400) * 1.6 : 3 + hash(n + 400) * (r / 22);
     if (Object.values(MOON_LOTS).some(([lx, lz]) => Math.hypot(lx - x, lz - z) < 7 + size))
       continue;
@@ -209,11 +211,12 @@ const CRATERS = (() => {
 export function moonHeight(x, z) {
   const r = Math.hypot(x, z);
   // The settlement floor is level; a soft rim rings it; hills swell beyond.
-  const rim = 3.6 * Math.exp(-(((r - 53) / 6.5) ** 2));
+  const rim = 3.6 * Math.exp(-(((r - MOON_RIM_RADIUS) / 6.5) ** 2));
   const hills =
-    smoothBetween(62, 130, r) *
+    smoothBetween(MOON_RIM_RADIUS + 9, MOON_RIM_RADIUS + 77, r) *
     (noise(x * 0.018, z * 0.018) * 11 + noise(x * 0.05, z * 0.05) * 3.5 - 4);
-  let height = smoothBetween(41, 47, r) * (rim + Math.max(hills, -2));
+  let height =
+    smoothBetween(MOON_FLOOR_RADIUS, MOON_FLOOR_RADIUS + 6, r) * (rim + Math.max(hills, -2));
   for (const { x: cx, z: cz, size, depth } of CRATERS) {
     const d = Math.hypot(x - cx, z - cz) / size;
     if (d > 1.6) continue;

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { MeshStandardMaterial, PerspectiveCamera, Scene, Vector3 } from 'three';
 import { MoonScene, moonHeight } from '../src/game/town/moon/MoonScene';
-import { moonParcels } from '../src/data/moonSettlement';
+import { MOON_RIM_RADIUS, moonParcels } from '../src/data/moonSettlement';
 import { TOWN_EDGE, horizonMaterial, setTownAtmosphere } from '../src/game/town/TownAtmosphere';
 import { landscapeGeometry } from '../src/game/town/TownMillrace';
 import { RAIL_EDGE } from '../src/game/town/TownLayout';
@@ -228,7 +228,8 @@ describe('The Moon camera', () => {
   const hill = () => {
     let best = [0, 0];
     for (let a = 0; a < Math.PI * 2; a += 0.05)
-      for (const r of [52, 60, 70, 85]) {
+      // Around the crater's rim and the hills beyond it.
+      for (const r of [-1, 7, 17, 32].map((step) => MOON_RIM_RADIUS + step)) {
         const point = [Math.cos(a) * r, Math.sin(a) * r];
         if (moonHeight(...point) > moonHeight(...best)) best = point;
       }
