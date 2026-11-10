@@ -3,7 +3,7 @@ export { eventInsetRect } from './TownInset';
 import { PerspectiveCamera, Vector3, Vector4 } from 'three';
 import { eventKind } from '../../data/townEvents';
 import { PLOTS } from './TownLayout';
-import { keepCameraAboveTerrain } from './TownLandscape';
+import { clearCinematicTerrain, keepCameraAboveTerrain } from './TownLandscape';
 import { smooth01 } from './TownMath';
 import { syncTownControls } from './TownControls';
 
@@ -80,7 +80,7 @@ export function renderEventInset(d) {
   camera.updateProjectionMatrix();
   subjectFrame(d.raid, definition.inset, shot.insetFrame, camera.aspect, 9, true);
   camera.position.copy(shot.insetFrame.focus).addScaledVector(direction, shot.insetFrame.distance);
-  keepCameraAboveTerrain(camera.position, shot.insetFrame.focus);
+  clearCinematicTerrain(camera.position, shot.insetFrame.focus, d.terrainHeight);
   camera.lookAt(shot.insetFrame.focus);
   if (shot.mainFrame.focus.distanceTo(shot.insetFrame.focus) < 7) {
     hideEventInset(d);
@@ -142,6 +142,7 @@ export function updateEventCamera(d) {
     const t = smooth01(Math.min(1, elapsed / 1.2));
     d.camera.position.lerpVectors(shot.fromPosition, shot.position, t);
     d.controls.target.lerpVectors(shot.fromTarget, shot.target, t);
+    keepCameraAboveTerrain(d.camera.position, d.controls.target, undefined, d.terrainHeight);
     if (t === 1) {
       d.overview = shot.overview;
       d.eventCamera = null;
@@ -160,7 +161,7 @@ export function updateEventCamera(d) {
     const distance = shot.mainFrame.distance;
     if (!shot.checkedFocus?.equals(focus) || shot.distance !== distance) {
       shot.destination.copy(focus).addScaledVector(direction, distance);
-      keepCameraAboveTerrain(shot.destination, focus);
+      clearCinematicTerrain(shot.destination, focus, d.terrainHeight);
       (shot.checkedFocus ??= new Vector3()).copy(focus);
       shot.distance = distance;
     }
@@ -177,6 +178,7 @@ export function updateEventCamera(d) {
       if (d.camera.position.distanceToSquared(position) < 1e-6) d.camera.position.copy(position);
       if (d.controls.target.distanceToSquared(focus) < 1e-6) d.controls.target.copy(focus);
     }
+    clearCinematicTerrain(d.camera.position, d.controls.target, d.terrainHeight);
   }
   shot.previous = d.elapsed;
   if (!shot.lastPosition.equals(d.camera.position) || !shot.lastTarget.equals(d.controls.target)) {

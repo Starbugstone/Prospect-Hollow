@@ -1,5 +1,5 @@
 import { beginEventCamera, restoreEventCamera } from './TownEventCamera';
-import { keepCameraAboveTerrain } from './TownLandscape';
+import { clearCinematicTerrain } from './TownLandscape';
 import { TownRailwayOpening } from './TownRailwayOpening';
 import { TownMineEraConstruction } from './TownMineEraConstruction';
 import { TownCompletionFireworks } from './TownCompletionFireworks';
@@ -30,7 +30,7 @@ export class TownPresentation {
       d.camera.position.lerpVectors(d.eventCamera.position, eye, t * t * (3 - 2 * t));
       d.controls.target.lerpVectors(d.eventCamera.target, focus, t * t * (3 - 2 * t));
       // Each map's own ground: the valley's terrain unless the map supplies its height.
-      keepCameraAboveTerrain(d.camera.position, d.controls.target, undefined, d.terrainHeight);
+      clearCinematicTerrain(d.camera.position, d.controls.target, d.terrainHeight);
       d.camera.lookAt(d.controls.target);
     }
     // The valley advances its scenery here; a map without per-frame motions (the Moon) has none.

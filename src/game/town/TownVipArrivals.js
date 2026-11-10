@@ -6,7 +6,7 @@ import { PerspectiveCamera, Vector3, Vector4 } from 'three';
 import { VISITOR_TRANSPORTS, VISITOR_ARRIVAL_SITES, arrivalSeed } from '../../data/visitorArrivals';
 import { visitorPopulation } from './TownRules';
 import { LANE_X, PLOTS, plotStreet, routeBetween } from './TownLayout';
-import { keepCameraAboveTerrain } from './TownLandscape';
+import { clearCinematicTerrain } from './TownLandscape';
 import { eventInsetRect, drawCameraInset, hideEventInset } from './TownInset';
 
 export const VIP_INSET_SECONDS = 6;
@@ -256,7 +256,7 @@ export class TownVipArrivals {
     camera.position
       .copy(this.focus)
       .addScaledVector(new Vector3(...direction).normalize(), distance);
-    keepCameraAboveTerrain(camera.position, this.focus);
+    clearCinematicTerrain(camera.position, this.focus, d.terrainHeight);
     camera.lookAt(this.focus);
     camera.updateMatrixWorld();
     const namePoint = actor.root.position

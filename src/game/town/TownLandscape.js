@@ -229,6 +229,28 @@ export function keepCameraAboveTerrain(
   return true;
 }
 
+// Scripted shots must show their subject's court as well as stay out of the ground.
+// Lift vertically so clearing a ridge cannot swing a shot into a different hillside.
+// Player orbiting deliberately keeps the less restrictive guard above.
+export function clearCinematicTerrain(position, target, height = cameraTerrainHeight) {
+  const before = position.y;
+  const targetBefore = target.y;
+  const ground = height(target.x, target.z);
+  // A transition's blended focus can itself pass through a hill.
+  target.y = Math.max(target.y, ground + 0.5);
+  const base = Math.min(target.y, ground + 0.25);
+  const steps = Math.ceil(Math.hypot(position.x - target.x, position.z - target.z) / 0.5);
+  let floor = cameraFloor(position, height);
+  for (let n = 1; n <= steps; n++) {
+    const t = n / steps;
+    const x = target.x + (position.x - target.x) * t;
+    const z = target.z + (position.z - target.z) * t;
+    floor = Math.max(floor, base + (height(x, z) + 0.15 - base) / t);
+  }
+  position.y = Math.max(position.y, floor);
+  return position.y !== before || target.y !== targetBefore;
+}
+
 const SAND = new THREE.Color('#cdbb8b'),
   SAGE = new THREE.Color('#a8af80'),
   SCREE = new THREE.Color('#a3967c'),
