@@ -33,10 +33,22 @@
         <circle cx="-38" cy="-38" r="7" fill="#4f8fc7" />
         <ellipse cy="6" rx="52" ry="40" fill="#b9b6ad" />
         <ellipse
+          v-for="ring in MOON_ROADS.rings"
+          :key="ring"
           cy="6"
-          :rx="MOON_RING_ROAD * 1.3"
-          :ry="MOON_RING_ROAD * 1.05"
+          :rx="ring * 1.3"
+          :ry="ring * 1.05"
           fill="none"
+          stroke="#cfccc3"
+          stroke-width="1.6"
+        />
+        <line
+          v-for="([[ax, az], [bx, bz]], n) in moonSpokes()"
+          :key="`spoke-${n}`"
+          :x1="ax * 1.3"
+          :y1="6 + az * 1.05"
+          :x2="bx * 1.3"
+          :y2="6 + bz * 1.05"
           stroke="#cfccc3"
           stroke-width="1.6"
         />
@@ -135,9 +147,10 @@ import {
 } from 'vue';
 import {
   MOON_LOTS,
-  MOON_RING_ROAD,
+  MOON_ROADS,
   moonApproaches,
   moonSettlement,
+  moonSpokes,
 } from '../../data/moonSettlement';
 import { TOWN_ACTIONS, buildingActionLabel } from '../../data/townIndicators';
 import {

@@ -1,6 +1,7 @@
 import { MOON_PALETTE as p } from '../../../data/futureArchitecture';
 import {
   MOON_RING_ROAD,
+  MOON_ROADS,
   MOON_ROAD_LIFT,
   moonApproachHeight,
   moonApproaches,
@@ -36,22 +37,67 @@ const approachPoints = (route) =>
 /** A lot's hatch, on its pad: where walkers step in and out. */
 export const moonHatch = (route) => approachPoints(route)[0];
 
-// Ring points from one angle to another the short way round, or a full lap when
-// both ends meet (a settler with a single building to visit takes a stroll).
-function ringArc(from, to) {
-  let delta = to - from;
-  delta = ((((delta + Math.PI) % TAU) + TAU) % TAU) - Math.PI;
-  if (Math.abs(delta) < 1e-3) delta = TAU;
+// The signed turn from one angle to another, the short way round.
+const turn = (from, to) => ((((to - from + Math.PI) % TAU) + TAU) % TAU) - Math.PI;
+
+// Ring points from one angle to another the short way round. When both ends meet, a full
+// lap (a settler with a single building to visit takes a stroll), or with `lap` off, just
+// the one point.
+function ringArc(from, to, ring = MOON_RING_ROAD, { lap = true } = {}) {
+  let delta = turn(from, to);
+  if (Math.abs(delta) < 1e-3) delta = lap ? TAU : 0;
   // Keep right: travelling anticlockwise (seen from above) keeps to the inner lane.
-  const radius = MOON_RING_ROAD + (delta > 0 ? -LANE : LANE);
-  const steps = Math.max(1, Math.ceil(Math.abs(delta) / RING_STEP));
+  const radius = ring + (delta > 0 ? -LANE : LANE);
+  const steps = delta ? Math.max(1, Math.ceil(Math.abs(delta) / RING_STEP)) : 0;
   return Array.from({ length: steps + 1 }, (_, n) => {
     const a = from + (delta * n) / steps;
     return [Math.cos(a) * radius, MOON_ROAD_LIFT, Math.sin(a) * radius];
   });
 }
 
-/** The walk from one building's hatch to another's, along their paths and the ring. */
+/**
+ * The walk along the roads between two paths' ends, each on its ring. On one ring it is the
+ * arc between them; between rings it follows the arc to the spoke that makes the walk
+ * shortest, the spoke itself, then the arc on the other ring.
+ */
+export function moonRoadWalk(
+  from,
+  to,
+  fromRing = MOON_RING_ROAD,
+  toRing = MOON_RING_ROAD,
+  roads = MOON_ROADS,
+) {
+  const a = Math.atan2(from[1], from[0]),
+    b = Math.atan2(to[1], to[0]);
+  if (fromRing === toRing) return ringArc(a, b, fromRing);
+  const [inner, outer] = fromRing < toRing ? [fromRing, toRing] : [toRing, fromRing];
+  // Spokes join neighbouring rings; a longer climb takes them one ring at a time.
+  const rings = roads.rings.filter((ring) => ring >= inner && ring <= outer);
+  const climbing = fromRing < toRing ? rings : [...rings].reverse();
+  const spokes = roads.spokes.length ? roads.spokes : [a];
+  const points = [];
+  let angle = a;
+  climbing.forEach((ring, n) => {
+    const next = climbing[n + 1];
+    if (next === undefined) {
+      points.push(...ringArc(angle, b, ring, { lap: false }));
+      return;
+    }
+    // The spoke nearest the way still to go: its arc here plus the arc from it on the
+    // next ring toward the destination.
+    const spoke = spokes.reduce((best, s) =>
+      Math.abs(turn(angle, s)) * ring + Math.abs(turn(s, b)) * next <
+      Math.abs(turn(angle, best)) * ring + Math.abs(turn(best, b)) * next
+        ? s
+        : best,
+    );
+    points.push(...ringArc(angle, spoke, ring, { lap: false }));
+    angle = spoke;
+  });
+  return points;
+}
+
+/** The walk from one building's hatch to another's, along their paths and the roads. */
 export function moonSettlerRoute(from, to) {
   const out = approachPoints(from),
     back = approachPoints(to).reverse();
@@ -59,7 +105,12 @@ export function moonSettlerRoute(from, to) {
     end = back[0];
   const points = [
     ...out,
-    ...ringArc(Math.atan2(start[2], start[0]), Math.atan2(end[2], end[0])),
+    ...moonRoadWalk(
+      [start[0], start[2]],
+      [end[0], end[2]],
+      from.ring ?? MOON_RING_ROAD,
+      to.ring ?? MOON_RING_ROAD,
+    ),
     ...back,
   ];
   const path = walkPath(points);

@@ -7,6 +7,7 @@ import {
 import { animateMoonSettler, createMoonSettlers, moonSuitFigure } from './MoonSettlers';
 import { areaUnlocked } from '../../../data/townLandmarks';
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { createTownControls } from '../TownControls';
 import { createTapGesture } from '../TownTapGesture';
 import { cameraAction, focusCamera } from '../TownCamera';
@@ -45,7 +46,9 @@ import {
   MOON_PAD_TOP,
   MOON_PATH_LIFT,
   MOON_RING_ROAD,
+  MOON_ROADS,
   MOON_ROAD_LIFT,
+  MOON_ROAD_WIDTH,
   moonApproachHeight,
   moonApproaches,
   moonCommissionVenues,
@@ -53,6 +56,8 @@ import {
   moonLotPose,
   moonParcels,
   moonPathDistance,
+  moonRoadDistance,
+  moonSpokes,
 } from '../../../data/moonSettlement';
 
 // New Hollow on the Moon: a small scene of its own beside the valley's. One
@@ -174,7 +179,7 @@ function noise(x, z) {
   return top + (bottom - top) * sz;
 }
 // Soft craters: a shallow bowl with a raised lip. The settlement keeps only small
-// ones, clear of every lot and the ring road.
+// ones, clear of every lot and road.
 const CRATERS = (() => {
   const list = [];
   for (let n = 0; list.length < 46 && n < 400; n++) {
@@ -193,7 +198,7 @@ const CRATERS = (() => {
       )
     )
       continue;
-    if (Math.abs(r - MOON_RING_ROAD) < 2.5 + size) continue;
+    if (moonRoadDistance(x, z) < 1.7 + MOON_ROAD_WIDTH / 2 + size) continue;
     // Reserve the same authored access corridors that the road mesh draws.
     // A crater's complete lip stays outside the public path, not just its bowl.
     if (moonPathDistance(x, z) < 1.6 * size + 0.6) continue;
@@ -264,16 +269,32 @@ function terrain() {
   );
   ground.receiveShadow = true;
   g.add(ground);
-  // A pale ring road joins the lots around the landing.
+  g.add(roads());
+  return g;
+}
+// Pale ring roads round the landing and the spokes between them, as one mesh.
+export function roads(layout = MOON_ROADS) {
+  const half = MOON_ROAD_WIDTH / 2;
+  const parts = layout.rings.map((ring) => new THREE.RingGeometry(ring - half, ring + half, 96));
+  for (const [[ax, az], [bx, bz]] of moonSpokes(layout)) {
+    // A spoke runs from the outer edge of one ring to the inner edge of the next.
+    const length = Math.hypot(bx - ax, bz - az) - MOON_ROAD_WIDTH;
+    const spoke = new THREE.PlaneGeometry(length, MOON_ROAD_WIDTH);
+    // In the ring's plane: x along the spoke, y across it (the scene's -z once laid flat).
+    spoke.rotateZ(-Math.atan2(bz - az, bx - ax));
+    spoke.translate((ax + bx) / 2, -(az + bz) / 2, 0);
+    parts.push(spoke);
+  }
   const road = new THREE.Mesh(
-    new THREE.RingGeometry(MOON_RING_ROAD - 0.8, MOON_RING_ROAD + 0.8, 96),
+    parts.length > 1 ? mergeGeometries(parts.map((part) => part.toNonIndexed())) : parts[0],
     new THREE.MeshStandardMaterial({ color: '#cdcac1', roughness: 1 }),
   );
+  if (parts.length > 1) for (const part of parts) part.dispose();
+  road.name = 'Moon roads';
   road.rotation.x = -Math.PI / 2;
   road.position.y = 0.04;
   road.receiveShadow = true;
-  g.add(road);
-  return g;
+  return road;
 }
 
 // All entrance strips share one mesh/material. The crater floor is level here;

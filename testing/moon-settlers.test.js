@@ -16,6 +16,7 @@ import {
   moonSettlerPlan,
   moonSettlerPose,
   moonSettlerRoute,
+  moonRoadWalk,
 } from '../src/game/town/moon/MoonSettlers';
 import { TownPrimitives } from '../src/game/town/TownPrimitives';
 
@@ -229,6 +230,53 @@ it.each([
     }
     expect(problems, `settler ${n}`).toEqual([]);
   }
+});
+
+// Roads are data: a second ring with spokes, as a wider New Hollow lays them out.
+describe('walking between ring roads', () => {
+  const roads = { rings: [20.5, 45], spokes: [0, Math.PI / 2, Math.PI, -Math.PI / 2] };
+  const at = (ring, angle) => [Math.cos(angle) * ring, Math.sin(angle) * ring];
+  const radius = ([x, , z]) => Math.hypot(x, z);
+  const angle = ([x, , z]) => Math.atan2(z, x);
+  const near = (a, b) => Math.abs(Math.atan2(Math.sin(a - b), Math.cos(a - b))) < 1e-6;
+
+  it('stays on one ring, the short way round, when both ends share it', () => {
+    const walk = moonRoadWalk(at(45, 0.3), at(45, 0.9), 45, 45, roads);
+    expect(walk.every((point) => Math.abs(radius(point) - 45) <= 0.36)).toBe(true);
+    expect(near(angle(walk[0]), 0.3) && near(angle(walk.at(-1)), 0.9)).toBe(true);
+  });
+
+  it.each([
+    ['out', 20.5, 0.2, 45, 1.2],
+    ['in', 45, 2.9, 20.5, -2.6],
+  ])('climbs %s by the spoke that makes the walk shortest', (_, fromRing, a, toRing, b) => {
+    const walk = moonRoadWalk(at(fromRing, a), at(toRing, b), fromRing, toRing, roads);
+    // It leaves on its own ring and arrives on the other, crossing once at a spoke.
+    expect(Math.abs(radius(walk[0]) - fromRing)).toBeLessThanOrEqual(0.36);
+    expect(Math.abs(radius(walk.at(-1)) - toRing)).toBeLessThanOrEqual(0.36);
+    const jumps = walk.flatMap((point, n) =>
+      n && Math.abs(radius(point) - radius(walk[n - 1])) > 1 ? [n] : [],
+    );
+    expect(jumps).toHaveLength(1);
+    const spoke = angle(walk[jumps[0]]);
+    expect(roads.spokes.some((s) => near(s, spoke))).toBe(true);
+    // No other spoke gives a shorter walk.
+    const cost = (s) =>
+      Math.abs(Math.atan2(Math.sin(s - a), Math.cos(s - a))) * fromRing +
+      Math.abs(Math.atan2(Math.sin(b - s), Math.cos(b - s))) * toRing;
+    expect(cost(spoke)).toBeCloseTo(Math.min(...roads.spokes.map(cost)), 9);
+    // The steps along each ring stay short, so walkers never cut across the ground.
+    for (let n = 1; n < walk.length; n++)
+      if (n !== jumps[0])
+        expect(Math.hypot(walk[n][0] - walk[n - 1][0], walk[n][2] - walk[n - 1][2])).toBeLessThan(
+          6,
+        );
+  });
+
+  it('never laps a ring on the way between rings', () => {
+    const walk = moonRoadWalk(at(20.5, 0), at(45, 0), 20.5, 45, roads);
+    expect(walk.length).toBe(2);
+  });
 });
 
 it('matches the shared access routes: settlers use each lot’s public path', () => {

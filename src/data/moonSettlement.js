@@ -40,8 +40,9 @@ const MOON_LIGHTS = Array.from({ length: MOON_SETTLEMENT_LIMIT }, (_, n) => {
 // Every Moon lot, in one place: where it stands (`at`, the Moon scene's own coordinates), its
 // pad's radius, the public path from its hatch (`arrival`, in the lot's own frame, local +z
 // its front apron) and which way it faces. `face` is 'out' by default: the front looks away
-// from the landing. 'in' turns it toward the landing; a number fixes the turn. Lots are
-// listed in the order every map draws and labels them. A new Moon building adds one entry.
+// from the landing. 'in' turns it toward the landing; a number fixes the turn. `ring` is the
+// ring road its path joins (an index into MOON_ROADS.rings, the inner ring by default). Lots
+// are listed in the order every map draws and labels them. A new Moon building adds one entry.
 const MOON_LOT_TABLE = Object.freeze({
   ribbonLanding: {
     at: [0, -8],
@@ -150,7 +151,37 @@ export const MOON_LOTS = Object.freeze(
     Object.entries(MOON_LOT_TABLE).map(([id, { at }]) => [id, Object.freeze([...at])]),
   ),
 );
-export const MOON_RING_ROAD = 20.5;
+// New Hollow's roads: ring roads round the landing (radii, inner first) and straight spokes
+// joining neighbouring rings (angles in radians, measured as Math.atan2(z, x)). Every path,
+// walker and drawing reads this one definition.
+export const MOON_ROADS = Object.freeze({
+  rings: Object.freeze([20.5]),
+  spokes: Object.freeze([]),
+});
+// The inner ring road, which the first lots' paths join.
+export const MOON_RING_ROAD = MOON_ROADS.rings[0];
+// Every road's width, rings and spokes alike.
+export const MOON_ROAD_WIDTH = 1.6;
+/** Each spoke as a segment from the innermost ring to the outermost, as [[x, z], [x, z]]. */
+export const moonSpokes = (roads = MOON_ROADS) =>
+  roads.rings.length < 2
+    ? []
+    : roads.spokes.map((angle) =>
+        [roads.rings[0], roads.rings.at(-1)].map((ring) => [
+          Math.cos(angle) * ring,
+          Math.sin(angle) * ring,
+        ]),
+      );
+/** How far (x, z) is from the middle of the nearest road, ring or spoke. */
+export function moonRoadDistance(x, z, roads = MOON_ROADS) {
+  const r = Math.hypot(x, z);
+  let distance = Math.min(...roads.rings.map((ring) => Math.abs(r - ring)));
+  for (const [a, b] of moonSpokes(roads))
+    distance = Math.min(distance, moonSegmentDistance(x, z, a, b));
+  return distance;
+}
+/** The radius of the ring road a lot's path joins. */
+export const moonLotRing = (id) => MOON_ROADS.rings[lotEntry(id)?.ring ?? 0] ?? MOON_RING_ROAD;
 // Lots sit inside a crater bowl; footprints stay within this radius of a lot.
 export const MOON_LOT_RADIUS = 5;
 export const MOON_CRATER_RADIUS = 46;
@@ -252,6 +283,7 @@ export function moonApproach(id, level = 3, lots = MOON_LOTS, site = null) {
   const pose = site?.pose ?? moonLotPose(id, lots);
   const local = (site?.arrival ?? lotArrival(id)).map((point) => [...point]);
   if (id === 'willowkinDome' && level >= 2) local[0] = [0, 2.48];
+  const ring = site?.ring ?? moonLotRing(id);
   const padRadius = site?.padRadius ?? moonPadRadius(id),
     rampStart = moonPadApothem(padRadius - 0.25) - 0.05,
     rampEnd = padRadius + 0.35;
@@ -299,7 +331,7 @@ export function moonApproach(id, level = 3, lots = MOON_LOTS, site = null) {
       }
       for (let j = 0; j < 96; j++) {
         const a = (j * Math.PI) / 48;
-        const end = [Math.cos(a) * MOON_RING_ROAD, Math.sin(a) * MOON_RING_ROAD];
+        const end = [Math.cos(a) * ring, Math.sin(a) * ring];
         const cost = length + Math.hypot(end[0] - arc.at(-1)[0], end[1] - arc.at(-1)[1]);
         if ((!best || cost < best.cost) && clear(arc.at(-1), end))
           best = { cost, points: [...arc, end] };
@@ -308,7 +340,7 @@ export function moonApproach(id, level = 3, lots = MOON_LOTS, site = null) {
   }
   // Incomplete future layouts still get finite, visible access data. Shipped
   // layouts are regression checked to always find a clear exterior connection.
-  const fallback = [Math.cos(startAngle) * MOON_RING_ROAD, Math.sin(startAngle) * MOON_RING_ROAD];
+  const fallback = [Math.cos(startAngle) * ring, Math.sin(startAngle) * ring];
   return {
     id,
     width: MOON_ACCESS_WIDTH,
@@ -318,6 +350,7 @@ export function moonApproach(id, level = 3, lots = MOON_LOTS, site = null) {
     padRadius,
     rampStart,
     rampEnd,
+    ring,
     clear: !!best,
     points: [...apron, ...(best?.points.slice(1) ?? [fallback])],
     apronSegments: apron.length - 1,
