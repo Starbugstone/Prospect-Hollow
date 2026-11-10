@@ -228,9 +228,15 @@ export function previewPowerEffect(store, index) {
   store.renderer?.animator?.showBonusPreview?.(indices);
 }
 
+// Boards whose free recovery is under way, by nesting depth: the rescue sweep settles like any
+// move and checks again.
+const recovering = new WeakMap();
+
 export function processQueuedInput(store) {
   if (store.animationInProgress || store.inputPaused || !store.sessionActive || store.levelCleared)
     return;
+  // Queued input waits for the recovery to finish, so it never plays on a dead board.
+  if (recovering.has(toRaw(store.$state))) return;
   if (store.queuedBonus) {
     const queued = store.queuedBonus;
     store.queuedBonus = null;
@@ -331,13 +337,15 @@ export async function resolveSwap(store, aIndex, bIndex, { activateInPlace = fal
   });
 }
 
-// After a move or power resolves: accept input again, then keep the board playable.
+// After a move or power resolves: accept input again and keep the board playable. The free
+// reshuffle comes before queued input: a queued swap finds no match on a dead board, and its
+// bounce would hold the board busy past the check.
 export async function settleMove(store, boardUpdated) {
   store.pendingBoardState = null;
   store.animationInProgress = false;
   if (store.sessionActive) store.scheduleHint();
-  store.processQueuedInput();
   if (boardUpdated && store.sessionActive && !store.levelCleared) await store.ensurePlayableBoard();
+  store.processQueuedInput();
 }
 
 // A swap that makes no match bounces back; the board and move count stay unchanged.
@@ -350,6 +358,8 @@ export async function rejectSwap(store, aIndex, bIndex, session) {
     } finally {
       if (session === store.sessionVersion) {
         store.animationInProgress = false;
+        // A reshuffle that fell due while the bounce held the board busy was skipped.
+        await store.ensurePlayableBoard();
         store.processQueuedInput();
       }
     }
@@ -448,6 +458,21 @@ export async function ensurePlayableBoard(store) {
   )
     return false;
   if (store._hasPlayableMove()) return false;
+  const owner = toRaw(store.$state);
+  recovering.set(owner, (recovering.get(owner) ?? 0) + 1);
+  try {
+    return await recoverPlayableBoard(store);
+  } finally {
+    const depth = recovering.get(owner) - 1;
+    if (depth) recovering.set(owner, depth);
+    else {
+      recovering.delete(owner);
+      store.processQueuedInput();
+    }
+  }
+}
+
+async function recoverPlayableBoard(store) {
   const session = store.sessionVersion;
   showReshuffleNotice(store);
   for (let attempt = 0; attempt < 3; attempt++) {
