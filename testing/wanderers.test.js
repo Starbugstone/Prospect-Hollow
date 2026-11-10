@@ -1,5 +1,5 @@
 import { afterEach, expect, it, vi } from 'vitest';
-import { Group, MeshBasicMaterial, PerspectiveCamera, Scene, Vector3 } from 'three';
+import { Box3, Group, MeshBasicMaterial, PerspectiveCamera, Scene, Vector3 } from 'three';
 import { TownDiorama } from '../src/game/town/TownDiorama';
 import { createTownGeometries } from '../src/game/town/TownGeometries';
 import { TownPrimitives } from '../src/game/town/TownPrimitives';
@@ -13,6 +13,7 @@ import {
   RACCOON_HEIGHT,
   WANDERERS,
   pairTargets,
+  strideRaccoon,
   wanderersPlace,
   wanderersTargets,
 } from '../src/game/town/TownWanderers';
@@ -104,6 +105,54 @@ it('builds the raccoon upright on the villager skeleton, beside the game’s Wil
               reference[limbs][n][joint].rotation.x,
             );
     }
+  }
+});
+
+it('keeps the raccoon cheap to draw, inside its tap height and at rest under reduced motion', () => {
+  const d = new TownPrimitives();
+  views.push(Object.assign(d, { scene: new Group() }));
+  for (const costume of [null, 'space-helmet']) {
+    const { raccoon, willowkin } = animalModel(d, WANDERERS, 0, costume, d.scene);
+    // Each rigid part is one mesh per colour: detail costs triangles, not draw calls.
+    let meshes = 0,
+      triangles = 0;
+    raccoon.root.traverse((object) => {
+      if (!object.isMesh) return;
+      meshes++;
+      triangles += object.geometry.index.count / 3;
+    });
+    expect(meshes).toBeLessThanOrEqual(34);
+    expect(triangles).toBeLessThan(4600);
+    d.scene.updateMatrixWorld(true);
+    const top = new Box3().setFromObject(raccoon.root, true).max.y;
+    expect(Math.abs(top - RACCOON_HEIGHT)).toBeLessThan(0.1);
+
+    const pose = () =>
+      [raccoon.head, raccoon.tail, raccoon.tailTip, ...raccoon.ears].map(({ rotation }) =>
+        rotation.toArray().slice(0, 3),
+      );
+    // Reduced motion: the shared gait still walks it; its own touches hold one pose.
+    d.reducedMotion = true;
+    strideRaccoon(raccoon, 3, true, 0.1);
+    const still = pose(),
+      leg = raccoon.legs[0].upper.rotation.x;
+    strideRaccoon(raccoon, 9.4, true, 3.78);
+    expect(pose()).toEqual(still);
+    expect(raccoon.legs[0].upper.rotation.x).not.toBeCloseTo(leg);
+    // Otherwise the tail sways and, here, an ear is mid-flick.
+    d.reducedMotion = false;
+    strideRaccoon(raccoon, 9.4, true, 3.78);
+    expect(raccoon.tail.rotation.y).not.toBeCloseTo(0);
+    expect(raccoon.tailTip.rotation.z).not.toBeCloseTo(0);
+    expect(raccoon.ears.map(({ rotation }) => rotation.z)).not.toEqual(
+      still.slice(3).map((r) => r[2]),
+    );
+    // Standing, it turns its head up toward the Willowkin beside it.
+    strideRaccoon(raccoon, 0, false, 5);
+    expect(Math.sign(raccoon.head.rotation.y)).toBe(
+      Math.sign(willowkin.root.position.x - raccoon.root.position.x),
+    );
+    expect(raccoon.head.rotation.x).toBeLessThan(0);
   }
 });
 

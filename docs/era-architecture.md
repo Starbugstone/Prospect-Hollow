@@ -1029,6 +1029,9 @@ the helmet's state, persistence or server code.
   upright raccoon and its Willowkin (`TownWanderers.js`). `wanderersPlace` puts them in the
   valley or on the Moon from `completedRuns`; the valley casts them as one sidewalk walker
   that `placeWanderers` hides while they are away, and `MoonScene.placeWanderers` walks
-  them round the ring road in suits. `testing/wanderers.test.js` covers both maps.
+  them round the ring road in suits. The raccoon's head and wrap-around markings live in
+  `TownRaccoonGeometries.js`; `uprightRaccoon` merges each rigid part into one mesh per
+  colour, and its own touches (tail sway, ear flick, a look up at the Willowkin) rest under
+  reduced motion. `testing/wanderers.test.js` covers both maps, the draw budget and that rest.
 - Each find is separate: finding one never uses up another.
   `testing/hidden-finds.test.js` runs the contract for every definition.
