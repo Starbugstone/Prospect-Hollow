@@ -382,6 +382,7 @@ describe('Two eras and explicit modernization', () => {
       'stargazer',
       'moonward',
       'twin-hollows',
+      'hollow-rising',
     ]);
   });
   it('saves the transition before presenting it and cannot advance twice across reload', () => {

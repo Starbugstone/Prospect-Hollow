@@ -172,6 +172,30 @@ export const TOWN_PROJECTS = [
     'Keep a welcome in the valley',
     ['homecomingHall', 'spaceElevator', 'moonpost'],
   ],
+  [
+    'hollow-rising',
+    'outer-ring',
+    'Lay the outer ring',
+    ['ringTram', 'dewfallCistern', 'orchardVaults', 'ribbonLanding'],
+  ],
+  [
+    'hollow-rising',
+    'moon-born',
+    'Homes for the first Moon-born',
+    ['lanternRow', 'earthviewTerraces', 'craterSchool', 'newHollowCommons'],
+  ],
+  [
+    'hollow-rising',
+    'crater-welcome',
+    'Open New Hollow to visitors',
+    ['ringMarket', 'craterInn', 'starwatchDish', 'square'],
+  ],
+  [
+    'hollow-rising',
+    'own-supplies',
+    'A town that feeds itself',
+    ['craterIceWell', 'earthlightGreenhouse', 'expeditionGarage', 'roverBarn'],
+  ],
 ].map(([era, id, title, buildings, hammers = 0]) => ({ era, id, title, buildings, hammers }));
 
 export const PROJECT_MILESTONES = ['Open the doors', 'Make room to grow', 'Complete the project'];

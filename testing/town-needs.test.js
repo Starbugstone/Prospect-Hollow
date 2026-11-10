@@ -5,7 +5,7 @@ import { ERA_SUPPLY_STEP, HAPPINESS } from '../src/data/townNeeds';
 import { CITY_BUILDINGS, cityBenefit } from '../src/data/city';
 import { BUILDINGS, createTown } from '../src/data/town';
 import { advanceEra, eraGate, modernization } from '../src/game/town/TownEras';
-import { townNeeds, townSupply, visitorShare } from '../src/game/town/TownNeeds';
+import { needProviders, townNeeds, townSupply, visitorShare } from '../src/game/town/TownNeeds';
 import {
   buildWithHammer,
   finishConstruction,
@@ -154,8 +154,15 @@ describe('happiness follows comfort and supplies', () => {
     expect(visitorShare(90)).toBe(1);
     const finished = finishedEras.at(-1);
     const happy = townNeeds(finished);
+    // Take comfort away, the square first, until happiness falls below the 90% where
+    // visitors start to stay away.
     const gloomy = { ...finished, buildings: { ...finished.buildings, square: 0, saloon: 1 } };
+    for (const id of needProviders('comfort')) {
+      if (townNeeds(gloomy).happiness < 90) break;
+      if (!['square', 'saloon'].includes(id)) gloomy.buildings[id] = 0;
+    }
     const sad = townNeeds(gloomy);
+    expect(sad.happiness).toBeGreaterThan(30);
     expect(sad.happiness).toBeLessThan(happy.happiness);
     expect(sad.visitors).toBe(
       Math.min(Math.floor(sad.visitorPlaces * visitorShare(sad.happiness)), sad.visitorPlaces),

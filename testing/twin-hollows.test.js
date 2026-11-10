@@ -34,10 +34,21 @@ import {
 import { VISITOR_TRANSPORTS } from '../src/data/visitorArrivals';
 import { moonHeight, roads as moonRoads } from '../src/game/town/moon/MoonScene';
 import { Raycaster, Vector3 } from 'three';
-import { areasForSettlement } from '../src/data/townLandmarks';
+import {
+  AREA_BY_ID,
+  advanceMonumentWorks,
+  areaUnlocked,
+  areasForSettlement,
+  landmarkOffer,
+  monumentWork,
+  purchaseLandmark,
+  unveilLandmark,
+} from '../src/data/townLandmarks';
 import { MOON_SETTLEMENT } from '../src/data/settlements';
 import {
+  advanceEra,
   eraBuildingLevel,
+  eraGate,
   finishEra,
   isEraComplete,
   modernization,
@@ -184,6 +195,28 @@ describe('Twin Hollows: the Moon is the new frontier', () => {
     town.buildingEraLevels.square = 3;
     expect(upgradeOffer(town, 'square')).toMatchObject({ targetEra: 'twin-hollows' });
     expect(isEraComplete(town)).toBe(false);
+  });
+
+  // Commissions are optional: a commission chosen and half paid for never holds the town
+  // back from the next era (owner, 10 November 2026).
+  it('opens the next era with a commission open, chosen or part funded', () => {
+    const town = twinTown();
+    const site = AREA_BY_ID['earthlight-conservatory'];
+    expect(areaUnlocked(town, site)).toBe(true);
+    expect(eraGate(town).available).toBe(true);
+    let funded = purchaseLandmark(town, {
+      id: site.id,
+      slot: 0,
+      value: site.choices[0],
+      ...landmarkOffer(town, site, site.choices[0]),
+    });
+    expect(funded).toBeTruthy();
+    while (monumentWork(funded, site) && !monumentWork(funded, site).ready)
+      funded = advanceMonumentWorks(funded);
+    funded = unveilLandmark(funded, site.id, 1);
+    expect(isEraComplete(funded)).toBe(true);
+    expect(eraGate(funded).available).toBe(true);
+    expect(advanceEra(funded, 'twin-hollows').era).toBe('hollow-rising');
   });
 
   it('needs New Hollow finished as well as the valley before the era is complete', () => {

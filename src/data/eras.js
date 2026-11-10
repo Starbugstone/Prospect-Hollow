@@ -452,8 +452,7 @@ export const ERAS = continueSupplyTiers(
       },
       label: 'New Hollow Rising',
       yearLabel: '2335',
-      // Opens once its buildings can be built and modernized to the end.
-      enabled: false,
+      enabled: true,
       story:
         'New Hollow has outgrown its first ring. The crater floor is cleared to the rim, a little tram circles the new streets, and the first children born under Earthlight are walking to school.',
       horizon: 'New Hollow is ready to grow up.',

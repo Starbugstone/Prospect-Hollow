@@ -1,4 +1,5 @@
 import { afterEach, expect, it, vi } from 'vitest';
+import { eraSettlement } from '../src/game/town/TownEventSettlement';
 import { Group, Raycaster } from 'three';
 import { ERAS } from '../src/data/eras';
 import { BUILDINGS, EARTH_BUILDINGS, createTown } from '../src/data/town';
@@ -51,8 +52,9 @@ afterEach(() => {
 });
 
 it('covers a newly introduced unbuilt valley plot in every shipped era', () => {
+  // An era that builds only on another settlement (New Hollow Rising) has no valley plot.
   expect(openPlots.map(([era]) => era)).toEqual(
-    ERAS.filter((era) => era.enabled).map((era) => era.id),
+    ERAS.filter((era) => era.enabled && !eraSettlement(era.id)).map((era) => era.id),
   );
 });
 

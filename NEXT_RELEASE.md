@@ -434,7 +434,12 @@ with the 18 new boards).
 - [x] The era cinematic hands over to the Moon map, since every new building stands there
 - [x] The wandering pair: a raccoon on its hind legs and a Willowkin, found in the valley or on the
       Moon with the astronaut's rewards, through one shared hidden-find contract (owner, 10 November)
-- [ ] Enable the era after a phone pass
+- [x] Enable the era on `preprod` (owner, 10 November 2026). Commissions never gate it: a test
+      moves a finished Twin Hollows town on with a commission chosen and part paid for
+- [ ] Phone pass of the era: the wider crater, the outer ring, the modernized buildings, the
+      wandering pair
+- [ ] Before release: decide whether a save in the new era needs save schema 5, so an older
+      cached client treats it as read-only instead of normalizing the unknown era away
 - [ ] The optional buildings, the tram and child settlers
 - [ ] The moonstone monument site, then the two commissions
 - [ ] Rover expeditions: client, server replay, presentation and an economy rerun
