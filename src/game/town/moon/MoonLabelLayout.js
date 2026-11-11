@@ -2,17 +2,20 @@ import { MOON_FLOOR_RADIUS } from '../../../data/moonSettlement';
 import { layoutTownLabels } from '../TownLabelLayout';
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
-// An action icon is drawn this many world units tall where its place stands, within these
-// pixel sizes: never too small to see, never larger than the valley's.
-const MARKER_UNITS = 3.2;
-const MOON_MARKER_PIXELS = Object.freeze({ min: 22, max: 50, full: 50 });
+// An action icon is sized by its own place: this share of the width its pad is drawn at,
+// never smaller than can be seen at a glance in a phone's overview and never larger than
+// the valley's. It stands on a round badge this much wider than itself.
+const MARKER_SHARE = 0.42;
+const MOON_MARKER_PIXELS = Object.freeze({ min: 30, max: 50, full: 50 });
+const MARKER_BADGE = 1.36;
+const MARKER_CROWDING = 0.8;
 /**
- * An action icon's size for a place drawn at `unit` pixels per world unit: a fraction of
- * the full icon, in steps, so a slow zoom redraws it only now and then.
+ * An action icon's size for a place whose pad is drawn `pad` pixels wide: a fraction of the
+ * full icon, in steps, so a slow zoom redraws it only now and then.
  */
-const moonMarkerSize = (unit) => {
+const moonMarkerSize = (pad) => {
   const { min, max, full } = MOON_MARKER_PIXELS;
-  const pixels = clamp((unit ?? Infinity) * MARKER_UNITS, min, max);
+  const pixels = clamp((pad ?? Infinity) * MARKER_SHARE, min, max);
   return Math.round((pixels / full) * 20) / 20;
 };
 
@@ -87,8 +90,8 @@ export function moonMapLabel({ id, x, y }, view, box = CRATER_BOX) {
   const [mx, my] = moonMapPercent([x, y - PLACE_REACH.above], view, box);
   const scale = Math.min(view.width / box.width, view.height / box.height);
   const visible = !!view.width && !!view.height;
-  // A drawn lot is about 6 map units to a world unit of the 3D scene's marker rule.
-  return { id, x: px, y: py, visible, marker: { x: mx, y: my, visible, unit: scale * 3 } };
+  const pad = scale * PLACE_REACH.side * 2;
+  return { id, x: px, y: py, visible, marker: { x: mx, y: my, visible, pad } };
 }
 
 // A place's action icon stays at its projected marker: over its own worksite or building
@@ -96,15 +99,18 @@ export function moonMapLabel({ id, x, y }, view, box = CRATER_BOX) {
 // answers a tap); it is never slid somewhere else to stay on screen.
 function markerPlace(label, width, height, top, bottom) {
   const marker = label.marker ?? { x: label.x, y: label.y, visible: true };
-  const size = moonMarkerSize(marker.unit);
-  const half = (MOON_MARKER_PIXELS.full * size) / 2;
+  const size = moonMarkerSize(marker.pad);
+  // Its badge is what it covers on screen.
+  const half = (MOON_MARKER_PIXELS.full * size * MARKER_BADGE) / 2;
   const [x, y] = [(marker.x * width) / 100, (marker.y * height) / 100];
   return {
     x: marker.x,
     y: marker.y,
     size,
-    // What it covers on screen, for keeping icons apart.
-    extent: half * 2 + 6,
+    // The room it keeps from other icons: a little less than its badge, so in a crowded
+    // overview neighbouring badges may touch and overlap slightly instead of being pushed
+    // off their own sites.
+    extent: half * 2 * MARKER_CROWDING,
     visible:
       !!width &&
       !!height &&

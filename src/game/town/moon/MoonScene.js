@@ -69,6 +69,7 @@ import {
   MOON_PARCEL_SIDES,
   moonLotPose,
   moonLotsShown,
+  moonPadRadius,
   moonParcels,
   moonPathDistance,
   moonRoadDistance,
@@ -1189,7 +1190,9 @@ export class MoonScene extends TownPrimitives {
       };
       const markerY = point.y;
       point.set(position.x, top + 1, position.z).project(this.camera);
-      marker.unit = (Math.abs(point.y - markerY) * view) / 2;
+      // How wide the place's pad is drawn: what its icon is sized by.
+      const radius = this.parcels?.get(id)?.radius ?? moonPadRadius(id);
+      marker.pad = Math.abs(point.y - markerY) * view * radius;
       point.copy(position).project(this.camera);
       return {
         id,
@@ -1210,7 +1213,7 @@ export class MoonScene extends TownPrimitives {
         .map(
           (l) =>
             `${l.id}${Math.round(l.x * 10)},${Math.round(l.y * 10)}${l.visible}` +
-            `${Math.round(l.marker.y * 10)},${Math.round(l.marker.unit)}`,
+            `${Math.round(l.marker.y * 10)},${Math.round(l.marker.pad / 4)}`,
         )
         .join();
     if (key === this.labelKey) return;

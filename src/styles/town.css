@@ -1923,14 +1923,34 @@ html:has(.town-museum[open]) {
   width: calc(36px * var(--action-scale, 1));
   height: calc(36px * var(--action-scale, 1));
 }
-/* On the Moon an icon shrinks with its place, but its tap target never does. The hammer's
-   own ground shadow is left off: it hangs over a worksite, not on the ground. */
+/* On the Moon an icon shrinks with its place, but its tap target never does. A ready
+   hammer stands on a cream badge with a gold rim, like the map's pills, so it shows against
+   scaffolding and the dark sky alike. The hammer's own ground shadow is left off: it hangs
+   over a worksite, not on the ground. */
 .town-moon-view .town-action-icon {
   min-width: 44px;
   min-height: 44px;
 }
+.town-moon-view .town-completion-icon::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(36px * var(--action-scale, 1) * 1.36);
+  height: calc(36px * var(--action-scale, 1) * 1.36);
+  box-sizing: border-box;
+  border: 2px solid #e2b84f;
+  border-radius: 50%;
+  background: #fff8e6;
+  box-shadow: 0 2px 5px #0c122866;
+  transform: translate(-50%, -50%);
+}
 .town-moon-view .town-completion-icon img {
+  position: relative;
   clip-path: inset(0 0 16% 0);
+  filter: none;
+  /* The clipped shadow leaves the art top-heavy: settle it in the middle of the badge. */
+  translate: 0 6%;
 }
 .town-plot-ready {
   color: #426654;

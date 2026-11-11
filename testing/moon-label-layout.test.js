@@ -38,22 +38,23 @@ it('separates overlapping Moon action icons by their own drawn size, through the
   const at = (id, x) => ({
     ...label(id, x, 60),
     action: true,
-    marker: { x, y: 55, visible: true, unit: 40 },
+    marker: { x, y: 55, visible: true, pad: 400 },
   });
   const placed = layoutMoonLabels([at('workshop', 50), at('garden', 51)], 320, 568);
   const [a, b] = placed.map(({ collection }) => ({
     x: (collection.x * 320) / 100,
     y: (collection.y * 568) / 100,
   }));
-  // Full-size icons: 50 pixels and a gap.
+  // Full-size icons keep four fifths of a 68-pixel badge apart.
   expect(placed[0].collection.size).toBe(1);
-  expect(Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y))).toBeGreaterThanOrEqual(55.9);
+  expect(Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y))).toBeGreaterThanOrEqual(54.3);
   // Small icons, as in a phone's overview, need far less room and are barely moved.
-  const small = (id, x) => ({ ...at(id, x), marker: { x, y: 55, visible: true, unit: 4 } });
+  const small = (id, x) => ({ ...at(id, x), marker: { x, y: 55, visible: true, pad: 40 } });
   const far = layoutMoonLabels([small('workshop', 50), small('garden', 51)], 320, 568);
-  expect(far[0].collection.size).toBeLessThan(0.5);
+  // The floor: 30 pixels drawn, so a phone's overview still reads at a glance.
+  expect(far[0].collection.size).toBe(0.6);
   for (const [n, x] of [50, 51].entries())
-    expect(Math.abs(((far[n].collection.x - x) * 320) / 100)).toBeLessThan(16);
+    expect(Math.abs(((far[n].collection.x - x) * 320) / 100)).toBeLessThan(24);
 });
 
 it('keeps a ready action available when its text label cannot fit', () => {
@@ -99,7 +100,7 @@ it.each([
   [375, 740],
 ])('keeps a ready hammer at its own marker, or leaves it out, at %sx%s', (width, height) => {
   const top = width < 600 ? 164 : height < 450 ? 110 : 112;
-  const marker = (y) => ({ x: 50, y, visible: true, unit: 12 });
+  const marker = (y) => ({ x: 50, y, visible: true, pad: 120 });
   const inside = ((top + 80) / height) * 100,
     under = ((top - 30) / height) * 100;
   const placed = layoutMoonLabels(
@@ -114,7 +115,7 @@ it.each([
   // The icon is exactly where its place's marker projects: never offset, never slid.
   expect(placed[0].collection).toMatchObject({ x: 50, y: inside, visible: true });
   const extent = placed[0].collection.extent;
-  expect(extent).toBeLessThanOrEqual(56);
+  expect(extent).toBeLessThanOrEqual(72);
   const icon = { x: width / 2, y: (inside * height) / 100, width: extent, height: extent };
   for (const lot of placed.filter((lot) => lot.visible)) {
     expect(
@@ -170,6 +171,7 @@ describe('ready markers over their own sites', () => {
         pickTargets: {
           children: parcels.map(({ id }) => ({ userData: { lot: id }, scale: { y: WORKSITE } })),
         },
+        parcels: new Map(parcels.map((parcel) => [parcel.id, parcel])),
       });
       scene.labelActions = new Set(scene.lots.map(({ id }) => id));
       let projected;
@@ -204,9 +206,12 @@ describe('ready markers over their own sites', () => {
         // Just above the worksite: above its roof, within two world units of it.
         expect(iy, `${lot.id} below its roof`).toBeLessThanOrEqual(roof + drawn / 2);
         expect(iy, `${lot.id} floats`).toBeGreaterThanOrEqual(above - drawn / 2);
-        // In proportion: no larger than the valley's icon, no wider than the pad is drawn
-        // (or the smallest size an icon can still be read at).
-        expect(drawn, `${lot.id} size`).toBeLessThanOrEqual(Math.max(22, Math.min(50, pad * 2)));
+        // In proportion: sized by the pad, no larger than the valley's icon and no wider
+        // than the pad is drawn (or the smallest size an icon can still be read at).
+        expect(drawn, `${lot.id} size`).toBeLessThanOrEqual(Math.max(30, Math.min(50, pad * 2)));
+        // Seen at a glance: never under the floor, and full size on a pad drawn large.
+        expect(drawn, `${lot.id} floor`).toBeGreaterThanOrEqual(30);
+        if (pad * 2 * 0.42 >= 52) expect(drawn, `${lot.id} on a large pad`).toBe(50);
       }
     });
   });
