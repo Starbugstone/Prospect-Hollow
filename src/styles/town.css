@@ -2081,17 +2081,45 @@ html:has(.town-museum[open]) {
   align-items: center;
   pointer-events: none;
 }
+/* The foot of the map: on a phone, the waiting-event notice and the commission pill stack
+   above the tab bar, which draws over the bottom of the frame. Elsewhere it lays nothing
+   out and each keeps its own place. */
+.town-map-foot {
+  display: contents;
+}
+.town-map-frame:has(> .town-project-goal) .town-map-foot > .town-commission-goal {
+  top: calc(max(12px, env(safe-area-inset-top)) + 152px);
+}
+@media (max-width: 599px) {
+  .town-map-foot {
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: calc(var(--town-tab-height, 0px) + 12px);
+    z-index: 18;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
+  }
+  .town-map-frame .town-map-foot > * {
+    pointer-events: auto;
+  }
+  .town-map-frame .town-map-foot > .town-settlement-notice {
+    position: static;
+    align-self: center;
+    transform: none;
+  }
+}
 /* A phone wraps the Moon header to two rows; the same clearance as layoutMoonLabels. */
 @media (max-width: 599px) {
   .town-map-frame:has(.town-moon-header) .town-visitor-notice {
     top: max(164px, calc(env(safe-area-inset-top) + 164px));
   }
-  /* The goal pills would cover the header's second row, so they start below it. */
-  .town-map-frame:has(.town-moon-header) .town-project-goal {
+  /* The project pill would cover the header's second row, so it starts below it. The
+     commission pill sits at the foot of the map on a phone (TownCommissionGoal). */
+  .town-map-frame:has(.town-moon-header) .town-project-goal:not(.town-commission-goal) {
     top: calc(max(12px, env(safe-area-inset-top)) + 152px);
-  }
-  .town-map-frame:has(.town-moon-header) .town-project-goal + .town-commission-goal {
-    top: calc(max(12px, env(safe-area-inset-top)) + 202px);
   }
 }
 .town-moon-back,

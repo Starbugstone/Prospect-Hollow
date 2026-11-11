@@ -56,11 +56,6 @@
           ></span>
           <b>{{ projectGoal.done }}/{{ projectGoal.total }}</b>
         </button>
-        <TownCommissionGoal
-          v-if="commissionGoal && !playingRaid"
-          :status="commissionGoal"
-          @open="selectBuilding(commissionGoal.site)"
-        />
         <p
           v-if="(campaign.saveWarning || campaign.inventoryNotice) && !playingRaid"
           role="status"
@@ -118,12 +113,21 @@
             </button>
           </div>
         </div>
-        <TownSettlementNotice
-          v-if="active && waitingEvent"
-          :key="waitingEvent.key"
-          :destination="waitingEvent.settlement"
-          @watch="watchWaitingEvent"
-        />
+        <!-- The foot of the map on a phone: the waiting-event notice above the commission pill,
+             stacked so neither covers the other. Elsewhere each keeps its own place. -->
+        <div class="town-map-foot">
+          <TownSettlementNotice
+            v-if="active && waitingEvent"
+            :key="waitingEvent.key"
+            :destination="waitingEvent.settlement"
+            @watch="watchWaitingEvent"
+          />
+          <TownCommissionGoal
+            v-if="commissionGoal && !playingRaid"
+            :status="commissionGoal"
+            @open="selectBuilding(commissionGoal.site)"
+          />
+        </div>
         <TownVisitorNotice
           :notice="visitorNotice"
           @dismiss="dismissVisitorNotice"

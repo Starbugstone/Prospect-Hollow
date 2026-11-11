@@ -121,14 +121,37 @@ const count = (page) => page.locator(`${PILL} b`).innerText();
 const state = (page, expected) =>
   page.locator(`${PILL}[data-commission-state="${expected}"]`).waitFor({ timeout: 20000 });
 async function assertPillClear(page, viewport, label) {
+  // An honours toast slides over the foot of the map for a few seconds; a player closes it
+  // or waits. The layout below is what stays on screen.
+  for (const close of await page.locator('.honour-toast-close').all())
+    await close.click().catch(() => {});
+  await page
+    .locator('.honour-toast')
+    .waitFor({ state: 'detached', timeout: 15000 })
+    .catch(() => {});
   const box = await page.locator(PILL).boundingBox();
   assert.ok(box.x >= 0 && box.x + box.width <= viewport.width, `${label}: within the width`);
   assert.ok(box.height >= 44, `${label}: large enough to tap`);
+  if (viewport.width < 600) {
+    // A phone has no spare row at the top: the pill is one line in the lower-left corner,
+    // short of the event inset's column (eventInsetRect) and of the Moon's Earth.
+    const frame = await page.locator('.town-map-frame').boundingBox();
+    assert.ok(box.height <= 48, `${label}: one line on a phone (${box.height}px)`);
+    assert.ok(box.y > frame.y + frame.height / 2, `${label}: in the lower half on a phone`);
+    const tabs = await page.locator('.town-tab-bar').boundingBox();
+    if (tabs) assert.ok(box.y + box.height <= tabs.y, `${label}: above the tab bar`);
+    const inset = Math.floor(Math.min(320, Math.max(156, frame.width * 0.4), frame.width * 0.46));
+    assert.ok(
+      box.x + box.width <= frame.x + frame.width - inset - 12,
+      `${label}: left of the event inset`,
+    );
+  }
   // The pill draws over the map's other controls, so "nothing covers the pill" cannot see it
   // hiding one of them: the Moon's header wraps to a second row on a phone.
   for (const selector of [
     '.town-project-goal:not(.town-commission-goal)',
     '.town-map-notice',
+    '.town-settlement-notice',
     '.town-map-wallet',
     '.town-moon-back',
     '.town-moon-title',
@@ -139,14 +162,14 @@ async function assertPillClear(page, viewport, label) {
       if (bounds) assert.ok(!overlap(box, bounds), `${label}: clear of ${selector}`);
     }
   }
-  const reached = await page.locator(PILL).evaluate((element) => {
+  const cover = await page.locator(PILL).evaluate((element) => {
     const rect = element.getBoundingClientRect();
     const hit = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
-    return element.contains(hit);
+    return element.contains(hit) ? null : `${hit?.tagName}.${hit?.className}`;
   });
-  assert.ok(reached, `${label}: nothing covers the pill`);
+  assert.equal(cover, null, `${label}: nothing covers the pill`);
   const overflow = await page
-    .locator(`${PILL} small`)
+    .locator(`${PILL} small:visible`)
     .evaluate((small) => small.getBoundingClientRect().right);
   assert.ok(overflow <= viewport.width, `${label}: the words stay on screen`);
 }
@@ -187,9 +210,22 @@ async function run(browser, viewport, name) {
   await state(page, 'request');
   await choose(page, 'homecoming-commons', 'Homecoming Bandstand');
   await state(page, 'work');
-  await page.locator(`${PILL} progress`).waitFor();
+  await page
+    .locator(`${PILL} progress`)
+    .waitFor({ state: viewport.width < 600 ? 'attached' : 'visible' });
   await assertPillClear(page, viewport, `${name} work`);
   await save(page, `${name}-work`);
+  // The same pill on the Moon, under its header.
+  await page.evaluate(() =>
+    document
+      .querySelector('.town-view')
+      .__vueParentComponent.setupState.townScene.showSettlement('moon'),
+  );
+  await page.locator('.town-moon-header').waitFor();
+  await assertPillClear(page, viewport, `${name} Moon work`);
+  await save(page, `${name}-moon-work`);
+  await page.locator('.town-moon-back').click();
+  await page.locator('.town-moon-header').waitFor({ state: 'detached' });
 
   // A real puzzle, won in the mine, builds both commissions and moves the pill on.
   assert.match(await count(page), /^0\//, `${name}: no puzzle built yet`);

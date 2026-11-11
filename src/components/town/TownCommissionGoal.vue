@@ -8,7 +8,8 @@
   >
     <img :src="status.state === 'ready' ? HAMMER : LETTER" alt="" />
     <span>
-      <small>{{ heading }}</small>
+      <small class="commission-heading">{{ heading }}</small>
+      <small class="commission-short">{{ short }}</small>
       <em v-if="status.state === 'request'">{{ t(status.area.label) }}</em>
       <progress v-else :value="status.done" :max="status.total"></progress>
     </span>
@@ -37,6 +38,14 @@ const heading = computed(() =>
       ? t('Commission ready · {design}', { design: design.value })
       : t('Commission · {design}', { design: design.value }),
 );
+// The one line a phone has room for: the pill's letter or hammer already says "commission".
+const short = computed(() =>
+  props.status.state === 'request'
+    ? t('New commission')
+    : props.status.state === 'ready'
+      ? t('Ready to unveil')
+      : design.value,
+);
 const label = computed(() => {
   const { state, area, done, total } = props.status;
   if (state === 'request')
@@ -52,13 +61,11 @@ const label = computed(() => {
 });
 </script>
 <style scoped>
-/* The same light pill as the town project beside it, one row lower when both show. */
+/* The same light pill as the town project beside it, one row lower when both show
+   (town.css, .town-map-foot). */
 .town-commission-goal {
   max-width: min(290px, calc(100% - 24px));
   cursor: pointer;
-}
-.town-project-goal + .town-commission-goal {
-  top: calc(max(12px, env(safe-area-inset-top)) + 152px);
 }
 .town-commission-goal.is-inline {
   position: static;
@@ -79,6 +86,31 @@ const label = computed(() => {
 .is-calling {
   border-color: #d3a63f;
   animation: commission-call 2.4s ease-in-out 3;
+}
+/* A phone has no spare row at the top: the pill becomes one line at the foot of the map
+   (.town-map-foot), clear of the event inset on the right (eventInsetRect) and of the
+   Moon's Earth. The site's letter and the request it opens carry the rest. */
+@media (max-width: 599px) {
+  .town-commission-goal:not(.is-inline) {
+    position: static;
+    align-self: flex-start;
+    /* Clear of the event inset, max(156px, 40% of the frame) wide and 12px from its right
+       edge; 100% here is the foot, the frame less 24px. */
+    max-width: min(calc(100% - 162px), calc(60% - 16px));
+  }
+  .town-commission-goal:not(.is-inline) em,
+  .town-commission-goal:not(.is-inline) progress,
+  .town-commission-goal:not(.is-inline) .commission-heading {
+    display: none;
+  }
+}
+@media (min-width: 600px) {
+  .commission-short {
+    display: none;
+  }
+}
+.town-commission-goal.is-inline .commission-short {
+  display: none;
 }
 @keyframes commission-call {
   50% {
