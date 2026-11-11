@@ -5,6 +5,7 @@ import { useCampaignStore } from '../src/stores/campaignStore';
 import { localProfile } from '../src/services/localProfile';
 import { townStorage } from '../src/services/townStorage';
 import { HintEngine } from '../src/game/engine/HintEngine';
+import { BOARD_PRESENTERS } from '../src/game/phaser/boardPresenters';
 let games;
 beforeEach(() => {
   games = [];
@@ -149,7 +150,7 @@ it('recovers a transferred mine renderer without replaying the intro or leaving 
   const queued = vi.spyOn(next, 'processQueuedInput').mockImplementation(() => {});
   next.rendererRecovering = true;
   next.animationInProgress = true;
-  next.attachRenderer({ scene: {}, boardContainer: {} });
+  next.attachRenderer({ scene: {}, boardContainer: {}, presenters: BOARD_PRESENTERS });
   expect(next.animationInProgress).toBe(false);
   expect(next.rendererRecovering).toBe(false);
   expect(next.introFinalized).toBe(next.sessionVersion);

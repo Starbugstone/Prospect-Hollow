@@ -40,7 +40,7 @@ async function inspect(directory) {
 await inspect('src');
 // What a player's phone downloads before the first screen, gzipped: the page plus every script and
 // style it links or preloads. Raise this on purpose, with the new baseline in the performance log.
-const FIRST_DOWNLOAD_BUDGET = Number(process.env.PH_FIRST_DOWNLOAD_BYTES ?? 480_000);
+const FIRST_DOWNLOAD_BUDGET = Number(process.env.PH_FIRST_DOWNLOAD_BYTES ?? 500_000);
 const firstFiles = [...startup.matchAll(/(?:href|src)="\/assets\/([^"]+\.(?:js|css))"/g)].map(
   ([, file]) => file,
 );

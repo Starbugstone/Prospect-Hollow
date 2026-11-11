@@ -504,3 +504,18 @@ SwiftShader draws on the CPU, so these guard against regressions and don't predi
 
 First download: 443 kB gzipped against a 480 kB ceiling. The town at this slowdown exceeds a 60 fps
 frame on script alone, which matches earlier entries in this log; its ceiling stops it getting worse.
+
+## First download, 11 November 2026
+
+The era art pass (villager outfits, roof tones, the era cinematic's camera) took the first download
+from 473.8 kB to 478.4 kB gzipped, 1.6 kB under its ceiling. Two changes followed.
+
+| Change                               | Where                                                                                            | Effect / revert note                                                                                                                                                                                                                                                                  |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Board renderer loads with the board  | `src/game/phaser/boardPresenters.js`, `attachRenderer()` in `src/stores/game/rendererBinding.js` | The game store imported `BoardAnimator` and `BoardInput`, so the board's animation, effects and sprite frames (about 100 kB of source) downloaded before the first screen. `BoardCanvas.vue` now hands them over with its renderer. `testing/board-chunk.test.js` holds the boundary. |
+| Ceiling raised from 480 kB to 500 kB | `FIRST_DOWNLOAD_BUDGET` in `scripts/check-bundle-budget.mjs`                                     | Requested by the owner to leave room for era art. Revert: set it back to `480_000`.                                                                                                                                                                                                   |
+
+First download after both changes and the newcomer animals and home variants: 458.4 kB gzipped
+against the 500 kB ceiling. The frame budget was not re-measured cleanly on the development machine
+(see the session notes in the commit); run `testing/browser/frame-budget.cjs` on a quiet machine
+before a release.

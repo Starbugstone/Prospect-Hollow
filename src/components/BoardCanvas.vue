@@ -23,6 +23,7 @@ import { useSettingsStore } from '../stores/settingsStore';
 import { BoardScene } from '../game/phaser/BoardScene';
 import { releaseContextOnDestroy } from '../game/phaser/RendererLifecycle';
 import { createBoardLoop } from '../game/phaser/BoardLoop';
+import { BOARD_PRESENTERS } from '../game/phaser/boardPresenters';
 
 const canvasRoot = ref(null);
 const gameStore = useGameStore();
@@ -109,7 +110,12 @@ onMounted(() => {
       payload.particles.destroy();
       return;
     }
-    gameStore.attachRenderer({ ...payload, game, onActivity: wakeBoard });
+    gameStore.attachRenderer({
+      ...payload,
+      game,
+      onActivity: wakeBoard,
+      presenters: BOARD_PRESENTERS,
+    });
     payload.particles.setReducedMotion(settings.reducedMotion);
     payload.scene.events.once('shutdown', () => payload.particles.destroy());
     resize();

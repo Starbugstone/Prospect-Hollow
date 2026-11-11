@@ -1,7 +1,5 @@
 import { markRaw, toRaw } from 'vue';
 import { BoardReadiness } from '../../game/phaser/BoardReadiness';
-import { BoardAnimator } from '../../game/phaser/BoardAnimator';
-import { BoardInput } from '../../game/phaser/BoardInput';
 import { afterPaint, performanceMark } from '../../game/PresentationWork';
 import { useSettingsStore } from '../settingsStore';
 
@@ -77,7 +75,9 @@ export function attachRenderer(store, renderer) {
   boardReadiness(store).invalidate();
   store.renderer?.animator?.destroy();
   store.renderer?.input?.destroy();
-  const animator = new BoardAnimator({
+  // The board's chunk supplies what presents it (game/phaser/boardPresenters.js).
+  const { Animator, Input } = renderer.presenters;
+  const animator = new Animator({
     scene: renderer.scene,
     boardContainer: renderer.boardContainer,
     backgroundLayer: renderer.backgroundLayer,
@@ -92,7 +92,7 @@ export function attachRenderer(store, renderer) {
     onBanner: (banner) => store.showArcadeBanner(banner),
     onActivity: renderer.onActivity,
   });
-  const input = new BoardInput({
+  const input = new Input({
     scene: renderer.scene,
     boardContainer: renderer.boardContainer,
     gameStore: store,
