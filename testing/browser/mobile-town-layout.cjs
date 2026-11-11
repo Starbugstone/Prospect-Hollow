@@ -67,6 +67,11 @@ const ownerNotice = (page) =>
       ]),
   );
 
+// Whether `a` reaches the middle of `b`.
+const covers = (a, b) => {
+  const [x, y] = [b.x + b.width / 2, b.y + b.height / 2];
+  return x > a.x && x < a.x + a.width && y > a.y && y < a.y + a.height;
+};
 async function checkActions(browser, viewport) {
   const { page, errors } = await openTown(browser, viewport);
   const label = `actions-${viewport.width}x${viewport.height}`;
@@ -83,8 +88,10 @@ async function checkActions(browser, viewport) {
   await save(page, label);
   for (const [n, a] of boxes.entries()) {
     assert(a.own, `${label}: a tap on ${a.id} reaches ${a.id}`);
+    // Crowded icons may overlap a little so that none leaves its own plot (TownMarkers.js),
+    // but neither may reach the middle of the other: each keeps its own place to tap.
     for (const b of boxes.slice(n + 1))
-      assert(!overlap(a, b), `${label}: ${a.id} and ${b.id} do not overlap`);
+      assert(!covers(a, b) && !covers(b, a), `${label}: ${a.id} and ${b.id} keep their own middle`);
   }
   const stock = () =>
     page.evaluate(() => {

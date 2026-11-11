@@ -813,7 +813,7 @@ const SITE_PARCEL_SHARE = 0.75;
  * what stands on the plot, and sized by the width of the plot's own parcel (its lot, the
  * airport field or a garden parcel).
  */
-export function plotMarker(id, parcel) {
+function plotMarker(id, parcel) {
   const [x, z] = PLOTS[id];
   const { minX, maxX } = parcel.base ?? parcel;
   return {

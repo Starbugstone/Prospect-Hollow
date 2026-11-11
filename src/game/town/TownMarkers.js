@@ -13,15 +13,15 @@
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 // The share of its place's drawn width an icon takes, and its size in pixels.
 const MARKER_SHARE = 0.42;
-export const MARKER_PIXELS = Object.freeze({ min: 30, max: 50, full: 50 });
+const MARKER_PIXELS = Object.freeze({ min: 30, max: 50, full: 50 });
 // The badge is this much wider than the icon on it.
 const MARKER_BADGE = 1.36;
 const MARKER_CROWDING = 0.8;
 const MARKER_LEASH = 0.3;
 // An icon hangs this far above what stands on its place, measured no higher than this:
 // over a tower it sits by the first storeys instead of in the sky.
-export const MARKER_LIFT = 1.1;
-export const MARKER_CEILING = 4.5;
+const MARKER_LIFT = 1.1;
+const MARKER_CEILING = 4.5;
 
 /** The world height an icon hangs at over something `top` high standing at `ground`. */
 export const markerHeight = (top, ground = 0) =>
@@ -31,7 +31,7 @@ export const markerHeight = (top, ground = 0) =>
  * An icon's size for a place drawn `span` pixels wide: a fraction of the full icon, in
  * steps, so a slow zoom redraws it only now and then.
  */
-export const markerSize = (span) => {
+const markerSize = (span) => {
   const { min, max, full } = MARKER_PIXELS;
   const pixels = clamp((span ?? Infinity) * MARKER_SHARE, min, max);
   return Math.round((pixels / full) * 20) / 20;
