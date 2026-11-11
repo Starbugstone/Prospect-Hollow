@@ -1,6 +1,7 @@
 import { COZY_PALETTES } from '../../data/cozyArchitecture';
 import { ERAS, eraEvolution } from '../../data/eras';
 import { FUTURE_PALETTES } from '../../data/futureArchitecture';
+import { NEWCOMER_MODELS } from './NewcomerAnimalModels';
 import {
   WILLOWKIN_CROWNS,
   WILLOWKIN_ELDERS_FROM,
@@ -378,7 +379,17 @@ function willowkinResident(d, root, { variant = 0, era } = {}) {
   return { root, body, head, legs, arms, wings: [], tail };
 }
 
-const MODELS = { deer, otter, hedgehog, hare, squirrel, badger, willowkin, willowkinResident };
+const MODELS = {
+  deer,
+  otter,
+  hedgehog,
+  hare,
+  squirrel,
+  badger,
+  willowkin,
+  willowkinResident,
+  ...NEWCOMER_MODELS,
+};
 const PLAIN = Object.freeze({ size: 1 });
 /** `options` carries the animal's look, its own seed (`variant`) and the town's era. */
 export const gardenAnimalModel = (d, species, root, options = {}) =>

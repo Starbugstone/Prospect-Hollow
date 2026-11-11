@@ -108,8 +108,12 @@ export function animalModel(d, species, variant = 0, costume = null, parent = d.
       const wing = d.group(body, side * 0.13, 0.29, 0);
       if (flyingAnimal(species)) {
         d.mesh(wing, `pigeonWing${side}`, [1, 1, 1], [0, 0, 0], light);
-        if (species === 'pigeon')
-          d.mesh(wing, `pigeonWing${side}Bars`, [1, 1, 1], [0, 0, 0], '#526471');
+        if (look.bars) d.mesh(wing, `pigeonWing${side}Bars`, [1, 1, 1], [0, 0, 0], look.bars);
+        if (form === 'owl') {
+          // A wide face and ear tufts over the shared bird body.
+          d.ball(head, side * 0.045, 0.01, 0.07, [0.05, 0.055, 0.03], look.neck);
+          d.mesh(head, 'cone', [0.028, 0.06, 0.024], [side * 0.07, 0.1, -0.01], coat);
+        }
       } else d.ball(wing, side * 0.055, -0.035, -0.03, [0.075, 0.13, 0.22], light);
       wings.push(wing);
     } else {
@@ -140,8 +144,7 @@ export function animalModel(d, species, variant = 0, costume = null, parent = d.
       const rooster = form === 'rooster';
       d.ball(head, 0, rooster ? 0.12 : 0.1, 0, [0.04, rooster ? 0.1 : 0.065, 0.085], '#b86c50');
       if (rooster) d.ball(head, 0, -0.09, 0.07, [0.03, 0.06, 0.035], '#b86c50');
-    } else
-      d.ball(head, 0, -0.1, -0.015, [0.1, 0.1, 0.1], species === 'bluebird' ? light : '#649b91');
+    } else d.ball(head, 0, -0.1, -0.015, [0.1, 0.1, 0.1], look.neck ?? light);
   } else {
     const muzzle = species === 'fox' ? 0.19 : form === 'collie' ? 0.16 : 0.12;
     d.ball(head, 0, -0.045, 0.13, [0.1, 0.075, muzzle], light);

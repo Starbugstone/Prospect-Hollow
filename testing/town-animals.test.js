@@ -1,4 +1,4 @@
-import { afterEach, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Group, MeshBasicMaterial, PerspectiveCamera, Scene, Vector3 } from 'three';
 import { TownActors } from '../src/game/town/TownActors';
 import { updateTownLocomotion } from '../src/game/town/TownLocomotion';
@@ -23,7 +23,14 @@ import { ERAS, ERA_BY_ID, eraEvolution } from '../src/data/eras';
 import { defineEra } from '../src/data/eraDefinitions';
 import { PLOTS } from '../src/game/town/TownLayout';
 import { COMPANION_NEIGHBORHOODS } from '../src/data/townCompanions';
-import { SPACE_HELMET, TOWN_ANIMALS, townFauna } from '../src/data/townAnimals';
+import {
+  PASSING_NEIGHBORS,
+  SPACE_HELMET,
+  TOWN_ANIMALS,
+  TOWN_FAUNA,
+  flyingAnimal,
+  townFauna,
+} from '../src/data/townAnimals';
 import { birdPopulation } from '../src/game/town/TownBirdHabitats';
 import { monumentCast } from '../src/game/town/TownMonumentLife';
 
@@ -135,8 +142,9 @@ it.each(['canopy', 'riverlight'])(
       companions.every((a) => a.species === townFauna(eraEvolution(era)).companions.species),
     ).toBe(true);
     expect(new Set(companions.map((a) => a.seed)).size).toBe(3);
+    // The long-standing cast, the passing newcomers on the ground and one passing bird species.
     expect(d.animals.length).toBeLessThanOrEqual(
-      26 + monumentCast(d.town, townFauna(eraEvolution(era))).length,
+      26 + PASSING_NEIGHBORS + 2 + monumentCast(d.town, townFauna(eraEvolution(era))).length,
     );
     const roots = d.animals.map((a) => a.root),
       plans = d.navigation.plans;
@@ -166,7 +174,8 @@ it('adds wildlife without replacing existing animals or duplicating them on refr
     d.repairAnimalLife();
     expect(d.animals).toEqual(retained);
   }
-  expect(d.animals.filter((a) => !a.monumentSite)).toHaveLength(15);
+  // Fifteen long-standing animals, and the crow, duck and tortoise that have joined by 1986.
+  expect(d.animals.filter((a) => !a.monumentSite)).toHaveLength(18);
 });
 
 it('evolves all three companions into neighbors and retains their accepted street routes on refresh', () => {
@@ -248,7 +257,8 @@ it('inherits capabilities for a future era and drops removed power perches', () 
   });
   const future = fixture('animal-future', { home: 3, farm: 3, square: 3, powerHouse: 3 });
   addTownAnimals(future, future.town);
-  expect(future.animals).toHaveLength(15);
+  // A successor inherits the whole cast, newcomers included (crow, duck, tortoise, heron).
+  expect(future.animals).toHaveLength(19);
   expect(future.animalHabitats.every((h) => h.kind !== 'perch')).toBe(true);
   const d = fixture('industrial', { home: 3, square: 3, powerHouse: 3 });
   expect(animalHabitats(d, d.town).some((h) => h.kind === 'perch')).toBe(true);
@@ -1075,4 +1085,81 @@ it('lets both original and monument wildlife wear the single cosmonaut outfit', 
   }
   for (const animal of d.animals.filter((a) => SPACE_HELMET.wearers.includes(a.species)))
     expect(seen.has(animalKey(animal)), animalKey(animal)).toBe(true);
+});
+
+// Every era brings the valley a new animal (townAnimals.js: one fauna profile per era).
+const eraCast = (era) => {
+  const fauna = townFauna(eraEvolution(era));
+  return new Set([
+    'dog',
+    'cat',
+    'hen',
+    'fox',
+    'raccoon',
+    ...fauna.garden,
+    ...fauna.birds.map((bird) => bird.species),
+    ...(fauna.companions ? [fauna.companions.species] : []),
+  ]);
+};
+const fullTown = (era) =>
+  fixture(era, Object.fromEntries(BUILDINGS.map((b) => [b.id, b.upgrades.length])));
+
+describe('Era newcomers', () => {
+  it('introduces a species the valley has not seen in every era after the first', () => {
+    const seen = new Set(eraCast(ERAS[0].id));
+    expect(seen.has('deer')).toBe(true);
+    for (const era of ERAS.slice(1)) {
+      const arrivals = [...eraCast(era.id)].filter((species) => !seen.has(species));
+      expect(arrivals, era.id).toHaveLength(1);
+      expect(TOWN_ANIMALS[arrivals[0]], arrivals[0]).toBeTruthy();
+      seen.add(arrivals[0]);
+    }
+  });
+
+  it('keeps the cast bounded: early newcomers move on, the long-standing animals stay', () => {
+    const sizes = ERAS.map((era) => {
+      const fauna = townFauna(eraEvolution(era.id));
+      expect(fauna.passing?.length ?? 0, era.id).toBeLessThanOrEqual(PASSING_NEIGHBORS);
+      expect(fauna.birds.filter((bird) => bird.passing).length, era.id).toBeLessThanOrEqual(1);
+      for (const bird of fauna.birds.filter((b) => b.passing)) expect(bird.maxCount).toBe(2);
+      return fauna.garden.length + fauna.birds.length;
+    });
+    // deer, otter, hedgehog and three newcomers; pigeons, bluebirds and one newcomer bird.
+    expect(Math.max(...sizes)).toBe(3 + PASSING_NEIGHBORS + 3);
+    expect(eraCast('post-war').has('duck')).toBe(true);
+    expect(eraCast(ERAS.at(-1).id).has('duck')).toBe(false);
+    for (const era of ERAS.slice(ERAS.findIndex(({ id }) => id === SPACE_HELMET.debut)))
+      for (const species of SPACE_HELMET.wearers.filter((s) => eraCast('tomorrow').has(s)))
+        expect(eraCast(era.id).has(species), `${era.id}: ${species}`).toBe(true);
+  });
+
+  it('gives a successor era the cast it inherits and an unknown profile the standard one', () => {
+    const successor = defineEra({
+      id: 'newcomer-future',
+      evolution: { ...eraEvolution(ERAS.at(-1).id) },
+    });
+    expect(townFauna(successor.evolution)).toBe(townFauna(eraEvolution(ERAS.at(-1).id)));
+    expect(townFauna({ wildlife: 'no-such-cast' })).toBe(TOWN_FAUNA.standard);
+    expect(townFauna({ wildlife: 'constructor' })).toBe(TOWN_FAUNA.standard);
+    expect(townFauna(null)).toBe(TOWN_FAUNA.standard);
+    expect(() => defineEra({ id: 'x', evolution: { wildlife: 'no-such-cast' } })).toThrow();
+  });
+
+  const arrivals = ERAS.slice(1).map((era, n) => [
+    era.id,
+    [...eraCast(era.id)].find((species) => !eraCast(ERAS[n].id).has(species)),
+  ]);
+  it.each(arrivals)('walks or flies the %s newcomer (%s) through a full town', (era, species) => {
+    const d = fullTown(era);
+    addTownAnimals(d, d.town);
+    const animals = d.animals.filter((a) => a.species === species && !a.monumentSite);
+    expect(animals.length, species).toBeGreaterThanOrEqual(1);
+    for (const animal of animals) {
+      if (flyingAnimal(species)) expect(animal.habitats.length).toBeGreaterThan(1);
+      else expect(animal.path.total).toBeGreaterThan(2);
+      let meshes = 0;
+      animal.root.traverse((node) => (meshes += node.isMesh ? 1 : 0));
+      expect(meshes).toBeLessThanOrEqual(40);
+    }
+  });
 });

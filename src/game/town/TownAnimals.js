@@ -899,17 +899,19 @@ function* populateAnimals(d, town, preparedSpace) {
       continue;
     }
     let points;
-    if (species === 'otter') {
+    const { riverbank, home } = TOWN_ANIMALS[species];
+    if (Number.isFinite(riverbank)) {
       points = [0, 2, 5, 7, 5, 2, 0].map((offset, i) => {
-        const z = edge + offset;
-        return [riverCenterX(z) - RIVER.bankWidth - 2.5 - (i % 2) * 0.4, z];
+        const z = edge + riverbank + offset;
+        // Each stretch keeps its own lane, a little further from the water.
+        const lane = 2.5 + (riverbank % 3) * 0.9;
+        return [riverCenterX(z) - RIVER.bankWidth - lane - (i % 2) * 0.4, z];
       });
     } else {
       // The southern hills rise above the planner's flat walking plane. Use
       // the open verge of the old-town clearing so these small visits have a
       // complete route through the actual rendered landscape.
-      const x = species === 'deer' ? -15 : -22;
-      const z = species === 'deer' ? 27 : 25;
+      const [x, z] = home ?? [-22, 25];
       points = [
         [x, z],
         [x + 2, z + 0.8],

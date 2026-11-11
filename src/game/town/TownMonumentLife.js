@@ -14,7 +14,7 @@ export function monumentCast(town, fauna) {
     ...MONUMENT_WILDLIFE,
     'fox',
     'raccoon',
-    ...fauna.garden.filter((species) => species !== 'otter'),
+    ...fauna.garden.filter((species) => !Number.isFinite(TOWN_ANIMALS[species]?.riverbank)),
   ];
   const cast = areas.map((area) => {
     const index = areasForSettlement().indexOf(area);

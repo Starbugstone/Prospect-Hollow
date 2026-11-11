@@ -60,7 +60,7 @@ export const ERAS = continueSupplyTiers(
         waterworks: [50, 55, 60],
         farmCapacity: [20, 25, 30],
         style: 'industrial',
-        wildlife: 'riverside',
+        wildlife: 'rooftops',
         prices: INDUSTRIAL_PRICES,
         newBuildingPrices: INDUSTRIAL_PRICES,
         // Incidents wait for the power house or the light mill.
@@ -80,7 +80,7 @@ export const ERAS = continueSupplyTiers(
         waterworks: [63, 66, 69],
         farmCapacity: [33, 36, 39],
         style: 'city',
-        wildlife: 'riverside',
+        wildlife: 'millpond',
         prices: [2400, 2900, 3400],
         cityAssets: 'post-war',
         roadBridge: false,
@@ -146,7 +146,7 @@ export const ERAS = continueSupplyTiers(
         waterworks: [117, 123, 129],
         farmCapacity: [87, 93, 99],
         style: 'city',
-        wildlife: 'songbirds',
+        wildlife: 'backyards',
         prices: [6200, 7000, 7800],
         cityAssets: 'broadcast',
         wardrobe: 'broadcast',
@@ -175,7 +175,7 @@ export const ERAS = continueSupplyTiers(
         waterworks: [137, 145, 153],
         farmCapacity: [107, 115, 123],
         style: 'city',
-        wildlife: 'songbirds',
+        wildlife: 'wetland',
         prices: [7600, 9000, 10400],
         cityAssets: 'contemporary',
         wardrobe: 'contemporary',
@@ -205,7 +205,7 @@ export const ERAS = continueSupplyTiers(
         waterworks: [161, 169, 177],
         farmCapacity: [126, 129, 132],
         style: 'city',
-        wildlife: 'songbirds',
+        wildlife: 'parkland',
         // Rounded forms are procedural; the Connected City family still supplies
         // shared vehicles, bridge approaches, garden finishes and fallbacks.
         architecture: 'rounded',
@@ -303,6 +303,7 @@ export const ERAS = continueSupplyTiers(
       id: 'skysail',
       evolution: {
         ...FUTURE_CITY_EVOLUTION,
+        wildlife: 'sail-town',
         architecture: 'sail',
         waterworks: [195, 201, 207],
         farmCapacity: [162, 168, 174],
@@ -331,6 +332,7 @@ export const ERAS = continueSupplyTiers(
       id: 'stargazer',
       evolution: {
         ...FUTURE_CITY_EVOLUTION,
+        wildlife: 'star-town',
         architecture: 'observatory',
         waterworks: [213, 219, 225],
         farmCapacity: [180, 186, 192],
@@ -359,6 +361,7 @@ export const ERAS = continueSupplyTiers(
       id: 'moonward',
       evolution: {
         ...FUTURE_CITY_EVOLUTION,
+        wildlife: 'moon-town',
         architecture: 'homestead',
         waterworks: [233, 241, 249],
         farmCapacity: [198, 204, 210],
@@ -388,6 +391,7 @@ export const ERAS = continueSupplyTiers(
       id: 'twin-hollows',
       evolution: {
         ...FUTURE_CITY_EVOLUTION,
+        wildlife: 'twin-town',
         architecture: 'twin',
         waterworks: [265, 281, 297],
         farmCapacity: [226, 242, 258],
@@ -420,6 +424,7 @@ export const ERAS = continueSupplyTiers(
       id: 'hollow-rising',
       evolution: {
         ...FUTURE_CITY_EVOLUTION,
+        wildlife: 'tram-town',
         // The valley keeps its Twin Hollows buildings: only New Hollow changes. Its small
         // touches (clothes, fountain, road inlay) wear the Moon tram's livery.
         architecture: 'twin',
@@ -462,6 +467,7 @@ export const ERAS = continueSupplyTiers(
       id: 'quiet-signal',
       evolution: {
         ...FUTURE_CITY_EVOLUTION,
+        wildlife: 'signal-town',
         // The valley keeps its Twin Hollows buildings, as in New Hollow Rising. Its small
         // touches (clothes, fountain, road inlay) turn quiet: night navy, moon-white and one
         // thin line of light.
