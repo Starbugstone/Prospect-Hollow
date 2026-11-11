@@ -31,13 +31,14 @@ try {
     for (const pattern of [0, 1, 3]) {
       let town = createTown(),
         honours = h.createHonours(),
+        records = {},
         museumAt = null,
         twinAt = null;
       const reached = {},
         coinLevels = new Set(),
         moonstoneGems = new Map();
       const note = (n, phase) => {
-        const state = { town, honours };
+        const state = { town, honours, records };
         for (const rank of selected)
           if (!reached[rank.id] && rank.qualifies(state))
             reached[rank.id] = { normalRuns: n, level: ((n - 1) % runs.length) + 1, phase };
@@ -94,6 +95,8 @@ try {
         const run = runs[(n - 1) % runs.length];
         town.coins += run.coins;
         town.completedRuns++;
+        // Completion records, for level milestones. Replays keep the first record.
+        records[run.id] ??= { score: run.score, stars: run.stars };
         town = moon.advanceMoonstoneProduction(
           advanceMonumentWorks(rules.advanceConstruction(town)),
         );

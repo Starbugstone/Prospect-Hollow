@@ -67,6 +67,9 @@ several shipped gold goals, so these ranks were appended (shipped goals are unch
 | Core Engineer            | 10     | 50     | 125    | 190           |
 | Gate Breaker             | 10     | 50     | 130    | 300           |
 
+Trail Surveyor gained a diamond, 75 trails, with levels 547–606 (honours version 8, see
+[Levels 547–606](#levels-547606-2026-11-11)).
+
 Floatstones count as relics; starglass, lenses, phase seals, portals, cracked walls and the
 moon lock and dial are `NON_MASTERY_ELEMENTS`.
 
@@ -715,8 +718,8 @@ short of a grind.
 | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
 | Commissions (two now, a third planned)         | **Commissioner**: 1 / 2 commissions sponsored now; gold, 3, joins with the third commission's site        |
 | The wandering pair and the space helmet        | **Keen Eye**: find 1, then both, of the hidden finds in your own town                                     |
-| Trace twins, Crossgrain crystal, Chord crystal | Mastery families, prepared on a separate commit until chapters 92–101 merge (see below)                   |
-| Levels 547–606                                 | **Far Seam Prospector**: complete levels 552, 582 and 606, prepared on the same separate commit           |
+| Trace twins, Crossgrain crystal, Chord crystal | Mastery families: Twin Tracer, Crossgrain Mender, Crystal Harmonist (see below)                           |
+| Levels 547–606                                 | **Far Seam Prospector**: complete levels 552, 582 and 606; Trail Surveyor gains a diamond (see below)     |
 | New Hollow Rising, The Quiet Signal            | Unchanged: Outer Ring Builder and Far Rim Listener (generations 6 and 7); both stay in NON_MILESTONE_ERAS |
 | Voyagers' Court                                | Unchanged: `NON_MONUMENT_HONOURS`, since Landmark Patron's eleven sites shipped fixed                     |
 
@@ -810,39 +813,83 @@ Neither depends on puzzle play, so the continuous patterns change nothing.
 Two cautions, as before: the model is a mining-only town with no chests, hammers, saloon or
 visitors, so real towns get there earlier, and it shows order and spacing rather than dates.
 
-### Waiting for chapters 92–101
+### Levels 547–606 (2026-11-11)
 
-Levels 547–606 are being authored on another branch, and this branch must not touch level data.
-The three crystal mastery families and the Far Seam Prospector milestone are prepared on a
-separate branch, `t3/honours-1-3-crystals`, one commit on top of this one. The three crystal
-elements stay in `NON_MASTERY_ELEMENTS` here, so nothing counts them before their ranks exist.
+Chapters 92–101 merged at `c8b62696`. The three crystal elements left `NON_MASTERY_ELEMENTS` and
+their families ship with Far Seam Prospector, all with `since: 8` (1.3.0 has not reached `main`,
+which is still at honours version 5).
 
-| Family              | Element or measure                | Bronze / silver / gold (provisional) | Counts                            |
-| ------------------- | --------------------------------- | ------------------------------------ | --------------------------------- |
-| Twin Tracer         | `traceTwins` (`trace-twins`)      | 1 / 8 / 15                           | Pairs of trace stamps fired       |
-| Crossgrain Mender   | `crossgrain`                      | 4 / 24 / 40                          | Crossgrain crystals sealed        |
-| Crystal Harmonist   | `chords` (`chord`)                | 3 / 18 / 30                          | Chord crystals completed          |
-| Far Seam Prospector | `level` (highest completed level) | 552 / 582 / 606                      | Levels 552, 582 and 606 completed |
+| Family              | Element or measure                | Per campaign                    | Bronze / silver / gold  | Counts                            |
+| ------------------- | --------------------------------- | ------------------------------- | ----------------------- | --------------------------------- |
+| Twin Tracer         | `traceTwins` (`trace-twins`)      | 10 pairs, 8 levels (ch. 92–101) | 1 / 8 / 15              | Pairs of trace stamps fired       |
+| Crossgrain Mender   | `crossgrain`                      | 35, 9 levels (ch. 93–98)        | 3 / 25 / 50             | Crossgrain crystals sealed        |
+| Crystal Harmonist   | `chords` (`chord`)                | 30, 10 levels (ch. 94–99)       | 2 / 20 / 45             | Chord crystals completed          |
+| Far Seam Prospector | `level` (highest completed level) | —                               | 552 / 582 / 606         | Levels 552, 582 and 606 completed |
+| Trail Surveyor      | `surveys`, new diamond            | 50, 50 levels (ch. 44–95)       | 5 / 20 / 60, diamond 75 | Survey trails completed           |
 
-The mastery goals are placeholders from the boards on trial (about three chords, four crossgrain
-crystals and one or two trace pairs a board, over about seven boards each) and must be calibrated
-before they ship. Far Seam Prospector's goals are fixed level numbers, never "all levels": the
-first new chapter's last level, act V's finale and the pack's finale. A later pack appends a
-diamond rank with its own level. The new `level` measure reads the highest completed level in
-the records on both sides, so the server verifies it from the replayed records.
+The rule for the crystal goals: bronze is the element's teaching board (548 holds one trace pair,
+554 three crossgrain crystals, 560 two chords), silver falls within one campaign, and gold at
+about 1.5 campaigns (1.5, 1.43 and 1.5). Far Seam Prospector's goals are the last levels of
+chapters 92, 97 and 101, never "all levels". A later pack appends a rank with its own level. The
+`level` measure reads the highest level with a completion record, on both sides, so the server
+verifies it from the replayed records.
 
-To finish once chapters 92–101 are on `preprod`:
+Twin Tracer's bronze has its own singular text ("Fire a pair of trace twins"). Far Seam
+Prospector has its own badge, `public/art/rewards/far-seam.svg`: the Endless Seam tunnel with a
+flag at its far end instead of the infinity sign, since it is a fixed milestone, not endless play.
+The museum's "For an honour" tags name each crystal element ("3 chord crystals"). On a
+collection card that shows "New rank", the markers now take a row of their own above the title:
+long French names ("Prospecteur de la veine lointaine") ran under the wide "Nouveau rang" pill.
 
-1. Rebase `t3/honours-1-3-crystals` onto it. Until the levels exist, the calibration test ("sets
-   mine silver within one campaign and the top rank near one and a half campaigns") fails for the
-   three crystal families, which keeps them from shipping uncalibrated.
-2. In Docker, regenerate `node scripts/export-honour-levels.mjs`, `npm run export:save-rules` and
-   `node scripts/export-public-content.mjs`.
-3. Run the calibration above with 606 levels, then
-   `node -e` over `src/data/honourLevels.json` (or `elementLevels(id).pieces`) for each element's
-   pieces per campaign. Set silver within one pass and gold at about 1.5 passes; for a mechanic in
-   only a handful of levels, bronze is its first board. Update the goals in `MINE_ELEMENTS`, the
-   shipped record and the table above, with the evidence.
-4. Keep `since: 8` if 1.3.0 has not shipped; otherwise raise `HONOURS_VERSION` and use it.
-5. Run `npm run verify`, `npm run test:levels`, and `backend/tests/honours.php` against a
-   throwaway PostgreSQL.
+**Two test decisions.**
+
+1. _The level element index pin._ `testing/honours.test.js` pinned lanterns at 183 pieces in
+   chapters 42–90. Chapter 94 adds lanterns, so the generated index now has 198 in chapters 42–94.
+   The pin is a sample of the generated index, not a requirement, so it now reads 198 and 42–94.
+   Lamplighter's ranks are unchanged; its diamond (275) is 1.39 campaigns.
+2. _Mine families and longer campaigns._ The new levels lower three top ranks under the 1.3
+   campaigns the test required: Trail Surveyor's gold (60 of 50 trails, 1.2 campaigns), Ore
+   Merchant's diamond (340 of 275, 1.24) and Gate Breaker's diamond (300 of 237, 1.27). The test
+   stopped at the first, so the chapters merge reported only surveys. Shipped goals never move,
+   and every new pack lowers these ratios again, so the test now separates two things:
+   - A top rank is **set** at 1.3–1.7 campaigns. This applies to ranks added in the current
+     generation (`since === HONOURS_VERSION`), such as the crystal families and the new diamond.
+   - A top rank **stays** above 1.2 campaigns, and below 1.7. At 1.2 or less, the family gets a
+     new rank at the end, calibrated at about 1.5.
+
+   Trail Surveyor had room for that rank, so it gains **diamond, 75 trails** (1.5 campaigns,
+   `since: 8`), as the floating seam gave diamonds to the families gold had outgrown. Ore Merchant
+   and Gate Breaker keep their diamonds: they still need more than a fifth of a campaign in
+   replays (normal-only diamond at runs 968 and 999, against 606 levels). Their next rank would be
+   a metal after diamond, which has no frame, colour or name yet. That is a design for the owner,
+   due with the next pack that adds ore orders or blast gates. Reverting either rule fails the
+   test: without the survey diamond it reports "surveys: expected 1.2 to be greater than 1.2", and
+   a new gold set at 1.27 campaigns fails "set at 1.3 campaigns or more".
+
+**Calibration.** Measured as above, now over all 606 levels: seeds 1–3, every normal run
+complete, 20-move continuous visits. `scripts/measure-honours.mjs` now keeps completion
+records, so level milestones are measured too. Median normal run at which each rank is earned
+(range over three seeds where it differs). Runs above 606 are normal replays, which the model
+takes in level order; a player would pick the element's levels in the museum instead.
+
+| Family              | Goals               | Normal only                         | +1 continuous visit / level | +3 continuous visits / level |
+| ------------------- | ------------------- | ----------------------------------- | --------------------------- | ---------------------------- |
+| Twin Tracer         | 1 / 8 / 15          | 548 / 605 / 1208                    | 548 / 601 / 605             | 548 / 551 / 601              |
+| Crossgrain Mender   | 3 / 25 / 50         | 554 / 586 / 1190                    | 554 / 583 / 586             | 554 / 558 / 583              |
+| Crystal Harmonist   | 2 / 20 / 45         | 560 / 592 / 1197                    | 560 / 589 / 594             | 560 / 562 / 590              |
+| Far Seam Prospector | 552 / 582 / 606     | 552 / 582 / 606                     | 552 / 582 / 606             | 552 / 582 / 606              |
+| Trail Surveyor      | 5 / 20 / 60 / 75    | 263 / 302 / 886 / 920               | 261 / 280 / 321 / 353       | 260 / 263 / 291 / 301        |
+| Ore Merchant        | 10 / 40 / 110 / 340 | 254 / 308 / 438 / 968               | 245 / 268 / 342 / 564       | 243 / 254 / 274 / 428        |
+| Gate Breaker        | 10 / 50 / 130 / 300 | 376 / 388 / 437 / 999               | 375 / 382 / 398 / 504       | 374 / 378 / 386 / 408        |
+| Commissioner        | 1 / 2               | 1026 (1024–1044) / 1034 (1032–1052) | 1026 / 1033                 | 1026 / 1033                  |
+| Keen Eye            | 1 / 2               | 329 (328–336) / 948 (944–971)       | 328 / 948                   | 328 / 948                    |
+
+**Assessment.** Each crystal bronze arrives on its teaching board and silver late in the same
+pass (trace pairs on level 605, crossgrain 586, chords 592), so a player meets every rank but gold
+in a straight run. Gold then needs the element's own levels again: about five more trace pairs
+(levels 601–606), fifteen crossgrain crystals (four boards of chapter 98) or fifteen chords (four
+boards of chapter 99). With continuous visits, gold arrives within the first pass, as it does for
+the lanterns and cores, because those visits are extra play on the same boards. Far Seam
+Prospector arrives on its three levels in every seed. Twin Hollows now begins at runs 877–908,
+so Keen Eye's silver (the pair's debut) moves from 973 to 948; Commissioner barely moves. No
+level data, star target or reward changed, so `npm run test:levels` was not needed.

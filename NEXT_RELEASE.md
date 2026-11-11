@@ -424,11 +424,12 @@ rejected ideas and the calibration are in
       and silver at runs 1028 and 1034, Keen Eye at 329 and 973 (earliest finds)
 - [x] `testing/honours.test.js`, `testing/commissions.test.js` and `backend/tests/honours.php`
       extended
-- [ ] Crystal masteries (Twin Tracer, Crossgrain Mender, Crystal Harmonist) and the **Far Seam
-      Prospector** milestone (complete levels 552, 582, 606) wait on chapters 92–101. They are one
-      commit on `t3/honours-1-3-crystals`; the elements stay in `NON_MASTERY_ELEMENTS` until then.
-      After the chapters merge: rebase, regenerate the catalogs, calibrate the provisional mastery
-      goals against the real levels, and record the evidence
+- [x] Crystal masteries calibrated on levels 547–606: Twin Tracer 1 / 8 / 15 pairs, Crossgrain
+      Mender 3 / 25 / 50, Crystal Harmonist 2 / 20 / 45; **Far Seam Prospector** completes levels
+      552, 582 and 606. Trail Surveyor gains diamond 75, since chapter 95 took its gold to 1.2
+      campaigns
+- [ ] Ore Merchant and Gate Breaker diamonds are at 1.24 and 1.27 campaigns. The next pack with ore
+      orders or blast gates needs a metal after diamond, which needs the owner's design
 
 A later commission can't join a shipped list. It gets new ranks at the end or a new family.
 
