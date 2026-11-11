@@ -1,7 +1,9 @@
-import { LEVEL_COUNT } from './campaign';
-
 // A fixed, small cargo mesh grows with completed levels. It is decoration, never
 // a move allowance, reward multiplier or limit on campaign progress.
+// The cart fills over a fixed number of levels, the campaign's length when chapters 92–101
+// were appended, rather than over LEVEL_COUNT: new levels must never take gems out of a
+// cart a player has already filled.
+export const CART_FULL_LEVELS = 546;
 const GEM_COLORS = ['#b889ca', '#6dace5', '#6bcbae', '#e8c879', '#e495b3'];
 export const CART_GEMS = Object.freeze(
   Array.from({ length: 12 }, (_, i) => ({
@@ -11,7 +13,7 @@ export const CART_GEMS = Object.freeze(
     color: GEM_COLORS[i % GEM_COLORS.length],
   })),
 );
-export function mineGrowth(completedLevels, levelCount = LEVEL_COUNT) {
+export function mineGrowth(completedLevels, levelCount = CART_FULL_LEVELS) {
   const total = Math.max(1, Math.floor(levelCount) || 1);
   const completed = Math.max(0, Math.min(Math.floor(completedLevels) || 0, total));
   const count = 1 + Math.ceil((completed / total) * (CART_GEMS.length - 1));
