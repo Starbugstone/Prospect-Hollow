@@ -26,8 +26,11 @@ export const MOON_DOOR_TIME = 0.7;
 const STRIDE = 1.2;
 // Each footfall lifts the suit off the regolith.
 const HOP = 0.12;
-// Walkers keep to their own side of the ring road.
-const LANE = 0.35;
+// Walkers keep to the edges of the ring road, their own side each way; rovers have its middle.
+export const MOON_WALK_LANE = 0.65;
+const LANE = MOON_WALK_LANE;
+/** The wandering pair's lane: far enough out for the inner of the two to keep the walking lane. */
+export const MOON_PAIR_LANE = 0.95;
 const RING_STEP = 0.12;
 // The saucer pad is an open landing apron, not a building to step into.
 const OPEN_PADS = new Set(['saucerPad']);
@@ -240,7 +243,8 @@ const moonCommissionFront = (route) => {
 export function moonSettlerPose(plan, time, out = {}) {
   if (plan.ring) {
     const a = plan.phase + plan.dir * time * plan.speed;
-    const radius = MOON_RING_ROAD + (plan.dir > 0 ? -LANE : LANE);
+    const lane = plan.lane ?? LANE;
+    const radius = (plan.radius ?? MOON_RING_ROAD) + (plan.dir > 0 ? -lane : lane);
     out.x = Math.cos(a) * radius;
     out.y = MOON_ROAD_LIFT;
     out.z = Math.sin(a) * radius;
@@ -311,6 +315,8 @@ export const moonWanderersPlan = (town) => ({
   phase: hash((town?.completedRuns ?? 0) + 311) * TAU,
   speed: 0.045,
   dir: 1,
+  // Two abreast: they walk the road's shoulder, so the one nearer the middle is clear of rovers.
+  lane: MOON_PAIR_LANE,
 });
 /** The valley's pair on the Moon: the same model in suits, at the Moon's stride. */
 export function createMoonWanderers(d, parent, town) {
@@ -320,6 +326,25 @@ export function createMoonWanderers(d, parent, town) {
     stride: strideMoonWillowkin,
   };
 }
+
+/**
+ * Settlers out for a walk round the outer ring, so the long road is never empty once
+ * anything stands on it: one for each of its first built lots, alternating direction.
+ */
+export function moonOuterStrollers(levels) {
+  const outer = MOON_ROADS.rings.at(-1);
+  if (MOON_ROADS.rings.length < 2) return [];
+  const built = moonSettlerBuildings(levels).filter(({ ring }) => ring === outer).length;
+  return Array.from({ length: Math.min(MOON_OUTER_STROLLERS, built) }, (_, n) => ({
+    ring: true,
+    radius: outer,
+    phase: hash(n + 520) * TAU,
+    // A stroll: a little slower than a settler with somewhere to be.
+    speed: (MOON_WALK_SPEED * (0.7 + hash(n + 540) * 0.2)) / outer,
+    dir: n % 2 ? 1 : -1,
+  }));
+}
+export const MOON_OUTER_STROLLERS = 4;
 
 /** Completed homes add neighbors. A construction project alone never spawns them. */
 export function createMoonSettlers(d, parent, levels = {}, venues = []) {
@@ -354,6 +379,10 @@ export function createMoonSettlers(d, parent, levels = {}, venues = []) {
       plan: moonSettlerPlan(levels, 300 + n, home, venues, 'willowkin', { local: true }),
       stride: strideMoonWillowkin,
     }),
+  );
+  // Appended last: every settler above keeps its place and its day.
+  moonOuterStrollers(levels).forEach((plan, n) =>
+    settlers.push({ ...moonSuitFigure(d, { parent, suit: suits[n % suits.length] }), plan }),
   );
   return settlers;
 }

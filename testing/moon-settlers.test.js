@@ -3,14 +3,20 @@ import { Group } from 'three';
 import {
   MOON_LOTS,
   MOON_RING_ROAD,
+  MOON_ROADS,
+  MOON_ROAD_WIDTH,
   moonApproaches,
   moonEntrance,
   moonPadRadius,
 } from '../src/data/moonSettlement';
 import {
   MOON_DOOR_TIME,
+  MOON_OUTER_STROLLERS,
+  MOON_WALK_LANE,
   MOON_WALK_SPEED,
   animateMoonSettler,
+  createMoonSettlers,
+  moonOuterStrollers,
   moonSettlerBuildings,
   moonSuitFigure,
   moonSettlerPlan,
@@ -215,7 +221,7 @@ it.each([
     for (let t = 0; t < 120; t += 0.1) {
       const pose = { ...moonSettlerPose(plan, t) };
       if (!pose.visible || pose.scale !== 1) problems.push(`hidden at ${t}`);
-      if (Math.abs(Math.hypot(pose.x, pose.z) - MOON_RING_ROAD) >= 0.5)
+      if (Math.abs(Math.hypot(pose.x, pose.z) - MOON_RING_ROAD) >= MOON_ROAD_WIDTH / 2)
         problems.push(`off the ring at ${t}`);
       if (previous) {
         const dx = pose.x - previous.x,
@@ -242,7 +248,7 @@ describe('walking between ring roads', () => {
 
   it('stays on one ring, the short way round, when both ends share it', () => {
     const walk = moonRoadWalk(at(45, 0.3), at(45, 0.9), 45, 45, roads);
-    expect(walk.every((point) => Math.abs(radius(point) - 45) <= 0.36)).toBe(true);
+    expect(walk.every((point) => Math.abs(radius(point) - 45) <= MOON_WALK_LANE + 0.01)).toBe(true);
     expect(near(angle(walk[0]), 0.3) && near(angle(walk.at(-1)), 0.9)).toBe(true);
   });
 
@@ -252,8 +258,8 @@ describe('walking between ring roads', () => {
   ])('climbs %s by the spoke that makes the walk shortest', (_, fromRing, a, toRing, b) => {
     const walk = moonRoadWalk(at(fromRing, a), at(toRing, b), fromRing, toRing, roads);
     // It leaves on its own ring and arrives on the other, crossing once at a spoke.
-    expect(Math.abs(radius(walk[0]) - fromRing)).toBeLessThanOrEqual(0.36);
-    expect(Math.abs(radius(walk.at(-1)) - toRing)).toBeLessThanOrEqual(0.36);
+    expect(Math.abs(radius(walk[0]) - fromRing)).toBeLessThanOrEqual(MOON_WALK_LANE + 0.01);
+    expect(Math.abs(radius(walk.at(-1)) - toRing)).toBeLessThanOrEqual(MOON_WALK_LANE + 0.01);
     const jumps = walk.flatMap((point, n) =>
       n && Math.abs(radius(point) - radius(walk[n - 1])) > 1 ? [n] : [],
     );
@@ -335,5 +341,48 @@ describe('settler figure', () => {
     const pose = animateMoonSettler(settler, at(plan, rest, rest.duration / 2));
     expect(pose.visible).toBe(false);
     expect(figure.root.visible).toBe(false);
+  });
+});
+
+// The outer ring is a long road: once something stands on it, settlers stroll round it.
+describe('strollers on the outer ring', () => {
+  const outer = MOON_ROADS.rings.at(-1);
+  const outerLots = moonApproaches(null)
+    .filter((route) => route.ring === outer)
+    .map(({ id }) => id);
+  const built = (count) => Object.fromEntries(outerLots.slice(0, count).map((id) => [id, 1]));
+
+  it('sends one out for each built outer lot, up to the limit, and none before', () => {
+    expect(outerLots.length).toBeGreaterThan(MOON_OUTER_STROLLERS);
+    expect(moonOuterStrollers({})).toEqual([]);
+    expect(moonOuterStrollers(null)).toEqual([]);
+    expect(moonOuterStrollers({ settlerDomes: 3 })).toEqual([]);
+    expect(moonOuterStrollers(built(1))).toHaveLength(1);
+    expect(moonOuterStrollers(built(outerLots.length))).toHaveLength(MOON_OUTER_STROLLERS);
+    // Both ways round.
+    expect(new Set(moonOuterStrollers(built(4)).map(({ dir }) => dir)).size).toBe(2);
+  });
+
+  it('walks them along the edge of the outer ring at a walking pace', () => {
+    for (const plan of moonOuterStrollers(built(4))) {
+      const [a, b] = [10, 11].map((time) => ({ ...moonSettlerPose(plan, time) }));
+      for (const pose of [a, b]) {
+        const offset = Math.abs(Math.hypot(pose.x, pose.z) - outer);
+        expect(offset).toBeCloseTo(MOON_WALK_LANE, 6);
+        expect(offset).toBeLessThan(MOON_ROAD_WIDTH / 2);
+      }
+      const speed = Math.hypot(b.x - a.x, b.z - a.z);
+      expect(speed).toBeGreaterThan(MOON_WALK_SPEED * 0.6);
+      expect(speed).toBeLessThanOrEqual(MOON_WALK_SPEED);
+    }
+  });
+
+  it('adds them after every other settler, whose days stay as they were', () => {
+    const d = new TownPrimitives();
+    const before = createMoonSettlers(d, new Group(), { settlerDomes: 2 });
+    const after = createMoonSettlers(d, new Group(), { settlerDomes: 2, ...built(2) });
+    expect(after.filter(({ plan }) => plan.radius === outer)).toHaveLength(2);
+    expect(after.slice(-2).every(({ plan }) => plan.radius === outer)).toBe(true);
+    expect(after.length - 2).toBe(before.length);
   });
 });

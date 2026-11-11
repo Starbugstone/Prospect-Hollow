@@ -9,6 +9,7 @@ import {
   createMoonSettlers,
   createMoonWanderers,
   moonSuitFigure,
+  moonSettlerPose,
 } from './MoonSettlers';
 import { hiddenFindTap } from '../TownHiddenFinds';
 import { pairTargets, wanderersPlace } from '../TownWanderers';
@@ -50,6 +51,7 @@ import {
   moonClimberLift,
 } from './MoonVips';
 import { outerRingRovers } from '../../../data/moonModernizations';
+import { moonRoverAngle, moonRoverStep, rememberWalkers } from './MoonRovers';
 import {
   MOON_FLOOR_RADIUS,
   MOON_LOTS,
@@ -78,6 +80,9 @@ import {
 } from '../../../data/moonSettlement';
 import { MoonDistricts } from './MoonDistricts';
 import { markerHeight, projectMarker } from '../TownMarkers';
+// Where a settler's own day puts them a moment from now; visitors have no such plan.
+const settlerAhead = (person, time, out) =>
+  person.plan ? moonSettlerPose(person.plan, time, out) : null;
 
 // New Hollow on the Moon: a small scene of its own beside the valley's. One
 // renderer, a crater of lots, the ribbon arriving from the valley, settlers,
@@ -885,12 +890,21 @@ export class MoonScene extends TownPrimitives {
     this.monuments?.userData.update(this.reducedMotion ? 0 : time);
     for (const settler of this.settlers ?? []) animateMoonSettler(settler, time);
     if (this.wanderers) animateMoonSettler(this.wanderers, time);
-    // Rovers circle the ring road.
-    for (const w of this.walkers ?? []) {
-      const a = w.phase + w.dir * time * w.speed;
-      w.root.position.set(Math.cos(a) * (w.radius + 0.3), 0, Math.sin(a) * (w.radius + 0.3));
+    // Rovers circle the ring road down its middle and wait for anyone crossing ahead.
+    const people = [
+      ...(this.settlers ?? []),
+      ...(this.wanderers ? [this.wanderers] : []),
+      ...(this.vipArrivals?.actors ?? []),
+    ];
+    const rovers = this.walkers ?? [];
+    const step = moonRoverStep(time, this.roverClock);
+    this.roverClock = time;
+    for (const w of rovers) {
+      const a = moonRoverAngle(w, time, step, people, rovers, settlerAhead);
+      w.root.position.set(Math.cos(a) * w.radius, 0, Math.sin(a) * w.radius);
       w.root.rotation.y = -a - (w.dir > 0 ? 0 : Math.PI);
     }
+    if (rovers.length) rememberWalkers(people);
   }
   /**
    * The climber rides the ribbon; the climber and the saucer publish their arrivals the

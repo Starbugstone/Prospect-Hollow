@@ -407,6 +407,15 @@ rover depot).
   (`moonWaterworks`, `moonFarm` in the era, read by `NEED_SOURCES`).
 - **Rovers on the outer ring.** The finished rover depot sends two rovers round the outer ring,
   the other way from those on the inner ring (`outerRingRovers`).
+- **Rovers give way to people.** A rover drives down the middle of its ring and walkers keep
+  to the road's edges (`MOON_WALK_LANE`). It brakes for anyone in its strip, for a settler
+  whose planned day is about to take them across the road, and for a rover waiting ahead
+  (`MoonRovers.js`); it never waits for someone it will already have passed. A rover that has
+  not had to wait is exactly where its timetable puts it. `testing/moon-rovers.test.js`
+  covers stopping, passing, queueing and the fallbacks.
+- **Strollers on the outer ring.** Once lots stand on the outer ring, up to four settlers walk
+  it in both directions (`moonOuterStrollers`), so the long road is never empty. They are
+  added after every other settler, whose days do not change.
 
 ### The wandering pair
 

@@ -21,6 +21,7 @@ import {
   moonPadApothem,
   moonPadRadius,
   moonSegmentDistance,
+  MOON_ROAD_WIDTH,
 } from '../src/data/moonSettlement';
 import {
   QUIET_STONE,
@@ -396,7 +397,7 @@ describe('The Far Rim: paths and residents', () => {
     for (const [x, , z] of near.points.slice(homes.points.length, -workshop.points.length))
       expect(
         Math.abs(Math.hypot(x - FAR_RIM.centre[0], z - FAR_RIM.centre[1]) - FAR_RIM.ring),
-      ).toBeLessThan(0.5);
+      ).toBeLessThan(MOON_ROAD_WIDTH / 2);
     for (const [from, to] of [
       [homes, commons],
       [commons, homes],

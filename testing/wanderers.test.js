@@ -18,7 +18,12 @@ import {
   wanderersTargets,
 } from '../src/game/town/TownWanderers';
 import { MoonScene } from '../src/game/town/moon/MoonScene';
-import { animateMoonSettler, moonWanderersPlan } from '../src/game/town/moon/MoonSettlers';
+import {
+  MOON_PAIR_LANE,
+  MOON_WALK_LANE,
+  animateMoonSettler,
+  moonWanderersPlan,
+} from '../src/game/town/moon/MoonSettlers';
 import { MOON_RING_ROAD } from '../src/data/moonSettlement';
 import { HIDDEN_FINDS } from '../src/data/hiddenFinds';
 import { createTown } from '../src/data/town';
@@ -288,7 +293,9 @@ it('laps the Moon’s ring road in suits while the puzzles put the pair there', 
   for (const time of [0, 40, 900]) {
     const pose = animateMoonSettler(pair, time);
     expect(pose.visible).toBe(true);
-    expect(Math.abs(Math.hypot(pose.x, pose.z) - MOON_RING_ROAD)).toBeLessThan(0.5);
+    // Two abreast on the road's shoulder: the inner of the pair keeps the walking lane.
+    expect(Math.abs(Math.hypot(pose.x, pose.z) - MOON_RING_ROAD)).toBeCloseTo(MOON_PAIR_LANE, 6);
+    expect(MOON_PAIR_LANE - 0.3).toBeGreaterThan(MOON_WALK_LANE - 1e-9);
   }
   // The same town again keeps the same pair; a tap finds them without moving the camera.
   view.placeWanderers({ ...onMoon });
