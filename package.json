@@ -24,7 +24,7 @@
     "check:integrity-fixtures": "node scripts/create-integrity-fixtures.mjs --check",
     "assets": "node scripts/generate-gems.mjs && node scripts/generate-bonus-art.mjs",
     "lint": "eslint . && knip",
-    "verify": "npm run format:check && npm run lint && npm run check:footprints && npm test && npm run build",
+    "verify": "npm run format:check && npm run lint && npm run check:footprints && npm run check:save-rules && npm run check:public-content && npm run check:integrity-fixtures && npm test && npm run build",
     "demo:eras": "node scripts/create-era-demo.mjs",
     "predev": "node scripts/split-mesh-catalogs.mjs",
     "pretest": "node scripts/split-mesh-catalogs.mjs",
