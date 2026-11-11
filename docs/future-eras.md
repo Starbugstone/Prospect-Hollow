@@ -339,3 +339,178 @@ mastery credit. Resource earnings and puzzle gems remain separate measures; see
 
 For current monument sites, designs and construction, see
 [town personalisation](town-personalisation.md). The former-site captures have been retired.
+
+## New Hollow Rising (2335)
+
+The sixteenth era changes only the Moon. New Hollow outgrows its first ring: the crater floor
+is cleared to the rim, a tram circles a second ring road and the first Moon-born children walk
+to school. The valley keeps its Twin Hollows buildings; only the town square modernizes, for
+its ring-roads fountain, and the valley's small touches (clothes, road inlay, sky saucer, mine
+portal) wear the tram's livery.
+
+### The wider crater
+
+The level floor reaches radius 63 and the rim crest 75 (`MOON_FLOOR_RADIUS`, `MOON_RIM_RADIUS`
+in `src/data/moonSettlement.js`). Every town sees it, Twin Hollows towns included. The first
+eleven lots, their paths and their settlers' routes did not move.
+
+- **Lots are one table.** `MOON_LOT_TABLE` gives each lot its place, pad radius, the public
+  path from its hatch, which way it faces and the ring road its path joins. A new Moon
+  building adds one entry.
+- **Roads are data.** `MOON_ROADS` lists the ring roads (radii 20.5 and 45) and six spokes
+  between them. The road mesh, the SVG map, crater scatter, path search and the settlers' walks
+  all read it; settlers cross between rings by the nearest spoke (`moonRoadWalk`).
+- **The outer ring** has sixteen slots on a circle of radius 55, one every 22.5° from 11.25°,
+  so none sits on a spoke. Slot 13 stays empty under the saucer's flight line.
+- **A lot belongs to its building's era.** `moonLotsShown(town)` lists the lots a town sees;
+  a later era's lots have no pad, label or tap target, as the valley's future plots do.
+
+### Twelve outer-ring buildings
+
+Ten required and two optional, three levels each, at 33,750 / 37,500 / 41,250 coins.
+
+| Building           | Per level             | Unlocks after            |
+| ------------------ | --------------------- | ------------------------ |
+| Ring Tram stop     | 4 visitors, 1 comfort | Ribbon Landing 1         |
+| Dewfall Cistern    | 12 water, 1 comfort   | Ribbon Landing 1         |
+| Orchard Vaults     | 12 food, 1 comfort    | Ribbon Landing 1         |
+| Lantern Row        | 6 homes, 1 comfort    | Tram 1                   |
+| Ring Market        | 4 visitors, 2 comfort | Tram 1, Vaults 1         |
+| Crater School      | 2 visitors, 3 comfort | Lantern Row 1            |
+| Earthview Terraces | 6 homes, 1 comfort    | Lantern Row 2, Cistern 1 |
+| Expedition Garage  | 2 comfort             | Tram 2                   |
+| Crater Inn         | 4 visitors, 2 comfort | Market 1                 |
+| Starwatch Dish     | 2 visitors, 3 comfort | School 1, Garage 1       |
+| Moonball Field     | 3 comfort, optional   | School 1, Market 1       |
+| Crater Pond Garden | 3 comfort, optional   | Cistern 2, Vaults 2      |
+
+Their 3D forms are in `src/game/town/buildings/moonRising.js` on the shared lunar kit
+(`moonKit.js`), and their SVG drawings in `src/components/town/moonRisingDrawings.js`. Every
+form stays on its octagonal pad, keeps its hatch and path clear and grows with each level
+(`testing/moon-rising-art.test.js`). The Pond Garden stays lower than a settler, beside the
+saucer's flight line.
+
+### Moon modernization
+
+Five first lots modernize, at 20,000 / 22,600 / 25,200 coins a step: the Ribbon Landing
+(a terminal with a second berth and a tram halt), the Crater Ice Well (deep ice works), the
+Earthlight Greenhouse (a double greenhouse), the Commons (a town hall) and the Rover Barn (a
+rover depot).
+
+- **Finishes only add.** `renderMoonBuilding(d, parent, kind, level, finish)` draws the building
+  as built and then the pieces of its `finish`, `{ era, level }` (`moonFinishes.js`). The
+  building, its hatch and its path stay as they were. The SVG drawing does the same
+  (`finishDrawing`).
+- **Offers** name what each step adds (`src/data/moonModernizations.js`): the new name and one
+  line for each of three steps. A Moon building without an entry uses the era's own lines.
+- **Supply.** The modernized ice well and greenhouse add 16 water or food per step
+  (`moonWaterworks`, `moonFarm` in the era, read by `NEED_SOURCES`).
+- **Rovers on the outer ring.** The finished rover depot sends two rovers round the outer ring,
+  the other way from those on the inner ring (`outerRingRovers`).
+
+### The wandering pair
+
+From this era a raccoon on its hind legs and its Willowkin stroll the valley or New Hollow,
+moving each time a puzzle is completed. Finding them pays saloon takings, as the space helmet
+does. They are the second definition of the shared hidden-find contract
+([architecture guide](era-architecture.md#hidden-finds)).
+
+### The era cinematic
+
+Every new building stands on the Moon, so the era cinematic hands over to the Moon map when it
+ends (`eraSettlement` in `src/game/town/TownEventSettlement.js`). Honours: Outer Ring Builder
+(1, 15 and 30 of 36 outer-ring levels); see [the honours guide](honours.md).
+
+## The Quiet Signal (2370)
+
+The seventeenth era. A black stone stands beyond the far rim of the crater, where there was
+only dust. A neighbourhood grows round it to listen, to understand and to answer. The tone is
+sincere: no jokes. Nobody learns who made the stone, or what it is to the Willowkin.
+
+### The Far Rim
+
+`MOON_DISTRICTS.farRim` is new ground beyond the rim: a level hollow of radius 36 round
+`[34.5, -93.8]`, a ring road of radius 16 and one straight road from the end of the outer
+ring's 315° spoke, across empty slot 13. The centre lies on the line from the default camera
+to the risen Earth, so the road, the stone and Earth stand one above the other in the first
+view of the Moon.
+
+- **Gated by the era.** `moonHeight(x, z, districts)` takes the districts a town has opened
+  (`moonDistrictsShown`). Before the era a town sees the rim and hills as they were, with no
+  district, lot, label or site. `testing/fixtures/moon-crater-snapshot.json` pins the crater's
+  lots, paths, ground, settlers and saucer line.
+- **Lots** stand 26.5 from the stone and face it. Nothing stands inside the ring road, and the
+  side toward Earth stays empty. The Signal Terrace is on the sight line and stays under 3.2
+  high.
+- **Walking.** A lot's path joins its district's ring. Between the district and the crater,
+  settlers take the district's road to the outer ring and go on by the crater's rings and
+  spokes.
+- **In the era only:** in portrait the haze moves back with the camera, so the district is not
+  lost in it, and the sun's shadows follow the camera's target into the district.
+
+### The Quiet Stone
+
+One black slab, 5.2 wide, 11.7 high and 1.3 deep (1 : 4 : 9 on its side), unlit and unfogged:
+the same black from every distance. It is a fixed landmark of the district, not a building or
+a monument site. It has no price, level or upgrade, and it gates nothing. It has no label
+until it is tapped; then its label shows its name and one line that follows the story. A tap
+never moves the camera.
+
+### Buildings
+
+Six required and one optional, at 36,000 / 39,750 / 43,500 coins. The town square (its still
+pool) and the Starwatch Dish (the Stonewatch Dish, with a second dish turned to the stone)
+modernize at 21,600 / 24,200 / 26,800.
+
+| Building              | Per level             | Unlocks after                     |
+| --------------------- | --------------------- | --------------------------------- |
+| Listening House       | 2 visitors, 3 comfort | Ribbon Landing 1                  |
+| Stillwater Basin      | 14 water, 1 comfort   | Ribbon Landing 1                  |
+| Tonewood Conservatory | 14 food, 1 comfort    | Ribbon Landing 1                  |
+| Far Rim Homes         | 6 homes, 1 comfort    | Listening House 1                 |
+| Resonance Workshop    | 2 visitors, 2 comfort | Listening House 1, Conservatory 1 |
+| Signal Terrace        | 4 visitors, 2 comfort | Workshop 2, Far Rim Homes 1       |
+| Pattern Garden        | 3 comfort, optional   | Conservatory 2, Stillwater 1      |
+
+At level 3 the required six add 42 residents and visitor places, 42 water, 42 food and 30
+comfort: the era carries itself. Forms are in `buildings/moonSignal.js`, drawings in
+`moonSignalDrawings.js`. Dishes follow the stone, and instrument lamps swell every 91 seconds
+with one ring on the basin; this rests with reduced motion.
+
+The Far Rim's homes add suited settlers, and a Willowkin walks out from the homes, the
+conservatory, the garden and the workshop. They keep to the district. Nobody steps inside the
+terrace: visitors stand at its marker and face the stone (`gather` in the lot table).
+
+### Voyagers' Court
+
+An optional monument site beside the way to the stone, apart from it. Three designs, each
+developed over the five monument levels on an octagonal base in moon-white, navy and gold
+(`moon/MoonSignalLandmarks.js`): the **Steady Lens Pavilion** (one steady red lens in a dark
+panel, then instrument wings, memory stacks and a lantern), the **Twin Wheel Station** (one
+wheel, then a second as an open frame, clad and turning, then the docking structure) and the
+**Ivory Work Pod** (a round pod over a crystal sample, then its two arms, lights, a bay hoop
+and sample cases). The names are original.
+
+### The story and the finale
+
+The story is read from building levels (`src/data/quietSignal.js`); nothing new is saved.
+Two characters sign the letters in the Story tab: **Osier**, a Willowkin who keeps the orchard
+vaults, and **Maren Voss**, a human instrument maker.
+
+| Stage      | Reached when                     | What the letters say                                 |
+| ---------- | -------------------------------- | ---------------------------------------------------- |
+| Arrival    | The era begins                   | The greenhouse instruments pulse together            |
+| Listen     | Listening House 1, then 2        | A pulse every 91 seconds; a long repeating pattern   |
+| Understand | Listening House 2 and Workshop 1 | The pattern matches the valley's crystal seams       |
+| Answer     | Signal Terrace 1, then 2         | Answer in the same shape; a resonator per family     |
+| Answered   | Signal Terrace 3                 | Osier and Maren send it; the ribbon and the star map |
+
+The finale is the Signal Terrace's last level. A thin ribbon of light runs from the stone's
+foot along the sight line toward New Hollow, and stars appear in the ground beside it with one
+path drawn through them (`MoonDistricts.js`, `starMap`). It draws itself once, over seven
+seconds, if the Moon is open when the level is finished, and then stays. With reduced motion it
+is simply there.
+
+Honours: Far Rim Listener (1, 9 and 18 of 21 Far Rim levels); see
+[the honours guide](honours.md). `testing/quiet-signal.test.js` covers the district, the
+stone, the paths and residents, the story, the art and the move from New Hollow Rising.

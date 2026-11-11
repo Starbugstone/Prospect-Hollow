@@ -40,7 +40,9 @@ On `preprod` after `e8d7191f`; nothing below has reached `main`.
 | Third commission                                                 | Not yet                                  |
 | Honours family, economy rerun, release notes                     | Not yet                                  |
 | New Hollow Rising: Moon lot table, roads as data, wider crater   | Done on `preprod`                        |
-| New Hollow Rising: the era, its buildings and expeditions        | Not yet                                  |
+| New Hollow Rising: the era and its buildings                     | Done on `preprod`                        |
+| New Hollow Rising: rover expeditions, the tram, child settlers   | Not yet                                  |
+| The Quiet Signal: the era, playable to its end                   | Done on `t3/quiet-signal-finish`         |
 
 ## What the numbers say
 
@@ -495,7 +497,7 @@ with the 18 new boards).
 - [x] Roads as data: rings, spokes, lots naming their ring, settlers walking between rings
 - [x] The wider crater: floor to 63, rim to 75, outer ring and spokes, craters kept off the roads
 - [ ] Phone check of the wider crater (below)
-- [ ] The era and its ten required buildings: definition, lots, art (3D and SVG), letters, projects,
+- [x] The era and its ten required buildings: definition, lots, art (3D and SVG), letters, projects,
       French text, a needs test that the finished era houses everyone, an era demo fixture, exports,
       and an era transition that opens the Moon. Keep the era `enabled: false` until the next task
 - [x] Moon modernization: art finishes, offer text, the two supply tiers, rovers on the outer ring
@@ -509,10 +511,12 @@ with the 18 new boards).
       wandering pair
 - [ ] Before release: decide whether a save in the new era needs save schema 5, so an older
       cached client treats it as read-only instead of normalizing the unknown era away
-- [ ] The optional buildings, the tram and child settlers
+- [x] The two optional buildings (Moonball Field, Crater Pond Garden)
+- [ ] A tram that runs the outer ring, and child settlers
 - [ ] The moonstone monument site, then the two commissions
 - [ ] Rover expeditions: client, server replay, presentation and an economy rerun
-- [ ] Honours (below), French text, docs (`docs/future-eras.md`, `docs/era-architecture.md`)
+- [x] Honours (Outer Ring Builder, calibrated in `docs/honours.md`), French text, docs
+      (`docs/future-eras.md`, `docs/era-architecture.md`)
 
 ### Phone check of the wider crater
 
@@ -682,7 +686,9 @@ No film names, quotes or logos are used.
   `HONOURS_VERSION` 7. Gold needs every required level, or some with the optional garden.
 - Through the Ages still ends on its diamond: `quiet-signal` joins `NON_MILESTONE_ERAS`.
 - Voyagers' Court adds no rank: Landmark Patron's site list shipped fixed (`NON_MONUMENT_HONOURS`).
-- Not yet calibrated with the campaign simulator or recorded in `docs/honours.md`.
+- Calibrated with the campaign simulator on 11 November 2026: bronze, silver and gold at normal
+  runs 1007, 1012 and 1018 (three seeds), after Outer Ring Builder's gold at 997. The goals stay.
+  The evidence is in `docs/honours.md`.
 
 ### Valley touches
 
@@ -700,13 +706,12 @@ set in the order their seams branch).
 - [x] Regression tests (`testing/quiet-signal.test.js`, with the crater snapshot in
       `testing/fixtures/moon-crater-snapshot.json`), server catalogs, integrity fixtures and
       the backend's honours version 7
-- [ ] To enable: set `enabled: true`, then run `npm run assets:footprints`,
-      `npm run export:save-rules`, `node scripts/export-public-content.mjs`,
-      `npm run export:integrity-fixtures` and `npm run demo:eras`, and add `quiet-signal` to the
-      playable-era list in `testing/town-eras.test.js`. With the era on in scratch, those were the
-      only failing checks (save rules, that list, the mine sign and setback catalogs)
-- [ ] Docs (`docs/future-eras.md`, `docs/era-architecture.md`, `docs/honours.md`) and the
+- [x] Enabled (11 November 2026): footprints, setbacks and mine signs, save rules, public content,
+      integrity fixtures, era demo saves and the playable-era list. A finished New Hollow Rising
+      town moves on with a commission open, chosen or part built
+- [x] Docs (`docs/future-eras.md`, `docs/era-architecture.md`, `docs/honours.md`) and the
       campaign-simulator calibration of Far Rim Listener
+- [x] The Ivory Work Pod's arms read from the map camera; the ribbon's glow is thinner
 - [ ] Phone pass on a real device: the district in portrait, the haze, the stone's label
 - [ ] The SVG fallback map already clips the outer ring's southern lots (its box ends at the
       crater floor); the district is inside the widened box, the old clipping is unchanged

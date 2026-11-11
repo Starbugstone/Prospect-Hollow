@@ -20,7 +20,7 @@ try {
   const { eraGate, advanceEra } = await loader.ssrLoadModule('/src/game/town/TownEras.js');
   const { PERSONAL_AREAS, landmarkOffer, purchaseLandmark, advanceMonumentWorks } =
     await loader.ssrLoadModule('/src/data/townLandmarks.js');
-  const selected = h.HONOURS.definitions.filter((r) => r.version === 2 || r.since === 5);
+  const selected = h.HONOURS.definitions.filter((r) => r.version === 2 || r.since >= 5);
   const results = [];
   for (const seed of [...new Set(normal.map((r) => r.seed))]) {
     const runs = normal.filter((r) => r.seed === seed);

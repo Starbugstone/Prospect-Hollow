@@ -632,3 +632,67 @@ cumulative run checkpoints, and commit together. Continuous honours keep countin
 both the per-level workshop credit and coin allowances are exhausted. With the integrated
 workshop, currency silver is reached at normal runs 981 / 979 / 965 and gold at
 1101 / 1087 / 1011 (normal / one visit / three visits). Goals remain 10 / 60 / 180.
+
+## Moon eras: honours generations 6 and 7 (2026-11-11)
+
+Two eras build only on the Moon. Each gets a town family of its own, counted like New Hollow
+Pioneer: completed building levels over a fixed list, so a later building never changes a
+shipped measure.
+
+| Content                                            | Decision                                                                                   |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| New Hollow Rising, its twelve outer-ring buildings | Outer Ring Builder: 1 / 15 / 30 of 36 levels, `since = 6`                                  |
+| The Quiet Signal, its seven Far Rim buildings      | Far Rim Listener: 1 / 9 / 18 of 21 levels, `since = 7`                                     |
+| Both eras as era milestones                        | `NON_MILESTONE_ERAS`: Through the Ages still ends on its diamond, Two Towns, One Sky       |
+| Voyagers' Court, The Quiet Signal's monument site  | `NON_MONUMENT_HONOURS`: Landmark Patron's eleven sites shipped fixed, so it adds no rank   |
+| The Quiet Stone                                    | No honour. It is a fixed landmark: nothing is bought, built or counted there               |
+| The wandering pair (hidden find)                   | No honour, like the space helmet: a find pays saloon takings and is not a collection count |
+
+| Rank ID           | Metal  | Goal | Name               | Measure                                       |
+| ----------------- | ------ | ---: | ------------------ | --------------------------------------------- |
+| outer-ring-bronze | Bronze |    1 | Outer Ring Builder | buildingLevels: 12 fixed outer-ring buildings |
+| outer-ring-silver | Silver |   15 | Outer Ring Builder | same                                          |
+| outer-ring-gold   | Gold   |   30 | Outer Ring Builder | same                                          |
+| far-rim-bronze    | Bronze |    1 | Far Rim Listener   | buildingLevels: 7 fixed Far Rim buildings     |
+| far-rim-silver    | Silver |    9 | Far Rim Listener   | same                                          |
+| far-rim-gold      | Gold   |   18 | Far Rim Listener   | same                                          |
+
+Outer Ring Builder gold is 30 levels: the ten required buildings earn it without the two
+optional ones. Far Rim Listener gold is 18 levels: the six required buildings earn it without
+the optional Pattern Garden, and a player who builds the garden reaches it three levels
+sooner. Neither asks for "all" buildings. Honours gate nothing: the era, its letters and the
+ribbon of light follow building levels alone.
+
+### Calibration (2026-11-11)
+
+Measured with the method of the calibration above: the actual engine, seeds 1–3, all 546
+levels, a 20-move continuous visit, and the conservative mining-only town that buys recommended
+progression first. `scripts/measure-honours.mjs` now reports every rank with `since >= 5`.
+
+```sh
+node scripts/measure-campaign.mjs . 3 546 > campaign.json
+CONTINUOUS_VISIT_MOVES=20 node scripts/measure-campaign.mjs . 3 546 > continuous.json
+node scripts/measure-honours.mjs campaign.json continuous.json
+```
+
+Median normal run at which each rank is earned, with the range over the three seeds. Numbers
+above 546 include normal replays.
+
+| Family             | Goals B / S / G | Normal only                                            | +1 continuous visit / level | +3 continuous visits / level |
+| ------------------ | --------------- | ------------------------------------------------------ | --------------------------- | ---------------------------- |
+| New Hollow Pioneer | 1 / 15 / 30     | 939 / 952 / 966                                        | 938 / 952 / 966             | 938 / 952 / 966              |
+| Outer Ring Builder | 1 / 15 / 30     | 974 (974–991) / 985 (985–1001) / 997 (997–1012)        | 974 / 985 / 997             | 974 / 985 / 997              |
+| Far Rim Listener   | 1 / 9 / 18      | 1007 (1005–1022) / 1012 (1009–1026) / 1018 (1015–1031) | 1007 / 1013 / 1018          | 1007 / 1013 / 1018           |
+
+**Assessment.** The three Moon families arrive in era order and never overlap: New Hollow
+Pioneer gold at run 966, Outer Ring Builder from 974 to 997, Far Rim Listener from 1007 to 1018. Far Rim Listener's bronze comes about ten runs after Outer Ring Builder's gold, which
+is the cost of finishing New Hollow Rising and opening the era. Its three ranks span 11 runs,
+against 23 for the outer ring: the Far Rim has six required buildings where the outer ring
+has ten, so the spacing follows the size of the era. Every rank is reached in all three seeds
+and all three patterns. Continuous visits barely move them, because continuous play never
+advances construction. The goals stay at 1, 9 and 18.
+
+Two cautions. The model is a mining-only town with no chests, hammers, saloon or visitors, so
+real towns reach these ranks earlier; it shows order and spacing, not dates. And it buys
+recommended progression only, so it never builds the optional Pattern Garden: the measured
+gold is the required-buildings path.

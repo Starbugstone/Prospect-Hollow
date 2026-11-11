@@ -316,6 +316,50 @@ map (TownScene's `guidance`; a visit derives its own). Every Build row is
 coins or build with a hammer. `testing/town-guidance.test.js` and
 `testing/build-list.test.js` cover both.
 
+### The Moon map: lots, roads and districts as data
+
+New Hollow grows by adding data in `src/data/moonSettlement.js`; no map, path or walker is
+edited for a new lot.
+
+- **`MOON_LOT_TABLE`** holds every lot: `at`, `pad`, the `arrival` path in the lot's own
+  frame, `face` ('out', 'in' or a turn), the `ring` its path joins and, beyond the crater,
+  its `district`. `gather` marks an open place nobody steps inside: visitors stand where its
+  path begins and face the middle of its ring.
+- **`MOON_ROADS`** lists ring radii and spoke angles. The road mesh, the SVG map, the crater
+  scatter, `moonApproach` (the path search) and `moonRoadWalk` (the settlers' walk) all read it.
+- **`moonLotsShown(town)`** gives the lots a town sees: those of its era and every earlier
+  enabled one. The scene, the labels, the SVG map and tap targets use it, so a later era's
+  lots do not exist for an earlier town.
+- **`MOON_DISTRICTS`** adds ground beyond the rim for a later era: a `centre`, the radius of
+  its level `floor`, how far it takes to `blend` back into the hills, its own `ring` road, one
+  straight `road` from the crater's outer ring, and an optional fixed landmark (`stone`).
+  `moonDistrictsShown(town)` lists those a town has reached.
+- **Ground is gated by era.** `moonHeight(x, z, districts)` multiplies the natural ground by
+  what a district leaves of it; without districts it is the crater every earlier town sees.
+  `MoonScene.openDistricts` rebuilds the terrain once when the list changes, and the crater
+  scatter reads only the crater's own lots, sites and paths, so a district never moves a
+  crater elsewhere. `MoonDistricts.js` draws a district's roads, its landmark and what the
+  landmark does once the town's story is told.
+- **A second district** is one more entry: its lots name it, 'in' faces its centre, paths join
+  its ring and `moonDistrictWalk` routes settlers by its road. The SVG map widens its box to
+  hold it (`moonMapBox`).
+
+A modernized Moon building is its form plus a finish. `renderMoonBuilding(d, parent, kind,
+level, finish)` takes `{ era, level }` and adds that era's pieces from `MOON_FINISHES`
+(`buildings/moonFinishes.js`); a finish never changes the building beneath it, its hatch or
+its path. `src/data/moonModernizations.js` gives the offer its words (a name and three step
+lines per era and building) and any behaviour a step brings, such as rovers on the outer ring.
+Parts that move carry `userData.moonMotion` and stay out of the merged settlement mesh.
+
+An era whose new buildings all stand on one other settlement hands its cinematic over to that
+settlement's map: `eraSettlement(era)` in `TownEventSettlement.js` returns it, or null for an
+era that builds in the valley or in several places. New Hollow Rising and The Quiet Signal both
+return the Moon.
+
+Checks: `testing/moon-access.test.js` (paths), `testing/moon-parcels.test.js` (pads, taps),
+`testing/moon-settlers.test.js` (walks), `testing/moon-finishes.test.js` (finishes) and
+`testing/quiet-signal.test.js` (districts, era-gated ground and the crater snapshot).
+
 ## Regression evidence
 
 `testing/era-definitions.test.js` covers invalid definitions, immutable shared
