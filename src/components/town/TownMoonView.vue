@@ -186,6 +186,7 @@
           :ref="(icon) => trackElement(actionElements, lot.id, icon?.$el)"
           :indicator="indicators[lot.id]"
           :label="buildingActionLabel(town, lot.id, indicators[lot.id])"
+          :size="lot.collection.size ?? 1"
           :data-moon-action="lot.id"
           :style="{ translate: box.translate(lot.collection) }"
           @click="activateLabel(lot.id, $event)"

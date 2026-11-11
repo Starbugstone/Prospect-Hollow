@@ -36,10 +36,12 @@ function separateActionTargets(labels, width, height, top, bottom) {
       label,
       x: (label.collection.x * width) / 100,
       y: (label.collection.y * height) / 100,
+      // A map that draws smaller icons gives each one's extent.
+      extent: label.collection.extent ?? ACTION_TARGET,
       moved: false,
     }));
-  const half = ACTION_TARGET / 2;
   const settle = (target) => {
+    const half = target.extent / 2;
     target.moved = true;
     target.x = Math.max(half, Math.min(width - half, target.x));
     target.y = Math.max(top + half, Math.min(bottom - half, target.y));
@@ -55,7 +57,8 @@ function separateActionTargets(labels, width, height, top, bottom) {
         const directionX = distance ? (b.x - a.x) / distance : Math.cos(fan);
         const directionY = distance ? (b.y - a.y) / distance : Math.sin(fan);
         // Targets are square: along this line they clear once one axis does.
-        const clear = ACTION_TARGET / Math.max(Math.abs(directionX), Math.abs(directionY));
+        const clear =
+          (a.extent + b.extent) / 2 / Math.max(Math.abs(directionX), Math.abs(directionY));
         if (distance >= clear) continue;
         touching = true;
         const push = (clear - distance) / 2;
@@ -97,8 +100,8 @@ export function layoutTownLabels(
       id: label.id,
       x: (label.collection.x * width) / 100,
       y: (label.collection.y * height) / 100,
-      width: ACTION_TARGET,
-      height: ACTION_TARGET,
+      width: label.collection.extent ?? ACTION_TARGET,
+      height: label.collection.extent ?? ACTION_TARGET,
     }));
   const ranked = [...result].sort(
     (a, b) =>

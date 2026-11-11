@@ -17,6 +17,7 @@ import {
   MOON_LOTS,
   moonDistrictsShown,
   moonLotsShown,
+  moonParcels,
 } from '../src/data/moonSettlement';
 import { createTown } from '../src/data/town';
 import { areaUnlocked, areasForSettlement } from '../src/data/townLandmarks';
@@ -33,21 +34,26 @@ it('keeps the selected name at its building and hides a colliding routine name, 
   expect(placed[1]).toMatchObject({ x: 50, y: 50 });
 });
 
-it('separates Moon action targets below the header, through the shared layout', () => {
-  const placed = layoutMoonLabels(
-    [
-      { ...label('workshop', 50, 40), action: true },
-      { ...label('garden', 51, 40), action: true },
-    ],
-    320,
-    568,
-  );
+it('separates overlapping Moon action icons by their own drawn size, through the shared layout', () => {
+  const at = (id, x) => ({
+    ...label(id, x, 60),
+    action: true,
+    marker: { x, y: 55, visible: true, unit: 40 },
+  });
+  const placed = layoutMoonLabels([at('workshop', 50), at('garden', 51)], 320, 568);
   const [a, b] = placed.map(({ collection }) => ({
     x: (collection.x * 320) / 100,
     y: (collection.y * 568) / 100,
   }));
-  expect(Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y))).toBeGreaterThanOrEqual(67.2);
-  expect(Math.min(a.y, b.y)).toBeGreaterThanOrEqual(164 + 34);
+  // Full-size icons: 50 pixels and a gap.
+  expect(placed[0].collection.size).toBe(1);
+  expect(Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y))).toBeGreaterThanOrEqual(55.9);
+  // Small icons, as in a phone's overview, need far less room and are barely moved.
+  const small = (id, x) => ({ ...at(id, x), marker: { x, y: 55, visible: true, unit: 4 } });
+  const far = layoutMoonLabels([small('workshop', 50), small('garden', 51)], 320, 568);
+  expect(far[0].collection.size).toBeLessThan(0.5);
+  for (const [n, x] of [50, 51].entries())
+    expect(Math.abs(((far[n].collection.x - x) * 320) / 100)).toBeLessThan(16);
 });
 
 it('keeps a ready action available when its text label cannot fit', () => {
@@ -91,20 +97,25 @@ it.each([
   [1440, 900],
   [900, 360],
   [375, 740],
-])('keeps a ready hammer below the header and clear of labels at %sx%s', (width, height) => {
+])('keeps a ready hammer at its own marker, or leaves it out, at %sx%s', (width, height) => {
+  const top = width < 600 ? 164 : height < 450 ? 110 : 112;
+  const marker = (y) => ({ x: 50, y, visible: true, unit: 12 });
+  const inside = ((top + 80) / height) * 100,
+    under = ((top - 30) / height) * 100;
   const placed = layoutMoonLabels(
-    [{ ...label('ready', 50, 30), action: true }, label('other', 52, 35)],
+    [
+      { ...label('ready', 50, inside + 8), action: true, marker: marker(inside) },
+      label('other', 52, inside + 3),
+      { ...label('hidden', 50, under + 8), action: true, marker: marker(under) },
+    ],
     width,
     height,
   );
-  const top = width < 600 ? 164 : height < 450 ? 110 : 112;
-  const icon = {
-    x: (placed[0].collection.x * width) / 100,
-    y: (placed[0].collection.y * height) / 100,
-    width: 68,
-    height: 68,
-  };
-  expect(icon.y - 34).toBeGreaterThanOrEqual(top);
+  // The icon is exactly where its place's marker projects: never offset, never slid.
+  expect(placed[0].collection).toMatchObject({ x: 50, y: inside, visible: true });
+  const extent = placed[0].collection.extent;
+  expect(extent).toBeLessThanOrEqual(56);
+  const icon = { x: width / 2, y: (inside * height) / 100, width: extent, height: extent };
   for (const lot of placed.filter((lot) => lot.visible)) {
     expect(
       labelsOverlap(
@@ -118,6 +129,87 @@ it.each([
       ),
     ).toBe(false);
   }
+  // Under the header it is left out, at its own place, and its pad still answers a tap.
+  expect(placed[2].collection).toMatchObject({ x: 50, y: under, visible: false });
+});
+
+// Every ready marker belongs to its own site: over its pad, just above what stands there,
+// and no larger than the site is drawn. This is the owner's phone view, with a town whose
+// every Moon lot and site is ready to finish at once.
+describe('ready markers over their own sites', () => {
+  const town = { ...createTown(), era: 'quiet-signal' };
+  town.buildings = { ...town.buildings, earthlightGreenhouse: 3 };
+  const WORKSITE = 3.4;
+  const views = {
+    overview: (scene) => scene.frameTown(),
+    'close on the first ring': (scene) => {
+      scene.controls.target.set(-12, 2, 2);
+      scene.camera.position.set(-2, 18, 30);
+    },
+    'the Far Rim': (scene) => {
+      scene.controls.target.set(34.5, 2, -93.8);
+      scene.camera.position.set(22, 30, -42);
+    },
+  };
+  describe.each([
+    [375, 740],
+    [412, 915],
+    [1440, 900],
+  ])('at %sx%s', (width, height) => {
+    it.each(Object.keys(views))('%s', (view) => {
+      const camera = new PerspectiveCamera(48, 1, 0.1, 600);
+      const parcels = moonParcels();
+      const scene = Object.assign(Object.create(MoonScene.prototype), {
+        camera,
+        canvas: { clientWidth: width, clientHeight: height },
+        controls: { target: new Vector3(0, 0, 4), update() {} },
+        renderer: { setSize() {} },
+        requestFrame() {},
+        lots: moonLabelAnchors(town),
+        // Every pad carries a worksite's scaffolding.
+        pickTargets: {
+          children: parcels.map(({ id }) => ({ userData: { lot: id }, scale: { y: WORKSITE } })),
+        },
+      });
+      scene.labelActions = new Set(scene.lots.map(({ id }) => id));
+      let projected;
+      scene.onLabels = (labels) => (projected = labels);
+      scene.resize();
+      views[view](scene);
+      camera.lookAt(scene.controls.target);
+      camera.updateMatrixWorld(true);
+      scene.projectLabels();
+      const placed = layoutMoonLabels(projected, width, height);
+      const screen = (x, y, z) => {
+        const p = new Vector3(x, y, z).project(camera);
+        return [((p.x + 1) * width) / 2, ((1 - p.y) * height) / 2];
+      };
+      const shown = placed.filter(
+        (lot) => lot.collection?.visible && parcels.some(({ id }) => id === lot.id),
+      );
+      expect(shown.length).toBeGreaterThan(view === 'overview' ? 12 : 2);
+      for (const lot of shown) {
+        const { x, z, radius } = parcels.find(({ id }) => id === lot.id);
+        const [cx, cy] = screen(x, 0, z),
+          [, roof] = screen(x, WORKSITE, z),
+          [, above] = screen(x, WORKSITE + 2, z);
+        const unit = Math.hypot(...screen(x, 1, z).map((v, n) => v - [cx, cy][n]));
+        const pad = radius * unit;
+        const [ix, iy] = [(lot.collection.x * width) / 100, (lot.collection.y * height) / 100];
+        // An icon without a size of its own is the valley's full 67-pixel target.
+        const drawn = (lot.collection.size ?? 67 / 50) * 50;
+        // Over its own pad: no further sideways than the pad reaches, plus the little an
+        // icon may be nudged clear of a neighbour's.
+        expect(Math.abs(ix - cx), `${lot.id} sideways`).toBeLessThanOrEqual(pad + drawn / 2);
+        // Just above the worksite: above its roof, within two world units of it.
+        expect(iy, `${lot.id} below its roof`).toBeLessThanOrEqual(roof + drawn / 2);
+        expect(iy, `${lot.id} floats`).toBeGreaterThanOrEqual(above - drawn / 2);
+        // In proportion: no larger than the valley's icon, no wider than the pad is drawn
+        // (or the smallest size an icon can still be read at).
+        expect(drawn, `${lot.id} size`).toBeLessThanOrEqual(Math.max(22, Math.min(50, pad * 2)));
+      }
+    });
+  });
 });
 
 it.each([

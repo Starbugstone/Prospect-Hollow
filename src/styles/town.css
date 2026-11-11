@@ -1923,6 +1923,15 @@ html:has(.town-museum[open]) {
   width: calc(36px * var(--action-scale, 1));
   height: calc(36px * var(--action-scale, 1));
 }
+/* On the Moon an icon shrinks with its place, but its tap target never does. The hammer's
+   own ground shadow is left off: it hangs over a worksite, not on the ground. */
+.town-moon-view .town-action-icon {
+  min-width: 44px;
+  min-height: 44px;
+}
+.town-moon-view .town-completion-icon img {
+  clip-path: inset(0 0 16% 0);
+}
 .town-plot-ready {
   color: #426654;
   font-weight: 800;

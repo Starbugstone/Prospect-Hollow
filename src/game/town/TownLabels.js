@@ -19,7 +19,7 @@ export const labelLayout = (anchors) =>
   anchors
     .map(
       ({ id, visible, collection, width }) =>
-        `${id}:${+!!visible}${+!!collection?.visible}:${width ?? 0}`,
+        `${id}:${+!!visible}${+!!collection?.visible}:${width ?? 0}:${collection?.size ?? ''}`,
     )
     .join('|');
 

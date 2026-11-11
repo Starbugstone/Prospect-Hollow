@@ -455,6 +455,9 @@ const labelPoint = new THREE.Vector3();
 // Tap targets cover a lot's whole pad, up to its building's roof (this tall until the
 // building is drawn).
 const PICK_HEIGHT = 3;
+// An action icon hangs this far above what stands on its pad, measured no higher than this.
+const MOON_MARKER_LIFT = 0.5;
+const MOON_MARKER_CEILING = 4.5;
 const PICK_LAYER = 3;
 // A lot of a later era keeps its tap target here, where no ray looks.
 const HIDDEN_LOT_LAYER = 30;
@@ -1172,10 +1175,25 @@ export class MoonScene extends TownPrimitives {
   }
   projectLabels() {
     const point = labelPoint;
+    const view = this.canvas.clientHeight || 1;
     const labels = this.lots.map(({ id, position }) => {
+      // The place's action icon (a finish hammer, a collection) is anchored in the world,
+      // as the valley's are: just above what stands on the pad, and sized by how large
+      // the place is drawn.
+      const top = this.markerHeight(id);
+      point.set(position.x, top, position.z).project(this.camera);
+      const marker = {
+        x: (point.x + 1) * 50,
+        y: (1 - point.y) * 50,
+        visible: point.z > -1 && point.z < 1,
+      };
+      const markerY = point.y;
+      point.set(position.x, top + 1, position.z).project(this.camera);
+      marker.unit = (Math.abs(point.y - markerY) * view) / 2;
       point.copy(position).project(this.camera);
       return {
         id,
+        marker,
         action: this.labelActions?.has(id) ?? false,
         depth: point.z,
         x: (point.x + 1) * 50,
@@ -1189,11 +1207,21 @@ export class MoonScene extends TownPrimitives {
     const key =
       `${this.canvas.clientWidth}x${this.canvas.clientHeight}:${Math.round(distance * 10)}:` +
       labels
-        .map((l) => `${l.id}${Math.round(l.x * 10)},${Math.round(l.y * 10)}${l.visible}`)
+        .map(
+          (l) =>
+            `${l.id}${Math.round(l.x * 10)},${Math.round(l.y * 10)}${l.visible}` +
+            `${Math.round(l.marker.y * 10)},${Math.round(l.marker.unit)}`,
+        )
         .join();
     if (key === this.labelKey) return;
     this.labelKey = key;
     this.onLabels(labels, distance, this.projectObstacles());
+  }
+  // Where a place's action icon hangs: a little above its building or worksite (its tap
+  // target reaches that roof), and never higher than a tall landing's first storeys.
+  markerHeight(id) {
+    const target = this.pickTargets?.children.find((mesh) => mesh.userData.lot === id);
+    return Math.min(MOON_MARKER_CEILING, target?.scale.y ?? PICK_HEIGHT) + MOON_MARKER_LIFT;
   }
   // What names keep clear of, as rectangles in percent of the view about their centres.
   // A landmark behind the camera or off the view asks for nothing.
