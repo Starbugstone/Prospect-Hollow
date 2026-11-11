@@ -1,5 +1,48 @@
 import { addHomeWing, addWindow, TRIM } from './frontierParts';
 
+function weathervane(d, parent, x, y, z) {
+  const vane = d.group(parent, x, y, z);
+  vane.name = 'Weathervane';
+  d.rod(vane, [0, 0, 0], [0, 0.62, 0], 0.022, '#6a6050');
+  d.rod(vane, [-0.24, 0.5, 0], [0.24, 0.5, 0], 0.016, '#6a6050');
+  d.mesh(vane, 'cone', [0.07, 0.14, 0.02], [0.27, 0.5, 0], '#d9b24c').rotation.z = -Math.PI / 2;
+  d.box(vane, 0.13, 0.11, 0.02, -0.25, 0.5, 0, '#d9b24c');
+}
+// Home II, III and onwards each add their own touch above the shared cabin, clear of the
+// ground: the lot, the door and the later brick and slate modernization are unchanged.
+function addHomeCharacter(d, parent, stage) {
+  const ridge = stage >= 3 ? 4.32 : 2.95,
+    attic = stage >= 3 ? 3.78 : 2.52;
+  const variant = (d.plotVariant ?? 0) % 5;
+  if (variant === 1 || variant === 4) {
+    // A little lantern cupola on the ridge.
+    const cupola = d.group(parent, 0, ridge, 0.35);
+    cupola.name = 'Home cupola';
+    d.box(cupola, 0.5, 0.42, 0.5, 0, 0.16, 0, '#e8d3a7');
+    for (const x of [-0.26, 0.26]) d.box(cupola, 0.02, 0.26, 0.3, x, 0.18, 0, '#e1bd75');
+    d.mesh(cupola, 'cone', [0.42, 0.3, 0.42], [0, 0.52, 0], '#658580');
+    weathervane(d, cupola, 0, 0.64, 0);
+  }
+  if (variant === 2 || variant === 4) {
+    // A round attic window under the front gable.
+    d.mesh(parent, 'cylinder', [0.24, 0.06, 0.24], [0, attic, 1.24], '#e8d3a7').rotation.x =
+      Math.PI / 2;
+    d.mesh(parent, 'cylinder', [0.17, 0.07, 0.17], [0, attic, 1.25], '#e1bd75').rotation.x =
+      Math.PI / 2;
+  }
+  if (variant === 2) {
+    // A railed walk along the ridge.
+    for (const z of [-0.9, -0.3, 0.3, 0.9])
+      d.rod(parent, [0, ridge, z], [0, ridge + 0.34, z], 0.02, '#e1cf9e');
+    d.rod(parent, [0, ridge + 0.34, -0.95], [0, ridge + 0.34, 0.95], 0.024, '#e1cf9e');
+  }
+  if (variant === 3) {
+    // A broad fieldstone chimney on the far gable.
+    d.box(parent, 0.62, ridge - 0.2, 0.36, 0.55, (ridge + 0.6) / 2, -1.3, '#aaa08c');
+    d.box(parent, 0.5, 0.7, 0.3, 0.55, ridge + 0.5, -1.3, '#9a907d');
+    d.box(parent, 0.6, 0.08, 0.4, 0.55, ridge + 0.88, -1.3, '#857c6b');
+  }
+}
 const DETAILS = {
   museum(d, parent, stage) {
     for (const x of [-1.1, 1.1]) {
@@ -61,6 +104,13 @@ const DETAILS = {
     }
   },
   farm(d, parent, stage) {
+    // The second farm flies a weathervane; the third hoists hay to its loft.
+    if (d.plotVariant === 1) weathervane(d, parent, 0, 2.95, -0.6);
+    else if (d.plotVariant === 2) {
+      d.rod(parent, [0, 2.78, 1.1], [0, 2.78, 1.95], 0.05, '#8d6844').name = 'Hay hoist';
+      d.rod(parent, [0, 2.78, 1.9], [0, 2.35, 1.9], 0.015, '#d6c298');
+      d.box(parent, 0.32, 0.26, 0.3, 0, 2.2, 1.9, '#cdb05e', true);
+    }
     const field = d.group(parent, 1.4, 0, 1.5);
     d.box(field, 2.4, 0.06, 1.6, 0, 0.02, 0, '#8d8050');
     for (let row = 0; row < 4; row++)
@@ -76,6 +126,7 @@ const DETAILS = {
     d.box(parent, 0.3, 0.8, 0.35, -0.65, stage >= 3 ? 4.3 : 2.9, -0.6, '#a76c53');
     d.group(parent, -0.65, stage >= 3 ? 4.7 : 3.3, -0.6).name = 'chimney';
     if (stage > 1) addHomeWing(d, parent, 4);
+    addHomeCharacter(d, parent, stage);
   },
 };
 export function renderFrontierBuilding(

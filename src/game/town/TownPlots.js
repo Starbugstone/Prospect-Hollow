@@ -1,3 +1,5 @@
+import { toneRoof } from './buildings/RoofTones';
+import { plotVariant } from '../../data/roofTones';
 import { townLabelWidth } from './TownLabelLayout';
 import { syncCommissionResidents } from './TownCommissionResidents';
 import { TownItineraries } from './TownItineraries';
@@ -174,13 +176,17 @@ export function buildPlot(d, id, group, town, labels) {
   if (transform) group.userData.signCameraScale = [transform.x.scale, 1, transform.z.scale];
   const previous = d.pendingPlotSigns;
   const previousRoot = d.plotSignRoot;
+  const previousVariant = d.plotVariant;
   d.pendingPlotSigns = [];
   d.plotSignRoot = group;
+  // Renderers read which of its kind this plot is, to tell Home II from Home.
+  d.plotVariant = plotVariant(id, BUILDING_BY_ID[id]?.kind);
   try {
     return drawPlot(d, id, group, town, labels, envelope);
   } finally {
     d.pendingPlotSigns = previous;
     d.plotSignRoot = previousRoot;
+    d.plotVariant = previousVariant;
   }
 }
 
@@ -246,6 +252,8 @@ function drawPlot(d, id, group, town, labels, envelope) {
       const climbers = group.getObjectByName(ELEVATOR_CLIMBERS);
       if (climbers)
         movingPart = { rotor: climbers, update: elevatorMotion(d, climbers), solid: false };
+      // The roof takes the tone of the building's purpose before any scaffolding goes up.
+      toneRoof(d, group, id, kind, town.buildingEras[id]);
       if (project) addScaffolding(d, group, kind, stage, constructionVisual(project));
     }
   }

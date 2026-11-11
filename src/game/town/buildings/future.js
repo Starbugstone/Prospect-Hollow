@@ -100,7 +100,33 @@ const FORMS = {
       );
       return crowns[0];
     }
-    return house(d, g, s, { w: Math.min(2.8, s.width ?? 2.8), dep: 2.1, h: Math.min(h, 2.6) });
+    const w = Math.min(2.8, s.width ?? 2.8),
+      tall = Math.min(h, 2.6);
+    // Home II, III and onwards take their own massing inside the same lot width.
+    const variant = (s.variant ?? 0) % 5;
+    if (variant === 1 || variant === 4) {
+      // A main house with a lower side room.
+      const side = variant === 1 ? 1 : -1;
+      const crown = house(d, g, s, { x: -side * 0.5, w: w * 0.62, dep: 2.1, h: tall });
+      house(d, g, s, {
+        x: side * 0.9,
+        w: w * 0.36,
+        dep: 1.7,
+        h: tall - 0.8,
+        accent: true,
+        door: false,
+      });
+      return crown;
+    }
+    if (variant === 2)
+      return house(d, g, s, { w: w * 0.78, dep: 2.1, h: tall + 0.6, accent: true });
+    if (variant === 3) {
+      // Two gables side by side.
+      const crown = house(d, g, s, { x: -0.72, w: w * 0.46, dep: 2.1, h: tall });
+      house(d, g, s, { x: 0.72, w: w * 0.46, dep: 1.9, h: tall - 0.4, accent: true, door: false });
+      return crown;
+    }
+    return house(d, g, s, { w, dep: 2.1, h: tall });
   },
   hall(d, g, s) {
     const crown = house(d, g, s, { w: Math.min(3.6, s.width ?? 3.6), dep: 2.4, h: 2.3 });
@@ -725,6 +751,7 @@ export function renderFutureBuilding(d, parent, kind, label, level, era, service
     era,
     level,
     serviceLevel,
+    variant: d.plotVariant ?? 0,
   };
   if (['fisherman', 'riverPort'].includes(kind))
     addFishingDock(d, parent, serviceLevel, kind === 'riverPort');

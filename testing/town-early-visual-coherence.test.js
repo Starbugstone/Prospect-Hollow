@@ -102,8 +102,10 @@ describe('Grounded early town architecture', () => {
       expect(root.getObjectByName(`Heritage ${heritageUpgrade(kind)}`)).toBeUndefined();
       const roof = root.getObjectByName('Frontier timber lean-to roof');
       expect(roof).toBeDefined();
+      // The lean-to is shingled like the main roof, in the tone of the building's purpose.
+      const shingle = (root.userData.roofTone?.to ?? '#937447').slice(1);
       expect(
-        meshes(roof).filter((mesh) => mesh.material.color.getHexString() === '937447'),
+        meshes(roof).filter((mesh) => mesh.material.color.getHexString() === shingle),
       ).toHaveLength(9);
       const river = drawing('river-rail');
       for (const tier of [1, 2, 3]) {
