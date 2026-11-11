@@ -1,5 +1,6 @@
 import { MOON_PALETTE as p } from '../../../data/futureArchitecture';
 import {
+  MOON_DISTRICTS,
   MOON_RING_ROAD,
   MOON_ROADS,
   MOON_ROAD_LIFT,
@@ -31,6 +32,14 @@ const RING_STEP = 0.12;
 // The saucer pad is an open landing apron, not a building to step into.
 const OPEN_PADS = new Set(['saucerPad']);
 const HOMES = ['settlerDomes', 'craterHomesteads'];
+// The Far Rim's homes, and where its Willowkin live and work: one walks out from each.
+const FAR_RIM_HOME = 'farRimHomes';
+const FAR_RIM_WILLOWKIN = [
+  'farRimHomes',
+  'tonewoodConservatory',
+  'patternGarden',
+  'resonanceWorkshop',
+];
 
 // Walkers tread the paths' own surface, from the pad's top down to the road.
 const approachPoints = (route) =>
@@ -99,6 +108,35 @@ export function moonRoadWalk(
   return points;
 }
 
+// A district's ring road, walked the short way round its own centre.
+function districtArc({ centre: [cx, cz], ring }, from, to) {
+  const a = Math.atan2(from[1] - cz, from[0] - cx),
+    b = Math.atan2(to[1] - cz, to[0] - cx);
+  return ringArc(a, b, ring, { lap: false }).map(([x, y, z]) => [x + cx, y, z + cz]);
+}
+/**
+ * The walk along the roads between two paths' ends, wherever they are: round a district's
+ * ring, down its road to the crater's outer ring, and on by the crater's rings and spokes.
+ */
+function moonDistrictWalk(from, to, start, end) {
+  const [a, b] = [from, to].map(({ district }) => MOON_DISTRICTS[district] ?? null);
+  const crater = (route) => route.ring ?? MOON_RING_ROAD,
+    outer = MOON_ROADS.rings.at(-1);
+  if (a === b)
+    return a ? districtArc(a, start, end) : moonRoadWalk(start, end, crater(from), crater(to));
+  const lift = ([x, z]) => [x, MOON_ROAD_LIFT, z];
+  // Out of the first district to the crater's outer ring, then into the second.
+  const leave = a ? [...districtArc(a, start, a.road[1]), lift(a.road[1]), lift(a.road[0])] : [];
+  const enter = b ? [lift(b.road[0]), lift(b.road[1]), ...districtArc(b, b.road[1], end)] : [];
+  const between = moonRoadWalk(
+    a ? a.road[0] : start,
+    b ? b.road[0] : end,
+    a ? outer : crater(from),
+    b ? outer : crater(to),
+  );
+  return [...leave, ...between, ...enter];
+}
+
 /** The walk from one building's hatch to another's, along their paths and the roads. */
 export function moonSettlerRoute(from, to) {
   const out = approachPoints(from),
@@ -107,12 +145,7 @@ export function moonSettlerRoute(from, to) {
     end = back[0];
   const points = [
     ...out,
-    ...moonRoadWalk(
-      [start[0], start[2]],
-      [end[0], end[2]],
-      from.ring ?? MOON_RING_ROAD,
-      to.ring ?? MOON_RING_ROAD,
-    ),
+    ...moonDistrictWalk(from, to, [start[0], start[2]], [end[0], end[2]]),
     ...back,
   ];
   const path = walkPath(points);
@@ -134,9 +167,17 @@ const venueForTrip = (venues, kind, trip) =>
 
 /**
  * One settler's looping day: home → visit → home, three times, resting indoors
- * between walks. Without any building to enter, the settler circles the ring.
+ * between walks. Without any building to enter, the settler circles the ring. A `local`
+ * resident visits only their own district's buildings.
  */
-export function moonSettlerPlan(levels, n, homeId = null, venues = [], kind = 'settler') {
+export function moonSettlerPlan(
+  levels,
+  n,
+  homeId = null,
+  venues = [],
+  kind = 'settler',
+  { local = false } = {},
+) {
   const buildings = moonSettlerBuildings(levels);
   if (!buildings.length)
     return {
@@ -149,7 +190,10 @@ export function moonSettlerPlan(levels, n, homeId = null, venues = [], kind = 's
   const home =
     buildings.find(({ id }) => id === homeId) ??
     (homes.length ? homes : buildings)[n % (homes.length || buildings.length)];
-  const others = buildings.filter((route) => route !== home);
+  // A `local` resident keeps to their own district, while it has anywhere else to go.
+  const elsewhere = buildings.filter((route) => route !== home),
+    nearby = elsewhere.filter((route) => route.district === home.district);
+  const others = local && nearby.length ? nearby : elsewhere;
   const steps = [];
   for (let trip = 0; trip < 3; trip++) {
     const venue = venueForTrip(venues, kind, trip);
@@ -158,7 +202,8 @@ export function moonSettlerPlan(levels, n, homeId = null, venues = [], kind = 's
       (others.length ? others[Math.floor(hash(n * 13 + trip * 7 + 1) * others.length)] : home);
     // A commission's outcome decides what happens there (`commissionUse`): settlers go in
     // through its door, or stand before it, and may bring something home.
-    const stay = venue?.use?.stay ?? 'enter';
+    // An open gathering place (a lot with an `outlook`) is stood at, not entered.
+    const stay = venue?.use?.stay ?? (visit.outlook ? 'gather' : 'enter');
     const enters = stay === 'enter';
     const there = moonSettlerRoute(home, visit);
     steps.push({ route: there, toDoor: enters });
@@ -166,7 +211,13 @@ export function moonSettlerPlan(levels, n, homeId = null, venues = [], kind = 's
     steps.push(
       enters
         ? { inside: visit.id, duration: pause }
-        : { stand: there, face: moonCommissionFront(visit), duration: pause * 2 },
+        : {
+            stand: there,
+            face: visit.outlook
+              ? [visit.outlook[0], moonHatch(visit)[1], visit.outlook[1]]
+              : moonCommissionFront(visit),
+            duration: pause * 2,
+          },
     );
     steps.push({
       route: moonSettlerRoute(visit, home),
@@ -288,6 +339,22 @@ export function createMoonSettlers(d, parent, levels = {}, venues = []) {
       plan: moonSettlerPlan(levels, 100 + n, 'willowkinDome', venues, 'willowkin'),
       stride: strideMoonWillowkin,
     });
+  // The Far Rim's own residents: researchers, craftspeople and families from its homes, and
+  // the Willowkin who live and work beside the stone. They keep to the district.
+  const rim = levels[FAR_RIM_HOME] ?? 0;
+  for (let n = 0; n < (rim > 0 ? rim + 1 : 0); n++)
+    settlers.push({
+      ...moonSuitFigure(d, { parent, suit: suits[n % suits.length] }),
+      plan: moonSettlerPlan(levels, 200 + n, FAR_RIM_HOME, venues, 'settler', { local: true }),
+    });
+  const kin = FAR_RIM_WILLOWKIN.filter((id) => levels[id] > 0);
+  kin.forEach((home, n) =>
+    settlers.push({
+      ...animalModel(d, 'willowkinResident', 0, 'space-helmet', parent),
+      plan: moonSettlerPlan(levels, 300 + n, home, venues, 'willowkin', { local: true }),
+      stride: strideMoonWillowkin,
+    }),
+  );
   return settlers;
 }
 

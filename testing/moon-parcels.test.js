@@ -11,6 +11,7 @@ import {
   SpriteMaterial,
   Vector3,
 } from 'three';
+import { ERAS } from '../src/data/eras';
 import { createTown } from '../src/data/town';
 import {
   MOON_LOTS,
@@ -120,7 +121,8 @@ it.each(areasForSettlement('moon').map((area) => [area.id, area]))(
     // buildMoonMonuments merges meshes; the pad is checked before batching.
     const batch = d.batch;
     d.batch = () => {};
-    let town = moonTown();
+    // A site opens with its own era.
+    let town = { ...moonTown(), era: area.era };
     expectParcelPad(siteIn(town), MOON_SITE_PAD, 'open');
     const choice = area.choices[0];
     const offer = landmarkOffer(town, area, choice);
@@ -207,7 +209,8 @@ it('gives every parcel a glow, tap target and selection outline of its pad shape
 });
 
 it('opens every parcel from a tap on it without moving the camera', () => {
-  const scene = parcelScene();
+  // A town in the latest era, so every monument site is open.
+  const scene = parcelScene({ ...moonTown(), era: ERAS.at(-1).id });
   for (const parcel of moonParcels()) {
     scene.camera.position.set(parcel.x + 0.5, 30, parcel.z + 12);
     scene.camera.lookAt(parcel.x, 0, parcel.z);

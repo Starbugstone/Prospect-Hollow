@@ -78,6 +78,7 @@ it('orders rebuilding after Electric and before cars, with two saved, idempotent
     'moonward',
     'twin-hollows',
     'hollow-rising',
+    'quiet-signal',
   ]);
   for (const from of ['industrial', 'motor-age']) {
     let c = useCampaignStore();

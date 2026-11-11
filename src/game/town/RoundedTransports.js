@@ -55,6 +55,12 @@ const SAUCER_TRAITS = {
     band(d, g, 1.03, base + 0.16, c.traitColor);
     d.box(g, 0.62, 0.16, 0.1, 0, base + 0.2, 1.0, c.light);
   },
+  // The Quiet Signal: one thin line of light from bow to stern, and a small listening
+  // light on the dome.
+  'signal-line'(d, g, c, top, base) {
+    d.box(g, 0.05, 0.03, 2.02, 0, base + 0.27, 0, c.traitColor);
+    pod(d, g, [0.08, 0.08, 0.08], [0, top + 0.04, 0], c.light);
+  },
 };
 
 /** A saucer-style sky shuttle: a flat disc under a glass dome, standing on three landing

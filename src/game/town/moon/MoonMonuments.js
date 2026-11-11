@@ -1,6 +1,11 @@
 import { Box3, Vector3 } from 'three';
 import { commissionFor } from '../../../data/commissions';
-import { MOON_LOTS, MOON_SITE_PAD, moonLotsShown } from '../../../data/moonSettlement';
+import {
+  MOON_LOTS,
+  MOON_SITE_PAD,
+  moonDistrictsShown,
+  moonLotsShown,
+} from '../../../data/moonSettlement';
 import {
   areasForSettlement,
   areaChoice,
@@ -30,7 +35,8 @@ export const moonMonumentSignature = (town) =>
   ]);
 /**
  * Where each lot's and open monument site's label hangs: over its building, or lower
- * over a site. Every Moon lot the town sees, then each site the town has opened.
+ * over a site. Every Moon lot the town sees, then each site the town has opened, then the
+ * landmark of each district it has reached.
  */
 export const moonLabelAnchors = (town) => [
   ...moonLotsShown(town).map((id) => {
@@ -41,6 +47,13 @@ export const moonLabelAnchors = (town) => [
     id: area.id,
     position: new Vector3(area.positions[0][0], 2, area.positions[0][1]),
   })),
+  // A district's landmark has a label over its top, shown only once it is tapped.
+  ...(town ? moonDistrictsShown(town) : [])
+    .filter(({ stone }) => stone)
+    .map(({ centre, stone }) => ({
+      id: stone.id,
+      position: new Vector3(centre[0], stone.size[1] + 1, centre[1]),
+    })),
 ];
 
 // The shared unveiling stages suited settlers from the Moon's one figure builder.

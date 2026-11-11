@@ -886,6 +886,57 @@
     },
     "version": 1
   },
+  "far-rim-bronze": {
+    "goal": 1,
+    "measure": {
+      "kind": "buildingLevels",
+      "settlement": "moon",
+      "buildings": [
+        "listeningHouse",
+        "stillwaterBasin",
+        "tonewoodConservatory",
+        "farRimHomes",
+        "resonanceWorkshop",
+        "signalTerrace",
+        "patternGarden"
+      ]
+    },
+    "version": 1
+  },
+  "far-rim-silver": {
+    "goal": 9,
+    "measure": {
+      "kind": "buildingLevels",
+      "settlement": "moon",
+      "buildings": [
+        "listeningHouse",
+        "stillwaterBasin",
+        "tonewoodConservatory",
+        "farRimHomes",
+        "resonanceWorkshop",
+        "signalTerrace",
+        "patternGarden"
+      ]
+    },
+    "version": 1
+  },
+  "far-rim-gold": {
+    "goal": 18,
+    "measure": {
+      "kind": "buildingLevels",
+      "settlement": "moon",
+      "buildings": [
+        "listeningHouse",
+        "stillwaterBasin",
+        "tonewoodConservatory",
+        "farRimHomes",
+        "resonanceWorkshop",
+        "signalTerrace",
+        "patternGarden"
+      ]
+    },
+    "version": 1
+  },
   "saucer-welcome-bronze": {
     "goal": 1,
     "measure": {

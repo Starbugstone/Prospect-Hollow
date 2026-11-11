@@ -148,6 +148,16 @@
         <circle cy="-86" r="11" fill="none" :stroke="future.twin.light" stroke-width="3" />
         <circle cy="-86" r="5" :fill="future.twin.shell" />
       </g>
+      <g v-if="profile.portal === 'signal-arch'">
+        <path d="M-62-38 0-64 62-38Z" :fill="future.twin.roof" />
+        <path d="M0-62v-6" :stroke="future.twin.deep" stroke-width="3" />
+        <rect x="-30" y="-100" width="60" height="30" :fill="SIGNAL_NAVY" />
+        <path d="M-32-69h64" :stroke="future.twin.light" stroke-width="2.5" />
+        <path
+          d="m0-97 4 7-4 7-4-7ZM-16-88l2.5 4.5-2.5 4.5-2.5-4.5ZM16-88l2.5 4.5-2.5 4.5-2.5-4.5ZM-25-82l1.5 3-1.5 3-1.5-3ZM25-82l1.5 3-1.5 3-1.5-3Z"
+          :fill="SIGNAL_LIGHT"
+        />
+      </g>
       <g v-if="profile.portal === 'rounded-arch'">
         <path d="M-60-16a60 34 0 0 1 120 0Z" fill="#a6d3d4" stroke="#6d9f98" stroke-width="5" />
       </g>
@@ -223,6 +233,8 @@ import {
   EARTHLIGHT_BLUE,
   FUTURE_MINE_PORTALS,
   FUTURE_PALETTES as future,
+  SIGNAL_LIGHT,
+  SIGNAL_NAVY,
 } from '../../data/futureArchitecture';
 import { mineGrowth } from '../../data/mineGrowth';
 import { t } from '../../i18n';

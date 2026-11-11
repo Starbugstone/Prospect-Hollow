@@ -777,6 +777,7 @@ import TownResourceCollection from './TownResourceCollection.vue';
 import TownMoonstoneBalance from './TownMoonstoneBalance.vue';
 import { commissionFor, commissionLetters, commissionStatus } from '../../data/commissions';
 import { moonLetters } from '../../data/moonSettlement';
+import { signalLetters } from '../../data/quietSignal';
 import TownCommissionGoal from './TownCommissionGoal.vue';
 import TownNextStep from './TownNextStep.vue';
 import TownBuildRow from './TownBuildRow.vue';
@@ -1070,7 +1071,8 @@ const monumentSites = computed(() =>
     }),
 );
 // Each Moon building sends one letter home; the Story tab keeps them.
-const newHollowLetters = computed(() => moonLetters(town.value));
+// New Hollow's letters, then the Far Rim's story in the order it unfolds.
+const newHollowLetters = computed(() => [...moonLetters(town.value), ...signalLetters(town.value)]);
 const valleyLetters = computed(() => commissionLetters(town.value, HOME_SETTLEMENT));
 const nextMonumentSite = computed(() =>
   PERSONAL_AREAS.find((area) => !areaUnlocked(town.value, area)),

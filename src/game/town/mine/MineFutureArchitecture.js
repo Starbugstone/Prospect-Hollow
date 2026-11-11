@@ -1,4 +1,9 @@
-import { EARTHLIGHT_BLUE, FUTURE_PALETTES } from '../../../data/futureArchitecture';
+import {
+  EARTHLIGHT_BLUE,
+  FUTURE_PALETTES,
+  SIGNAL_LIGHT,
+  SIGNAL_NAVY,
+} from '../../../data/futureArchitecture';
 import { futureShape } from '../buildings/futureShapes';
 
 // Each later era crowns the portal with its own small signature in place of the
@@ -76,5 +81,23 @@ export const FUTURE_MINE_CROWNS = {
         [0, 3.8, z],
         color,
       ).rotation.x = Math.PI / 2;
+  },
+  // The Quiet Signal: a night-blue board over the homecoming gable, with the mine's own
+  // crystals set in the order its seams branch: one, then the same shape twice, smaller.
+  'signal-arch'(d, entry) {
+    const p = FUTURE_PALETTES.twin;
+    const gable = d.mesh(entry, futureShape(d, 'gable'), [3.4, 0.7, 1.15], [0, 2.78, 0.12], p.roof);
+    gable.name = 'Mine signal gable';
+    d.box(entry, 0.08, 0.4, 0.08, 0, 3.0, 0.2, p.deep);
+    d.box(entry, 1.9, 0.9, 0.08, 0, 3.72, 0.2, SIGNAL_NAVY).name = 'Mine pattern board';
+    d.box(entry, 1.98, 0.05, 0.1, 0, 3.25, 0.2, p.light);
+    for (const [x, y, size] of [
+      [0, 3.82, 0.2],
+      [-0.5, 3.6, 0.124],
+      [0.5, 3.6, 0.124],
+      [-0.78, 3.48, 0.077],
+      [0.78, 3.48, 0.077],
+    ])
+      d.ball(entry, x, y, 0.27, [size * 0.6, size, size * 0.5], SIGNAL_LIGHT, 'rock');
   },
 };

@@ -3,14 +3,42 @@ import { layoutTownLabels } from '../TownLabelLayout';
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 const MOON_ACTION_OFFSET = 76;
 
+// The SVG map flattens the Moon's ground: x widens and z becomes y under the crater's tilt.
+export const MOON_MAP_SCALE = Object.freeze([1.3, 1.05]);
+export const moonMapPoint = (x, z) => [x * MOON_MAP_SCALE[0], 6 + z * MOON_MAP_SCALE[1]];
+// The crater alone fills this box.
+const CRATER_BOX = Object.freeze({ x: -60, y: -50, width: 120, height: 100 });
+/**
+ * The SVG map's viewBox, `{ x, y, width, height }`: the crater, widened to hold the level
+ * ground of each district the town has opened.
+ */
+export function moonMapBox(districts = []) {
+  let [left, top, right, bottom] = [
+    CRATER_BOX.x,
+    CRATER_BOX.y,
+    CRATER_BOX.x + CRATER_BOX.width,
+    CRATER_BOX.y + CRATER_BOX.height,
+  ];
+  for (const { centre, floor } of districts) {
+    const [x, y] = moonMapPoint(...centre),
+      reach = floor + 4;
+    left = Math.min(left, x - reach * MOON_MAP_SCALE[0]);
+    right = Math.max(right, x + reach * MOON_MAP_SCALE[0]);
+    top = Math.min(top, y - reach * MOON_MAP_SCALE[1]);
+    bottom = Math.max(bottom, y + reach * MOON_MAP_SCALE[1]);
+  }
+  return { x: left, y: top, width: right - left, height: bottom - top };
+}
+
 // The SVG viewBox is centred and letterboxed, so percentages of its drawing
 // coordinates are not percentages of a tall or wide container.
-export function moonMapLabel({ id, x, y }, { width, height }) {
-  const scale = Math.min(width / 120, height / 100);
+export function moonMapLabel({ id, x, y }, { width, height }, box = CRATER_BOX) {
+  const scale = Math.min(width / box.width, height / box.height);
+  const [cx, cy] = [box.x + box.width / 2, box.y + box.height / 2];
   return {
     id,
-    x: width ? 50 + ((x * scale) / width) * 100 : 50,
-    y: height ? 50 + (((y - 6) * scale) / height) * 100 : 50,
+    x: width ? 50 + (((x - cx) * scale) / width) * 100 : 50,
+    y: height ? 50 + (((y - 6 - cy) * scale) / height) * 100 : 50,
     visible: !!width && !!height,
   };
 }

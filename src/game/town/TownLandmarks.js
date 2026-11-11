@@ -1,6 +1,7 @@
 import { buildMoonstoneLandmark, MOONSTONE_LANDMARK_FORMS } from './TownMoonstoneLandmarks';
 import { buildMoonLandmark, LUNAR_LANDMARK_FORMS } from './moon/MoonLandmarks';
 import { buildCommissionLandmark, COMMISSION_LANDMARK_FORMS } from './moon/MoonCommissionLandmarks';
+import { buildSignalLandmark, SIGNAL_LANDMARK_FORMS } from './moon/MoonSignalLandmarks';
 import { buildValleyCommission, VALLEY_COMMISSION_FORMS } from './TownCommissionLandmarks';
 import { createLandmarkMotion } from './TownLandmarkMotion';
 import { LANDMARK_BY_ID, LANDMARK_PROGRESSION } from '../../data/townLandmarks';
@@ -99,7 +100,9 @@ export function buildLandmark(d, parent, choice, stage = 1, timeless = false, st
     g.scale.y = [1, 1.1, 1.2, 1.35, 1.5][tier - 1];
   const commission = COMMISSION_LANDMARK_FORMS.includes(o.form);
   // A commission stands on the raised pad its door opens onto, not a monument's pedestal.
-  if (!commission) pedestal(d, g, timeless ? 7.5 : 5.8);
+  // Voyagers' Court builds its own octagonal base, the shape of every Moon parcel.
+  const signal = SIGNAL_LANDMARK_FORMS.includes(o.form);
+  if (!commission && !signal) pedestal(d, g, timeless ? 7.5 : 5.8);
   const lunar = LUNAR_LANDMARK_FORMS.includes(o.form);
   const mineral = MOONSTONE_LANDMARK_FORMS.includes(o.form);
   if (timeless && buildMonumentSculpture(d, g, choice, move)) {
@@ -108,6 +111,7 @@ export function buildLandmark(d, parent, choice, stage = 1, timeless = false, st
   else if (VALLEY_COMMISSION_FORMS.includes(o.form)) buildValleyCommission(d, g, o, tier, move);
   else if (mineral) buildMoonstoneLandmark(d, g, o, tier, move);
   else if (lunar) buildMoonLandmark(d, g, o, tier, move);
+  else if (signal) buildSignalLandmark(d, g, o, tier, move);
   else if (o.form === 'arch') {
     for (const x of [-4, 4]) {
       d.box(g, 2.1, 7, 2.8, x, 4, 0, STONE);
@@ -586,7 +590,7 @@ export function buildLandmark(d, parent, choice, stage = 1, timeless = false, st
     }
     d.mesh(g, 'cone', [2.3, 1.6, 2.3], [0, towerHeight + 1.4, 0], colour);
   }
-  if (!timeless && !lunar && !mineral && !commission) {
+  if (!timeless && !lunar && !mineral && !commission && !signal) {
     // Large architectural changes stay inside the reserved court.
     if (tier >= 2) {
       const court = d.group(g);
@@ -655,7 +659,7 @@ export function buildLandmark(d, parent, choice, stage = 1, timeless = false, st
   }
   // Public halls and gardens have a fountain performance; engineering monuments
   // additionally run their own machinery. The centerpiece gets it immediately.
-  if (!lunar && !mineral && !commission && (timeless || tier >= 3))
+  if (!lunar && !mineral && !commission && !signal && (timeless || tier >= 3))
     buildMonumentFountain(d, g, move, timeless);
   g.userData.sceneryUpdate = (time) => {
     for (const update of motions) update(time);

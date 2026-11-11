@@ -11,6 +11,7 @@ import {
   tramCar,
   turned,
 } from './moonRising';
+import { SIGNAL_FINISHES } from './moonSignal';
 
 // Modernized finishes of the first Moon lots. An era that modernizes a Moon building adds
 // its own pieces to the building's form, one step for each era level (1 to 3). A finish
@@ -201,7 +202,7 @@ const HOLLOW_RISING = {
   },
 };
 
-const MOON_FINISHES = { 'hollow-rising': HOLLOW_RISING };
+const MOON_FINISHES = { 'hollow-rising': HOLLOW_RISING, 'quiet-signal': SIGNAL_FINISHES };
 /** Every (era, kind) that has a modernized Moon finish, for tests and fixtures. */
 export const MOON_FINISH_KINDS = Object.freeze(
   Object.fromEntries(

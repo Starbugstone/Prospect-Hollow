@@ -255,6 +255,25 @@ const WARDROBES = {
       ['#e7b94f', '#4d6283', '#5b8fc9', '#e9e2d2', '#f1eee6'],
     ],
   },
+  // The Quiet Signal: plain, quiet clothes for people who listen. Night-navy coats,
+  // moon-white scarves and a single gold collar pin.
+  listening: {
+    skirtLength: 0.42,
+    crown: 'cap',
+    hat: 'cap',
+    trim: '#f3ecd9',
+    trousers: '#3b4763',
+    boots: '#e9e2d2',
+    coat: 0.46,
+    patrol: true,
+    resident: 'garden',
+    guest: ['#5d4a7a', '#2f3552', '#d8cfe6', '#f6f1ea', '#f0c45a'],
+    palettes: [
+      ['#27365a', '#3b4763', '#f3ecd9', '#e9e2d2', '#f0c45a'],
+      ['#f1eee6', '#56648a', '#27365a', '#f1eee6', '#c9d3e6'],
+      ['#56648a', '#2f3552', '#f3ecd9', '#e9e2d2', '#f0c45a'],
+    ],
+  },
   // Homestead flight suits: patched work jackets, gold visors and barn-red scarves.
   moonward: {
     skirtLength: 0.32,

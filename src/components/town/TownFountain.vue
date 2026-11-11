@@ -118,6 +118,51 @@
         <path v-for="x in [-14, 14]" :key="x" :d="`M${x}-46v-11`" v-bind="jet" />
       </template>
     </template>
+    <template v-else-if="design === 'still-pool'">
+      <ellipse cy="-20" rx="41" ry="15" :fill="future.twin.shell" />
+      <ellipse cy="-24" rx="37" ry="12" :fill="signalNavy" />
+      <ellipse cy="-24" rx="33" ry="10" fill="#1d2944" :stroke="water" stroke-width="1" />
+      <circle
+        v-for="[x, y] in grand
+          ? [
+              [-37, -24],
+              [37, -24],
+              [0, -36],
+              [0, -12],
+              [-26, -32],
+              [26, -32],
+              [-26, -16],
+              [26, -16],
+            ]
+          : [
+              [-37, -24],
+              [37, -24],
+              [0, -36],
+              [0, -12],
+            ]"
+        :key="`${x},${y}`"
+        :cx="x"
+        :cy="y"
+        r="2"
+        :fill="future.twin.light"
+      />
+      <template v-if="grand">
+        <path d="M-22-17 24-31" :stroke="signalLight" stroke-width="1.6" />
+        <circle
+          v-for="[x, y, r] in [
+            [12, -20, 1.3],
+            [-14, -28, 1],
+            [-4, -20, 0.8],
+            [8, -30, 1.1],
+          ]"
+          :key="`s${x}`"
+          :cx="x"
+          :cy="y"
+          :r="r"
+          :fill="signalLight"
+        />
+      </template>
+    </template>
     <template v-else-if="design === 'victorian-iron'">
       <polygon :points="ring(38, 16, -24, 8)" fill="#8f8c82" />
       <polygon :points="ring(38, 16, -32, 8)" fill="#c4c0b3" />
@@ -387,6 +432,8 @@ import { cozyAppearance } from '../../data/cozyArchitecture';
 import {
   EARTHLIGHT_BLUE as earthlight,
   FUTURE_PALETTES as future,
+  SIGNAL_LIGHT as signalLight,
+  SIGNAL_NAVY as signalNavy,
 } from '../../data/futureArchitecture';
 
 // Flat counterparts of TownFountains.js for the SVG fallback, drawn around the

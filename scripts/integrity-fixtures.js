@@ -670,7 +670,12 @@ export function createIntegrityFixtures() {
         );
       },
     );
-    for (const { area, oldFoundation } of PERSONAL_AREAS.flatMap((area) => [
+    // A site of an era still being built has no playable town to stand in yet: the server
+    // refuses that era's saves, so its fixture joins once the era is enabled.
+    const playable = PERSONAL_AREAS.filter(
+      (area) => ERAS.find((era) => era.id === area.era)?.enabled,
+    );
+    for (const { area, oldFoundation } of playable.flatMap((area) => [
       { area, oldFoundation: false },
       ...(area.currency === 'moonstones' ? [{ area, oldFoundation: true }] : []),
     ]))

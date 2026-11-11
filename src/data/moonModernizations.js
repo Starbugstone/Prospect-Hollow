@@ -47,6 +47,17 @@ export const MOON_MODERNIZATIONS = Object.freeze({
       outerRovers: { from: 3, count: 2 },
     },
   }),
+  // The Quiet Signal: the old town's ear turns to the Far Rim.
+  'quiet-signal': Object.freeze({
+    starwatchDish: {
+      name: 'Stonewatch dish',
+      steps: [
+        'Raise a second dish on a tall mast and turn it past the rim, to the Quiet Stone.',
+        'Add a recording room, with a lamp that brightens at every pulse.',
+        'Stand a line of aerials behind the dish, all leaning the way it looks.',
+      ],
+    },
+  }),
 });
 
 /** A Moon building's modernization in `era`, `{ name, steps }`, or null. */

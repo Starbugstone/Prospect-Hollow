@@ -22,7 +22,7 @@ import { PERSONAL_AREAS } from './townLandmarks';
 // The saved block's shape and the catch-up generation: saves from an older generation
 // are re-evaluated once on load. It is not a requirement version (see `version` on a
 // rank) and a new rank or family raises it so existing saves earn what they prove.
-export const HONOURS_VERSION = 6;
+export const HONOURS_VERSION = 7;
 // Ranks in ladder order. A family may stop early; new ranks only ever append.
 export const RANK_METALS = Object.freeze(['bronze', 'silver', 'gold', 'diamond']);
 const METAL_DIFFICULTY = Object.freeze({
@@ -254,6 +254,8 @@ export const NON_MILESTONE_ERAS = Object.freeze([
   'moonward',
   // Through the Ages ends on its diamond rank, "Two Towns, One Sky", for now.
   'hollow-rising',
+  // The Far Rim has its own family, Far Rim Listener.
+  'quiet-signal',
 ]);
 // Fixed membership is part of a shipped measure. Future content extends the
 // collection through another rank/family, never by silently changing these lists.
@@ -286,6 +288,17 @@ const OUTER_RING_HONOUR_BUILDINGS = Object.freeze([
   'moonballField',
   'craterPondGarden',
 ]);
+// The Quiet Signal's buildings round the Quiet Stone: a list of its own, as the outer
+// ring's is. The stone is a fixed landmark and counts for nothing.
+const FAR_RIM_HONOUR_BUILDINGS = Object.freeze([
+  'listeningHouse',
+  'stillwaterBasin',
+  'tonewoodConservatory',
+  'farRimHomes',
+  'resonanceWorkshop',
+  'signalTerrace',
+  'patternGarden',
+]);
 const HONOUR_MONUMENT_SITES = Object.freeze([
   'meadow',
   'monument',
@@ -311,6 +324,8 @@ export const NON_MONUMENT_HONOURS = Object.freeze({
   // first arc of them is complete enough to set fixed goals.
   'earthlight-conservatory': 'Commissions earn their own family with the first complete arc.',
   'homecoming-commons': 'Commissions earn their own family with the first complete arc.',
+  // Landmark Patron's site list shipped fixed, so a later site cannot join it.
+  'voyagers-court': 'Landmark Patron’s shipped sites are fixed; a later site adds no rank yet.',
 });
 function obstacle(id) {
   return OBSTACLES.find((entry) => entry.id === id) ?? { present: () => false };
@@ -691,6 +706,21 @@ export function honourFamilies({
       popup: '{goal} outer ring building levels completed',
       progress: '{value} / {goal} outer ring building levels',
       ranks: [1, 15, 30].map((goal, index) => ({ metal: RANK_METALS[index], goal, since: 6 })),
+    },
+    {
+      id: 'far-rim',
+      tab: 'town',
+      name: 'Far Rim Listener',
+      art: { image: '/art/rewards/moon-homestead.svg' },
+      measure: {
+        kind: 'buildingLevels',
+        settlement: 'moon',
+        buildings: FAR_RIM_HONOUR_BUILDINGS,
+      },
+      requirement: 'Complete {goal} building levels in the Far Rim, beside the Quiet Stone.',
+      popup: '{goal} Far Rim building levels completed',
+      progress: '{value} / {goal} Far Rim building levels',
+      ranks: [1, 9, 18].map((goal, index) => ({ metal: RANK_METALS[index], goal, since: 7 })),
     },
     {
       id: 'saucer-welcome',

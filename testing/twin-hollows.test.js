@@ -30,6 +30,8 @@ import {
   moonLetters,
   moonSettlement,
   moonstoneKeepsakes,
+  moonDistrictAt,
+  moonLotDistrict,
 } from '../src/data/moonSettlement';
 import { VISITOR_TRANSPORTS } from '../src/data/visitorArrivals';
 import { moonHeight, roads as moonRoads } from '../src/game/town/moon/MoonScene';
@@ -255,6 +257,10 @@ it('preserves completed Twin Hollows saves while the optional Saucer Pad is abse
   expect(upgradeOffer(earlier, 'saucerPad').available).toBe(false);
 });
 
+// The crater's own lots. A district beyond the rim keeps its own contracts
+// (testing/quiet-signal.test.js).
+const CRATER_LOTS = Object.entries(MOON_LOTS).filter(([id]) => !moonLotDistrict(id));
+
 describe('New Hollow buildings', () => {
   it('stand on the Moon map and never on a valley lot', () => {
     expect(MOON_BUILDINGS.length).toBe(Object.keys(MOON_LOTS).length);
@@ -264,8 +270,9 @@ describe('New Hollow buildings', () => {
       expect(b.settlement).toBe('moon');
       expect(PLOTS[b.id], b.id).toBeUndefined();
       expect(MOON_LOTS[b.id], b.id).toBeTruthy();
-      // New Hollow Rising's outer ring has its own unlock order.
-      if (b.introducedEra === 'hollow-rising') continue;
+      // New Hollow Rising's outer ring and The Quiet Signal's Far Rim have their own
+      // unlock orders (testing/quiet-signal.test.js covers the Far Rim).
+      if (['hollow-rising', 'quiet-signal'].includes(b.introducedEra)) continue;
       expect(b.introducedEra).toBe('twin-hollows');
       expect(b.unlock).toEqual(
         b.id === 'saucerPad'
@@ -284,7 +291,7 @@ describe('New Hollow buildings', () => {
   });
 
   it('keeps every lot inside the crater, off the ring road and apart from its neighbors', () => {
-    const lots = Object.entries(MOON_LOTS);
+    const lots = CRATER_LOTS;
     for (const [id, [x, z]] of lots) {
       const r = Math.hypot(x, z);
       expect(r + moonPadRadius(id), id).toBeLessThan(MOON_CRATER_RADIUS);
@@ -349,7 +356,7 @@ describe('New Hollow buildings', () => {
 
   it('keeps the settlement level on smooth regolith with a soft rim and hills beyond', () => {
     // Every lot and the ring road sit on level ground.
-    for (const [id, [x, z]] of Object.entries(MOON_LOTS))
+    for (const [id, [x, z]] of CRATER_LOTS)
       for (const [dx, dz] of [
         [0, 0],
         [4, 0],
@@ -385,12 +392,10 @@ describe('New Hollow buildings', () => {
     const outer = MOON_ROADS.rings.at(-1);
     expect(outer + 0.8).toBeLessThan(MOON_FLOOR_RADIUS);
     const pads = [
-      ...Object.entries(MOON_LOTS).map(([id, at]) => [id, at, moonPadRadius(id)]),
-      ...areasForSettlement(MOON_SETTLEMENT).map((area) => [
-        area.id,
-        area.positions[0],
-        Math.max(area.radius, MOON_SITE_PAD),
-      ]),
+      ...CRATER_LOTS.map(([id, at]) => [id, at, moonPadRadius(id)]),
+      ...areasForSettlement(MOON_SETTLEMENT)
+        .filter((area) => !moonDistrictAt(...area.positions[0]))
+        .map((area) => [area.id, area.positions[0], Math.max(area.radius, MOON_SITE_PAD)]),
     ];
     // The road's half width plus a clear margin.
     for (const [id, [x, z], radius] of pads) {
@@ -399,7 +404,7 @@ describe('New Hollow buildings', () => {
       expect(Math.abs(Math.hypot(x, z) - outer) - radius, id).toBeGreaterThan(2.5);
     }
     // The first lots' paths still join the inner ring; lots beyond the outer road join it.
-    for (const route of moonApproaches())
+    for (const route of moonApproaches().filter(({ district }) => !district))
       expect(route.ring, route.id).toBe(
         Math.hypot(...MOON_LOTS[route.id]) > outer ? outer : MOON_RING_ROAD,
       );

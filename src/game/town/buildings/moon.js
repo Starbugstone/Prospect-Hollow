@@ -19,6 +19,7 @@ import {
 } from './moonKit';
 import { moonFinish } from './moonFinishes';
 import { RISING_FORMS } from './moonRising';
+import { SIGNAL_FORMS } from './moonSignal';
 
 // New Hollow on the Moon. Every building is drawn from the shared lunar kit (moonKit.js).
 export { moonParcelPad, moonRover };
@@ -282,8 +283,9 @@ const FIRST_FORMS = {
   },
 };
 
-// Every Moon building kind's form: the first lots, then the outer ring (moonRising.js).
-const FORMS = { ...FIRST_FORMS, ...RISING_FORMS };
+// Every Moon building kind's form: the first lots, the outer ring (moonRising.js), then the
+// Far Rim (moonSignal.js).
+const FORMS = { ...FIRST_FORMS, ...RISING_FORMS, ...SIGNAL_FORMS };
 export const MOON_FORMS = Object.freeze(Object.keys(FORMS));
 
 /**

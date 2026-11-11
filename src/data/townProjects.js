@@ -196,6 +196,20 @@ export const TOWN_PROJECTS = [
     'A town that feeds itself',
     ['craterIceWell', 'earthlightGreenhouse', 'expeditionGarage', 'roverBarn'],
   ],
+  // The Quiet Signal's three stages: Listen, Understand, Answer.
+  [
+    'quiet-signal',
+    'far-rim-listen',
+    'Listen at the Far Rim',
+    ['listeningHouse', 'stillwaterBasin', 'starwatchDish'],
+  ],
+  [
+    'quiet-signal',
+    'far-rim-understand',
+    'Read the pattern',
+    ['tonewoodConservatory', 'resonanceWorkshop', 'farRimHomes'],
+  ],
+  ['quiet-signal', 'far-rim-answer', 'Send New Hollow’s answer', ['signalTerrace', 'square']],
 ].map(([era, id, title, buildings, hammers = 0]) => ({ era, id, title, buildings, hammers }));
 
 export const PROJECT_MILESTONES = ['Open the doors', 'Make room to grow', 'Complete the project'];

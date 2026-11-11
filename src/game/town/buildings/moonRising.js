@@ -145,7 +145,7 @@ function dishShape(d) {
   return key;
 }
 /** A dish on its feed struts, tilted back by `tilt` and turned by `turn`. */
-function dish(d, g, x, y, z, radius, tilt, turn = 0) {
+export function dish(d, g, x, y, z, radius, tilt, turn = 0) {
   const mount = d.group(g, x, y, z);
   mount.rotation.y = turn;
   const bowl = d.group(mount);
