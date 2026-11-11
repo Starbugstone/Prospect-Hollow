@@ -2675,7 +2675,7 @@
   "Showcased honours": "Distinctions exposées",
   "Add an earned honour": "Ajouter une distinction obtenue",
   "Earned {date}": "Obtenue le {date}",
-  "Earned before honours were introduced": "Obtenue avant l’arrivée des distinctions",
+  "Earned before this honour was added": "Obtenue avant l’arrivée de cette distinction",
   "{score} on level {level} (target {target})": "{score} au niveau {level} (objectif {target})",
   "{count} levels · chapters {from}–{to}": "{count} niveaux · chapitres {from} à {to}",
   "You have completed {done} of these {count} levels": "Vous avez terminé {done} de ces {count} niveaux",
