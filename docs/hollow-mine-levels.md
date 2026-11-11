@@ -219,6 +219,12 @@ of a board, so they suit only levels that would otherwise need heavy collection 
 
 ## Boards on trial
 
+Every board below has since joined chapters 92–101 at the level number it was measured
+with; [the crystal seams guide](crystal-seam-levels.md) describes those chapters and the
+two boards that changed (548 and 560). The measurements below are the trial record.
+Settings still lists the boards for the open phone checks, each now playing its campaign
+level.
+
 A new board can be played before it joins the campaign. `src/data/prototypeBoards.js` lists
 them in the level grammar of this file. They sit outside `LEVEL_COUNT` and the save. Only
 the debug tools (development, preprod and `VITE_DEBUG_TOOLS=true` builds) open one: tap it
@@ -443,7 +449,8 @@ None has been played on a phone yet.
 
 The owner approved three original crystal behaviours for the 1.3.0 trials
 (10 November 2026); [the proposal and measurements](new-mechanics.md) record the
-review decisions. They remain outside the campaign until human phone play.
+review decisions. They joined the campaign with chapters 92–101; human phone play is
+still open.
 
 - **Trace twins** (`t`, or `j` for a second facet pair) link two matching facets.
   A player's swap matching on a stamp copies every matching line through it to

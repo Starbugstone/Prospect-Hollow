@@ -36,7 +36,7 @@ On `preprod` after `e8d7191f`; nothing below has reached `main`.
 | Residents visibly using each outcome                             | Prototype on `preprod`                   |
 | Route-choice board prototype (chapter 94)                        | Prototype on `preprod`, debug tools only |
 | Pairing prototypes (chapters 92 and 93)                          | Prototype on `preprod`, debug tools only |
-| New boards                                                       | Not yet                                  |
+| New boards: chapters 92–101, levels 547–606                      | Done on `t3/chapters-92-101`             |
 | Third commission                                                 | Not yet                                  |
 | Honours family, economy rerun, release notes                     | Not yet                                  |
 | New Hollow Rising: Moon lot table, roads as data, wider crater   | Done on `preprod`                        |
@@ -291,20 +291,22 @@ explained first.
   - [x] New mechanics and board shapes: candidates proposed; Trace twins, Crossgrain crystal and
         Chord crystal built with a board on trial each; Arrowhead and fixed Twin windows tried
   - [ ] Play the five new mechanic/shape trials on a real phone and confirm the teaching boards
-- [ ] Add the chapters to `PLANS` in `src/data/hollowMineLevels.js`, with names, stops and tips.
+- [x] Add the chapters to `PLANS` in `src/data/hollowMineLevels.js`, with names, stops and tips.
       Consider a new file if this one, already 1,720 lines, gets harder to read
-- [ ] Add French names, stops and tips to `src/i18n/fr.json`
-- [ ] Measure with 30 seeds: `node scripts/measure-campaign.mjs . 30`, then
+- [x] Add French names, stops and tips to `src/i18n/fr.json`
+- [x] Measure with 30 seeds: `node scripts/measure-campaign.mjs . 30`, then
       `node scripts/calibrate-star-targets.mjs <file> 547 606`
-- [ ] Set chest targets at 80% of the median score and add the star targets
-- [ ] Hold out seeds 101–120 and lower any star target leaving under a third of runs with three stars
-- [ ] Extend `testing/hollow-mine-levels.test.js`: the append, names, reachable cargo, reachable
+- [x] Set chest targets at 80% of the median score and add the star targets
+- [x] Hold out seeds 101–120 and lower any star target leaving under a third of runs with three stars
+      560, 593 and 597 lowered to 8 of 20; 570 keeps 6 of 20 as the act's challenge.
+- [x] Extend `testing/hollow-mine-levels.test.js`: the append, names, reachable cargo, reachable
       starglass, completion on held-out seeds and completion beyond 100 moves
-- [ ] Regenerate in Docker: `node scripts/export-honour-levels.mjs`, `npm run export:save-rules`,
+- [x] Regenerate in Docker: `node scripts/export-honour-levels.mjs`, `npm run export:save-rules`,
       `node scripts/export-public-content.mjs`
-- [ ] Update hardcoded counts: `scripts/measure-economy-balance.mjs` (546), `docs/README.md`,
+- [x] Update hardcoded counts: `scripts/measure-economy-balance.mjs` (546), `docs/README.md`,
       `docs/town-demo.md`, `docs/settlement-eras.md`
-- [ ] Add a guide for levels 547–606, its own page beside `docs/hollow-mine-levels.md`
+- [x] Add a guide for levels 547–606, its own page beside `docs/hollow-mine-levels.md`
+      See [the crystal seams guide](docs/crystal-seam-levels.md) for the chapters, the boards that changed and the evidence.
 
 ### Approved new mechanics and shapes
 
@@ -331,13 +333,15 @@ an ordinary cell. The three trial-only elements are deliberately non-mastery.
 
 ### What to check beyond the boards
 
-- [ ] A player who already finished level 546: the mine must offer 547 rather than the museum
-- [ ] `campaignCompletion` counts more levels, so a "perfect" campaign is no longer complete. Check
+- [x] A player who already finished level 546: the mine must offer 547 rather than the museum
+- [x] `campaignCompletion` counts more levels, so a "perfect" campaign is no longer complete. Check
       that nothing earned or displayed goes backwards
+      The mine cart would have lost gems; it now fills over a fixed 546 levels. A pending 100% celebration waits for level 606.
 - [ ] Seam Explorer lists levels 1–546 by name. Leave it: shipped ranks don't change, and new levels
       earn it nothing
-- [ ] Chest coins and VIP spending at chapters 92–101 still pass the server's checks
-- [ ] Each new level adds three workshop credits, so moonstone supply rises slightly
+- [x] Chest coins and VIP spending at chapters 92–101 still pass the server's checks
+- [x] Each new level adds three workshop credits, so moonstone supply rises slightly
+      Up to 240 more credits (60 normal, 180 continuous), about 11%.
 
 ### Checks
 

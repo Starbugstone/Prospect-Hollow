@@ -1,6 +1,6 @@
 # Documentation
 
-Current content: **546 puzzles, 91 six-level chapters and 15 playable eras**
+Current content: **606 puzzles, 101 six-level chapters and 15 playable eras**
 (reviewed 20 October 2026). The runtime definitions in `src/data/campaign.js` and
 `src/data/eras.js` own those catalogs. Mine progression and town-era advancement
 are independent; puzzle moves remain unlimited.
@@ -14,6 +14,8 @@ are independent; puzzle moves remain unlimited.
 - [Deeper mines, 373–402](deep-mine-levels.md): braziers, fossils, spores, roots and pearl funnels.
 - [The floating seam, 403–546](hollow-mine-levels.md): lenses, phase seals, portal pads,
   gravity and floatstones, including the latest mechanic videos.
+- [Crystal seams, 547–606](crystal-seam-levels.md): trace twins, crossgrain and chord crystals,
+  two new shapes and ten chapters of new pairings.
 - [Town Honours](honours.md): permanent ranks, extension rules and measured goals.
 - [Combined economy balance](economy-balance.md): mining, town income, moonstones and honours pacing.
 - [Moonstones](moonstones.md): the saved Moon resource, workshop production, sales and monuments.
