@@ -40560,7 +40560,7 @@
       }
     },
     "quiet-signal": {
-      "enabled": false,
+      "enabled": true,
       "style": "city",
       "requiresPower": false,
       "electricity": true,
@@ -59669,5 +59669,5 @@
       "seenGeneration": 7
     }
   },
-  "contentDigest": "565602c5b6c1a1b2d1c088a88e3aa7ac248b0ab879208f8452d49370e91998df"
+  "contentDigest": "34486b3062e3e39ddca9290946cf957ca20db1d85e2c02664dd9cf13a38ae361"
 }

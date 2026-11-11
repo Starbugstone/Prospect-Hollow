@@ -54512,12 +54512,1341 @@
       "serverNow": 1780000000000
     },
     {
-      "name": "VIP purchase at a New Hollow shop",
+      "name": "optional landmark voyagers-court: construction and upgrades",
       "before": {
         "schemaVersion": 4,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000662",
+          "clientAt": 1780000000000,
+          "baseSequence": 0,
+          "actions": []
+        },
+        "records": {},
+        "continuousRecords": {},
+        "powers": [
+          { "id": "clear-row", "label": "Clear Row", "dropWeight": 30, "quantity": 0 },
+          { "id": "tnt", "label": "TNT", "dropWeight": 25, "quantity": 0 },
+          { "id": "color-wand", "label": "Color Wand", "dropWeight": 20, "quantity": 0 },
+          { "id": "shuffle", "label": "Shuffle", "dropWeight": 10, "quantity": 0 },
+          { "id": "tile-breaker", "label": "Tile Breaker", "dropWeight": 15, "quantity": 0 }
+        ],
+        "builderHammers": 0,
+        "chestsWithoutBuilderHammer": 0,
+        "pendingChests": [],
+        "shopStock": [],
+        "shopVisit": 0,
+        "vipReceipts": [],
+        "seenObstacles": [],
+        "seenTips": [],
+        "town": {
+          "personalisation": {
+            "version": 3,
+            "crest": null,
+            "areas": {},
+            "areaLevels": {},
+            "construction": {},
+            "plaques": {}
+          },
+          "era": "quiet-signal",
+          "buildingEras": {
+            "well": "quiet-signal",
+            "farm": "quiet-signal",
+            "home": "quiet-signal",
+            "saloon": "quiet-signal",
+            "stable": "quiet-signal",
+            "sheriff": "quiet-signal",
+            "museum": "quiet-signal",
+            "armory": "quiet-signal",
+            "bank": "quiet-signal",
+            "shop": "quiet-signal",
+            "square": "quiet-signal",
+            "watermill": "quiet-signal",
+            "fisherman": "quiet-signal",
+            "blacksmith": "quiet-signal",
+            "school": "quiet-signal",
+            "doctor": "quiet-signal",
+            "bridge": "quiet-signal",
+            "riverPort": "quiet-signal",
+            "railDepot": "quiet-signal",
+            "post": "quiet-signal",
+            "warehouse": "quiet-signal",
+            "hotel": "quiet-signal",
+            "home5": "quiet-signal",
+            "market": "quiet-signal",
+            "powerHouse": "quiet-signal",
+            "fireStation": "quiet-signal",
+            "rowHouses": "quiet-signal",
+            "mill": "quiet-signal",
+            "garage": "quiet-signal",
+            "busDepot": "quiet-signal",
+            "gardenCourt": "quiet-signal",
+            "diner": "quiet-signal",
+            "teaHouse": "quiet-signal",
+            "blossomAtelier": "quiet-signal",
+            "orchardCottages": "quiet-signal",
+            "glassworks": "quiet-signal",
+            "springsRetreat": "quiet-signal",
+            "riverlightPavilion": "quiet-signal",
+            "airport": "quiet-signal",
+            "radioTower": "quiet-signal",
+            "concertHall": "quiet-signal",
+            "television": "quiet-signal",
+            "skyline": "quiet-signal",
+            "cityHall": "quiet-signal",
+            "apartments": "quiet-signal",
+            "supermarket": "quiet-signal",
+            "waterPlant": "quiet-signal",
+            "transitHub": "quiet-signal",
+            "library": "quiet-signal",
+            "crystalLab": "quiet-signal",
+            "cityHomes": "quiet-signal",
+            "riverPark": "quiet-signal",
+            "skyPods": "quiet-signal",
+            "biodome": "quiet-signal",
+            "maglevStation": "quiet-signal",
+            "skyHarbour": "quiet-signal",
+            "cloudOrchard": "quiet-signal",
+            "windsongLofts": "quiet-signal",
+            "greatTelescope": "quiet-signal",
+            "dewlightGardens": "quiet-signal",
+            "starlightTerraces": "quiet-signal",
+            "spaceElevator": "quiet-signal",
+            "moonpost": "quiet-signal",
+            "missionHomesteads": "quiet-signal",
+            "homecomingHall": "quiet-signal",
+            "ribbonLanding": "quiet-signal",
+            "settlerDomes": "quiet-signal",
+            "craterIceWell": "quiet-signal",
+            "earthlightGreenhouse": "quiet-signal",
+            "willowkinDome": "quiet-signal",
+            "newHollowCommons": "quiet-signal",
+            "craterHomesteads": "quiet-signal",
+            "moonstoneWorkshop": "quiet-signal",
+            "roverBarn": "quiet-signal",
+            "saucerPad": "quiet-signal",
+            "earthriseLookout": "quiet-signal",
+            "ringTram": "quiet-signal",
+            "dewfallCistern": "quiet-signal",
+            "orchardVaults": "quiet-signal",
+            "lanternRow": "quiet-signal",
+            "ringMarket": "quiet-signal",
+            "craterSchool": "quiet-signal",
+            "earthviewTerraces": "quiet-signal",
+            "expeditionGarage": "quiet-signal",
+            "craterInn": "quiet-signal",
+            "starwatchDish": "quiet-signal",
+            "moonballField": "quiet-signal",
+            "craterPondGarden": "quiet-signal",
+            "listeningHouse": "quiet-signal",
+            "stillwaterBasin": "quiet-signal",
+            "tonewoodConservatory": "quiet-signal",
+            "farRimHomes": "quiet-signal",
+            "resonanceWorkshop": "quiet-signal",
+            "signalTerrace": "quiet-signal",
+            "patternGarden": "quiet-signal",
+            "horseField": "quiet-signal",
+            "park": "quiet-signal",
+            "home2": "quiet-signal",
+            "home3": "quiet-signal",
+            "home4": "quiet-signal",
+            "well2": "quiet-signal",
+            "farm2": "quiet-signal",
+            "farm3": "quiet-signal"
+          },
+          "buildingEraLevels": {
+            "well": 3,
+            "farm": 3,
+            "home": 3,
+            "saloon": 3,
+            "stable": 3,
+            "sheriff": 3,
+            "museum": 3,
+            "armory": 3,
+            "bank": 3,
+            "shop": 3,
+            "square": 3,
+            "watermill": 3,
+            "fisherman": 3,
+            "blacksmith": 3,
+            "school": 3,
+            "doctor": 3,
+            "bridge": 3,
+            "riverPort": 3,
+            "railDepot": 3,
+            "post": 3,
+            "warehouse": 3,
+            "hotel": 3,
+            "home5": 3,
+            "market": 3,
+            "powerHouse": 3,
+            "fireStation": 3,
+            "rowHouses": 3,
+            "mill": 3,
+            "garage": 3,
+            "busDepot": 3,
+            "gardenCourt": 3,
+            "diner": 3,
+            "teaHouse": 3,
+            "blossomAtelier": 3,
+            "orchardCottages": 3,
+            "glassworks": 3,
+            "springsRetreat": 3,
+            "riverlightPavilion": 3,
+            "airport": 3,
+            "radioTower": 3,
+            "concertHall": 3,
+            "television": 3,
+            "skyline": 3,
+            "cityHall": 3,
+            "apartments": 3,
+            "supermarket": 3,
+            "waterPlant": 3,
+            "transitHub": 3,
+            "library": 3,
+            "crystalLab": 3,
+            "cityHomes": 3,
+            "riverPark": 3,
+            "skyPods": 3,
+            "biodome": 3,
+            "maglevStation": 3,
+            "skyHarbour": 3,
+            "cloudOrchard": 3,
+            "windsongLofts": 3,
+            "greatTelescope": 3,
+            "dewlightGardens": 3,
+            "starlightTerraces": 3,
+            "spaceElevator": 3,
+            "moonpost": 3,
+            "missionHomesteads": 3,
+            "homecomingHall": 3,
+            "ribbonLanding": 3,
+            "settlerDomes": 3,
+            "craterIceWell": 3,
+            "earthlightGreenhouse": 3,
+            "willowkinDome": 3,
+            "newHollowCommons": 3,
+            "craterHomesteads": 3,
+            "moonstoneWorkshop": 3,
+            "roverBarn": 3,
+            "saucerPad": 3,
+            "earthriseLookout": 3,
+            "ringTram": 3,
+            "dewfallCistern": 3,
+            "orchardVaults": 3,
+            "lanternRow": 3,
+            "ringMarket": 3,
+            "craterSchool": 3,
+            "earthviewTerraces": 3,
+            "expeditionGarage": 3,
+            "craterInn": 3,
+            "starwatchDish": 3,
+            "moonballField": 3,
+            "craterPondGarden": 3,
+            "listeningHouse": 3,
+            "stillwaterBasin": 3,
+            "tonewoodConservatory": 3,
+            "farRimHomes": 3,
+            "resonanceWorkshop": 3,
+            "signalTerrace": 3,
+            "patternGarden": 3,
+            "horseField": 3,
+            "park": 3,
+            "home2": 3,
+            "home3": 3,
+            "home4": 3,
+            "well2": 3,
+            "farm2": 3,
+            "farm3": 3
+          },
+          "firstLightsSeen": false,
+          "forge": { "progress": 0, "charge": 0 },
+          "coins": 10000000,
+          "moonstoneVersion": 2,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 0, "stored": 0 },
+          "tourSeen": false,
+          "buildings": {
+            "well": 3,
+            "farm": 3,
+            "home": 3,
+            "saloon": 3,
+            "stable": 3,
+            "sheriff": 3,
+            "museum": 3,
+            "armory": 3,
+            "bank": 3,
+            "shop": 3,
+            "square": 3,
+            "watermill": 3,
+            "fisherman": 3,
+            "blacksmith": 3,
+            "school": 3,
+            "doctor": 3,
+            "bridge": 3,
+            "riverPort": 3,
+            "railDepot": 3,
+            "post": 3,
+            "warehouse": 3,
+            "hotel": 3,
+            "home5": 3,
+            "market": 3,
+            "powerHouse": 3,
+            "fireStation": 3,
+            "rowHouses": 3,
+            "mill": 3,
+            "garage": 3,
+            "busDepot": 3,
+            "gardenCourt": 3,
+            "diner": 3,
+            "teaHouse": 3,
+            "blossomAtelier": 3,
+            "orchardCottages": 3,
+            "glassworks": 3,
+            "springsRetreat": 3,
+            "riverlightPavilion": 3,
+            "airport": 3,
+            "radioTower": 3,
+            "concertHall": 3,
+            "television": 3,
+            "skyline": 3,
+            "cityHall": 3,
+            "apartments": 3,
+            "supermarket": 3,
+            "waterPlant": 3,
+            "transitHub": 3,
+            "library": 3,
+            "crystalLab": 3,
+            "cityHomes": 3,
+            "riverPark": 3,
+            "skyPods": 3,
+            "biodome": 3,
+            "maglevStation": 3,
+            "skyHarbour": 3,
+            "cloudOrchard": 3,
+            "windsongLofts": 3,
+            "greatTelescope": 3,
+            "dewlightGardens": 3,
+            "starlightTerraces": 3,
+            "spaceElevator": 3,
+            "moonpost": 3,
+            "missionHomesteads": 3,
+            "homecomingHall": 3,
+            "ribbonLanding": 3,
+            "settlerDomes": 3,
+            "craterIceWell": 3,
+            "earthlightGreenhouse": 3,
+            "willowkinDome": 3,
+            "newHollowCommons": 3,
+            "craterHomesteads": 3,
+            "moonstoneWorkshop": 3,
+            "roverBarn": 3,
+            "saucerPad": 3,
+            "earthriseLookout": 3,
+            "ringTram": 3,
+            "dewfallCistern": 3,
+            "orchardVaults": 3,
+            "lanternRow": 3,
+            "ringMarket": 3,
+            "craterSchool": 3,
+            "earthviewTerraces": 3,
+            "expeditionGarage": 3,
+            "craterInn": 3,
+            "starwatchDish": 3,
+            "moonballField": 3,
+            "craterPondGarden": 3,
+            "listeningHouse": 3,
+            "stillwaterBasin": 3,
+            "tonewoodConservatory": 3,
+            "farRimHomes": 3,
+            "resonanceWorkshop": 3,
+            "signalTerrace": 3,
+            "patternGarden": 3,
+            "horseField": 3,
+            "park": 3,
+            "home2": 3,
+            "home3": 3,
+            "home4": 3,
+            "well2": 3,
+            "farm2": 3,
+            "farm3": 3
+          },
+          "events": {},
+          "presentations": {},
+          "projects": {},
+          "completedRuns": 0,
+          "nextRaidRun": null,
+          "income": { "at": null, "remainder": 0, "stored": 0 },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
+          "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
+          "wanderersRun": 0,
+          "wanderersVisitAt": 0,
+          "guestVip": null,
+          "progressionVersion": 2
+        },
+        "townProjectFocus": "",
+        "issuedRun": 0,
+        "settledRun": 0,
+        "honours": {
+          "version": 7,
+          "earned": {
+            "ages-bronze": { "at": 1780000000000, "version": 1, "seen": false, "announced": false },
+            "ages-silver": { "at": 1780000000000, "version": 1, "seen": false, "announced": false },
+            "ages-gold": { "at": 1780000000000, "version": 1, "seen": false, "announced": false },
+            "ages-diamond": {
+              "at": 1780000000000,
+              "version": 1,
+              "seen": false,
+              "announced": false
+            },
+            "new-hollow-bronze": {
+              "at": 1780000000000,
+              "version": 1,
+              "seen": false,
+              "announced": false
+            },
+            "new-hollow-silver": {
+              "at": 1780000000000,
+              "version": 1,
+              "seen": false,
+              "announced": false
+            },
+            "new-hollow-gold": {
+              "at": 1780000000000,
+              "version": 1,
+              "seen": false,
+              "announced": false
+            },
+            "outer-ring-bronze": {
+              "at": 1780000000000,
+              "version": 1,
+              "seen": false,
+              "announced": false
+            },
+            "outer-ring-silver": {
+              "at": 1780000000000,
+              "version": 1,
+              "seen": false,
+              "announced": false
+            },
+            "outer-ring-gold": {
+              "at": 1780000000000,
+              "version": 1,
+              "seen": false,
+              "announced": false
+            },
+            "far-rim-bronze": {
+              "at": 1780000000000,
+              "version": 1,
+              "seen": false,
+              "announced": false
+            },
+            "far-rim-silver": {
+              "at": 1780000000000,
+              "version": 1,
+              "seen": false,
+              "announced": false
+            },
+            "far-rim-gold": {
+              "at": 1780000000000,
+              "version": 1,
+              "seen": false,
+              "announced": false
+            },
+            "saucer-welcome-bronze": {
+              "at": 1780000000000,
+              "version": 1,
+              "seen": false,
+              "announced": false
+            }
+          },
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "continuousGems": 0,
+            "continuousBest": 0,
+            "continuousLevels": {},
+            "visitors": 0,
+            "travels": 0
+          },
+          "showcase": [],
+          "backfilled": 0,
+          "seenGeneration": 7
+        }
+      },
+      "after": {
+        "schemaVersion": 4,
+        "integrity": {
+          "version": 1,
+          "epoch": "00000000-0000-4000-8000-000000000662",
+          "clientAt": 1780000000000,
+          "baseSequence": 0,
+          "actions": [
+            {
+              "sequence": 1,
+              "id": "00000000-0000-4000-8000-000000000665",
+              "kind": "landmark-buy",
+              "data": {
+                "purchases": [
+                  {
+                    "kind": "area",
+                    "id": "voyagers-court",
+                    "slot": 0,
+                    "value": "steady-lens",
+                    "expectedChoice": null,
+                    "expectedLevel": 0,
+                    "monumentVersion": 3,
+                    "currency": "coins",
+                    "price": 37000
+                  }
+                ],
+                "at": 1780000000000
+              }
+            },
+            {
+              "sequence": 2,
+              "id": "00000000-0000-4000-8000-000000000666",
+              "kind": "run-start",
+              "data": { "runId": 1, "mode": "normal", "levelId": 1, "at": 1780000000000 }
+            },
+            {
+              "sequence": 3,
+              "id": "00000000-0000-4000-8000-000000000667",
+              "kind": "income-start",
+              "data": { "at": 1780000000000 }
+            },
+            {
+              "sequence": 4,
+              "id": "00000000-0000-4000-8000-000000000668",
+              "kind": "victory",
+              "data": {
+                "moonstoneVersion": 2,
+                "production": 2,
+                "runId": 1,
+                "levelId": 1,
+                "score": 7500,
+                "target": 7500,
+                "starTarget": 7500,
+                "combo": 4,
+                "elapsedMs": 3754000,
+                "speedTargetMs": 154000,
+                "jewels": 217,
+                "bonusGems": 2,
+                "comboCounts": { "2": 3, "5": 1 },
+                "multiMatchCounts": { "2": 2 },
+                "chooseRewards": false,
+                "chests": [{ "source": "score", "rewardId": "clear-row" }],
+                "economyVersion": 3,
+                "shopStock": [
+                  { "id": "clear-row", "sold": false },
+                  { "id": "tile-breaker", "sold": false },
+                  { "id": "shuffle", "sold": false },
+                  { "id": "tnt", "sold": false },
+                  { "id": "color-wand", "sold": false }
+                ],
+                "shopVisit": 1,
+                "at": 1780000000000
+              }
+            },
+            {
+              "sequence": 5,
+              "id": "00000000-0000-4000-8000-000000000669",
+              "kind": "run-start",
+              "data": { "runId": 2, "mode": "normal", "levelId": 1, "at": 1780000000000 }
+            },
+            {
+              "sequence": 6,
+              "id": "00000000-0000-4000-8000-000000000670",
+              "kind": "victory",
+              "data": {
+                "moonstoneVersion": 2,
+                "production": 2,
+                "runId": 2,
+                "levelId": 1,
+                "score": 7500,
+                "target": 7500,
+                "starTarget": 7500,
+                "combo": 4,
+                "elapsedMs": 3754000,
+                "speedTargetMs": 154000,
+                "jewels": 217,
+                "bonusGems": 2,
+                "comboCounts": { "2": 3, "5": 1 },
+                "multiMatchCounts": { "2": 2 },
+                "chooseRewards": false,
+                "chests": [{ "source": "score", "rewardId": "clear-row" }],
+                "economyVersion": 3,
+                "shopStock": [
+                  { "id": "shuffle", "sold": false },
+                  { "id": "color-wand", "sold": false },
+                  { "id": "tile-breaker", "sold": false },
+                  { "id": "tnt", "sold": false },
+                  { "id": "clear-row", "sold": false }
+                ],
+                "shopVisit": 2,
+                "at": 1780000000000
+              }
+            },
+            {
+              "sequence": 7,
+              "id": "00000000-0000-4000-8000-000000000671",
+              "kind": "run-start",
+              "data": { "runId": 3, "mode": "normal", "levelId": 1, "at": 1780000000000 }
+            },
+            {
+              "sequence": 8,
+              "id": "00000000-0000-4000-8000-000000000672",
+              "kind": "victory",
+              "data": {
+                "moonstoneVersion": 2,
+                "production": 2,
+                "runId": 3,
+                "levelId": 1,
+                "score": 7500,
+                "target": 7500,
+                "starTarget": 7500,
+                "combo": 4,
+                "elapsedMs": 3754000,
+                "speedTargetMs": 154000,
+                "jewels": 217,
+                "bonusGems": 2,
+                "comboCounts": { "2": 3, "5": 1 },
+                "multiMatchCounts": { "2": 2 },
+                "chooseRewards": false,
+                "chests": [{ "source": "score", "rewardId": "clear-row" }],
+                "economyVersion": 3,
+                "shopStock": [
+                  { "id": "tnt", "sold": false },
+                  { "id": "tile-breaker", "sold": false },
+                  { "id": "shuffle", "sold": false },
+                  { "id": "clear-row", "sold": false },
+                  { "id": "color-wand", "sold": false }
+                ],
+                "shopVisit": 3,
+                "at": 1780000000000
+              }
+            },
+            {
+              "sequence": 9,
+              "id": "00000000-0000-4000-8000-000000000673",
+              "kind": "landmark-buy",
+              "data": {
+                "purchases": [
+                  {
+                    "kind": "area",
+                    "id": "voyagers-court",
+                    "slot": 0,
+                    "value": "steady-lens",
+                    "expectedChoice": "steady-lens",
+                    "expectedLevel": 1,
+                    "monumentVersion": 3,
+                    "currency": "coins",
+                    "price": 148000
+                  }
+                ],
+                "at": 1780000000000
+              }
+            },
+            {
+              "sequence": 10,
+              "id": "00000000-0000-4000-8000-000000000674",
+              "kind": "run-start",
+              "data": { "runId": 4, "mode": "normal", "levelId": 1, "at": 1780000000000 }
+            },
+            {
+              "sequence": 11,
+              "id": "00000000-0000-4000-8000-000000000675",
+              "kind": "victory",
+              "data": {
+                "moonstoneVersion": 2,
+                "production": 2,
+                "runId": 4,
+                "levelId": 1,
+                "score": 7500,
+                "target": 7500,
+                "starTarget": 7500,
+                "combo": 4,
+                "elapsedMs": 3754000,
+                "speedTargetMs": 154000,
+                "jewels": 217,
+                "bonusGems": 2,
+                "comboCounts": { "2": 3, "5": 1 },
+                "multiMatchCounts": { "2": 2 },
+                "chooseRewards": false,
+                "chests": [{ "source": "score", "rewardId": "tnt" }],
+                "economyVersion": 3,
+                "shopStock": [
+                  { "id": "tnt", "sold": false },
+                  { "id": "clear-row", "sold": false },
+                  { "id": "tile-breaker", "sold": false },
+                  { "id": "color-wand", "sold": false },
+                  { "id": "shuffle", "sold": false }
+                ],
+                "shopVisit": 4,
+                "at": 1780000000000
+              }
+            },
+            {
+              "sequence": 12,
+              "id": "00000000-0000-4000-8000-000000000676",
+              "kind": "landmark-buy",
+              "data": {
+                "purchases": [
+                  {
+                    "kind": "area",
+                    "id": "voyagers-court",
+                    "slot": 0,
+                    "value": "steady-lens",
+                    "expectedChoice": "steady-lens",
+                    "expectedLevel": 2,
+                    "monumentVersion": 3,
+                    "currency": "coins",
+                    "price": 370000
+                  }
+                ],
+                "at": 1780000000000
+              }
+            },
+            {
+              "sequence": 13,
+              "id": "00000000-0000-4000-8000-000000000677",
+              "kind": "run-start",
+              "data": { "runId": 5, "mode": "normal", "levelId": 1, "at": 1780000000000 }
+            },
+            {
+              "sequence": 14,
+              "id": "00000000-0000-4000-8000-000000000678",
+              "kind": "victory",
+              "data": {
+                "moonstoneVersion": 2,
+                "production": 2,
+                "runId": 5,
+                "levelId": 1,
+                "score": 7500,
+                "target": 7500,
+                "starTarget": 7500,
+                "combo": 4,
+                "elapsedMs": 3754000,
+                "speedTargetMs": 154000,
+                "jewels": 217,
+                "bonusGems": 2,
+                "comboCounts": { "2": 3, "5": 1 },
+                "multiMatchCounts": { "2": 2 },
+                "chooseRewards": false,
+                "chests": [{ "source": "score", "rewardId": "clear-row" }],
+                "economyVersion": 3,
+                "shopStock": [
+                  { "id": "tile-breaker", "sold": false },
+                  { "id": "shuffle", "sold": false },
+                  { "id": "clear-row", "sold": false },
+                  { "id": "color-wand", "sold": false },
+                  { "id": "tnt", "sold": false }
+                ],
+                "shopVisit": 5,
+                "at": 1780000000000
+              }
+            },
+            {
+              "sequence": 15,
+              "id": "00000000-0000-4000-8000-000000000679",
+              "kind": "landmark-buy",
+              "data": {
+                "purchases": [
+                  {
+                    "kind": "area",
+                    "id": "voyagers-court",
+                    "slot": 0,
+                    "value": "steady-lens",
+                    "expectedChoice": "steady-lens",
+                    "expectedLevel": 3,
+                    "monumentVersion": 3,
+                    "currency": "coins",
+                    "price": 740000
+                  }
+                ],
+                "at": 1780000000000
+              }
+            },
+            {
+              "sequence": 16,
+              "id": "00000000-0000-4000-8000-000000000680",
+              "kind": "run-start",
+              "data": { "runId": 6, "mode": "normal", "levelId": 1, "at": 1780000000000 }
+            },
+            {
+              "sequence": 17,
+              "id": "00000000-0000-4000-8000-000000000681",
+              "kind": "victory",
+              "data": {
+                "moonstoneVersion": 2,
+                "production": 2,
+                "runId": 6,
+                "levelId": 1,
+                "score": 7500,
+                "target": 7500,
+                "starTarget": 7500,
+                "combo": 4,
+                "elapsedMs": 3754000,
+                "speedTargetMs": 154000,
+                "jewels": 217,
+                "bonusGems": 2,
+                "comboCounts": { "2": 3, "5": 1 },
+                "multiMatchCounts": { "2": 2 },
+                "chooseRewards": false,
+                "chests": [{ "source": "score", "rewardId": "clear-row" }],
+                "economyVersion": 3,
+                "shopStock": [
+                  { "id": "tile-breaker", "sold": false },
+                  { "id": "tnt", "sold": false },
+                  { "id": "shuffle", "sold": false },
+                  { "id": "color-wand", "sold": false },
+                  { "id": "clear-row", "sold": false }
+                ],
+                "shopVisit": 6,
+                "at": 1780000000000
+              }
+            },
+            {
+              "sequence": 18,
+              "id": "00000000-0000-4000-8000-000000000682",
+              "kind": "landmark-buy",
+              "data": {
+                "purchases": [
+                  {
+                    "kind": "area",
+                    "id": "voyagers-court",
+                    "slot": 0,
+                    "value": "steady-lens",
+                    "expectedChoice": "steady-lens",
+                    "expectedLevel": 4,
+                    "monumentVersion": 3,
+                    "currency": "coins",
+                    "price": 1295000
+                  }
+                ],
+                "at": 1780000000000
+              }
+            },
+            {
+              "sequence": 19,
+              "id": "00000000-0000-4000-8000-000000000683",
+              "kind": "run-start",
+              "data": { "runId": 7, "mode": "normal", "levelId": 1, "at": 1780000000000 }
+            },
+            {
+              "sequence": 20,
+              "id": "00000000-0000-4000-8000-000000000684",
+              "kind": "victory",
+              "data": {
+                "moonstoneVersion": 2,
+                "production": 2,
+                "runId": 7,
+                "levelId": 1,
+                "score": 7500,
+                "target": 7500,
+                "starTarget": 7500,
+                "combo": 4,
+                "elapsedMs": 3754000,
+                "speedTargetMs": 154000,
+                "jewels": 217,
+                "bonusGems": 2,
+                "comboCounts": { "2": 3, "5": 1 },
+                "multiMatchCounts": { "2": 2 },
+                "chooseRewards": false,
+                "chests": [{ "source": "score", "rewardId": "shuffle" }],
+                "economyVersion": 3,
+                "shopStock": [
+                  { "id": "tile-breaker", "sold": false },
+                  { "id": "shuffle", "sold": false },
+                  { "id": "tnt", "sold": false },
+                  { "id": "clear-row", "sold": false },
+                  { "id": "color-wand", "sold": false }
+                ],
+                "shopVisit": 7,
+                "at": 1780000000000
+              }
+            }
+          ]
+        },
+        "records": { "1": { "score": 7500, "stars": 3, "bestTimeMs": 3754000 } },
+        "continuousRecords": {},
+        "powers": [
+          { "id": "clear-row", "label": "Clear Row", "dropWeight": 30, "quantity": 5 },
+          { "id": "tnt", "label": "TNT", "dropWeight": 25, "quantity": 1 },
+          { "id": "color-wand", "label": "Color Wand", "dropWeight": 20, "quantity": 0 },
+          { "id": "shuffle", "label": "Shuffle", "dropWeight": 10, "quantity": 1 },
+          { "id": "tile-breaker", "label": "Tile Breaker", "dropWeight": 15, "quantity": 0 }
+        ],
+        "builderHammers": 0,
+        "chestsWithoutBuilderHammer": 7,
+        "pendingChests": [],
+        "shopStock": [
+          { "id": "tile-breaker", "sold": false },
+          { "id": "shuffle", "sold": false },
+          { "id": "tnt", "sold": false },
+          { "id": "clear-row", "sold": false },
+          { "id": "color-wand", "sold": false }
+        ],
+        "shopVisit": 7,
+        "vipReceipts": [],
+        "seenObstacles": [],
+        "seenTips": [],
+        "town": {
+          "personalisation": {
+            "version": 3,
+            "crest": null,
+            "areas": { "voyagers-court": ["steady-lens"] },
+            "areaLevels": { "voyagers-court": 5 },
+            "construction": {},
+            "plaques": {}
+          },
+          "era": "quiet-signal",
+          "buildingEras": {
+            "well": "quiet-signal",
+            "farm": "quiet-signal",
+            "home": "quiet-signal",
+            "saloon": "quiet-signal",
+            "stable": "quiet-signal",
+            "sheriff": "quiet-signal",
+            "museum": "quiet-signal",
+            "armory": "quiet-signal",
+            "bank": "quiet-signal",
+            "shop": "quiet-signal",
+            "square": "quiet-signal",
+            "watermill": "quiet-signal",
+            "fisherman": "quiet-signal",
+            "blacksmith": "quiet-signal",
+            "school": "quiet-signal",
+            "doctor": "quiet-signal",
+            "bridge": "quiet-signal",
+            "riverPort": "quiet-signal",
+            "railDepot": "quiet-signal",
+            "post": "quiet-signal",
+            "warehouse": "quiet-signal",
+            "hotel": "quiet-signal",
+            "home5": "quiet-signal",
+            "market": "quiet-signal",
+            "powerHouse": "quiet-signal",
+            "fireStation": "quiet-signal",
+            "rowHouses": "quiet-signal",
+            "mill": "quiet-signal",
+            "garage": "quiet-signal",
+            "busDepot": "quiet-signal",
+            "gardenCourt": "quiet-signal",
+            "diner": "quiet-signal",
+            "teaHouse": "quiet-signal",
+            "blossomAtelier": "quiet-signal",
+            "orchardCottages": "quiet-signal",
+            "glassworks": "quiet-signal",
+            "springsRetreat": "quiet-signal",
+            "riverlightPavilion": "quiet-signal",
+            "airport": "quiet-signal",
+            "radioTower": "quiet-signal",
+            "concertHall": "quiet-signal",
+            "television": "quiet-signal",
+            "skyline": "quiet-signal",
+            "cityHall": "quiet-signal",
+            "apartments": "quiet-signal",
+            "supermarket": "quiet-signal",
+            "waterPlant": "quiet-signal",
+            "transitHub": "quiet-signal",
+            "library": "quiet-signal",
+            "crystalLab": "quiet-signal",
+            "cityHomes": "quiet-signal",
+            "riverPark": "quiet-signal",
+            "skyPods": "quiet-signal",
+            "biodome": "quiet-signal",
+            "maglevStation": "quiet-signal",
+            "skyHarbour": "quiet-signal",
+            "cloudOrchard": "quiet-signal",
+            "windsongLofts": "quiet-signal",
+            "greatTelescope": "quiet-signal",
+            "dewlightGardens": "quiet-signal",
+            "starlightTerraces": "quiet-signal",
+            "spaceElevator": "quiet-signal",
+            "moonpost": "quiet-signal",
+            "missionHomesteads": "quiet-signal",
+            "homecomingHall": "quiet-signal",
+            "ribbonLanding": "quiet-signal",
+            "settlerDomes": "quiet-signal",
+            "craterIceWell": "quiet-signal",
+            "earthlightGreenhouse": "quiet-signal",
+            "willowkinDome": "quiet-signal",
+            "newHollowCommons": "quiet-signal",
+            "craterHomesteads": "quiet-signal",
+            "moonstoneWorkshop": "quiet-signal",
+            "roverBarn": "quiet-signal",
+            "saucerPad": "quiet-signal",
+            "earthriseLookout": "quiet-signal",
+            "ringTram": "quiet-signal",
+            "dewfallCistern": "quiet-signal",
+            "orchardVaults": "quiet-signal",
+            "lanternRow": "quiet-signal",
+            "ringMarket": "quiet-signal",
+            "craterSchool": "quiet-signal",
+            "earthviewTerraces": "quiet-signal",
+            "expeditionGarage": "quiet-signal",
+            "craterInn": "quiet-signal",
+            "starwatchDish": "quiet-signal",
+            "moonballField": "quiet-signal",
+            "craterPondGarden": "quiet-signal",
+            "listeningHouse": "quiet-signal",
+            "stillwaterBasin": "quiet-signal",
+            "tonewoodConservatory": "quiet-signal",
+            "farRimHomes": "quiet-signal",
+            "resonanceWorkshop": "quiet-signal",
+            "signalTerrace": "quiet-signal",
+            "patternGarden": "quiet-signal",
+            "horseField": "quiet-signal",
+            "park": "quiet-signal",
+            "home2": "quiet-signal",
+            "home3": "quiet-signal",
+            "home4": "quiet-signal",
+            "well2": "quiet-signal",
+            "farm2": "quiet-signal",
+            "farm3": "quiet-signal"
+          },
+          "buildingEraLevels": {
+            "well": 3,
+            "farm": 3,
+            "home": 3,
+            "saloon": 3,
+            "stable": 3,
+            "sheriff": 3,
+            "museum": 3,
+            "armory": 3,
+            "bank": 3,
+            "shop": 3,
+            "square": 3,
+            "watermill": 3,
+            "fisherman": 3,
+            "blacksmith": 3,
+            "school": 3,
+            "doctor": 3,
+            "bridge": 3,
+            "riverPort": 3,
+            "railDepot": 3,
+            "post": 3,
+            "warehouse": 3,
+            "hotel": 3,
+            "home5": 3,
+            "market": 3,
+            "powerHouse": 3,
+            "fireStation": 3,
+            "rowHouses": 3,
+            "mill": 3,
+            "garage": 3,
+            "busDepot": 3,
+            "gardenCourt": 3,
+            "diner": 3,
+            "teaHouse": 3,
+            "blossomAtelier": 3,
+            "orchardCottages": 3,
+            "glassworks": 3,
+            "springsRetreat": 3,
+            "riverlightPavilion": 3,
+            "airport": 3,
+            "radioTower": 3,
+            "concertHall": 3,
+            "television": 3,
+            "skyline": 3,
+            "cityHall": 3,
+            "apartments": 3,
+            "supermarket": 3,
+            "waterPlant": 3,
+            "transitHub": 3,
+            "library": 3,
+            "crystalLab": 3,
+            "cityHomes": 3,
+            "riverPark": 3,
+            "skyPods": 3,
+            "biodome": 3,
+            "maglevStation": 3,
+            "skyHarbour": 3,
+            "cloudOrchard": 3,
+            "windsongLofts": 3,
+            "greatTelescope": 3,
+            "dewlightGardens": 3,
+            "starlightTerraces": 3,
+            "spaceElevator": 3,
+            "moonpost": 3,
+            "missionHomesteads": 3,
+            "homecomingHall": 3,
+            "ribbonLanding": 3,
+            "settlerDomes": 3,
+            "craterIceWell": 3,
+            "earthlightGreenhouse": 3,
+            "willowkinDome": 3,
+            "newHollowCommons": 3,
+            "craterHomesteads": 3,
+            "moonstoneWorkshop": 3,
+            "roverBarn": 3,
+            "saucerPad": 3,
+            "earthriseLookout": 3,
+            "ringTram": 3,
+            "dewfallCistern": 3,
+            "orchardVaults": 3,
+            "lanternRow": 3,
+            "ringMarket": 3,
+            "craterSchool": 3,
+            "earthviewTerraces": 3,
+            "expeditionGarage": 3,
+            "craterInn": 3,
+            "starwatchDish": 3,
+            "moonballField": 3,
+            "craterPondGarden": 3,
+            "listeningHouse": 3,
+            "stillwaterBasin": 3,
+            "tonewoodConservatory": 3,
+            "farRimHomes": 3,
+            "resonanceWorkshop": 3,
+            "signalTerrace": 3,
+            "patternGarden": 3,
+            "horseField": 3,
+            "park": 3,
+            "home2": 3,
+            "home3": 3,
+            "home4": 3,
+            "well2": 3,
+            "farm2": 3,
+            "farm3": 3
+          },
+          "firstLightsSeen": false,
+          "forge": { "progress": 1, "charge": 3 },
+          "coins": 7412044,
+          "moonstoneVersion": 2,
+          "moonstones": 0,
+          "moonstonesEarned": 0,
+          "moonstoneProduction": { "progress": 1, "stored": 6 },
+          "tourSeen": false,
+          "buildings": {
+            "well": 3,
+            "farm": 3,
+            "home": 3,
+            "saloon": 3,
+            "stable": 3,
+            "sheriff": 3,
+            "museum": 3,
+            "armory": 3,
+            "bank": 3,
+            "shop": 3,
+            "square": 3,
+            "watermill": 3,
+            "fisherman": 3,
+            "blacksmith": 3,
+            "school": 3,
+            "doctor": 3,
+            "bridge": 3,
+            "riverPort": 3,
+            "railDepot": 3,
+            "post": 3,
+            "warehouse": 3,
+            "hotel": 3,
+            "home5": 3,
+            "market": 3,
+            "powerHouse": 3,
+            "fireStation": 3,
+            "rowHouses": 3,
+            "mill": 3,
+            "garage": 3,
+            "busDepot": 3,
+            "gardenCourt": 3,
+            "diner": 3,
+            "teaHouse": 3,
+            "blossomAtelier": 3,
+            "orchardCottages": 3,
+            "glassworks": 3,
+            "springsRetreat": 3,
+            "riverlightPavilion": 3,
+            "airport": 3,
+            "radioTower": 3,
+            "concertHall": 3,
+            "television": 3,
+            "skyline": 3,
+            "cityHall": 3,
+            "apartments": 3,
+            "supermarket": 3,
+            "waterPlant": 3,
+            "transitHub": 3,
+            "library": 3,
+            "crystalLab": 3,
+            "cityHomes": 3,
+            "riverPark": 3,
+            "skyPods": 3,
+            "biodome": 3,
+            "maglevStation": 3,
+            "skyHarbour": 3,
+            "cloudOrchard": 3,
+            "windsongLofts": 3,
+            "greatTelescope": 3,
+            "dewlightGardens": 3,
+            "starlightTerraces": 3,
+            "spaceElevator": 3,
+            "moonpost": 3,
+            "missionHomesteads": 3,
+            "homecomingHall": 3,
+            "ribbonLanding": 3,
+            "settlerDomes": 3,
+            "craterIceWell": 3,
+            "earthlightGreenhouse": 3,
+            "willowkinDome": 3,
+            "newHollowCommons": 3,
+            "craterHomesteads": 3,
+            "moonstoneWorkshop": 3,
+            "roverBarn": 3,
+            "saucerPad": 3,
+            "earthriseLookout": 3,
+            "ringTram": 3,
+            "dewfallCistern": 3,
+            "orchardVaults": 3,
+            "lanternRow": 3,
+            "ringMarket": 3,
+            "craterSchool": 3,
+            "earthviewTerraces": 3,
+            "expeditionGarage": 3,
+            "craterInn": 3,
+            "starwatchDish": 3,
+            "moonballField": 3,
+            "craterPondGarden": 3,
+            "listeningHouse": 3,
+            "stillwaterBasin": 3,
+            "tonewoodConservatory": 3,
+            "farRimHomes": 3,
+            "resonanceWorkshop": 3,
+            "signalTerrace": 3,
+            "patternGarden": 3,
+            "horseField": 3,
+            "park": 3,
+            "home2": 3,
+            "home3": 3,
+            "home4": 3,
+            "well2": 3,
+            "farm2": 3,
+            "farm3": 3
+          },
+          "events": {},
+          "presentations": {},
+          "projects": {},
+          "completedRuns": 7,
+          "nextRaidRun": null,
+          "income": { "at": 1780000000000, "stored": 0, "remainder": 0 },
+          "lastCollections": { "saloon": null, "blacksmith": null, "moonstoneWorkshop": null },
+          "saloonVisitAt": 0,
+          "helmetRun": 0,
+          "helmetVisitAt": 0,
+          "wanderersRun": 0,
+          "wanderersVisitAt": 0,
+          "guestVip": null,
+          "progressionVersion": 2
+        },
+        "townProjectFocus": "",
+        "issuedRun": 7,
+        "settledRun": 7,
+        "honours": {
+          "version": 7,
+          "earned": {
+            "ages-bronze": { "at": 1780000000000, "version": 1, "seen": false, "announced": false },
+            "ages-silver": { "at": 1780000000000, "version": 1, "seen": false, "announced": false },
+            "ages-gold": { "at": 1780000000000, "version": 1, "seen": false, "announced": false },
+            "ages-diamond": {
+              "at": 1780000000000,
+              "version": 1,
+              "seen": false,
+              "announced": false
+            },
+            "new-hollow-bronze": {
+              "at": 1780000000000,
+              "version": 1,
+              "seen": false,
+              "announced": false
+            },
+            "new-hollow-silver": {
+              "at": 1780000000000,
+              "version": 1,
+              "seen": false,
+              "announced": false
+            },
+            "new-hollow-gold": {
+              "at": 1780000000000,
+              "version": 1,
+              "seen": false,
+              "announced": false
+            },
+            "outer-ring-bronze": {
+              "at": 1780000000000,
+              "version": 1,
+              "seen": false,
+              "announced": false
+            },
+            "outer-ring-silver": {
+              "at": 1780000000000,
+              "version": 1,
+              "seen": false,
+              "announced": false
+            },
+            "outer-ring-gold": {
+              "at": 1780000000000,
+              "version": 1,
+              "seen": false,
+              "announced": false
+            },
+            "far-rim-bronze": {
+              "at": 1780000000000,
+              "version": 1,
+              "seen": false,
+              "announced": false
+            },
+            "far-rim-silver": {
+              "at": 1780000000000,
+              "version": 1,
+              "seen": false,
+              "announced": false
+            },
+            "far-rim-gold": {
+              "at": 1780000000000,
+              "version": 1,
+              "seen": false,
+              "announced": false
+            },
+            "saucer-welcome-bronze": {
+              "at": 1780000000000,
+              "version": 1,
+              "seen": false,
+              "announced": false
+            }
+          },
+          "counts": {
+            "gems": {},
+            "mine": {},
+            "fusions": {},
+            "forge": 0,
+            "guardian": 0,
+            "continuousGems": 0,
+            "continuousBest": 0,
+            "continuousLevels": {},
+            "visitors": 0,
+            "travels": 0
+          },
+          "showcase": [],
+          "backfilled": 0,
+          "seenGeneration": 7
+        }
+      },
+      "serverNow": 1780000000000
+    },
+    {
+      "name": "VIP purchase at a New Hollow shop",
+      "before": {
+        "schemaVersion": 4,
+        "integrity": {
+          "version": 1,
+          "epoch": "00000000-0000-4000-8000-000000000685",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -54948,13 +56277,13 @@
         "schemaVersion": 4,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000662",
+          "epoch": "00000000-0000-4000-8000-000000000685",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000665",
+              "id": "00000000-0000-4000-8000-000000000688",
               "kind": "vip-spend",
               "data": {
                 "key": "moon-fixture-tour:0",
@@ -55395,7 +56724,7 @@
         "schemaVersion": 4,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000666",
+          "epoch": "00000000-0000-4000-8000-000000000689",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -55826,25 +57155,25 @@
         "schemaVersion": 4,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000666",
+          "epoch": "00000000-0000-4000-8000-000000000689",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000669",
+              "id": "00000000-0000-4000-8000-000000000692",
               "kind": "run-start",
               "data": { "runId": 1, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000670",
+              "id": "00000000-0000-4000-8000-000000000693",
               "kind": "income-start",
               "data": { "at": 1780000000000 }
             },
             {
               "sequence": 3,
-              "id": "00000000-0000-4000-8000-000000000671",
+              "id": "00000000-0000-4000-8000-000000000694",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
@@ -55877,7 +57206,7 @@
             },
             {
               "sequence": 4,
-              "id": "00000000-0000-4000-8000-000000000672",
+              "id": "00000000-0000-4000-8000-000000000695",
               "kind": "chest-claim",
               "data": {
                 "chestId": "1-score",
@@ -55891,13 +57220,13 @@
             },
             {
               "sequence": 5,
-              "id": "00000000-0000-4000-8000-000000000673",
+              "id": "00000000-0000-4000-8000-000000000696",
               "kind": "run-start",
               "data": { "runId": 2, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 6,
-              "id": "00000000-0000-4000-8000-000000000674",
+              "id": "00000000-0000-4000-8000-000000000697",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
@@ -55930,7 +57259,7 @@
             },
             {
               "sequence": 7,
-              "id": "00000000-0000-4000-8000-000000000675",
+              "id": "00000000-0000-4000-8000-000000000698",
               "kind": "chest-claim",
               "data": {
                 "chestId": "2-score",
@@ -55944,13 +57273,13 @@
             },
             {
               "sequence": 8,
-              "id": "00000000-0000-4000-8000-000000000676",
+              "id": "00000000-0000-4000-8000-000000000699",
               "kind": "run-start",
               "data": { "runId": 3, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 9,
-              "id": "00000000-0000-4000-8000-000000000677",
+              "id": "00000000-0000-4000-8000-000000000700",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
@@ -55983,7 +57312,7 @@
             },
             {
               "sequence": 10,
-              "id": "00000000-0000-4000-8000-000000000678",
+              "id": "00000000-0000-4000-8000-000000000701",
               "kind": "chest-claim",
               "data": {
                 "chestId": "3-score",
@@ -55997,13 +57326,13 @@
             },
             {
               "sequence": 11,
-              "id": "00000000-0000-4000-8000-000000000679",
+              "id": "00000000-0000-4000-8000-000000000702",
               "kind": "run-start",
               "data": { "runId": 4, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 12,
-              "id": "00000000-0000-4000-8000-000000000680",
+              "id": "00000000-0000-4000-8000-000000000703",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
@@ -56036,7 +57365,7 @@
             },
             {
               "sequence": 13,
-              "id": "00000000-0000-4000-8000-000000000681",
+              "id": "00000000-0000-4000-8000-000000000704",
               "kind": "chest-claim",
               "data": {
                 "chestId": "4-score",
@@ -56050,13 +57379,13 @@
             },
             {
               "sequence": 14,
-              "id": "00000000-0000-4000-8000-000000000682",
+              "id": "00000000-0000-4000-8000-000000000705",
               "kind": "run-start",
               "data": { "runId": 5, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 15,
-              "id": "00000000-0000-4000-8000-000000000683",
+              "id": "00000000-0000-4000-8000-000000000706",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
@@ -56089,7 +57418,7 @@
             },
             {
               "sequence": 16,
-              "id": "00000000-0000-4000-8000-000000000684",
+              "id": "00000000-0000-4000-8000-000000000707",
               "kind": "chest-claim",
               "data": {
                 "chestId": "5-score",
@@ -56103,13 +57432,13 @@
             },
             {
               "sequence": 17,
-              "id": "00000000-0000-4000-8000-000000000685",
+              "id": "00000000-0000-4000-8000-000000000708",
               "kind": "run-start",
               "data": { "runId": 6, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 18,
-              "id": "00000000-0000-4000-8000-000000000686",
+              "id": "00000000-0000-4000-8000-000000000709",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
@@ -56142,7 +57471,7 @@
             },
             {
               "sequence": 19,
-              "id": "00000000-0000-4000-8000-000000000687",
+              "id": "00000000-0000-4000-8000-000000000710",
               "kind": "chest-claim",
               "data": {
                 "chestId": "6-score",
@@ -56156,13 +57485,13 @@
             },
             {
               "sequence": 20,
-              "id": "00000000-0000-4000-8000-000000000688",
+              "id": "00000000-0000-4000-8000-000000000711",
               "kind": "run-start",
               "data": { "runId": 7, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 21,
-              "id": "00000000-0000-4000-8000-000000000689",
+              "id": "00000000-0000-4000-8000-000000000712",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
@@ -56195,7 +57524,7 @@
             },
             {
               "sequence": 22,
-              "id": "00000000-0000-4000-8000-000000000690",
+              "id": "00000000-0000-4000-8000-000000000713",
               "kind": "chest-claim",
               "data": {
                 "chestId": "7-score",
@@ -56209,13 +57538,13 @@
             },
             {
               "sequence": 23,
-              "id": "00000000-0000-4000-8000-000000000691",
+              "id": "00000000-0000-4000-8000-000000000714",
               "kind": "run-start",
               "data": { "runId": 8, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 24,
-              "id": "00000000-0000-4000-8000-000000000692",
+              "id": "00000000-0000-4000-8000-000000000715",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
@@ -56248,7 +57577,7 @@
             },
             {
               "sequence": 25,
-              "id": "00000000-0000-4000-8000-000000000693",
+              "id": "00000000-0000-4000-8000-000000000716",
               "kind": "chest-claim",
               "data": {
                 "chestId": "8-score",
@@ -56262,13 +57591,13 @@
             },
             {
               "sequence": 26,
-              "id": "00000000-0000-4000-8000-000000000694",
+              "id": "00000000-0000-4000-8000-000000000717",
               "kind": "run-start",
               "data": { "runId": 9, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 27,
-              "id": "00000000-0000-4000-8000-000000000695",
+              "id": "00000000-0000-4000-8000-000000000718",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
@@ -56301,7 +57630,7 @@
             },
             {
               "sequence": 28,
-              "id": "00000000-0000-4000-8000-000000000696",
+              "id": "00000000-0000-4000-8000-000000000719",
               "kind": "chest-claim",
               "data": {
                 "chestId": "9-score",
@@ -56315,13 +57644,13 @@
             },
             {
               "sequence": 29,
-              "id": "00000000-0000-4000-8000-000000000697",
+              "id": "00000000-0000-4000-8000-000000000720",
               "kind": "run-start",
               "data": { "runId": 10, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 30,
-              "id": "00000000-0000-4000-8000-000000000698",
+              "id": "00000000-0000-4000-8000-000000000721",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
@@ -56354,7 +57683,7 @@
             },
             {
               "sequence": 31,
-              "id": "00000000-0000-4000-8000-000000000699",
+              "id": "00000000-0000-4000-8000-000000000722",
               "kind": "chest-claim",
               "data": {
                 "chestId": "10-score",
@@ -56368,13 +57697,13 @@
             },
             {
               "sequence": 32,
-              "id": "00000000-0000-4000-8000-000000000700",
+              "id": "00000000-0000-4000-8000-000000000723",
               "kind": "run-start",
               "data": { "runId": 11, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 33,
-              "id": "00000000-0000-4000-8000-000000000701",
+              "id": "00000000-0000-4000-8000-000000000724",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
@@ -56407,7 +57736,7 @@
             },
             {
               "sequence": 34,
-              "id": "00000000-0000-4000-8000-000000000702",
+              "id": "00000000-0000-4000-8000-000000000725",
               "kind": "chest-claim",
               "data": {
                 "chestId": "11-score",
@@ -56421,13 +57750,13 @@
             },
             {
               "sequence": 35,
-              "id": "00000000-0000-4000-8000-000000000703",
+              "id": "00000000-0000-4000-8000-000000000726",
               "kind": "run-start",
               "data": { "runId": 12, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 36,
-              "id": "00000000-0000-4000-8000-000000000704",
+              "id": "00000000-0000-4000-8000-000000000727",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
@@ -56460,7 +57789,7 @@
             },
             {
               "sequence": 37,
-              "id": "00000000-0000-4000-8000-000000000705",
+              "id": "00000000-0000-4000-8000-000000000728",
               "kind": "chest-claim",
               "data": {
                 "chestId": "12-score",
@@ -56474,13 +57803,13 @@
             },
             {
               "sequence": 38,
-              "id": "00000000-0000-4000-8000-000000000706",
+              "id": "00000000-0000-4000-8000-000000000729",
               "kind": "run-start",
               "data": { "runId": 13, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 39,
-              "id": "00000000-0000-4000-8000-000000000707",
+              "id": "00000000-0000-4000-8000-000000000730",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
@@ -56513,7 +57842,7 @@
             },
             {
               "sequence": 40,
-              "id": "00000000-0000-4000-8000-000000000708",
+              "id": "00000000-0000-4000-8000-000000000731",
               "kind": "chest-claim",
               "data": {
                 "chestId": "13-score",
@@ -56527,13 +57856,13 @@
             },
             {
               "sequence": 41,
-              "id": "00000000-0000-4000-8000-000000000709",
+              "id": "00000000-0000-4000-8000-000000000732",
               "kind": "run-start",
               "data": { "runId": 14, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 42,
-              "id": "00000000-0000-4000-8000-000000000710",
+              "id": "00000000-0000-4000-8000-000000000733",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
@@ -56566,7 +57895,7 @@
             },
             {
               "sequence": 43,
-              "id": "00000000-0000-4000-8000-000000000711",
+              "id": "00000000-0000-4000-8000-000000000734",
               "kind": "chest-claim",
               "data": {
                 "chestId": "14-score",
@@ -56580,13 +57909,13 @@
             },
             {
               "sequence": 44,
-              "id": "00000000-0000-4000-8000-000000000712",
+              "id": "00000000-0000-4000-8000-000000000735",
               "kind": "run-start",
               "data": { "runId": 15, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 45,
-              "id": "00000000-0000-4000-8000-000000000713",
+              "id": "00000000-0000-4000-8000-000000000736",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
@@ -56619,7 +57948,7 @@
             },
             {
               "sequence": 46,
-              "id": "00000000-0000-4000-8000-000000000714",
+              "id": "00000000-0000-4000-8000-000000000737",
               "kind": "chest-claim",
               "data": {
                 "chestId": "15-score",
@@ -56633,13 +57962,13 @@
             },
             {
               "sequence": 47,
-              "id": "00000000-0000-4000-8000-000000000715",
+              "id": "00000000-0000-4000-8000-000000000738",
               "kind": "run-start",
               "data": { "runId": 16, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 48,
-              "id": "00000000-0000-4000-8000-000000000716",
+              "id": "00000000-0000-4000-8000-000000000739",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
@@ -56672,7 +58001,7 @@
             },
             {
               "sequence": 49,
-              "id": "00000000-0000-4000-8000-000000000717",
+              "id": "00000000-0000-4000-8000-000000000740",
               "kind": "chest-claim",
               "data": {
                 "chestId": "16-score",
@@ -56686,13 +58015,13 @@
             },
             {
               "sequence": 50,
-              "id": "00000000-0000-4000-8000-000000000718",
+              "id": "00000000-0000-4000-8000-000000000741",
               "kind": "run-start",
               "data": { "runId": 17, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 51,
-              "id": "00000000-0000-4000-8000-000000000719",
+              "id": "00000000-0000-4000-8000-000000000742",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
@@ -56725,7 +58054,7 @@
             },
             {
               "sequence": 52,
-              "id": "00000000-0000-4000-8000-000000000720",
+              "id": "00000000-0000-4000-8000-000000000743",
               "kind": "chest-claim",
               "data": {
                 "chestId": "17-score",
@@ -56739,13 +58068,13 @@
             },
             {
               "sequence": 53,
-              "id": "00000000-0000-4000-8000-000000000721",
+              "id": "00000000-0000-4000-8000-000000000744",
               "kind": "run-start",
               "data": { "runId": 18, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 54,
-              "id": "00000000-0000-4000-8000-000000000722",
+              "id": "00000000-0000-4000-8000-000000000745",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
@@ -56778,7 +58107,7 @@
             },
             {
               "sequence": 55,
-              "id": "00000000-0000-4000-8000-000000000723",
+              "id": "00000000-0000-4000-8000-000000000746",
               "kind": "chest-claim",
               "data": {
                 "chestId": "18-score",
@@ -56792,13 +58121,13 @@
             },
             {
               "sequence": 56,
-              "id": "00000000-0000-4000-8000-000000000724",
+              "id": "00000000-0000-4000-8000-000000000747",
               "kind": "run-start",
               "data": { "runId": 19, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 57,
-              "id": "00000000-0000-4000-8000-000000000725",
+              "id": "00000000-0000-4000-8000-000000000748",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
@@ -56831,7 +58160,7 @@
             },
             {
               "sequence": 58,
-              "id": "00000000-0000-4000-8000-000000000726",
+              "id": "00000000-0000-4000-8000-000000000749",
               "kind": "chest-claim",
               "data": {
                 "chestId": "19-score",
@@ -56845,13 +58174,13 @@
             },
             {
               "sequence": 59,
-              "id": "00000000-0000-4000-8000-000000000727",
+              "id": "00000000-0000-4000-8000-000000000750",
               "kind": "run-start",
               "data": { "runId": 20, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 60,
-              "id": "00000000-0000-4000-8000-000000000728",
+              "id": "00000000-0000-4000-8000-000000000751",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
@@ -56884,7 +58213,7 @@
             },
             {
               "sequence": 61,
-              "id": "00000000-0000-4000-8000-000000000729",
+              "id": "00000000-0000-4000-8000-000000000752",
               "kind": "chest-claim",
               "data": {
                 "chestId": "20-score",
@@ -56898,13 +58227,13 @@
             },
             {
               "sequence": 62,
-              "id": "00000000-0000-4000-8000-000000000730",
+              "id": "00000000-0000-4000-8000-000000000753",
               "kind": "run-start",
               "data": { "runId": 21, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 63,
-              "id": "00000000-0000-4000-8000-000000000731",
+              "id": "00000000-0000-4000-8000-000000000754",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
@@ -56937,7 +58266,7 @@
             },
             {
               "sequence": 64,
-              "id": "00000000-0000-4000-8000-000000000732",
+              "id": "00000000-0000-4000-8000-000000000755",
               "kind": "chest-claim",
               "data": {
                 "chestId": "21-score",
@@ -56951,13 +58280,13 @@
             },
             {
               "sequence": 65,
-              "id": "00000000-0000-4000-8000-000000000733",
+              "id": "00000000-0000-4000-8000-000000000756",
               "kind": "run-start",
               "data": { "runId": 22, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 66,
-              "id": "00000000-0000-4000-8000-000000000734",
+              "id": "00000000-0000-4000-8000-000000000757",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
@@ -56990,7 +58319,7 @@
             },
             {
               "sequence": 67,
-              "id": "00000000-0000-4000-8000-000000000735",
+              "id": "00000000-0000-4000-8000-000000000758",
               "kind": "chest-claim",
               "data": {
                 "chestId": "22-score",
@@ -57004,13 +58333,13 @@
             },
             {
               "sequence": 68,
-              "id": "00000000-0000-4000-8000-000000000736",
+              "id": "00000000-0000-4000-8000-000000000759",
               "kind": "run-start",
               "data": { "runId": 23, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 69,
-              "id": "00000000-0000-4000-8000-000000000737",
+              "id": "00000000-0000-4000-8000-000000000760",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
@@ -57043,7 +58372,7 @@
             },
             {
               "sequence": 70,
-              "id": "00000000-0000-4000-8000-000000000738",
+              "id": "00000000-0000-4000-8000-000000000761",
               "kind": "chest-claim",
               "data": {
                 "chestId": "23-score",
@@ -57057,13 +58386,13 @@
             },
             {
               "sequence": 71,
-              "id": "00000000-0000-4000-8000-000000000739",
+              "id": "00000000-0000-4000-8000-000000000762",
               "kind": "run-start",
               "data": { "runId": 24, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 72,
-              "id": "00000000-0000-4000-8000-000000000740",
+              "id": "00000000-0000-4000-8000-000000000763",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
@@ -57096,7 +58425,7 @@
             },
             {
               "sequence": 73,
-              "id": "00000000-0000-4000-8000-000000000741",
+              "id": "00000000-0000-4000-8000-000000000764",
               "kind": "chest-claim",
               "data": {
                 "chestId": "24-score",
@@ -57110,13 +58439,13 @@
             },
             {
               "sequence": 74,
-              "id": "00000000-0000-4000-8000-000000000742",
+              "id": "00000000-0000-4000-8000-000000000765",
               "kind": "run-start",
               "data": { "runId": 25, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 75,
-              "id": "00000000-0000-4000-8000-000000000743",
+              "id": "00000000-0000-4000-8000-000000000766",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
@@ -57149,7 +58478,7 @@
             },
             {
               "sequence": 76,
-              "id": "00000000-0000-4000-8000-000000000744",
+              "id": "00000000-0000-4000-8000-000000000767",
               "kind": "chest-claim",
               "data": {
                 "chestId": "25-score",
@@ -57163,13 +58492,13 @@
             },
             {
               "sequence": 77,
-              "id": "00000000-0000-4000-8000-000000000745",
+              "id": "00000000-0000-4000-8000-000000000768",
               "kind": "run-start",
               "data": { "runId": 26, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 78,
-              "id": "00000000-0000-4000-8000-000000000746",
+              "id": "00000000-0000-4000-8000-000000000769",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
@@ -57202,7 +58531,7 @@
             },
             {
               "sequence": 79,
-              "id": "00000000-0000-4000-8000-000000000747",
+              "id": "00000000-0000-4000-8000-000000000770",
               "kind": "chest-claim",
               "data": {
                 "chestId": "26-score",
@@ -57216,13 +58545,13 @@
             },
             {
               "sequence": 80,
-              "id": "00000000-0000-4000-8000-000000000748",
+              "id": "00000000-0000-4000-8000-000000000771",
               "kind": "run-start",
               "data": { "runId": 27, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 81,
-              "id": "00000000-0000-4000-8000-000000000749",
+              "id": "00000000-0000-4000-8000-000000000772",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
@@ -57255,7 +58584,7 @@
             },
             {
               "sequence": 82,
-              "id": "00000000-0000-4000-8000-000000000750",
+              "id": "00000000-0000-4000-8000-000000000773",
               "kind": "chest-claim",
               "data": {
                 "chestId": "27-score",
@@ -57269,13 +58598,13 @@
             },
             {
               "sequence": 83,
-              "id": "00000000-0000-4000-8000-000000000751",
+              "id": "00000000-0000-4000-8000-000000000774",
               "kind": "run-start",
               "data": { "runId": 28, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 84,
-              "id": "00000000-0000-4000-8000-000000000752",
+              "id": "00000000-0000-4000-8000-000000000775",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
@@ -57308,7 +58637,7 @@
             },
             {
               "sequence": 85,
-              "id": "00000000-0000-4000-8000-000000000753",
+              "id": "00000000-0000-4000-8000-000000000776",
               "kind": "chest-claim",
               "data": {
                 "chestId": "28-score",
@@ -57322,13 +58651,13 @@
             },
             {
               "sequence": 86,
-              "id": "00000000-0000-4000-8000-000000000754",
+              "id": "00000000-0000-4000-8000-000000000777",
               "kind": "run-start",
               "data": { "runId": 29, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 87,
-              "id": "00000000-0000-4000-8000-000000000755",
+              "id": "00000000-0000-4000-8000-000000000778",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
@@ -57361,7 +58690,7 @@
             },
             {
               "sequence": 88,
-              "id": "00000000-0000-4000-8000-000000000756",
+              "id": "00000000-0000-4000-8000-000000000779",
               "kind": "chest-claim",
               "data": {
                 "chestId": "29-score",
@@ -57375,13 +58704,13 @@
             },
             {
               "sequence": 89,
-              "id": "00000000-0000-4000-8000-000000000757",
+              "id": "00000000-0000-4000-8000-000000000780",
               "kind": "run-start",
               "data": { "runId": 30, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 90,
-              "id": "00000000-0000-4000-8000-000000000758",
+              "id": "00000000-0000-4000-8000-000000000781",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
@@ -57414,7 +58743,7 @@
             },
             {
               "sequence": 91,
-              "id": "00000000-0000-4000-8000-000000000759",
+              "id": "00000000-0000-4000-8000-000000000782",
               "kind": "chest-claim",
               "data": {
                 "chestId": "30-score",
@@ -57428,13 +58757,13 @@
             },
             {
               "sequence": 92,
-              "id": "00000000-0000-4000-8000-000000000760",
+              "id": "00000000-0000-4000-8000-000000000783",
               "kind": "run-start",
               "data": { "runId": 31, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 93,
-              "id": "00000000-0000-4000-8000-000000000761",
+              "id": "00000000-0000-4000-8000-000000000784",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
@@ -57467,7 +58796,7 @@
             },
             {
               "sequence": 94,
-              "id": "00000000-0000-4000-8000-000000000762",
+              "id": "00000000-0000-4000-8000-000000000785",
               "kind": "chest-claim",
               "data": {
                 "chestId": "31-score",
@@ -57481,13 +58810,13 @@
             },
             {
               "sequence": 95,
-              "id": "00000000-0000-4000-8000-000000000763",
+              "id": "00000000-0000-4000-8000-000000000786",
               "kind": "run-start",
               "data": { "runId": 32, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 96,
-              "id": "00000000-0000-4000-8000-000000000764",
+              "id": "00000000-0000-4000-8000-000000000787",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
@@ -57520,7 +58849,7 @@
             },
             {
               "sequence": 97,
-              "id": "00000000-0000-4000-8000-000000000765",
+              "id": "00000000-0000-4000-8000-000000000788",
               "kind": "chest-claim",
               "data": {
                 "chestId": "32-score",
@@ -57534,13 +58863,13 @@
             },
             {
               "sequence": 98,
-              "id": "00000000-0000-4000-8000-000000000766",
+              "id": "00000000-0000-4000-8000-000000000789",
               "kind": "run-start",
               "data": { "runId": 33, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 99,
-              "id": "00000000-0000-4000-8000-000000000767",
+              "id": "00000000-0000-4000-8000-000000000790",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
@@ -57573,7 +58902,7 @@
             },
             {
               "sequence": 100,
-              "id": "00000000-0000-4000-8000-000000000768",
+              "id": "00000000-0000-4000-8000-000000000791",
               "kind": "chest-claim",
               "data": {
                 "chestId": "33-score",
@@ -57587,13 +58916,13 @@
             },
             {
               "sequence": 101,
-              "id": "00000000-0000-4000-8000-000000000769",
+              "id": "00000000-0000-4000-8000-000000000792",
               "kind": "run-start",
               "data": { "runId": 34, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 102,
-              "id": "00000000-0000-4000-8000-000000000770",
+              "id": "00000000-0000-4000-8000-000000000793",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
@@ -57626,7 +58955,7 @@
             },
             {
               "sequence": 103,
-              "id": "00000000-0000-4000-8000-000000000771",
+              "id": "00000000-0000-4000-8000-000000000794",
               "kind": "chest-claim",
               "data": {
                 "chestId": "34-score",
@@ -57640,13 +58969,13 @@
             },
             {
               "sequence": 104,
-              "id": "00000000-0000-4000-8000-000000000772",
+              "id": "00000000-0000-4000-8000-000000000795",
               "kind": "run-start",
               "data": { "runId": 35, "mode": "normal", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 105,
-              "id": "00000000-0000-4000-8000-000000000773",
+              "id": "00000000-0000-4000-8000-000000000796",
               "kind": "victory",
               "data": {
                 "moonstoneVersion": 2,
@@ -57679,7 +59008,7 @@
             },
             {
               "sequence": 106,
-              "id": "00000000-0000-4000-8000-000000000774",
+              "id": "00000000-0000-4000-8000-000000000797",
               "kind": "chest-claim",
               "data": {
                 "chestId": "35-score",
@@ -57693,19 +59022,19 @@
             },
             {
               "sequence": 107,
-              "id": "00000000-0000-4000-8000-000000000775",
+              "id": "00000000-0000-4000-8000-000000000798",
               "kind": "forge-collect",
               "data": { "at": 1780000000000, "production": 2 }
             },
             {
               "sequence": 108,
-              "id": "00000000-0000-4000-8000-000000000776",
+              "id": "00000000-0000-4000-8000-000000000799",
               "kind": "run-start",
               "data": { "runId": 36, "mode": "continuous", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 109,
-              "id": "00000000-0000-4000-8000-000000000777",
+              "id": "00000000-0000-4000-8000-000000000800",
               "kind": "continuous",
               "data": {
                 "runId": 36,
@@ -58159,7 +59488,7 @@
         "schemaVersion": 4,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000778",
+          "epoch": "00000000-0000-4000-8000-000000000801",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": []
@@ -58586,19 +59915,19 @@
         "schemaVersion": 4,
         "integrity": {
           "version": 1,
-          "epoch": "00000000-0000-4000-8000-000000000778",
+          "epoch": "00000000-0000-4000-8000-000000000801",
           "clientAt": 1780000000000,
           "baseSequence": 0,
           "actions": [
             {
               "sequence": 1,
-              "id": "00000000-0000-4000-8000-000000000781",
+              "id": "00000000-0000-4000-8000-000000000804",
               "kind": "run-start",
               "data": { "runId": 1, "mode": "continuous", "levelId": 1, "at": 1780000000000 }
             },
             {
               "sequence": 2,
-              "id": "00000000-0000-4000-8000-000000000782",
+              "id": "00000000-0000-4000-8000-000000000805",
               "kind": "continuous",
               "data": {
                 "runId": 1,
@@ -58612,7 +59941,7 @@
             },
             {
               "sequence": 3,
-              "id": "00000000-0000-4000-8000-000000000783",
+              "id": "00000000-0000-4000-8000-000000000806",
               "kind": "continuous",
               "data": {
                 "runId": 1,
@@ -58626,13 +59955,13 @@
             },
             {
               "sequence": 4,
-              "id": "00000000-0000-4000-8000-000000000784",
+              "id": "00000000-0000-4000-8000-000000000807",
               "kind": "income-start",
               "data": { "at": 1780000000000 }
             },
             {
               "sequence": 5,
-              "id": "00000000-0000-4000-8000-000000000785",
+              "id": "00000000-0000-4000-8000-000000000808",
               "kind": "building-finish",
               "data": {
                 "buildingId": "moonstoneWorkshop",
@@ -58652,7 +59981,7 @@
             },
             {
               "sequence": 6,
-              "id": "00000000-0000-4000-8000-000000000786",
+              "id": "00000000-0000-4000-8000-000000000809",
               "kind": "continuous",
               "data": {
                 "runId": 1,

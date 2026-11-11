@@ -159,6 +159,8 @@ it('extends to a future settlement definition and safely ignores incomplete defi
 // an era that builds in the valley, or in both places, stays in the valley.
 it('hands an era cinematic over to the settlement where all its new buildings stand', () => {
   expect(eraSettlement('hollow-rising')).toBe('moon');
+  // The Quiet Signal builds only in the Far Rim, on the same Moon map.
+  expect(eraSettlement('quiet-signal')).toBe('moon');
   expect(eraSettlement('twin-hollows')).toBeNull();
   expect(eraSettlement('moonward')).toBeNull();
   expect(eraSettlement('frontier')).toBeNull();

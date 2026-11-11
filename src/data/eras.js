@@ -485,8 +485,7 @@ export const ERAS = continueSupplyTiers(
       },
       label: 'The Quiet Signal',
       yearLabel: '2370',
-      // Opens once the owner has reviewed its district, buildings and story.
-      enabled: false,
+      enabled: true,
       story:
         'A black stone stands beyond the far rim of the crater, where there was only dust. It is taller than the school and perfectly smooth. When sunlight touches it, the crystal instruments in the greenhouse pulse together. New Hollow has cut a road through the rim to listen.',
       horizon: 'Something beyond the rim is waiting to be heard.',

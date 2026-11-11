@@ -31,7 +31,25 @@ import {
   signalStage,
   starMap,
 } from '../src/data/quietSignal';
-import { AREA_BY_ID, LANDMARK_BY_ID, areaUnlocked, landmarkPrice } from '../src/data/townLandmarks';
+import {
+  AREA_BY_ID,
+  LANDMARK_BY_ID,
+  advanceMonumentWorks,
+  areaUnlocked,
+  landmarkOffer,
+  landmarkPrice,
+  monumentWork,
+  purchaseLandmark,
+  unveilLandmark,
+} from '../src/data/townLandmarks';
+import {
+  advanceEra,
+  eraGate,
+  finishEra,
+  isEraComplete,
+  plotInEra,
+} from '../src/game/town/TownEras';
+import { eraSettlement } from '../src/game/town/TownEventSettlement';
 import { moonModernization } from '../src/data/moonModernizations';
 import { TownPrimitives } from '../src/game/town/TownPrimitives';
 import { renderMoonBuilding } from '../src/game/town/buildings/moon';
@@ -125,6 +143,65 @@ describe('The Quiet Signal: the era', () => {
     expect(court.choices.map((choice) => landmarkPrice(court, choice, 1))).toEqual([
       37000, 38000, 39000,
     ]);
+  });
+});
+
+describe('The Quiet Signal: opening after New Hollow Rising', () => {
+  // A New Hollow Rising town with every required building built and modernized. Its two
+  // optional outer-ring buildings stay unbuilt.
+  const risingTown = () => {
+    const town = { ...createTown(), era: 'hollow-rising', coins: 1e9, completedRuns: 9999 };
+    for (const building of BUILDINGS) {
+      if (!plotInEra(town, building.id)) continue;
+      const optional =
+        building.introducedEra === 'hollow-rising' && !building.requiredForEraCompletion;
+      town.buildings[building.id] = optional ? 0 : building.upgrades.length;
+      town.buildingEras[building.id] = finishEra(building.id, 'hollow-rising');
+      town.buildingEraLevels[building.id] = 3;
+    }
+    return town;
+  };
+
+  it('is playable, and its cinematic hands over to the Moon', () => {
+    expect(ERA_BY_ID[ERA].enabled).toBe(true);
+    expect(ERAS.findLast((era) => era.enabled).id).toBe(ERA);
+    expect(eraSettlement(ERA)).toBe('moon');
+  });
+
+  it('moves a finished town on with a commission open, chosen or part built', () => {
+    const site = AREA_BY_ID['earthlight-conservatory'];
+    const open = risingTown();
+    expect(areaUnlocked(open, site)).toBe(true);
+    expect(isEraComplete(open)).toBe(true);
+    expect(eraGate(open).available).toBe(true);
+    // Chosen and paid for, with its first level still under construction.
+    const building = purchaseLandmark(open, {
+      id: site.id,
+      slot: 0,
+      value: site.choices[0],
+      ...landmarkOffer(open, site, site.choices[0]),
+    });
+    expect(monumentWork(building, site).ready).toBe(false);
+    // Unveiled at level 1 of 5: four paid levels still to go.
+    let part = building;
+    while (!monumentWork(part, site).ready) part = advanceMonumentWorks(part);
+    part = unveilLandmark(part, site.id, 1);
+    for (const town of [open, building, part]) {
+      expect(eraGate(town).available).toBe(true);
+      const next = advanceEra(town, 'hollow-rising');
+      expect(next.era).toBe(ERA);
+      // The commission is carried over exactly as it stood.
+      expect(next.personalisation).toEqual(town.personalisation);
+      expect(moonDistrictsShown(next)).toEqual([FAR_RIM]);
+      expect(moonLotsShown(next).filter(moonLotDistrict)).toEqual(farLots.map(([id]) => id));
+      expect(signalStage(next)).toBe('arrival');
+      expect(areaUnlocked(next, AREA_BY_ID['voyagers-court'])).toBe(true);
+    }
+    // An unfinished required building still holds the era back, as in every era.
+    const short = risingTown();
+    short.buildings.craterInn = 2;
+    expect(isEraComplete(short)).toBe(false);
+    expect(advanceEra(short, 'hollow-rising')).toBeNull();
   });
 });
 
