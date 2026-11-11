@@ -4,7 +4,7 @@
     {
       "name": "victory after 175 moves and an expired speed target",
       "before": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000001",
@@ -401,7 +401,7 @@
         }
       },
       "after": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000001",
@@ -851,7 +851,7 @@
     {
       "name": "run start saved while the puzzle is active",
       "before": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000007",
@@ -1248,7 +1248,7 @@
         }
       },
       "after": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000007",
@@ -1656,7 +1656,7 @@
     {
       "name": "chosen chest reward and victory shop refresh",
       "before": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000011",
@@ -2053,7 +2053,7 @@
         }
       },
       "after": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000011",
@@ -2502,7 +2502,7 @@
     {
       "name": "reload settles a full-bag forced coin chest without changing its pity counter",
       "before": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000017",
@@ -2899,7 +2899,7 @@
         }
       },
       "after": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000017",
@@ -3348,7 +3348,7 @@
     {
       "name": "shop purchase uses its real price and inventory quantity",
       "before": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000024",
@@ -3745,7 +3745,7 @@
         }
       },
       "after": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000024",
@@ -4153,7 +4153,7 @@
     {
       "name": "first free building and a paid construction purchase",
       "before": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000028",
@@ -4550,7 +4550,7 @@
         }
       },
       "after": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000028",
@@ -5004,7 +5004,7 @@
     {
       "name": "finish ready normal construction",
       "before": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000035",
@@ -5401,7 +5401,7 @@
         }
       },
       "after": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000035",
@@ -5817,7 +5817,7 @@
     {
       "name": "builder hammer finishes a new stage",
       "before": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000039",
@@ -6214,7 +6214,7 @@
         }
       },
       "after": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000039",
@@ -6630,7 +6630,7 @@
     {
       "name": "finishing the last starter-project building grants a builder hammer",
       "before": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000043",
@@ -7027,7 +7027,7 @@
         }
       },
       "after": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000043",
@@ -7443,7 +7443,7 @@
     {
       "name": "a hammer that finishes a starter project is paid back",
       "before": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000047",
@@ -7840,7 +7840,7 @@
         }
       },
       "after": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000047",
@@ -8256,7 +8256,7 @@
     {
       "name": "a starter project pays its hammer past the hammer limit",
       "before": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000051",
@@ -8653,7 +8653,7 @@
         }
       },
       "after": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000051",
@@ -9069,7 +9069,7 @@
     {
       "name": "modernization purchase uses its era price",
       "before": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000055",
@@ -9468,7 +9468,7 @@
         }
       },
       "after": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000055",
@@ -9915,7 +9915,7 @@
     {
       "name": "finish ready modernization keeps functional services",
       "before": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000060",
@@ -10326,7 +10326,7 @@
         }
       },
       "after": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000060",
@@ -10762,7 +10762,7 @@
     {
       "name": "forge collection grants one TNT",
       "before": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000065",
@@ -11159,7 +11159,7 @@
         }
       },
       "after": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000065",
@@ -11571,7 +11571,7 @@
     {
       "name": "moonstones production, collection and sale",
       "before": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000069",
@@ -12008,7 +12008,7 @@
         }
       },
       "after": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000069",
@@ -14274,7 +14274,7 @@
         }
       },
       "after": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000145",
@@ -15621,7 +15621,7 @@
         }
       },
       "after": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000173",
@@ -16656,7 +16656,7 @@
         }
       },
       "after": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000185",
@@ -17533,7 +17533,7 @@
         }
       },
       "after": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000189",
@@ -18498,7 +18498,7 @@
     {
       "name": "continuous moonstone lifetime allowance, duplicate settlement and retry",
       "before": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000220",
@@ -18929,7 +18929,7 @@
         }
       },
       "after": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000220",
@@ -19433,7 +19433,7 @@
     {
       "name": "continuous full workshop keeps crediting gems across collection in the same run",
       "before": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000229",
@@ -19864,7 +19864,7 @@
         }
       },
       "after": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000229",
@@ -20364,7 +20364,7 @@
     {
       "name": "Moon construction grants one moonstone once",
       "before": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000237",
@@ -20791,7 +20791,7 @@
         }
       },
       "after": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000237",
@@ -21253,7 +21253,7 @@
     {
       "name": "saloon collection preserves four offline hours",
       "before": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000242",
@@ -21650,7 +21650,7 @@
         }
       },
       "after": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000242",
@@ -22062,7 +22062,7 @@
     {
       "name": "visitor reserve collection and a VIP purchase",
       "before": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000246",
@@ -22459,7 +22459,7 @@
         }
       },
       "after": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000246",
@@ -22878,7 +22878,7 @@
     {
       "name": "VIP purchase at chapter 91",
       "before": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000251",
@@ -23275,7 +23275,7 @@
         }
       },
       "after": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000251",
@@ -23688,7 +23688,7 @@
     {
       "name": "space helmet found once for its completed puzzle",
       "before": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000255",
@@ -24088,7 +24088,7 @@
         }
       },
       "after": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000255",
@@ -24499,7 +24499,7 @@
     {
       "name": "raid bell refund and ordinary raid acknowledgment",
       "before": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000259",
@@ -24908,7 +24908,7 @@
         }
       },
       "after": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000259",
@@ -25336,7 +25336,7 @@
     {
       "name": "protected raid bounty and rescheduling retain the seen receipt",
       "before": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000264",
@@ -25745,7 +25745,7 @@
         }
       },
       "after": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000264",
@@ -26178,7 +26178,7 @@
     {
       "name": "continuous mode grants its existing economic reward",
       "before": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000270",
@@ -26575,7 +26575,7 @@
         }
       },
       "after": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000270",
@@ -27011,7 +27011,7 @@
     {
       "name": "the first continuous score before ten jewels grants no coins",
       "before": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000276",
@@ -27408,7 +27408,7 @@
         }
       },
       "after": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000276",
@@ -27830,7 +27830,7 @@
     {
       "name": "continuous honours grow beyond the coin allowance without a victory",
       "before": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000281",
@@ -28511,7 +28511,7 @@
         }
       },
       "after": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000281",
@@ -29273,7 +29273,7 @@
     {
       "name": "era progression uses the shared next-era gate",
       "before": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000287",
@@ -29670,7 +29670,7 @@
         }
       },
       "after": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000287",
@@ -30086,7 +30086,7 @@
     {
       "name": "new cozy era plot uses the shared purchase lifecycle",
       "before": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000291",
@@ -30486,7 +30486,7 @@
         }
       },
       "after": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000291",
@@ -30922,7 +30922,7 @@
     {
       "name": "consuming a stored power records one deduction",
       "before": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000296",
@@ -31319,7 +31319,7 @@
         }
       },
       "after": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000296",
@@ -31727,7 +31727,7 @@
     {
       "name": "finishing the sheriff fully defends a waiting raid",
       "before": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000300",
@@ -32136,7 +32136,7 @@
         }
       },
       "after": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000300",
@@ -32576,7 +32576,7 @@
     {
       "name": "a continuous score without coins is followed by another run",
       "before": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000304",
@@ -32973,7 +32973,7 @@
         }
       },
       "after": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000304",
@@ -33401,7 +33401,7 @@
     {
       "name": "an older saloon starts its income once before collecting",
       "before": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000310",
@@ -33798,7 +33798,7 @@
         }
       },
       "after": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000310",
@@ -34216,7 +34216,7 @@
     {
       "name": "an era advance after the cloud saw the last transition pending",
       "before": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000315",
@@ -34621,7 +34621,7 @@
         }
       },
       "after": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000315",
@@ -35037,7 +35037,7 @@
     {
       "name": "offline Town Honours: claimed victories, a forge collection and a protected raid",
       "before": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000319",
@@ -35501,7 +35501,7 @@
         }
       },
       "after": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000319",
@@ -36091,7 +36091,7 @@
     {
       "name": "optional landmark meadow: construction and upgrades",
       "before": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000329",
@@ -36492,7 +36492,7 @@
         }
       },
       "after": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000329",
@@ -37294,7 +37294,7 @@
     {
       "name": "optional landmark monument: construction and upgrades",
       "before": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000352",
@@ -37695,7 +37695,7 @@
         }
       },
       "after": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000352",
@@ -38263,7 +38263,7 @@
     {
       "name": "optional landmark motor-court: construction and upgrades",
       "before": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000363",
@@ -38664,7 +38664,7 @@
         }
       },
       "after": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000363",
@@ -39466,7 +39466,7 @@
     {
       "name": "optional landmark arts-court: construction and upgrades",
       "before": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000386",
@@ -39867,7 +39867,7 @@
         }
       },
       "after": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000386",
@@ -40669,7 +40669,7 @@
     {
       "name": "optional landmark horizon: construction and upgrades",
       "before": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000409",
@@ -41070,7 +41070,7 @@
         }
       },
       "after": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000409",
@@ -41872,7 +41872,7 @@
     {
       "name": "optional landmark light-court: construction and upgrades",
       "before": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000432",
@@ -42273,7 +42273,7 @@
         }
       },
       "after": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000432",
@@ -43075,7 +43075,7 @@
     {
       "name": "optional landmark stargazer-lawn: construction and upgrades",
       "before": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000455",
@@ -43476,7 +43476,7 @@
         }
       },
       "after": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000455",
@@ -44278,7 +44278,7 @@
     {
       "name": "optional landmark homecoming-green: construction and upgrades",
       "before": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000478",
@@ -44709,7 +44709,7 @@
         }
       },
       "after": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000478",
@@ -45541,7 +45541,7 @@
     {
       "name": "optional landmark earthrise-plaza: construction and upgrades",
       "before": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000501",
@@ -45972,7 +45972,7 @@
         }
       },
       "after": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000501",
@@ -46804,7 +46804,7 @@
     {
       "name": "optional landmark moonstone-garden: construction and upgrades",
       "before": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000524",
@@ -47253,7 +47253,7 @@
         }
       },
       "after": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000524",
@@ -48103,7 +48103,7 @@
     {
       "name": "optional landmark moonstone-garden: version-2 foundation then current upgrades",
       "before": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000547",
@@ -48552,7 +48552,7 @@
         }
       },
       "after": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000547",
@@ -49402,7 +49402,7 @@
     {
       "name": "optional landmark moonrock-court: construction and upgrades",
       "before": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000570",
@@ -49851,7 +49851,7 @@
         }
       },
       "after": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000570",
@@ -50701,7 +50701,7 @@
     {
       "name": "optional landmark moonrock-court: version-2 foundation then current upgrades",
       "before": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000593",
@@ -51150,7 +51150,7 @@
         }
       },
       "after": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000593",
@@ -52000,7 +52000,7 @@
     {
       "name": "optional landmark earthlight-conservatory: construction and upgrades",
       "before": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000616",
@@ -52431,7 +52431,7 @@
         }
       },
       "after": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000616",
@@ -53257,7 +53257,7 @@
     {
       "name": "optional landmark homecoming-commons: construction and upgrades",
       "before": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000639",
@@ -53688,7 +53688,7 @@
         }
       },
       "after": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000639",
@@ -54514,7 +54514,7 @@
     {
       "name": "optional landmark voyagers-court: construction and upgrades",
       "before": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000662",
@@ -54981,7 +54981,7 @@
         }
       },
       "after": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000662",
@@ -55843,7 +55843,7 @@
     {
       "name": "VIP purchase at a New Hollow shop",
       "before": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000685",
@@ -56274,7 +56274,7 @@
         }
       },
       "after": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000685",
@@ -56721,7 +56721,7 @@
     {
       "name": "unlimited workshop and forge production with partial TNT collection",
       "before": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000689",
@@ -57152,7 +57152,7 @@
         }
       },
       "after": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000689",
@@ -59485,7 +59485,7 @@
     {
       "name": "continuous gems before workshop construction never become production",
       "before": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000801",
@@ -59912,7 +59912,7 @@
         }
       },
       "after": {
-        "schemaVersion": 4,
+        "schemaVersion": 5,
         "integrity": {
           "version": 1,
           "epoch": "00000000-0000-4000-8000-000000000801",

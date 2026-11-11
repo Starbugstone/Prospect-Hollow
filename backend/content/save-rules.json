@@ -1,10 +1,11 @@
 {
   "version": 1,
-  "profileSchemaVersion": 4,
+  "profileSchemaVersion": 5,
   "supportedSchemaVersions": [
     2,
     3,
-    4
+    4,
+    5
   ],
   "maxSafeInteger": 9007199254740991,
   "levelCount": 546,
@@ -59241,7 +59242,7 @@
     "progressionVersion": 2
   },
   "defaultProfile": {
-    "schemaVersion": 4,
+    "schemaVersion": 5,
     "records": {},
     "continuousRecords": {},
     "powers": [
@@ -59669,5 +59670,5 @@
       "seenGeneration": 7
     }
   },
-  "contentDigest": "34486b3062e3e39ddca9290946cf957ca20db1d85e2c02664dd9cf13a38ae361"
+  "contentDigest": "b849b89877c43ae0575741327c28b8cc1bbba9781f15360647694c73d1b86ebb"
 }

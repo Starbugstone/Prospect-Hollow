@@ -1284,10 +1284,11 @@ final class SaveIntegrity
         $incoming = self::arrayOf($profile);
         $journal = $this->journal($incoming['integrity'] ?? null);
         $old = $previous ? self::arrayOf($previous) : null;
-        if (
-            (($old['schemaVersion'] ?? 2) >= 3 && ($incoming['schemaVersion'] ?? 2) < 3) ||
-            (($old['schemaVersion'] ?? 2) >= 4 && ($incoming['schemaVersion'] ?? 2) < 4)
-        ) {
+        // A client that writes an older format than the stored save cannot understand it (from
+        // schema 3: Moon resources, 4: stored production, 5: eras a 1.2 client does not know),
+        // so its upload would fold the town back. Schema 2 saves predate the guard.
+        $oldSchema = $old['schemaVersion'] ?? 2;
+        if ($oldSchema >= 3 && ($incoming['schemaVersion'] ?? 2) < $oldSchema) {
             self::incompatible();
         }
 

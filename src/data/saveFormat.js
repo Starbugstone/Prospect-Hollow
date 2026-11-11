@@ -1,6 +1,9 @@
 // The save format this game writes, and every older one it still reads and upgrades.
 // The server accepts the same list from the exported save rules (save-rules.json).
-export const SAVE_SCHEMA_VERSION = 4;
+// 5: a town may stand in an era that a 1.2 client does not know (New Hollow Rising and The
+// Quiet Signal). That client would fold the era back to the frontier and save over the town,
+// so it must open a schema 5 save read-only instead.
+export const SAVE_SCHEMA_VERSION = 5;
 const OLDEST_SAVE_SCHEMA_VERSION = 2;
 export const SUPPORTED_SAVE_SCHEMAS = Object.freeze(
   Array.from(

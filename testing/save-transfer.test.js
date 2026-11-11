@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
+import { SAVE_SCHEMA_VERSION } from '../src/data/saveFormat';
 import { useCampaignStore, SAVE_KEY } from '../src/stores/campaignStore';
 import { MAX_SAVE_FILE_BYTES, parseSaveFile, saveFileName } from '../src/services/saveTransfer';
 import { OTHER_TOWN_BACKUP, townStorage } from '../src/services/townStorage';
@@ -80,7 +81,7 @@ it.each([
     file.format = 'crystal-cascade-profile-v2';
   },
   (file) => {
-    file.profile.schemaVersion = 5;
+    file.profile.schemaVersion = SAVE_SCHEMA_VERSION + 1;
   },
   (file) => {
     file.profile.town = {};
@@ -178,7 +179,9 @@ it.each([
 });
 
 it('accepts a UTF-8 BOM and rejects oversized files', () => {
-  expect(parseSaveFile('\uFEFF' + useCampaignStore().exportSave()).schemaVersion).toBe(4);
+  expect(parseSaveFile('\uFEFF' + useCampaignStore().exportSave()).schemaVersion).toBe(
+    SAVE_SCHEMA_VERSION,
+  );
   expect(() => parseSaveFile(' '.repeat(MAX_SAVE_FILE_BYTES + 1))).toThrow();
 });
 

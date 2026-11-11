@@ -111,6 +111,21 @@ integrityDenied(
     'old-schema uploads cannot bypass resource shape validation',
 );
 $moonBase = $validator->accept($moonLegacy, null, $now);
+// A 1.2 client writes schema 4 and folds an era it does not know back to the frontier, so it
+// may never overwrite a schema 5 town; the same client may still update its own schema 4 save.
+$schemaFive = $validator->accept(integrityProfile($rules, $now), null, $now);
+assertIntegrity($schemaFive->schemaVersion === 5, 'the game writes schema 5');
+$schemaFour = integrityData($schemaFive);
+$schemaFour['schemaVersion'] = 4;
+integrityDenied(
+    fn() => $validator->accept(integrityObject($schemaFour), $schemaFive, $now),
+    'save_rules_unsupported',
+    'a schema 4 client cannot overwrite a schema 5 town',
+);
+assertIntegrity(
+    $validator->accept(integrityObject($schemaFour), null, $now)->schemaVersion === 4,
+    'a schema 4 save is still accepted on its own',
+);
 $moonMigrated = integrityData($moonBase);
 $moonMigrated['schemaVersion'] = 3;
 $moonMigrated['town']['moonstoneVersion'] = 1;
