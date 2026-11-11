@@ -347,7 +347,13 @@ describe('valley townsfolk at the finished commons', () => {
           streets.some(({ from, to }) => segmentDistance(p[0], p[2], from, to) <= 1.6);
         const onPath = (p) =>
           footpath.slice(1).some((to, n) => segmentDistance(p[0], p[2], footpath[n], to) <= 0.05);
-        const front = [footpath.at(-1)[0], 0, footpath.at(-1)[1]];
+        // The path's last corner but one is the court's front; its last stretch runs on to
+        // the court's edge, under the court's own lane.
+        const front = [footpath.at(-2)[0], 0, footpath.at(-2)[1]];
+        const [sx0, sz0] = valleySite.positions[0];
+        expect(Math.hypot(footpath.at(-1)[0] - sx0, footpath.at(-1)[1] - sz0)).toBeLessThan(
+          valleySite.radius,
+        );
         const arrives = there.findIndex((p) => gap(p, front) < 0.05);
         expect(arrives).toBeGreaterThan(0);
         const kinds = there.slice(0, arrives + 1).map((p) => (onPath(p) ? 'path' : onStreet(p)));

@@ -249,16 +249,17 @@ export function gardenTracks(town) {
 }
 // Footpaths lead from a street to a place beyond the streets: a monument or commission
 // site out in the field. Each is a list of corners, `[x, z]`, from a point on a wide street
-// to the site's front, and appears once its site opens. A footpath is drawn like any other
+// to the edge of the site's court, and appears once its site opens. A footpath is drawn like any other
 // narrow path and is for walkers only. Those heading to its site walk along its middle;
 // it is not part of the street graph, so no other errand strays down it.
 const SITE_FOOTPATHS = Object.freeze({
   // Between the Great Telescope and the Dewlight Gardens, down the level ground beside
-  // Stargazers' Lawn, then across to the Commons' front.
+  // Stargazers' Lawn, then across to the Commons' front and up to the edge of its court.
   'homecoming-commons': Object.freeze([
     [71, -51.5],
     [71, -93.6],
     [67.6, -93.6],
+    [67.6, -95.2],
   ]),
 });
 /** The footpath to a site, as corners from the street to its front, or null without one. */

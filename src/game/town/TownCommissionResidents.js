@@ -237,13 +237,15 @@ function* residentWalk(d, town, home, area, court) {
   const front = toWorld(area, court.approach[0]);
   const path = footpathWalk(d, town, area);
   yield;
-  if (path && Math.hypot(path.at(-1)[0] - front[0], path.at(-1)[2] - front[2]) < 0.05) {
+  // The path passes the court's front, where the court's own lane takes over.
+  const meets = path?.findIndex((p) => Math.hypot(p[0] - front[0], p[2] - front[2]) < 0.05) ?? -1;
+  if (meets > 0) {
     const street = yield* d.itineraries.legSteps(door, path[0]);
     const join = street?.total ? street.points.at(-1) : null;
     if (join && Math.hypot(join[0] - path[0][0], join[2] - path[0][2]) <= 0.05)
       return [
         ...street.points,
-        ...path.slice(1),
+        ...path.slice(1, meets + 1),
         ...court.approach.slice(1).map((point) => toWorld(area, point)),
       ];
   }
