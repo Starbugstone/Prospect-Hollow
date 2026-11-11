@@ -456,7 +456,7 @@ const labelPoint = new THREE.Vector3();
 // building is drawn).
 const PICK_HEIGHT = 3;
 // An action icon hangs this far above what stands on its pad, measured no higher than this.
-const MOON_MARKER_LIFT = 0.5;
+const MOON_MARKER_LIFT = 1.1;
 const MOON_MARKER_CEILING = 4.5;
 const PICK_LAYER = 3;
 // A lot of a later era keeps its tap target here, where no ray looks.
