@@ -56,6 +56,26 @@ export const moonLabelAnchors = (town) => [
     })),
 ];
 
+/**
+ * What no map name may cover: each reached district's fixed landmark, as the eight corners
+ * of its box in the world. The scene projects them; the layout steps names aside.
+ */
+export const moonLabelObstacles = (town) =>
+  (town ? moonDistrictsShown(town) : [])
+    .filter(({ stone }) => stone)
+    .map(({ centre, stone }) => {
+      const [width, height, depth] = stone.size,
+        [cos, sin] = [Math.cos(stone.turn), Math.sin(stone.turn)];
+      const corners = [];
+      for (const x of [-width / 2, width / 2])
+        for (const z of [-depth / 2, depth / 2])
+          for (const y of [0, height])
+            corners.push(
+              new Vector3(centre[0] + x * cos + z * sin, y, centre[1] - x * sin + z * cos),
+            );
+      return { id: stone.id, corners };
+    });
+
 // The shared unveiling stages suited settlers from the Moon's one figure builder.
 // Purchases, saved work, scaffolds, ribbon, shots and cleanup remain shared.
 // Isolated works hook, ready to share the Moon construction marker layer.
@@ -109,6 +129,7 @@ export function syncMoonMonuments(scene, town) {
   scene.d.clearGroup(scene.monuments);
   scene.monuments = buildMoonMonuments(scene.d, scene.scene, town);
   scene.lots = moonLabelAnchors(town);
+  scene.labelObstacles = moonLabelObstacles(town);
   scene.requestFrame();
 }
 

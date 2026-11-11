@@ -37,7 +37,7 @@
           fill="#10162b"
         />
         <circle :cx="mapBox.x + 22" :cy="mapBox.y + 12" r="7" fill="#4f8fc7" />
-        <ellipse cy="6" rx="52" ry="40" fill="#b9b6ad" />
+        <ellipse cy="6" :rx="craterFloor[0]" :ry="craterFloor[1]" fill="#b9b6ad" />
         <!-- A district beyond the rim: its level ground, its roads and its landmark. -->
         <g
           v-for="district in mapDistrictShapes"
@@ -217,6 +217,7 @@ import {
   watch,
 } from 'vue';
 import {
+  MOON_FLOOR_RADIUS,
   MOON_LOTS,
   MOON_ROADS,
   moonApproaches,
@@ -240,6 +241,7 @@ import {
   layoutMoonLabels,
   moonMapBox,
   moonMapLabel,
+  moonMapPercent,
   moonMapPoint,
 } from '../../game/town/moon/MoonLabelLayout';
 import { townLabelWidth } from '../../game/town/TownLabelLayout';
@@ -269,7 +271,7 @@ import TownMoonConstruction from './TownMoonConstruction.vue';
 import { cameraKeyAction } from '../../game/town/TownCameraKeys';
 import { keyboardActivation } from '../../game/town/TownTapGesture';
 import { useGraphicsRecovery } from '../../composables/useGraphicsRecovery';
-import { quietStoneLabel, signalAnswered, starMap } from '../../data/quietSignal';
+import { QUIET_STONE, quietStoneLabel, signalAnswered, starMap } from '../../data/quietSignal';
 import { t } from '../../i18n';
 
 // New Hollow, the town's settlement on the Moon. Its own small 3D scene sits over
@@ -308,6 +310,8 @@ let labelObserver;
 const unavailable = ref(false);
 // Replaced whole on camera frames that move a label, so it needs no deep reactivity.
 const labels = shallowRef([]);
+// What the scene asks names to keep clear of (the Quiet Stone), in percent of the view.
+const obstacles = shallowRef([]);
 const cameraDistance = ref(Infinity);
 const selectedLot = ref(props.selected ?? null);
 watch(
@@ -336,8 +340,6 @@ const mapLots = computed(() =>
   }),
 );
 const mapDistricts = computed(() => moonDistrictsShown(props.town));
-// The SVG map grows to hold an opened district, drawn with the crater's own flattening.
-const mapBox = computed(() => moonMapBox(mapDistricts.value));
 const mapDistrictShapes = computed(() =>
   mapDistricts.value.map(({ id, centre, floor, ring, road, stone }) => {
     const [x, y] = moonMapPoint(...centre),
@@ -377,6 +379,12 @@ const mapMonuments = computed(() =>
     work: monumentWork(props.town, area),
   })),
 );
+// The SVG map grows to hold every lot and site the town sees and each opened district,
+// drawn with the crater's own flattening.
+const mapBox = computed(() =>
+  moonMapBox(mapDistricts.value, [...mapLots.value, ...mapMonuments.value]),
+);
+const craterFloor = [MOON_FLOOR_RADIUS * MOON_MAP_SCALE[0], MOON_FLOOR_RADIUS * MOON_MAP_SCALE[1]];
 const mapApproaches = computed(() =>
   moonApproaches(props.town.buildings ?? {}).map((route) => ({
     ...route,
@@ -432,7 +440,23 @@ const placedLots = computed(() => {
   const projected = unavailable.value
     ? allLots.value.map((lot) => moonMapLabel(lot, viewport.value, mapBox.value))
     : labels.value;
-  return layoutMoonLabels(
+  // No name covers the Quiet Stone: the scene projects its box, the SVG map knows its own.
+  const avoid = unavailable.value
+    ? mapDistrictShapes.value
+        .filter((district) => district.stone)
+        .map(({ x, y, stone: [w, h] }) => {
+          const [left, top] = moonMapPercent([x - w / 2, y - h], viewport.value, mapBox.value),
+            [right, bottom] = moonMapPercent([x + w / 2, y], viewport.value, mapBox.value);
+          return {
+            id: QUIET_STONE.id,
+            x: (left + right) / 2,
+            y: (top + bottom) / 2,
+            width: right - left,
+            height: bottom - top,
+          };
+        })
+    : obstacles.value;
+  const placed = layoutMoonLabels(
     projected.map((lot) => {
       const info = lotInfo.value[lot.id];
       const selected = lot.id === selectedLot.value;
@@ -465,7 +489,9 @@ const placedLots = computed(() => {
     }),
     width,
     height,
+    { avoid },
   );
+  return placed;
 });
 // The same composited movement as the valley: camera frames update DOM transforms,
 // and Vue only redraws when visibility or label dimensions change.
@@ -555,8 +581,9 @@ async function start() {
     if (disposed || !canvas.value || scene) return;
     scene = new MoonScene(canvas.value, {
       reducedMotion: props.reducedMotion,
-      onLabels: (next, distance) => {
+      onLabels: (next, distance, keepClear = []) => {
         labels.value = next;
+        obstacles.value = keepClear;
         cameraDistance.value = distance;
       },
       // Tapping Earth over the rim returns to the valley.

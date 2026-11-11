@@ -1193,7 +1193,33 @@ export class MoonScene extends TownPrimitives {
         .join();
     if (key === this.labelKey) return;
     this.labelKey = key;
-    this.onLabels(labels, distance);
+    this.onLabels(labels, distance, this.projectObstacles());
+  }
+  // What names keep clear of, as rectangles in percent of the view about their centres.
+  // A landmark behind the camera or off the view asks for nothing.
+  projectObstacles() {
+    const boxes = [];
+    for (const { id, corners } of this.labelObstacles ?? []) {
+      let [left, top, right, bottom] = [Infinity, Infinity, -Infinity, -Infinity];
+      let ahead = true;
+      for (const corner of corners) {
+        labelPoint.copy(corner).project(this.camera);
+        if (labelPoint.z <= -1 || labelPoint.z >= 1) ahead = false;
+        left = Math.min(left, (labelPoint.x + 1) * 50);
+        right = Math.max(right, (labelPoint.x + 1) * 50);
+        top = Math.min(top, (1 - labelPoint.y) * 50);
+        bottom = Math.max(bottom, (1 - labelPoint.y) * 50);
+      }
+      if (ahead && right > 0 && left < 100 && bottom > 0 && top < 100)
+        boxes.push({
+          id,
+          x: (left + right) / 2,
+          y: (top + bottom) / 2,
+          width: right - left,
+          height: bottom - top,
+        });
+    }
+    return boxes;
   }
   // Points the raycaster through a pointer event; false when the canvas has no size.
   aim(event) {

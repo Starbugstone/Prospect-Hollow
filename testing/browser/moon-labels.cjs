@@ -155,7 +155,7 @@ window.getMoon=()=>app._instance.subTree.component.setupState;
         const detached = await page.evaluate(() => {
           const moon = window.getMoon();
           const source = moon.unavailable
-            ? moon.allLots.map((lot) => window.moonMapLabel(lot, moon.viewport))
+            ? moon.allLots.map((lot) => window.moonMapLabel(lot, moon.viewport, moon.mapBox))
             : moon.labels;
           return moon.shownLots
             .filter((lot) => {

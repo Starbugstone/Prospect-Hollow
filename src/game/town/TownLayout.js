@@ -4,6 +4,7 @@ import { MINE_POSITION } from '../../data/mineSite';
 import { WATERMILL_SITE } from '../../data/watermill';
 import { SQUARE_POSITION } from '../../data/townSquare';
 import { BUILDING_BY_ID } from '../../data/town';
+import { AREA_BY_ID, areaUnlocked } from '../../data/townLandmarks';
 import { plotUnlocked } from './TownRules';
 import { BRIDGE, riverPath } from './TownRiver';
 import { TOWN_EDGE } from './TownAtmosphere';
@@ -246,6 +247,43 @@ export function gardenTracks(town) {
     }),
   ];
 }
+// Footpaths lead from a street to a place beyond the streets: a monument or commission
+// site out in the field. Each is a list of corners, `[x, z]`, from a point on a wide street
+// to the edge of the site's court, and appears with the plot of the building that opens
+// its site. A footpath is drawn like any other
+// narrow path and is for walkers only. Those heading to its site walk along its middle;
+// it is not part of the street graph, so no other errand strays down it.
+const SITE_FOOTPATHS = Object.freeze({
+  // Between the Great Telescope and the Dewlight Gardens, down the level ground beside
+  // Stargazers' Lawn, then across to the Commons' front and up to the edge of its court.
+  'homecoming-commons': Object.freeze([
+    [70.5, -51.5],
+    [70.5, -93.6],
+    [67.6, -93.6],
+    [67.6, -95.2],
+  ]),
+});
+/** The footpath to a site, as corners from the street to its front, or null without one. */
+export function siteFootpath(town, site) {
+  const area = Object.hasOwn(SITE_FOOTPATHS, site) ? AREA_BY_ID[site] : null;
+  if (!area) return null;
+  // Laid with the plot of the building that opens the site, in the site's era: the streets
+  // only ever change with the plots, never when a building's level opens the site itself.
+  const era = { ...town, buildings: { [area.opens?.building]: area.opens?.level } };
+  const laid = areaUnlocked(era, area) && (!area.opens || plotUnlocked(town, area.opens.building));
+  return laid ? SITE_FOOTPATHS[site] : null;
+}
+const FOOTPATH_WIDTH = 0.75;
+/** Every open site's footpath as tracks, for drawing and for keeping the ground clear. */
+const footpathTracks = (town) =>
+  Object.keys(SITE_FOOTPATHS).flatMap((site) => {
+    const corners = siteFootpath(town, site) ?? [];
+    return corners.slice(1).map((to, n) => ({
+      ...road(corners[n], to, FOOTPATH_WIDTH),
+      modes: ['pedestrian'],
+      footpath: site,
+    }));
+  });
 export const townTracks = (town) => [
   ...TOWN_TRACKS.filter(({ plot }) => !plot || plot === 'mine' || plotUnlocked(town, plot)),
   ...(town.era !== 'frontier' && town.buildings.bridge
@@ -268,6 +306,7 @@ export const townTracks = (town) => [
     : []),
   ...INDUSTRIAL_TRACKS.filter(({ plot }) => plotUnlocked(town, plot)),
   ...gardenTracks(town),
+  ...footpathTracks(town),
 ];
 export const railEdges = (town) =>
   town.era !== 'frontier' && town.buildings.railDepot ? [RAIL_EDGE] : [];
@@ -281,7 +320,7 @@ export function routeGraph(town, mode = 'pedestrian') {
       ? railEdges(town)
       : mode === 'boat'
         ? boatPath.slice(1).map((to, i) => ({ from: boatPath[i], to, modes: ['boat'] }))
-        : townTracks(town).filter((edge) => edge.modes.includes(mode));
+        : townTracks(town).filter((edge) => edge.modes.includes(mode) && !edge.footpath);
   const points = [...segments.flatMap(({ from, to }) => [from, to])];
   for (const a of segments)
     for (const b of segments) {
