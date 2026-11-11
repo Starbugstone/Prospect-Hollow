@@ -308,6 +308,11 @@ explained first.
 - [x] Add a guide for levels 547–606, its own page beside `docs/hollow-mine-levels.md`
       See [the crystal seams guide](docs/crystal-seam-levels.md) for the chapters, the boards that changed and the evidence.
 
+- [ ] Honours after the append: two checks in `testing/honours.test.js` fail on the new levels and
+      are left to the honours work, since `src/data/honours.js` is being changed elsewhere. The level
+      element index check pins lanterns at 183 pieces up to chapter 90 (now 198 up to chapter 94),
+      and survey markers now reach their top rank at 1.2 campaigns, below the 1.3 the test requires
+
 ### Approved new mechanics and shapes
 
 Owner, 10 November 2026: **Trace twins, Crossgrain crystal, Chord crystal**;
