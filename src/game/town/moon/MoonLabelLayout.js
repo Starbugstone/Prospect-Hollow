@@ -2,7 +2,22 @@ import { MOON_FLOOR_RADIUS } from '../../../data/moonSettlement';
 import { layoutTownLabels } from '../TownLabelLayout';
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
-const MOON_ACTION_OFFSET = 76;
+// An action icon is sized by its own place: this share of the width its pad is drawn at,
+// never smaller than can be seen at a glance in a phone's overview and never larger than
+// the valley's. It stands on a round badge this much wider than itself.
+const MARKER_SHARE = 0.42;
+const MOON_MARKER_PIXELS = Object.freeze({ min: 30, max: 50, full: 50 });
+const MARKER_BADGE = 1.36;
+const MARKER_CROWDING = 0.8;
+/**
+ * An action icon's size for a place whose pad is drawn `pad` pixels wide: a fraction of the
+ * full icon, in steps, so a slow zoom redraws it only now and then.
+ */
+const moonMarkerSize = (pad) => {
+  const { min, max, full } = MOON_MARKER_PIXELS;
+  const pixels = clamp((pad ?? Infinity) * MARKER_SHARE, min, max);
+  return Math.round((pixels / full) * 20) / 20;
+};
 
 // The SVG map flattens the Moon's ground: x widens and z becomes y under the crater's tilt.
 export const MOON_MAP_SCALE = Object.freeze([1.3, 1.05]);
@@ -71,9 +86,42 @@ export function moonMapPercent([x, y], { width, height }, box = CRATER_BOX) {
 export function moonMapLabel({ id, x, y }, view, box = CRATER_BOX) {
   // A name hangs a little above its place's own point.
   const [px, py] = moonMapPercent([x, y - 6], view, box);
-  return { id, x: px, y: py, visible: !!view.width && !!view.height };
+  // Its action icon hangs over the top of its drawing, sized with the map.
+  const [mx, my] = moonMapPercent([x, y - PLACE_REACH.above], view, box);
+  const scale = Math.min(view.width / box.width, view.height / box.height);
+  const visible = !!view.width && !!view.height;
+  const pad = scale * PLACE_REACH.side * 2;
+  return { id, x: px, y: py, visible, marker: { x: mx, y: my, visible, pad } };
 }
 
+// A place's action icon stays at its projected marker: over its own worksite or building
+// at every zoom. Under the header or the bottom chrome it is not drawn (the pad still
+// answers a tap); it is never slid somewhere else to stay on screen.
+function markerPlace(label, width, height, top, bottom) {
+  const marker = label.marker ?? { x: label.x, y: label.y, visible: true };
+  const size = moonMarkerSize(marker.pad);
+  // Its badge is what it covers on screen.
+  const half = (MOON_MARKER_PIXELS.full * size * MARKER_BADGE) / 2;
+  const [x, y] = [(marker.x * width) / 100, (marker.y * height) / 100];
+  return {
+    x: marker.x,
+    y: marker.y,
+    size,
+    // The room it keeps from other icons: a little less than its badge, so in a crowded
+    // overview neighbouring badges may touch and overlap slightly instead of being pushed
+    // off their own sites.
+    extent: half * 2 * MARKER_CROWDING,
+    visible:
+      !!width &&
+      !!height &&
+      marker.visible !== false &&
+      (label.inView ?? label.visible) &&
+      x >= half &&
+      x <= width - half &&
+      y >= top + half &&
+      y <= bottom - half,
+  };
+}
 // Only projection and Moon chrome bounds belong here. Label size, density,
 // priority, collisions and styling follow the same contract as the valley.
 // `avoid` lists what no name may cover (the Quiet Stone), as rectangles in percent of the
@@ -84,17 +132,7 @@ export function layoutMoonLabels(labels, width, height, { avoid = [] } = {}) {
   const projected = labels.map((label) => ({
     ...label,
     offsetY: label.action ? 24 : 0,
-    collection: label.action
-      ? {
-          x: width ? (clamp((label.x * width) / 100, 40, width - 40) / width) * 100 : 50,
-          y: height
-            ? (clamp((label.y * height) / 100 - MOON_ACTION_OFFSET, top + 40, bottom - 34) /
-                height) *
-              100
-            : 50,
-          visible: !!width && !!height && (label.inView ?? label.visible),
-        }
-      : undefined,
+    collection: label.action ? markerPlace(label, width, height, top, bottom) : undefined,
   }));
   return layoutTownLabels(projected, width, height, {
     top,
