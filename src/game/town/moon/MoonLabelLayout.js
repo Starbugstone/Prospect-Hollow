@@ -5,12 +5,12 @@ const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 // An action icon is drawn this many world units tall where its place stands, within these
 // pixel sizes: never too small to see, never larger than the valley's.
 const MARKER_UNITS = 3.2;
-export const MOON_MARKER_PIXELS = Object.freeze({ min: 22, max: 50, full: 50 });
+const MOON_MARKER_PIXELS = Object.freeze({ min: 22, max: 50, full: 50 });
 /**
  * An action icon's size for a place drawn at `unit` pixels per world unit: a fraction of
  * the full icon, in steps, so a slow zoom redraws it only now and then.
  */
-export const moonMarkerSize = (unit) => {
+const moonMarkerSize = (unit) => {
   const { min, max, full } = MOON_MARKER_PIXELS;
   const pixels = clamp((unit ?? Infinity) * MARKER_UNITS, min, max);
   return Math.round((pixels / full) * 20) / 20;
