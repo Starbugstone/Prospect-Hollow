@@ -35,7 +35,13 @@ import { TownDiorama } from '../src/game/town/TownDiorama';
 import { createTownGeometries } from '../src/game/town/TownGeometries';
 import { TownItineraries } from '../src/game/town/TownItineraries';
 import { TownNavigation } from '../src/game/town/TownNavigation';
-import { PLOTS, segmentDistance, townTracks } from '../src/game/town/TownLayout';
+import {
+  PLOTS,
+  routeGraph,
+  segmentDistance,
+  siteFootpath,
+  townTracks,
+} from '../src/game/town/TownLayout';
 import { swingLimbs, VILLAGER_WALK_SPEED } from '../src/game/town/TownGait';
 import { TownPrimitives } from '../src/game/town/TownPrimitives';
 import {
@@ -331,24 +337,42 @@ describe('valley townsfolk at the finished commons', () => {
         const home = day.segments.at(-1).inside;
         expect(homes).toContain(home);
         expect(gap(there[0], d.itineraries.endpoint(home, true))).toBeLessThan(1e-6);
-        // ...straight onto the streets, along them without cutting across a lot, then out
-        // over the monument field from the edge of a wide street.
-        const onStreet = there.map((p) =>
-          roads.some(({ from, to }) => segmentDistance(p[0], p[2], from, to) <= 1.6),
-        );
-        const joins = onStreet.indexOf(true),
-          leaves = onStreet.lastIndexOf(true);
+        // ...straight onto the streets, along them without cutting across a lot, then down
+        // the site's footpath: every step from the home to the site's front is on a street
+        // or on the middle of that path, and never out across the open field.
+        const footpath = siteFootpath(town, valleySite.id);
+        expect(footpath).toBeTruthy();
+        const streets = roads.filter((road) => !road.footpath);
+        const onStreet = (p) =>
+          streets.some(({ from, to }) => segmentDistance(p[0], p[2], from, to) <= 1.6);
+        const onPath = (p) =>
+          footpath.slice(1).some((to, n) => segmentDistance(p[0], p[2], footpath[n], to) <= 0.05);
+        const front = [footpath.at(-1)[0], 0, footpath.at(-1)[1]];
+        const arrives = there.findIndex((p) => gap(p, front) < 0.05);
+        expect(arrives).toBeGreaterThan(0);
+        const kinds = there.slice(0, arrives + 1).map((p) => (onPath(p) ? 'path' : onStreet(p)));
+        const joins = kinds.indexOf(true),
+          takesPath = kinds.indexOf('path');
         expect(joins).toBeLessThanOrEqual(2);
-        expect(leaves).toBeGreaterThan(joins);
-        expect(onStreet.slice(joins, leaves + 1).every(Boolean)).toBe(true);
-        const wide = roads.filter(({ width }) => width >= 0.85);
+        expect(takesPath).toBeGreaterThan(joins);
+        expect(kinds.slice(joins, takesPath).every((kind) => kind === true)).toBe(true);
+        expect(kinds.slice(takesPath).every((kind) => kind === 'path')).toBe(true);
+        // The path is walked from end to end, and no step along it is longer than a stride.
+        expect(gap(there[takesPath], [footpath[0][0], 0, footpath[0][1]])).toBeLessThan(1.1);
+        for (let n = takesPath + 1; n <= arrives; n++)
+          expect(gap(there[n], there[n - 1])).toBeLessThanOrEqual(0.76);
+        // The path starts on a wide street and ends where the court's own lane begins.
+        const wide = streets.filter(({ width }) => width >= 0.85);
         expect(
-          Math.min(
-            ...wide.map(({ from, to }) =>
-              segmentDistance(there[leaves][0], there[leaves][2], from, to),
-            ),
-          ),
-        ).toBeLessThan(1.2);
+          Math.min(...wide.map(({ from, to }) => segmentDistance(...footpath[0], from, to))),
+        ).toBeLessThan(1e-6);
+        const court = commissionGrounds(
+          LANDMARK_BY_ID[choice].form,
+          commissionUse(outcome),
+          0,
+          valleySite.radius,
+        );
+        expect(gap(front, toWorld(valleySite, court.approach[0]))).toBeLessThan(0.05);
         // ...and ends in the site's court.
         const [sx, sz] = valleySite.positions[0];
         expect(Math.hypot(there.at(-1)[0] - sx, there.at(-1)[2] - sz)).toBeLessThan(
@@ -357,6 +381,40 @@ describe('valley townsfolk at the finished commons', () => {
       }
     },
   );
+
+  it('opens the footpath with its site, draws it as a narrow path and keeps errands off it', () => {
+    const town = valleyTown();
+    const footpath = siteFootpath(town, valleySite.id);
+    const tracks = townTracks(town).filter((track) => track.footpath);
+    expect(tracks).toHaveLength(footpath.length - 1);
+    for (const track of tracks) {
+      expect(track).toMatchObject({ width: 0.75, modes: ['pedestrian'], footpath: valleySite.id });
+      // Axis-aligned, like every valley path.
+      expect(track.from[0] === track.to[0] || track.from[1] === track.to[1]).toBe(true);
+    }
+    // Clear of every lot and every other site it passes.
+    for (const id of Object.keys(PLOTS)) {
+      const [x, z] = PLOTS[id];
+      for (const { from, to } of tracks)
+        expect(segmentDistance(x, z, from, to), id).toBeGreaterThan(5.5);
+    }
+    for (const area of Object.values(AREA_BY_ID).filter(
+      (area) => area.settlement === 'valley' && area.id !== valleySite.id,
+    ))
+      for (const { from, to } of tracks)
+        expect(segmentDistance(...area.positions[0], from, to), area.id).toBeGreaterThan(
+          area.radius,
+        );
+    // Not part of the street graph: no vehicle or ordinary errand takes it.
+    for (const mode of ['pedestrian', 'car'])
+      for (const node of routeGraph(town, mode).nodes.values())
+        expect(node[1], mode).toBeGreaterThan(-60);
+    // Before its site opens there is no path, and an unknown site has none.
+    expect(siteFootpath({ ...town, era: 'moonward' }, valleySite.id)).toBeNull();
+    expect(townTracks({ ...town, era: 'moonward' }).some((track) => track.footpath)).toBe(false);
+    expect(siteFootpath(town, 'no-such-site')).toBeNull();
+    expect(siteFootpath(town, 'meadow')).toBeNull();
+  });
 
   const pose = (resident, segment, elapsed) =>
     routinePose(

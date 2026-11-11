@@ -15,7 +15,7 @@ import {
 import { swingLimbs, VILLAGER_WALK_SPEED } from './TownGait';
 import { groundHeight } from './TownLandscape';
 import { finishWork, scheduleWork } from '../PresentationWork';
-import { PLOTS, segmentDistance, townTracks } from './TownLayout';
+import { PLOTS, segmentDistance, siteFootpath, townTracks } from './TownLayout';
 
 // Townsfolk who use a finished valley commission. Each leaves a real home through its
 // door, walks the streets to the edge of the monument field, crosses it to the site and
@@ -202,11 +202,51 @@ function fieldWalk(d, from, to) {
   });
   return points;
 }
-// From a home's door along the streets and across the field to the site: one walk.
+// A site's footpath as a walk along its middle, from the verge of its street to the site's
+// front, or null when the site has none or something stands on it.
+function footpathWalk(d, town, area) {
+  const corners = siteFootpath(town, area.id);
+  if (!corners) return null;
+  // Step off the street onto its verge, toward the path.
+  const [[ax, az], [bx, bz]] = corners;
+  const length = Math.hypot(bx - ax, bz - az) || 1;
+  const start = [ax + ((bx - ax) / length) * 1.05, az + ((bz - az) / length) * 1.05];
+  const points = [];
+  [start, ...corners.slice(1)].forEach(([x, z], n, list) => {
+    if (n) {
+      const [px, pz] = list[n - 1];
+      const count = Math.max(1, Math.ceil(Math.hypot(x - px, z - pz) / 0.75));
+      for (let s = 1; s < count; s++) {
+        const sx = px + ((x - px) * s) / count,
+          sz = pz + ((z - pz) * s) / count;
+        points.push([sx, groundHeight(sx, sz) + 0.07, sz]);
+      }
+    }
+    points.push([x, groundHeight(x, z) + 0.07, z]);
+  });
+  const clear = points.every(
+    (point, n) => !n || !d.navigation || d.navigation.segment(points[n - 1], point, 0.29),
+  );
+  return clear ? points : null;
+}
+// From a home's door along the streets, then by the site's footpath (or, without one,
+// across the field) to the site: one walk.
 function* residentWalk(d, town, home, area, court) {
   const door = d.itineraries.endpoint(home, true);
   if (!door) return null;
   const front = toWorld(area, court.approach[0]);
+  const path = footpathWalk(d, town, area);
+  yield;
+  if (path && Math.hypot(path.at(-1)[0] - front[0], path.at(-1)[2] - front[2]) < 0.05) {
+    const street = yield* d.itineraries.legSteps(door, path[0]);
+    const join = street?.total ? street.points.at(-1) : null;
+    if (join && Math.hypot(join[0] - path[0][0], join[2] - path[0][2]) <= 0.05)
+      return [
+        ...street.points,
+        ...path.slice(1),
+        ...court.approach.slice(1).map((point) => toWorld(area, point)),
+      ];
+  }
   for (const trailhead of trailheads(d, town, front)) {
     const field = fieldWalk(d, trailhead, front);
     yield;
