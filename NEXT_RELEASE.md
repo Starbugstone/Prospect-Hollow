@@ -139,7 +139,7 @@ Things the checks have not covered:
 - [ ] Re-capture Wild Meadow at stage 5, since its sign moved after the last capture
 - [ ] Watch the valley visitors moving. The Bandstand and Story Hall bring Willowkin residents, the
       only resident visitors a valley site has, rather than ordinary villagers
-- [ ] Read the French aloud. "Commande" is my choice for "commission" and needs your approval
+- [x] "Commande" for "commission" in French (owner, 11 November 2026)
 
 **Done when** every box is ticked or moved to a later step with a reason.
 
@@ -386,8 +386,8 @@ gather at the front.
 
 - [ ] Valley streets end about 40 units short of the Commons, so villagers cross the open field for the
       last stretch. `AGENTS.md` asks for public paths: a footpath to the site is the proposed fix
-- [ ] Decide the Bandstand audience size (capped at 4, `MAX_COMMISSION_VILLAGERS`), the children's
-      0.68 scale and whether Moon outcomes differ beyond what settlers carry
+- [x] The Bandstand audience stays capped at 4 (`MAX_COMMISSION_VILLAGERS`), children at 0.68 scale,
+      and Moon outcomes differ only in what settlers carry (owner, 11 November 2026)
 
 **Done when** the third commission opens in order on both client and server, and no combination of
 opening order blocks it.
@@ -509,12 +509,14 @@ with the 18 new boards).
       moves a finished Twin Hollows town on with a commission chosen and part paid for
 - [ ] Phone pass of the era: the wider crater, the outer ring, the modernized buildings, the
       wandering pair
-- [ ] Before release: decide whether a save in the new era needs save schema 5, so an older
-      cached client treats it as read-only instead of normalizing the unknown era away
+- [x] Save schema 5 (owner, 11 November 2026). A 1.2 client opened a finished New Hollow Rising
+      town as a frontier town and saved over it; it now opens the save read-only, and the server
+      refuses any upload older than the stored schema
 - [x] The two optional buildings (Moonball Field, Crater Pond Garden)
 - [ ] A tram that runs the outer ring, and child settlers
 - [ ] The moonstone monument site, then the two commissions
-- [ ] Rover expeditions: client, server replay, presentation and an economy rerun
+- [ ] Rover expeditions: client, server replay, presentation and an economy rerun. After 1.3.0
+      (owner, 11 November 2026)
 - [x] Honours (Outer Ring Builder, calibrated in `docs/honours.md`), French text, docs
       (`docs/future-eras.md`, `docs/era-architecture.md`)
 
@@ -522,25 +524,22 @@ with the 18 new boards).
 
 - [ ] The rim and the wider plain look right, and the empty outer ring reads as room to grow
 - [ ] The overview still frames New Hollow as before
-- [ ] On a phone the commission pill now covers part of Earth: it moved below the Moon header in the
-      first gap-closing pass. Earth stays tappable around it, and "Back to the valley" is unchanged.
-      Decide whether the pill or the camera should move
+- [x] On a phone the commission pill covered part of Earth and took a row of its own. It is now one
+      line at the foot of the map on both maps, above the tab bar, left of the event inset and
+      under the waiting-event notice (owner, 11 November 2026); `town-commission-signal.cjs`
+      checks it on the Moon too
 
-### Decisions still open
+### Decisions
 
-These wait until the era's content is built:
-
-1. Five modernized Moon buildings, two adding supply, or modernization for looks only (the cistern
-   and vaults then carry all the new supply).
-2. Era size: 10 required and 2 optional buildings, about 1.48M coins, or larger.
-3. Prices on the ladder above.
-4. Expeditions as the era's own loop, and their rewards.
-5. The two Moon commissions: their price (2M as now, or less) and how they fit the Commissioner
-   family. Its site list is fixed once it ships, so decide before this release.
-6. Through the Ages stops at diamond (the era goes in `NON_MILESTONE_ERAS`) or gains a fifth metal.
-   Proposed new families: Outer Ring Builder (1, 15, 30 of 36 building levels) and Rim Surveyor
-   (expeditions), with `HONOURS_VERSION` 7.
-7. Late projects that pay a builder hammer.
+1. Modernization changes looks and utility (owner, 10 November 2026).
+2. Ten required and two optional buildings, for now (owner, 10 November 2026).
+3. Prices continue the ladder (owner, 10 November 2026).
+4. Rover expeditions wait until after 1.3.0 (owner, 11 November 2026).
+5. The two Moon commissions cost 2M, on the valley's schedule, and join the Commissioner family
+   (owner, 11 November 2026).
+6. Through the Ages stops at diamond: the era is in `NON_MILESTONE_ERAS`. Outer Ring Builder shipped
+   with `HONOURS_VERSION` 6.
+7. Still open: late projects that pay a builder hammer.
 
 ## The Quiet Signal (the seventeenth era)
 
@@ -716,18 +715,18 @@ set in the order their seams branch).
 - [ ] The SVG fallback map already clips the outer ring's southern lots (its box ends at the
       crater floor); the district is inside the widened box, the old clipping is unchanged
 
-### Decisions still open
+### Decisions
 
-1. The stone's name in the game: "The Quiet Stone", and whether it should have any label at all.
-2. Era size: six required buildings and 0.86M, or more of them.
-3. The finale as a derived, permanent effect (as built) or a full cinematic on the shared timeline.
-4. Portrait haze and shadows that follow the camera: for towns in the era only (as built), or for
-   every town.
-5. The ground appears with the era, so the rim opens when the stone does. The alternative is to show
-   the hollow to every town, as the crater widening was.
-6. Far Rim Listener's goals, and a rank for Voyagers' Court.
-7. Whether the two named characters should also walk the district as recognisable figures.
-8. The "resonance pairs" board mechanic stays out of scope.
+All as built (owner, 11 November 2026), after the pictures and videos in `output/decisions/`:
+
+1. The stone is "The Quiet Stone", labelled only when tapped.
+2. Six required buildings, about 0.86M.
+3. The finale stays the derived, permanent ribbon of light, with no cinematic.
+4. The portrait haze and shadows follow the camera only for towns in the era.
+5. The district's ground appears with the era.
+6. Far Rim Listener keeps 1, 9 and 18 (calibrated in `docs/honours.md`); Voyagers' Court gets no rank.
+7. Osier and Maren stay in the letters; they do not walk the district.
+8. "Resonance pairs" stays out of scope.
 
 ## Step 6: economy rerun and documentation
 
@@ -811,6 +810,13 @@ the next release should lean on boards and new mechanics.
 - **Route-choice boards join step 3.** Chapter 94 gets one prototype first: either route opens the
   goal, neither is required, and each order must play differently.
 - **Residents using commissions joins this release** instead of waiting for the phone test.
+- **Save schema 5 for the new eras** (owner, 11 November 2026). An older client opens such a save
+  read-only, and the server refuses an upload older than the stored schema.
+- **Commission pill at the foot of the map on phones** (owner, 11 November 2026): one line, so it
+  takes no row of the header and leaves Earth clear. The phone UI stays compact.
+- **New mechanics for chapters 98, 99 and 101** (owner, 11 November 2026): Crossgrain with the
+  frozen gems, Chord crystal with the pearls, Trace twins with the route chambers, each tried on
+  its board first.
 - **Labels name the building that stands.** Once a design is chosen, every label shows it rather than
   the site's name. Map labels and tabs are checked at phone sizes first.
 
