@@ -401,7 +401,25 @@ function addSpaceSuit(d, { root, body, head, legs, species }) {
     .map((mesh) => [mesh, boundsOf(body, [mesh])])
     .reduce((a, b) => (volume(b[1]) > volume(a[1]) ? b : a));
   fitHelmet(d, root, head, coat, torso);
-  torso.material = d.material(SPACE_HELMET.suits[species] ?? SUIT);
+  const suit = d.material(SPACE_HELMET.suits[species] ?? SUIT);
+  torso.material = suit;
+  // A model may mark more of its coat as suited: a bird's wings, a long neck's lower half.
+  for (const mesh of coat) if (mesh.userData.suited) mesh.material = suit;
+  // A life-support pack rides on the back of animals built with such a suit.
+  if (coat.some((mesh) => mesh.userData.suited)) {
+    const size = trunk.getSize(new Vector3());
+    d.box(
+      body,
+      size.x * 0.5,
+      size.y * 0.3,
+      size.z * 0.42,
+      (trunk.min.x + trunk.max.x) / 2,
+      trunk.max.y + size.y * 0.06,
+      (trunk.min.z + trunk.max.z) / 2 - size.z * 0.08,
+      '#c9ced0',
+      true,
+    ).name = 'Space suit pack';
+  }
   const middle = trunk.getCenter(new Vector3()),
     half = trunk.getSize(new Vector3()).multiplyScalar(0.5);
   for (const side of [-1, 1])

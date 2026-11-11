@@ -23,6 +23,11 @@ function fourLegs(d, body, height, spread, length, coat, foot, width = 0.034) {
     }
   return legs;
 }
+// Parts of the coat a space suit covers along with the trunk (`addSpaceSuit`).
+const suited = (mesh) => {
+  mesh.userData.suited = true;
+  return mesh;
+};
 const scaled = (d, root, look) => {
   const body = d.group(root);
   body.scale.setScalar(look.size);
@@ -36,15 +41,24 @@ function waterfowl(d, root, { look }, neck) {
   const lift = neck > 0.3 ? 0.27 : 0.2,
     girth = neck > 0.3 ? 1.3 : 1;
   d.ball(body, 0, lift, 0, [0.14 * girth, 0.13 * girth, 0.25 * girth], coat);
-  d.ball(body, 0, lift - 0.03, 0.05, [0.12 * girth, 0.1 * girth, 0.2 * girth], light);
+  suited(d.ball(body, 0, lift - 0.03, 0.05, [0.12 * girth, 0.1 * girth, 0.2 * girth], light));
   for (const side of [-1, 1])
-    d.ball(body, side * 0.11 * girth, lift + 0.03, -0.03, [0.05, 0.09 * girth, 0.19 * girth], coat);
+    suited(
+      d.ball(
+        body,
+        side * 0.11 * girth,
+        lift + 0.03,
+        -0.03,
+        [0.05, 0.09 * girth, 0.19 * girth],
+        coat,
+      ),
+    );
   const base = [0, lift + 0.05, 0.17 * girth];
   const crown = [0, lift + 0.08 + neck, 0.22 * girth + (neck > 0.3 ? 0.05 : 0)];
   if (neck > 0.3) {
     // A swan carries its neck in a curve.
     const bend = [0, lift + 0.05 + neck * 0.6, 0.13 * girth];
-    d.rod(body, base, bend, 0.04, coat);
+    suited(d.rod(body, base, bend, 0.04, coat));
     d.rod(body, bend, crown, 0.036, coat);
   } else d.rod(body, base, crown, 0.045, dark);
   const head = d.group(body, ...crown);
@@ -64,9 +78,10 @@ function wader(d, root, { look }) {
   const { coat, light, dark = coat, form } = look;
   const body = scaled(d, root, look);
   d.ball(body, 0, 0.52, -0.02, [0.14, 0.15, 0.27], coat);
-  d.ball(body, 0, 0.49, 0.07, [0.11, 0.115, 0.19], light);
-  for (const side of [-1, 1]) d.ball(body, side * 0.12, 0.54, -0.07, [0.045, 0.1, 0.22], dark);
-  d.rod(body, [0, 0.56, 0.19], [0, 0.76, 0.1], 0.038, light);
+  suited(d.ball(body, 0, 0.49, 0.07, [0.11, 0.115, 0.19], light));
+  for (const side of [-1, 1])
+    suited(d.ball(body, side * 0.12, 0.54, -0.07, [0.045, 0.1, 0.22], dark));
+  suited(d.rod(body, [0, 0.56, 0.19], [0, 0.76, 0.1], 0.038, light));
   d.rod(body, [0, 0.76, 0.1], [0, 0.92, 0.19], 0.034, light);
   const head = d.group(body, 0, 0.95, 0.21);
   d.ball(head, 0, 0, 0, [0.062, 0.062, 0.082], light);
@@ -84,7 +99,7 @@ function tortoise(d, root, { look }) {
   const { coat, light, dark = coat } = look;
   const body = scaled(d, root, look);
   d.ball(body, 0, 0.21, 0, [0.22, 0.17, 0.27], coat);
-  d.ball(body, 0, 0.13, 0, [0.2, 0.06, 0.25], light);
+  suited(d.ball(body, 0, 0.13, 0, [0.2, 0.06, 0.25], light));
   // Five broad scutes read as a shell from the town's camera.
   for (const [x, z] of [
     [0, 0],
@@ -108,7 +123,8 @@ function peacock(d, root, { look }) {
   const { coat, light, dark = coat, form } = look;
   const body = scaled(d, root, look);
   d.ball(body, 0, 0.42, 0, [0.13, 0.15, 0.24], coat);
-  for (const side of [-1, 1]) d.ball(body, side * 0.1, 0.43, -0.04, [0.045, 0.1, 0.18], dark);
+  for (const side of [-1, 1])
+    suited(d.ball(body, side * 0.1, 0.43, -0.04, [0.045, 0.1, 0.18], dark));
   d.rod(body, [0, 0.47, 0.15], [0, 0.76, 0.2], 0.038, coat);
   const head = d.group(body, 0, 0.8, 0.21);
   d.ball(head, 0, 0, 0, [0.055, 0.058, 0.065], coat);
@@ -141,8 +157,8 @@ function goat(d, root, { look }) {
   const { coat, light, dark = coat } = look;
   const body = scaled(d, root, look);
   d.ball(body, 0, 0.56, -0.02, [0.17, 0.2, 0.33], coat);
-  d.ball(body, 0, 0.5, 0.0, [0.14, 0.14, 0.27], light);
-  d.rod(body, [0, 0.62, 0.24], [0, 0.82, 0.33], 0.08, coat);
+  suited(d.ball(body, 0, 0.5, 0.0, [0.14, 0.14, 0.27], light));
+  suited(d.rod(body, [0, 0.62, 0.24], [0, 0.82, 0.33], 0.08, coat));
   const head = d.group(body, 0, 0.87, 0.36);
   d.ball(head, 0, 0, 0, [0.1, 0.11, 0.13], coat);
   d.ball(head, 0, -0.045, 0.12, [0.062, 0.06, 0.11], light);
@@ -165,7 +181,7 @@ function lynx(d, root, { look }) {
   const { coat, light, dark = coat } = look;
   const body = scaled(d, root, look);
   d.ball(body, 0, 0.36, -0.02, [0.18, 0.19, 0.36], coat);
-  d.ball(body, 0, 0.31, 0.2, [0.13, 0.15, 0.13], light);
+  suited(d.ball(body, 0, 0.31, 0.2, [0.13, 0.15, 0.13], light));
   for (const [x, z] of [
     [-0.1, -0.16],
     [0.11, -0.04],
