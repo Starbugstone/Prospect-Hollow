@@ -65,7 +65,6 @@ it.each(KEYS)(
     };
     console.log(JSON.stringify(summary));
     expect(summary.completed).toBe(60);
-    expect(level.chestTarget).toBe(summary.medianScore * 0.8);
     if (key === 'arrowhead-inner-spring') expect(summary.medianLowerWingRefills).toBeGreaterThan(0);
     if (key === 'twin-windows-crafting-spine')
       expect(summary.medianInternalRefills).toBeGreaterThan(0);

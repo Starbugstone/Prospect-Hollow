@@ -1,6 +1,6 @@
 # Town gameplay
 
-The campaign has 546 puzzles in 91 chapters and fifteen playable town eras.
+The campaign has 606 puzzles in 101 chapters and fifteen playable town eras.
 Enter the village from the English/French landing page, fund construction, then
 use Mine to play the next unfinished puzzle. Results offer Continue mining and
 Back to village. Once the campaign is complete, Mine opens the museum.

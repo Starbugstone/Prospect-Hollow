@@ -22,6 +22,9 @@ try {
   const { miningDepthBonus } = await load('data/economy');
   const { CONTINUOUS_COIN_CAP } = await load('data/rewards');
   const { vipSpend, VIP_SPEND_VERSION } = await load('data/vipVisits');
+  // Every authored level, and a fixed horizon of four campaigns' worth of victories.
+  const { LEVEL_COUNT: LEVELS } = await load('data/campaign');
+  const HORIZON = LEVELS * 4;
   const { valleyVipTour } = await loadValleyVipTour(load);
   const vipCache = new Map();
   // The authored-tour harness of measure-vip-income, applied to the CURRENT
@@ -64,10 +67,10 @@ try {
   for (const seed of [1, 2, 3]) {
     const runs = normal.filter((r) => r.seed === seed);
     const visits = new Map(continuous.filter((r) => r.seed === seed).map((r) => [r.id, r]));
-    if (runs.length !== 546 || runs.some((r, i) => r.id !== i + 1 || !r.complete))
-      throw Error('Expected 546 complete normal levels per seed');
-    if (visits.size !== 546 || [...visits.values()].some((r) => r.turns !== 20))
-      throw Error('Expected 546 complete 20-move samples per seed');
+    if (runs.length !== LEVELS || runs.some((r, i) => r.id !== i + 1 || !r.complete))
+      throw Error(`Expected ${LEVELS} complete normal levels per seed`);
+    if (visits.size !== LEVELS || [...visits.values()].some((r) => r.turns !== 20))
+      throw Error(`Expected ${LEVELS} complete 20-move samples per seed`);
     for (const pattern of patterns) {
       let town = createTown(),
         honours = h.createHonours(),
@@ -197,9 +200,9 @@ try {
       }
       visitTown();
       // Fixed measurement horizon only; never a gameplay limit. After the first
-      // 546 victories cycle the six measured final-chapter boards, without new unlocks.
-      for (let n = 1; n <= 2184; n++) {
-        const run = runs[n <= 546 ? n - 1 : 540 + ((n - 547) % 6)];
+      // LEVELS victories cycle the six measured final-chapter boards, without new unlocks.
+      for (let n = 1; n <= HORIZON; n++) {
+        const run = runs[n <= LEVELS ? n - 1 : LEVELS - 6 + ((n - LEVELS - 1) % 6)];
         const before = { ...totals };
         town.coins += run.coins;
         totals.mining += run.coins;
@@ -215,12 +218,12 @@ try {
         visitTown();
         if (pattern.visits && town.buildings.museum) {
           if (!pattern.deferred) {
-            for (let id = 1; id <= Math.min(n, 546); id++)
+            for (let id = 1; id <= Math.min(n, LEVELS); id++)
               if ((visitHistory.get(id) ?? 0) < pattern.visits) continuousVisits(id);
           } else if (town.buildings.moonstoneWorkshop === 3) {
             // One old level's three visits per normal puzzle, rather than an
             // unbounded instant backlog dump. Each level is visited only once.
-            const id = Array.from({ length: Math.min(n, 546) }, (_, i) => i + 1).find(
+            const id = Array.from({ length: Math.min(n, LEVELS) }, (_, i) => i + 1).find(
               (id) => !visitHistory.has(id),
             );
             if (id) continuousVisits(id);
@@ -234,7 +237,7 @@ try {
           totals.saloon += income;
           town = { ...town, coins: town.coins + income, income: { ...town.income, stored: 0 } };
           if (!pattern.noVip) {
-            const income = vipHour(town, seed) * vipSpend({ [Math.min(n, 546)]: { stars: 1 } });
+            const income = vipHour(town, seed) * vipSpend({ [Math.min(n, LEVELS)]: { stars: 1 } });
             town.coins += income;
             totals.vip += income;
           }
@@ -245,7 +248,7 @@ try {
           Object.keys(totals).map((k) => [k, totals[k] - before[k]]),
         );
         ledger.push({ n, era: town.era, ...delta });
-        if (n === 546 || n === townComplete || n === bothComplete)
+        if (n === LEVELS || n === townComplete || n === bothComplete)
           snapshots[n] = {
             stonesEarned: town.moonstonesEarned,
             sold,
@@ -260,7 +263,7 @@ try {
       );
       const windows = Object.fromEntries(
         [
-          ['lateCampaign', ledger.filter((r) => r.n >= 403 && r.n <= 546)],
+          ['lateCampaign', ledger.filter((r) => r.n >= 403 && r.n <= LEVELS)],
           ['twinHollows', ledger.filter((r) => r.n > eras['twin-hollows'] && r.n <= townComplete)],
         ].map(([name, rows]) => [
           name,
@@ -292,7 +295,7 @@ try {
         sold,
         continuousPuzzleCredits: stoneSource,
         visits: [...visitHistory.values()].reduce((sum, n) => sum + n, 0),
-        horizon: 2184,
+        horizon: HORIZON,
       });
       process.stderr.write(
         `seed ${seed} ${pattern.id}: Twin ${eras['twin-hollows']}, town ${townComplete}, monuments ${bothComplete}\n`,
@@ -304,8 +307,7 @@ try {
       {
         boardSampleBase: '9d00d560',
         vipEconomyVersion: VIP_SPEND_VERSION,
-        model:
-          '546 levels; seeds 1–3; final chapter replays to 2184; zero hammers/chests/raid losses; coin foundations after progression; first-choice landmarks; paired moon upgrades; 20-move continuous samples repeated per visit; one fresh uninterrupted town hour/10 normals',
+        model: `${LEVELS} levels; seeds 1–3; final chapter replays to ${HORIZON}; zero hammers/chests/raid losses; coin foundations after progression; first-choice landmarks; paired moon upgrades; 20-move continuous samples repeated per visit; one fresh uninterrupted town hour/10 normals`,
         results,
       },
       null,

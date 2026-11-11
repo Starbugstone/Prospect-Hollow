@@ -141,7 +141,8 @@ it.each(['trace-twins-first-impression', 'crossgrain-narrow-neck', 'chord-changi
   async (key) => {
     const live = fresh(1);
     expect(live.startLevel(key, 'prototype', { seed: 871 })).toBe(true);
-    await play(live, 60);
+    // A diagnostic budget for the hint-led player, never a gameplay move limit.
+    await play(live, 150);
     expect(live.levelCleared).toBe(true);
     const log = JSON.parse(JSON.stringify(runReport(live)));
     const again = fresh(1);

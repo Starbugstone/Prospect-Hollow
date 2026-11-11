@@ -1,6 +1,6 @@
 # Settlement eras
 
-Fifteen eras are playable. The campaign has 546 puzzles in 91 chapters; town
+Fifteen eras are playable. The campaign has 606 puzzles in 101 chapters; town
 advancement and mine progress are independent.
 
 | Era                        | Year         | Saved id       |

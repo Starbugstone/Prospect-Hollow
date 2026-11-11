@@ -3,7 +3,7 @@ import { createPinia, setActivePinia } from 'pinia';
 import { createSSRApp, markRaw } from 'vue';
 import { renderToString } from 'vue/server-renderer';
 import SettingsDrawer from '../src/components/SettingsDrawer.vue';
-import { LEVEL_COUNT } from '../src/data/campaign';
+import { LEVEL_NAMES } from '../src/data/levelNames';
 import { mineRelicAppearance, mineSignalAppearance } from '../src/data/mineThemes';
 import { OBSTACLES } from '../src/data/obstacles';
 import { isCrystalSignal, traceCopies } from '../src/game/engine/CrystalMechanics';
@@ -13,6 +13,7 @@ import { gravityPath, isPlayableCell, isPortalPad } from '../src/game/engine/Boa
 import { releaseCutRoots } from '../src/game/engine/DeepMineMechanics';
 import { cargoPath, cargoReachesExit } from '../src/game/engine/GravityFrames';
 import { HintEngine } from '../src/game/engine/HintEngine';
+import { levelConfig } from '../src/game/engine/LevelGenerator';
 import fr from '../src/i18n/fr.json';
 import { PlayClock } from '../src/game/engine/PlayClock';
 import { layerCount, neighborsOf } from '../src/game/engine/TileRules';
@@ -30,9 +31,10 @@ import {
 } from './helpers/boardRules';
 import { simulateCampaignLevel } from './helpers/campaignSimulation';
 
-// Every board on trial (src/data/prototypeBoards.js) follows the layout rules of the shipped
-// hollow mine, plays to the end with unlimited moves and leaves the save untouched. Turn
-// budgets below are diagnostics, never gameplay move limits.
+// Every board on trial (src/data/prototypeBoards.js) is a campaign level of chapters 92–101,
+// follows the layout rules of the hollow mine, plays to the end with unlimited moves and, played
+// as a trial, leaves the save untouched. Turn budgets below are diagnostics, never gameplay
+// move limits.
 const hints = new HintEngine();
 const boards = PROTOTYPE_BOARDS.map((board) => [board.key, board, prototypeConfig(board.key)]);
 const cellsWhere = (level, test) =>
@@ -56,8 +58,10 @@ describe.each(boards)('the board on trial %s', (key, board, level) => {
     vi.unstubAllGlobals();
   });
 
-  it('takes a level number past the campaign and follows the shipped layout rules', () => {
-    expect(board.id).toBeGreaterThan(LEVEL_COUNT);
+  it('plays its campaign level and follows the shipped layout rules', () => {
+    // Every board on trial has joined chapters 92–101; the trial is that level, unchanged.
+    expect(level).toBe(levelConfig(board.id));
+    expect(prototypeName(key)).toBe(LEVEL_NAMES[board.id - 1]);
     expect(PROTOTYPE_BOARDS.filter((other) => other.id === board.id)).toHaveLength(1);
     if (isExtraction(level))
       expect(level.tiles.reduce((sum, tile) => sum + iceLayers(tile), 0)).toBe(0);
@@ -115,7 +119,6 @@ describe.each(boards)('the board on trial %s', (key, board, level) => {
     expect(JSON.stringify([campaign.profile(), [...saves]])).toBe(before);
   }, 60000);
 
-  // The board's number lies past the campaign, so its chapter cannot be looked up from it.
   it("hands the renderer its own chapter's art", () => {
     const game = useGameStore();
     expect(game.startLevel(key, 'prototype')).toBe(true);

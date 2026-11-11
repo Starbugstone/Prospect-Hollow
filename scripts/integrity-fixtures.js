@@ -9,7 +9,8 @@ import { createPinia, setActivePinia } from 'pinia';
 import { freshProfile, useCampaignStore } from '../src/stores/campaignStore.js';
 import { useGameStore } from '../src/stores/gameStore.js';
 import { useInventoryStore } from '../src/stores/inventoryStore.js';
-import { generateLevelConfigs } from '../src/game/engine/LevelGenerator.js';
+import { generateLevelConfigs, levelConfig } from '../src/game/engine/LevelGenerator.js';
+import { miningDepthBonus } from '../src/data/economy.js';
 import { BUILDINGS, BANDIT_EVENT } from '../src/data/town.js';
 import { SPACE_HELMET } from '../src/data/townAnimals.js';
 import { ERAS } from '../src/data/eras.js';
@@ -464,6 +465,46 @@ export function createIntegrityFixtures() {
           }) !== 910
         )
           throw new Error('VIP did not spend at mine depth.');
+      },
+    );
+    // Chapters 92–101: the server accepts their chests and VIP depth from the exported rules.
+    const finished = (profile, last) => {
+      for (let id = 1; id <= last; id++) profile.records[id] = { score: 1000, stars: 1 };
+    };
+    fixture(
+      'first victory on level 547 after a finished 546-level campaign',
+      (profile) => finished(profile, 546),
+      (campaign) => {
+        if (campaign.nextLevel !== 547) throw new Error('Level 547 was not offered.');
+        const [chest] = victory(campaign, { chooseRewards: true }, levelConfig(547));
+        expectSuccess(campaign.claimChest(chest.id, 'coins'), 'level 547 coin chest');
+      },
+    );
+    fixture(
+      'coin chest on level 606, the last of chapter 101',
+      (profile) => finished(profile, 605),
+      (campaign) => {
+        const [chest] = victory(campaign, { chooseRewards: true }, levelConfig(606));
+        expectSuccess(campaign.claimChest(chest.id, 'coins'), 'level 606 coin chest');
+      },
+    );
+    fixture(
+      'VIP purchase at chapter 101',
+      (profile) => {
+        saloon(profile);
+        profile.records[606] = { score: 1000, stars: 1 };
+      },
+      (campaign) => {
+        if (
+          campaign.collectVipSpending({
+            tour: 'deepest-fixture-tour',
+            stop: 0,
+            building: 'saloon',
+            visitor: { vip: true },
+          }) !==
+          10 + miningDepthBonus(10, 606)
+        )
+          throw new Error('VIP did not spend at the depth of chapter 101.');
       },
     );
     fixture(

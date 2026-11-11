@@ -1263,5 +1263,189 @@
   "546": {
     "relics": 6,
     "gates": 3
+  },
+  "547": {
+    "relics": 2,
+    "oreOrders": 1,
+    "cores": 1
+  },
+  "548": {
+    "gates": 4
+  },
+  "550": {
+    "relics": 2,
+    "oreOrders": 1,
+    "cores": 1
+  },
+  "551": {
+    "gates": 4
+  },
+  "552": {
+    "relics": 4,
+    "oreOrders": 2,
+    "cores": 1
+  },
+  "553": {
+    "relics": 2
+  },
+  "556": {
+    "relics": 3,
+    "oreOrders": 1
+  },
+  "557": {
+    "relics": 1,
+    "oreOrders": 1
+  },
+  "558": {
+    "relics": 3,
+    "oreOrders": 2
+  },
+  "559": {
+    "lanterns": 2
+  },
+  "561": {
+    "lanterns": 4,
+    "oreOrders": 1
+  },
+  "562": {
+    "lanterns": 2,
+    "oreOrders": 1
+  },
+  "563": {
+    "lanterns": 3
+  },
+  "564": {
+    "lanterns": 4,
+    "oreOrders": 2
+  },
+  "565": {
+    "surveys": 1,
+    "oreOrders": 1
+  },
+  "566": {
+    "surveys": 1,
+    "oreOrders": 1
+  },
+  "567": {
+    "surveys": 1,
+    "oreOrders": 2
+  },
+  "568": {
+    "surveys": 1,
+    "oreOrders": 2
+  },
+  "569": {
+    "surveys": 1,
+    "oreOrders": 1
+  },
+  "570": {
+    "surveys": 1,
+    "oreOrders": 2
+  },
+  "571": {
+    "relics": 2,
+    "oreOrders": 1,
+    "cores": 2,
+    "gates": 2
+  },
+  "572": {
+    "relics": 2,
+    "oreOrders": 1,
+    "cores": 2,
+    "gates": 2
+  },
+  "573": {
+    "relics": 2,
+    "oreOrders": 1,
+    "cores": 3,
+    "gates": 2
+  },
+  "574": {
+    "relics": 4,
+    "oreOrders": 2,
+    "cores": 3,
+    "gates": 4
+  },
+  "575": {
+    "relics": 1,
+    "oreOrders": 1,
+    "cores": 1,
+    "gates": 1
+  },
+  "576": {
+    "relics": 4,
+    "oreOrders": 3,
+    "cores": 3,
+    "gates": 4
+  },
+  "578": {
+    "oreOrders": 1
+  },
+  "579": {
+    "oreOrders": 1
+  },
+  "580": {
+    "oreOrders": 1
+  },
+  "581": {
+    "oreOrders": 1
+  },
+  "582": {
+    "oreOrders": 2
+  },
+  "588": {
+    "oreOrders": 1,
+    "gates": 2
+  },
+  "589": {
+    "relics": 2,
+    "oreOrders": 1
+  },
+  "590": {
+    "relics": 1,
+    "oreOrders": 1
+  },
+  "591": {
+    "relics": 3,
+    "oreOrders": 2
+  },
+  "592": {
+    "relics": 3,
+    "oreOrders": 2
+  },
+  "593": {
+    "relics": 1,
+    "oreOrders": 1
+  },
+  "594": {
+    "relics": 4,
+    "oreOrders": 2,
+    "gates": 2
+  },
+  "601": {
+    "relics": 1,
+    "gates": 2
+  },
+  "602": {
+    "relics": 1,
+    "oreOrders": 1
+  },
+  "603": {
+    "relics": 2,
+    "oreOrders": 1,
+    "gates": 2
+  },
+  "604": {
+    "relics": 2,
+    "oreOrders": 1
+  },
+  "605": {
+    "relics": 1,
+    "oreOrders": 1
+  },
+  "606": {
+    "relics": 3,
+    "oreOrders": 2,
+    "gates": 4
   }
 }

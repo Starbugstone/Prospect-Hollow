@@ -5,8 +5,14 @@ import { markRaw } from 'vue';
 import { CHAPTERS, LEVEL_COUNT } from '../src/data/campaign';
 import { LEVEL_NAMES } from '../src/data/levelNames';
 import { STAR_SCORE_TARGETS } from '../src/data/starScoreTargets';
-import { HOLLOW_MINE_CHAPTERS, HOLLOW_MINE_LEVELS } from '../src/data/hollowMineLevels';
+import {
+  chapterPalettes,
+  HOLLOW_MINE_CHAPTERS,
+  HOLLOW_MINE_LEVELS,
+} from '../src/data/hollowMineLevels';
+import { CRYSTAL_SEAM_FIRST_LEVEL, CRYSTAL_SEAM_PLANS } from '../src/data/crystalSeamLevels';
 import { obstaclesInLevel } from '../src/data/obstacles';
+import { isPortalPad } from '../src/game/engine/BoardTopology';
 import { generateLevelConfigs } from '../src/game/engine/LevelGenerator';
 import { cargoPath, cargoReachesExit } from '../src/game/engine/GravityFrames';
 import { HintEngine } from '../src/game/engine/HintEngine';
@@ -20,6 +26,7 @@ import {
   isExtraction as extraction,
   opened,
   strandedCargo,
+  turnedBeams,
   unreachableStarglass,
 } from './helpers/boardRules';
 import { simulateCampaignLevel } from './helpers/campaignSimulation';
@@ -53,7 +60,7 @@ describe('append-only floating seam chapters', () => {
     );
   });
 
-  it('keeps all 546 shipped levels identical while new boards are on trial', () => {
+  it('keeps all 546 shipped levels identical after chapters 92–101 are appended', () => {
     // Captured before the first prototype board (src/data/prototypeBoards.js) and route
     // chambers. Levels 1–546 keep their layouts, targets, names and chapters.
     const shipped = generateLevelConfigs(546).map(({ board, ...level }) => ({
@@ -165,8 +172,147 @@ describe('append-only floating seam chapters', () => {
   });
 
   // Three full games per level need headroom on slower Docker workers.
-  it('completes every new level in hint-led play without inventory powers', () => {
-    for (const level of hollow)
+  it('completes every level of 403–546 in hint-led play without inventory powers', () => {
+    for (const level of hollow.filter(({ id }) => id < CRYSTAL_SEAM_FIRST_LEVEL))
+      for (const seed of [101, 102, 103]) {
+        const run = simulateCampaignLevel(level, seed);
+        expect(run, `level ${level.id} seed ${seed}`).toMatchObject({
+          remaining: false,
+          layers: 0,
+          relics: 0,
+          ore: 0,
+        });
+      }
+  }, 300000);
+});
+
+// Chapters 92–101: the boards of NEXT_RELEASE.md step 3, after the trials that proved them.
+describe('chapters 92–101, levels 547–606', () => {
+  const crystal = levels.slice(CRYSTAL_SEAM_FIRST_LEVEL - 1);
+  const first = (obstacle) =>
+    levels.find((level) =>
+      obstaclesInLevel(level.tiles, level.theme).some(({ id }) => id === obstacle),
+    )?.id;
+
+  it('appends ten six-level chapters after level 546 with their own names', () => {
+    expect(CRYSTAL_SEAM_FIRST_LEVEL).toBe(547);
+    expect(LEVEL_COUNT).toBe(606);
+    expect(CHAPTERS.slice(91).map(({ id }) => id)).toEqual(CRYSTAL_SEAM_PLANS.map(({ id }) => id));
+    expect(CHAPTERS.slice(91).map(({ name }) => name)).toEqual([
+      'Echo gallery',
+      'Turning orchard',
+      'The deep lantern',
+      'Shifting survey',
+      'Ember sidings',
+      'Buried routes',
+      'Frost relays',
+      'Tidal pearls',
+      'Rooted vault',
+      'The far seam',
+    ]);
+    expect(crystal.map(({ id }) => id)).toEqual(Array.from({ length: 60 }, (_, i) => 547 + i));
+    const names = LEVEL_NAMES.slice(546);
+    expect(new Set(names).size).toBe(60);
+    expect(new Set(LEVEL_NAMES).size).toBe(LEVEL_COUNT);
+    for (const [index, plan] of CRYSTAL_SEAM_PLANS.entries()) {
+      expect(plan.stops).toHaveLength(6);
+      expect(plan.levels).toHaveLength(6);
+      expect(names.slice(index * 6, index * 6 + 6)).toEqual(
+        plan.stops.map((stop) => `${plan.name}: ${stop}`),
+      );
+    }
+  });
+
+  it('opens act VI at chapter 98 with the next rotation of color sets', () => {
+    const palettes = (chapter) => CHAPTERS[chapter - 1].palettes;
+    for (const chapter of [92, 93, 94, 95, 96, 97])
+      expect(palettes(chapter)).toEqual(chapterPalettes(24));
+    for (const chapter of [98, 99, 100, 101])
+      expect(palettes(chapter)).toEqual(chapterPalettes(30));
+    expect(palettes(98)).not.toEqual(palettes(97));
+  });
+
+  it('teaches each crystal mechanic on its own board, with its guide, before pairing it', () => {
+    // The first board that shows an obstacle opens its guide ("New in this mine").
+    expect(first('trace-twins')).toBe(548);
+    expect(first('crossgrain')).toBe(554);
+    expect(first('chord')).toBe(560);
+    for (const [id, obstacle] of [
+      [548, 'trace-twins'],
+      [554, 'crossgrain'],
+      [560, 'chord'],
+    ]) {
+      const shown = obstaclesInLevel(levels[id - 1].tiles, levels[id - 1].theme).map(
+        ({ id }) => id,
+      );
+      expect(shown, `level ${id}`).toContain(obstacle);
+    }
+  });
+
+  it('names no town building, since the mine is not gated by the town era', () => {
+    for (const level of crystal) {
+      const text = `${LEVEL_NAMES[level.id - 1]} ${level.tip}`;
+      expect(text, `level ${level.id}`).not.toMatch(/New Hollow|commission|town|village|valley/i);
+      expect(level.tip, `level ${level.id}`).not.toMatch(/TIP \d/);
+    }
+  });
+
+  it('keeps every turned beam clear of the portal pads', () => {
+    // A beam passes over a pad as over a void and does not come out of its pair. A player
+    // could expect either, so no board makes the question arise (docs/hollow-mine-levels.md).
+    const shared = hollow.filter(
+      (level) => level.tiles.some((tile) => tile.lens) && level.tiles.some(isPortalPad),
+    );
+    expect(shared.map(({ id }) => id)).toEqual([547, 550, 552]);
+    for (const level of shared) {
+      const cells = new Set();
+      for (const { lens, cells: hit } of turnedBeams(level)) {
+        cells.add(lens);
+        const last = hit.at(-1);
+        if (last == null) continue;
+        const step = (last - lens) / hit.length;
+        if (Number.isInteger(step))
+          for (let cell = lens; cell !== last; cell += step) cells.add(cell);
+        for (const cell of hit) cells.add(cell);
+      }
+      expect(
+        [...cells].filter((cell) => isPortalPad(level.tiles[cell])),
+        `level ${level.id}`,
+      ).toEqual([]);
+    }
+  });
+
+  it('only gives route chambers to levels whose chambers hold nothing the goal counts', () => {
+    // The generator throws otherwise; these are the levels where the player chooses a way in.
+    const routes = crystal
+      .filter((level) => level.tiles.some((tile) => tile.routeWall))
+      .map(({ id }) => id);
+    expect(routes).toEqual([559, 564, 577, 578, 579, 580, 582, 601, 606]);
+  });
+
+  it('offers level 547, not the museum, to a player who finished all 546 levels', () => {
+    const campaign = useCampaignStore();
+    campaign.records = Object.fromEntries(
+      Array.from({ length: 546 }, (_, i) => [i + 1, { score: 1, stars: 3 }]),
+    );
+    expect(campaign.newLevelsLeft).toBe(true);
+    expect(campaign.nextLevel).toBe(547);
+    expect(campaign.nextMiningLevel).toBe(547);
+    expect(campaign.canPlay(547)).toBe(true);
+    expect(campaign.canPlay(548)).toBe(false);
+    // A perfect 546-level campaign is no longer complete; it has 60 levels left to play.
+    expect(campaign.completion).toMatchObject({ perfect: 546, total: 606, complete: false });
+    expect(campaign.completion.unplayed).toBe(60);
+    const game = useGameStore();
+    game.bootstrap();
+    expect(game.startLevel(547)).toBe(true);
+    expect(game.currentLevelId).toBe(547);
+    game.exitLevel();
+  });
+
+  // Three full games per level need headroom on slower Docker workers.
+  it('completes every level of 547–606 in hint-led play on held-out seeds', () => {
+    for (const level of crystal)
       for (const seed of [101, 102, 103]) {
         const run = simulateCampaignLevel(level, seed);
         expect(run, `level ${level.id} seed ${seed}`).toMatchObject({
@@ -180,7 +326,8 @@ describe('append-only floating seam chapters', () => {
 });
 
 describe('floating seam play', () => {
-  it.each([408, 412, 414])(
+  // 548, 554 and 560 teach the three crystal mechanics; 577 and 601 have route chambers.
+  it.each([408, 412, 414, 548, 554, 560, 577, 601])(
     'completes level %i through normal play beyond 100 moves after its speed target elapsed',
     async (id) => {
       let random = id * 7919;
