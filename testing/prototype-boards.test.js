@@ -6,10 +6,10 @@ import SettingsDrawer from '../src/components/SettingsDrawer.vue';
 import { LEVEL_COUNT } from '../src/data/campaign';
 import { mineRelicAppearance, mineSignalAppearance } from '../src/data/mineThemes';
 import { OBSTACLES } from '../src/data/obstacles';
-import { isCrystalSignal } from '../src/game/engine/CrystalMechanics';
+import { isCrystalSignal, traceCopies } from '../src/game/engine/CrystalMechanics';
 import { PROTOTYPE_BOARDS, prototypeConfig, prototypeName } from '../src/data/prototypeBoards';
 import { BonusActivator } from '../src/game/engine/BonusActivator';
-import { gravityPath, isGravitySwitch, isPortalPad } from '../src/game/engine/BoardTopology';
+import { gravityPath, isPlayableCell, isPortalPad } from '../src/game/engine/BoardTopology';
 import { releaseCutRoots } from '../src/game/engine/DeepMineMechanics';
 import { cargoPath, cargoReachesExit } from '../src/game/engine/GravityFrames';
 import { HintEngine } from '../src/game/engine/HintEngine';
@@ -191,20 +191,6 @@ describe('the boards on trial in Settings', () => {
     expect(await settings()).toContain('Boards on trial');
   });
 });
-
-// Every cell a turned beam crosses, including the cells it passes over without hitting.
-const beamCells = (level) => {
-  const cells = new Set();
-  for (const { lens, cells: hit } of turnedBeams(level)) {
-    cells.add(lens);
-    for (const cell of hit) cells.add(cell);
-    const last = hit.at(-1);
-    if (last == null) continue;
-    const step = (last - lens) / hit.length;
-    if (Number.isInteger(step)) for (let cell = lens; cell !== last; cell += step) cells.add(cell);
-  }
-  return cells;
-};
 
 describe('Echo gallery: Crossed paths', () => {
   const level = prototypeConfig('echo-gallery-crossing');
@@ -440,57 +426,78 @@ describe('Buried routes: Shaft or gallery', () => {
   });
 });
 
-describe('Frost relays: Relay chain', () => {
-  const level = prototypeConfig('frost-relays-chain');
+describe('Frost relays: Frozen grain', () => {
+  const level = prototypeConfig('frost-relays-grain');
   const { tiles, boardCols: cols, boardRows: rows } = level;
   const frozen = cellsWhere(level, (tile) => tile.state === 'FROZEN');
   const relays = cellsWhere(level, (tile) => tile.signal === 'spore');
+  const crystals = cellsWhere(level, (tile) => tile.signal === 'crossgrain');
+  const row = (index) => Math.floor(index / cols);
+  const lineOf = (relay) =>
+    Array.from({ length: tiles[relay].sporeAxis === 'column' ? rows : cols }, (_, step) =>
+      tiles[relay].sporeAxis === 'column' ? step * cols + (relay % cols) : row(relay) * cols + step,
+    );
 
   it('carries ice and no lanterns, since every frozen gem sits on ice', () => {
     expect(isExtraction(level)).toBe(false);
-    expect(frozen.length).toBe(20);
+    expect(frozen.length).toBe(16);
     for (const cell of frozen) expect(iceLayers(tiles[cell])).toBe(1);
   });
 
-  it('wakes both row relays from the column relay, and the chain thaws every frozen gem', () => {
-    const column = relays.find((cell) => tiles[cell].sporeAxis === 'column');
-    const rowRelays = relays.filter((cell) => tiles[cell].sporeAxis === 'row');
-    expect(rowRelays).toHaveLength(2);
-    for (const relay of rowRelays) expect(relay % cols).toBe(column % cols);
-    // A burst clears the gems of its line; each cleared cell thaws its frozen neighbours.
-    const line = (relay) =>
-      Array.from({ length: tiles[relay].sporeAxis === 'column' ? rows : cols }, (_, step) =>
-        tiles[relay].sporeAxis === 'column'
-          ? step * cols + (relay % cols)
-          : Math.floor(relay / cols) * cols + step,
-      );
-    const cleared = new Set(relays.flatMap(line).filter((cell) => tiles[cell].state !== 'FROZEN'));
-    for (const cell of frozen)
-      expect(
-        neighborsOf(cell, cols, rows).some((n) => cleared.has(n)),
-        `frozen ${cell}`,
-      ).toBe(true);
+  it('blocks each crystal’s row with frost but leaves its column open', () => {
+    expect(crystals).toHaveLength(4);
+    for (const cell of crystals) {
+      // Every row of three through the crystal holds a frozen gem or runs off the board.
+      for (let start = (cell % cols) - 2; start <= cell % cols; start++) {
+        const line = [start, start + 1, start + 2];
+        expect(
+          line.some(
+            (col) => col < 0 || col >= cols || tiles[row(cell) * cols + col].state === 'FROZEN',
+          ),
+          `crystal ${cell} from column ${start}`,
+        ).toBe(true);
+      }
+      // The column through it is free of frost.
+      for (const neighbour of [cell - cols, cell + cols, cell - 2 * cols, cell + 2 * cols])
+        if (tiles[neighbour])
+          expect(tiles[neighbour].state, `cell ${neighbour}`).not.toBe('FROZEN');
+    }
+  });
+
+  it('hides each relay in the frost, its burst sealing the crystals of its own band only', () => {
+    expect(relays).toHaveLength(2);
+    for (const relay of relays) {
+      expect(tiles[relay].sporeAxis).toBe('row');
+      for (const neighbour of neighborsOf(relay, cols, rows))
+        expect(tiles[neighbour].state, `beside relay ${relay}`).toBe('FROZEN');
+      const line = lineOf(relay);
+      expect(crystals.filter((cell) => line.includes(cell))).toHaveLength(2);
+      // No relay lies on another's line, so one burst never sets off the next.
+      expect(relays.filter((other) => other !== relay && line.includes(other))).toEqual([]);
+    }
   });
 });
 
-describe('Tidal pearls: Ebb and flow', () => {
-  const level = prototypeConfig('tidal-pearls-pairs');
+describe('Tidal pearls: Falling chords', () => {
+  const level = prototypeConfig('tidal-pearls-chords');
   const { board, tiles, boardCols: cols, boardRows: rows } = level;
   const pearls = board.flatMap((gem, index) => (gem?.type === 'relic' ? [index] : []));
+  const chords = cellsWhere(level, (tile) => tile.signal === 'chord');
 
-  it('parts each pair at the seam: the upper pearl rises, the lower one sinks', () => {
+  it('brings both pearls down through a chord crystal to their baskets, with one order', () => {
     expect(mineRelicAppearance(level.theme).id).toBe('pearl');
     expect(level.oreOrders).toHaveLength(1);
-    expect(pearls).toHaveLength(4);
+    expect(tiles.some((tile) => tile.fall === 'up')).toBe(false);
+    expect(pearls).toHaveLength(2);
+    expect(chords).toHaveLength(3);
     for (const index of pearls) {
-      const up = tiles[index].fall === 'up';
       const path = cargoPath(board, tiles, index, cols, rows);
-      expect(Math.floor(path.at(-1) / cols), `pearl ${index}`).toBe(up ? 0 : rows - 1);
+      expect(Math.floor(path.at(-1) / cols), `pearl ${index}`).toBe(rows - 1);
       expect(tiles[path.at(-1)].exit).toBe(true);
-      // Its partner sits across the seam in the same column.
-      const partner = up ? index + cols : index - cols;
-      expect(pearls).toContain(partner);
-      expect(tiles[partner].fall === 'up').toBe(!up);
+      expect(
+        chords.filter((cell) => path.includes(cell)),
+        `pearl ${index}`,
+      ).toHaveLength(1);
     }
   });
 });
@@ -526,11 +533,13 @@ describe('Rooted vault: Bound shut', () => {
 });
 
 describe('The far seam: Either way out', () => {
-  const level = prototypeConfig('far-seam-either-way');
+  const level = prototypeConfig('far-seam-traces');
   const { board, tiles, boardCols: cols, boardRows: rows } = level;
   const float = board.findIndex((gem) => gem?.float);
   const dial = tiles.findIndex((tile) => tile.gravitySwitch === 'dial');
   const walls = cellsWhere(level, (tile) => tile.waist);
+  const gates = cellsWhere(level, (tile) => tile.bonusOnly && !tile.waist);
+  const stamps = cellsWhere(level, (tile) => tile.signal === 'trace');
 
   it('gives the floatstone one way out in each gravity, through its own shaft', () => {
     expect(float).toBeGreaterThanOrEqual(0);
@@ -545,23 +554,42 @@ describe('The far seam: Either way out', () => {
     expect(cargoReachesExit(board, flipped(tiles), float, cols, rows)).toBe(false);
   });
 
-  it('turns beams on to both walls and keeps them clear of the dial and the sealed shafts', () => {
-    const beams = turnedBeams({ ...level, tiles });
-    for (const wall of walls)
-      expect(
-        new Set(beams.filter((beam) => beam.cells.includes(wall)).map((beam) => beam.lens)).size,
-        `wall ${wall}`,
-      ).toBe(2);
-    // Walk the beams on the board as it starts, with the shafts still sealed.
-    const crossed = [...beamCells(level)];
-    expect(crossed.filter((cell) => isGravitySwitch(tiles[cell]))).toEqual([]);
-    expect(crossed.filter((cell) => tiles[cell].sealed)).toEqual([]);
-    expect(crossed).not.toContain(float);
-    // The floor brazier gives crosses on the row the bottom prisms end.
-    const core = tiles.findIndex((tile) => tile.signal === 'core');
-    expect(tiles[core].coreBonus).toBe('cross');
-    const row = Math.floor(core / cols);
-    expect(tiles[row * cols].lens).toBeTruthy();
-    expect(tiles[row * cols + cols - 1].lens).toBeTruthy();
+  it('copies every line through a stamp on to a wall or a gate, and carries no lenses', () => {
+    expect(tiles.some((tile) => tile.lens)).toBe(false);
+    expect(stamps).toHaveLength(2);
+    expect(gates).toHaveLength(2);
+    const swappable = (cell) => isPlayableCell(tiles[cell]) && tiles[cell].type !== 'blocker';
+    const [color] = level.boardLayout.gemTypes;
+    const hits = { horizontal: new Set(), vertical: new Set() };
+    for (const stamp of stamps) {
+      expect(neighborsOf(stamp, cols, rows).some((cell) => walls.includes(cell))).toBe(true);
+      for (const [orientation, step] of [
+        ['horizontal', 1],
+        ['vertical', cols],
+      ])
+        for (let offset = -2; offset <= 0; offset++) {
+          const line = [0, 1, 2].map((part) => stamp + (offset + part) * step);
+          const sameRow = line.every(
+            (cell) => Math.floor(cell / cols) === Math.floor(stamp / cols),
+          );
+          if ((step === 1 && !sameRow) || !line.every((cell) => tiles[cell] && swappable(cell)))
+            continue;
+          const [copy] = traceCopies(
+            tiles,
+            [{ type: color, indices: line, orientation }],
+            cols,
+            rows,
+            true,
+          ).filter((entry) => entry.from === stamp);
+          const useful = copy.targets.filter(
+            (cell) => walls.includes(cell) || gates.includes(cell),
+          );
+          expect(useful, `${orientation} line ${line}`).not.toEqual([]);
+          for (const cell of useful) hits[orientation].add(cell);
+        }
+    }
+    // Rows land on the walls, columns on the gates.
+    expect([...hits.horizontal].toSorted()).toEqual(walls.toSorted());
+    expect([...hits.vertical].toSorted()).toEqual(gates.toSorted());
   });
 });

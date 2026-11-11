@@ -63,9 +63,9 @@ const TRIAL_CHAPTERS = {
     motif: 'arch',
     rows: 10,
   },
-  // Chapter 98 opens act VI, whose color sets start at plan 30: frozen gems and spore
-  // relays. Lanterns were proposed too, but a frozen gem sits on ice and a lantern board
-  // carries none, so this board leaves them out (see docs/hollow-mine-levels.md).
+  // Chapter 98 opens act VI, whose color sets start at plan 30: frozen gems, spore relays
+  // and crossgrain crystals. Lanterns were proposed first, but a frozen gem sits on ice and
+  // a lantern board carries none (see docs/hollow-mine-levels.md).
   'frost-relays': {
     chapter: 97,
     plan: 30,
@@ -74,7 +74,8 @@ const TRIAL_CHAPTERS = {
     motif: 'ribbon',
     rows: 9,
   },
-  // Chapter 99: twin gravity, pearls and one ore order.
+  // Chapter 99: pearls, one ore order and chord crystals. Twin gravity was dropped: it
+  // already ships with pearls, and the board plays tighter without it.
   'tidal-pearls': {
     chapter: 98,
     plan: 31,
@@ -92,7 +93,8 @@ const TRIAL_CHAPTERS = {
     motif: 'twins',
     rows: 10,
   },
-  // Chapter 101, the pack's finale: lenses, a moon dial and route chambers.
+  // Chapter 101, the pack's finale: route chambers, trace twins and a moon dial. The lens
+  // prisms of the first draft were only a helper and are gone.
   'far-seam': {
     chapter: 100,
     plan: 33,
@@ -242,38 +244,40 @@ const BOARDS = [
     },
   },
   {
-    key: 'frost-relays-chain',
+    key: 'frost-relays-grain',
     // The first level of chapter 98.
     id: 583,
     trial: 'frost-relays',
-    stop: 'Relay chain',
-    // Four bands of frozen gems (rows 1, 3, 5 and 7). The column relay in the middle (v)
-    // bursts down column 3, through both row relays (h), which burst along rows 2 and 6.
-    // Every cleared cell thaws the frozen gems beside it, so one chain thaws all four bands.
-    // A burst never breaks the ice under a frozen gem: that still takes a match once thawed.
+    stop: 'Frozen grain',
+    // Two bands of frost (rows 1–3 and 5–7), each hiding a row relay (h) between two
+    // crossgrain crystals (i). Frozen gems flank every crystal, so its row holds no match
+    // until they thaw; a match down through the crystal seals its vertical crack and
+    // thaws the frost beside it. The relay sits inside the frost, so it fires only once a
+    // neighbour has thawed. Its burst runs along its row, and that blast seals each
+    // crystal's horizontal crack. One burst covers one band: no chain thaws the board.
     level: {
-      board: '......./.fffff./...h.../.fffff./...v.../.fffff./...h.../.fffff./.......',
+      board: '......./..fff../.ifhfi./..fff../......./..fff../.ifhfi./..fff../.......',
       ice: 40,
-      chestTarget: 23500,
-      tip: 'Four bands of frozen gems, and three mushrooms between them. Match beside the mushroom in the middle: its burst runs down the column and wakes the other two, and every burst thaws the gems beside it. A thawed gem still sits on ice, so match on it to clear it.',
+      chestTarget: 26400,
+      tip: 'Each band of frost hides a mushroom between two crossgrain crystals. The frozen gems beside a crystal block its row, so match down through it first: that seals one crack and thaws the frost around it. Then match beside the mushroom. Its burst runs along the row and seals the other crack of both crystals. Thawed gems still sit on ice.',
     },
   },
   {
-    key: 'tidal-pearls-pairs',
+    key: 'tidal-pearls-chords',
     // The first level of chapter 99.
     id: 589,
     trial: 'tidal-pearls',
-    stop: 'Ebb and flow',
-    // Two pairs of pearls meet at the seam (rows 3 and 4, columns 1 and 5). The top half
-    // falls up and the bottom half falls down, so each pair parts: the upper pearl rises to
-    // a hatch, the lower one sinks to a basket. Refills pour out of the seam between them.
+    stop: 'Falling chords',
+    // Two pearls fall from the top row to the baskets below them (columns 1 and 5). Three
+    // chord crystals cross the middle (row 3), two of them on the pearls' way down. Each
+    // needs three different colours matched on it, so the emerald order takes at most one
+    // socket of each crystal.
     level: {
-      board: '.E...E./......./......./.R...R./.R...R./......./......./......./.E...E.',
-      gravity: 'split',
+      board: '.R...R./......./......./.s.s.s./......./......./......./......./.E...E.',
       ice: 0,
-      orders: [['emerald', 40]],
-      chestTarget: 24000,
-      tip: 'Two pairs of pearls meet at the seam. The top half falls up and the bottom half falls down, so each pair parts: the upper pearl rises to a hatch and the lower one sinks to a basket. Clear between each pearl and its rim, and fill the emerald order as you go.',
+      orders: [['emerald', 30]],
+      chestTarget: 23280,
+      tip: 'Two pearls wait at the top, and three chord crystals cross the middle. Fill each crystal’s three sockets with three different colours by matching on it; a repeated colour adds nothing. Clear below the pearls to bring them down to their baskets, and fill the emerald order as you go.',
     },
   },
   {
@@ -295,7 +299,7 @@ const BOARDS = [
     },
   },
   {
-    key: 'far-seam-either-way',
+    key: 'far-seam-traces',
     // The first level of chapter 101.
     id: 601,
     trial: 'far-seam',
@@ -303,21 +307,20 @@ const BOARDS = [
     // A floatstone (column 3, row 4) between two sealed shafts: a thick wall above leads to
     // the hatch, a thin wall below to the basket. A floatstone moves against gravity, so the
     // way up works as the cavern stands and the way down only once the moon dial (bottom-left
-    // corner) turns gravity over. Gold prisms in the four corners turn row beams diagonally
-    // on to the walls: the top pair on to the thick one, the bottom pair on to the thin one,
-    // and the floor brazier gives crosses along the bottom pair's row. No turned beam crosses
-    // the dial or a sealed shaft cell, so a beam never has to answer what either does to it.
+    // corner) turns gravity over. One pair of trace stamps sits diagonally across the
+    // floatstone, each beside a wall, with a gate (B) above the upper stamp and below the
+    // lower one. A row matched on either stamp copies on to the far wall; a column, on to
+    // the far gate. A gate also stops the column that would run through it, so every copy
+    // lands on a wall or a gate.
     level: {
-      board: 'L..E..L/......./......./...Y.../...F.../...w.../......./......./L.o...L/Q..E...',
-      lenses: ['se', 'sw', 'ne', 'nw'],
+      board: '...E.../......./..B..../..tY.../...F.../...wt../....B../......./......./Q..E...',
       chambers: [
         { id: 'a', rows: [1, 2], cols: [3, 3], route: true },
         { id: 'b', rows: [6, 8], cols: [3, 3], route: true },
       ],
-      coreBonuses: ['cross'],
       ice: 0,
-      chestTarget: 11000,
-      tip: 'A floatstone waits between two sealed shafts: a thick wall above leads to the hatch, a thin wall below to the basket. Floatstones rise, so break in above and lift it out, or break in below and blast the moon dial in the corner to turn gravity over and sink it. The gold prisms in the corners turn beams on to the walls; the brazier on the floor gives crosses along their row.',
+      chestTarget: 16800,
+      tip: 'A floatstone waits between two sealed shafts: a thick wall above leads to the hatch, a thin wall below to the basket. A match on one faceted stamp copies itself on to the other as a blast: a row lands on the far wall, a column on the far gate. Floatstones rise, so break in above and lift it out, or open the floor and blast the moon dial in the corner to sink it.',
     },
   },
 ];
