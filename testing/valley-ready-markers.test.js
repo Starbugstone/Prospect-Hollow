@@ -161,5 +161,7 @@ describe.each([
         if (drawnSpan * 0.42 <= 28) expect(drawn, `${label.id} on a small place`).toBe(30);
       }
     },
+    // Each case builds a whole town.
+    30000,
   );
 });
