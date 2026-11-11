@@ -278,15 +278,16 @@ explained first.
         listed under Boards on trial in Settings (More options), from the village
   - [x] Chapters 95–101: one board on trial each, measured on 60 hint-led seeds like the first
         three (see [the measurements](docs/hollow-mine-levels.md#pairing-prototypes-chapters-95101)).
-        All 420 runs finish, with medians of 14–25 moves:
-        `shifting-survey-stars` (15), `ember-sidings-gates` (19), `buried-routes-bed` (22),
-        `frost-relays-chain` (14), `tidal-pearls-pairs` (21), `rooted-vault-knots` (25) and
-        `far-seam-either-way` (14). The pairings of chapters 95, 96, 97 and 100 work as
-        proposed. Chapter 98 cannot have lanterns, so its board pairs frozen gems with spore
-        relays only. Chapter 99 repeats shipped Twin gravity content, and chapter 101's prisms
-        barely matter on its first board
-  - [ ] Play chapters 95–101 on a phone, then settle chapter 98's third mechanic and whether
-        chapters 99 and 101 keep their pairings
+        All 420 runs finish. The pairings of chapters 95, 96, 97 and 100 work as proposed
+        (medians: `shifting-survey-stars` 15, `ember-sidings-gates` 19, `buried-routes-bed` 22,
+        `rooted-vault-knots` 25)
+  - [x] Chapters 98, 99 and 101 reworked with the crystal mechanics (owner, 11 November 2026):
+        `frost-relays-grain` (Crossgrain, median 19), `tidal-pearls-chords` (Chord crystal,
+        twin gravity dropped, median 19) and `far-seam-traces` (Trace twins, prisms dropped,
+        median 21). Every run finishes, none beyond 100 moves
+  - [ ] Play chapters 95–101 on a phone. Open points: chapter 99's order fills only about one
+        chord socket in eight, and on chapter 101 the hint always sends the copy to a gate,
+        never to a wall
   - [x] New mechanics and board shapes: candidates proposed; Trace twins, Crossgrain crystal and
         Chord crystal built with a board on trial each; Arrowhead and fixed Twin windows tried
   - [ ] Play the five new mechanic/shape trials on a real phone and confirm the teaching boards
