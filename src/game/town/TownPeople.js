@@ -1,11 +1,12 @@
 import * as THREE from 'three';
 import { eraEvolution } from '../../data/eras';
-import { villagerIdentity } from '../../data/villagers';
+import { villagerBody, villagerIdentity, villagerRandom } from '../../data/villagers';
 import { hasVisitorTransport } from '../../data/visitorArrivals';
 import {
   VIP_MARKER,
   townWardrobe,
   residentOutfit,
+  periodOutfit,
   vipOutfit,
   guestOutfit,
   liveVisitorOutfit,
@@ -15,6 +16,7 @@ import { prepareActorWalk, walkPose, placeSafely } from './TownNavigation';
 import { SIDEWALK_OFFSET } from './TownTraffic';
 import { updateWorkRoutine } from './TownWorkRoutine';
 import { swingLimbs, VILLAGER_WALK_SPEED } from './TownGait';
+import { addOutfitParts, outfitTraits } from './TownOutfitParts';
 
 // Villagers, visitors and the stable's horses: articulated models built from the
 // diorama's primitives, their era wardrobe and identity, and their walking pose.
@@ -40,6 +42,8 @@ export function addPerson(
     loop = false,
     linear = false,
     era = d.town?.era,
+    // Scripted actors (raiders, builders) keep the plain adult figure they were cast as.
+    styled = !manual,
   },
 ) {
   const persistentKey = !manual && JSON.stringify([seed, work, visitor, sheriff, route]);
@@ -62,6 +66,20 @@ export function addPerson(
     dress ||= female && resident.variant === 1;
     hat = resident.hat;
   }
+  // The period's palette and silhouette, and the villager's own body. Only ordinary
+  // residents come as children or elders.
+  const period = styled && !sheriff ? periodOutfit(profile, seed, identity.gender) : null;
+  if (period && !resident) {
+    color = period.shirt;
+    hat = period.hat;
+  }
+  const traits = outfitTraits(period?.parts);
+  // A scripted actor keeps the standard figure its props and poses were made for.
+  const physique = period
+    ? villagerBody(seed, !visitor && !work)
+    : { age: 'adult', height: 1, build: 1, hairStyle: 0 };
+  const child = physique.age === 'child',
+    elder = physique.age === 'elder';
   if (sheriff && wardrobe.patrol) color = '#315d83';
   const root = d.group(parent);
   root.userData.villager = { ...identity, name: firstVIP?.name ?? null };
@@ -71,10 +89,32 @@ export function addPerson(
     root.name = wardrobe.patrol ? 'Town patrol officer' : 'Village sheriff';
     root.scale.setScalar(1.05);
   }
-  const body = d.group(root, 0, 0.54, 0);
-  d.box(body, 0.25, 0.19, 0.16, 0, 0, 0, '#69654d', true);
+  // The whole figure scales to the villager's height; `root` stays at full size for the
+  // doorway fade, the sheriff's stature and the contact shadow.
+  const figure = d.group(root);
+  figure.name = 'Villager figure';
+  figure.scale.setScalar(physique.height);
+  const body = d.group(figure, 0, 0.54, 0);
+  const legColor = resident?.trousers ?? period?.trousers ?? wardrobe.trousers;
+  d.box(body, 0.25, 0.19, 0.16, 0, 0, 0, period ? legColor : '#69654d', true);
   const torso = d.group(body, 0, 0.1, 0);
+  torso.scale.x = physique.build;
   const shirt = d.box(torso, female ? 0.26 : 0.32, wardrobe.coat, 0.18, 0, 0.13, 0, color, true);
+  // Rounded shoulders and a belt give the coat a shape of its own.
+  const shoulders = d.ball(torso, 0, 0.13 + wardrobe.coat / 2 - 0.035, 0, [0.2, 0.062, 0.1], color);
+  shoulders.name = 'Villager shoulders';
+  const belt = d.box(
+    torso,
+    (female ? 0.26 : 0.32) + 0.014,
+    0.04,
+    0.19,
+    0,
+    0.13 - wardrobe.coat / 2 + 0.035,
+    0,
+    '#4c4338',
+  );
+  belt.name = 'Villager belt';
+  belt.visible = !sheriff;
   const hips = d.mesh(body, 'cone', [0.17, 0.19, 0.13], [0, -0.015, 0], color);
   hips.visible = female;
   if (sheriff) {
@@ -130,13 +170,46 @@ export function addPerson(
     pin.name = 'Neighbor craft pin';
   }
   const head = d.group(torso, 0, 0.46, 0);
+  // A child's head is large for its body; the head keeps its width on any build.
+  const headSize = child ? 1.22 : 1;
+  head.scale.set(headSize / physique.build, headSize, headSize);
   d.ball(head, 0, 0, 0, [0.12, 0.145, 0.115], skin);
-  const hairColor = resident?.hair ?? '#73563d';
-  d.ball(head, 0, 0.045, -0.03, [0.123, 0.12, 0.097], hairColor);
+  const hairColor = elder
+    ? ['#d9d6cb', '#b9b5aa'][Math.floor(villagerRandom(seed + 977) * 2)]
+    : (resident?.hair ?? period?.hair ?? '#73563d');
+  const hairStyle = traits.hairStyle ?? physique.hairStyle;
+  const balding = elder && !female && !!period;
+  // An elder's hair has thinned to a fringe round the back of the head.
+  const cap = balding
+    ? d.ball(head, 0, 0.005, -0.045, [0.124, 0.085, 0.09], hairColor)
+    : d.ball(head, 0, 0.045, -0.03, [0.123, 0.12, 0.097], hairColor);
+  cap.name = 'Villager hair';
+  if (!balding) cap.scale.multiplyScalar(traits.hairVolume);
   const hair = d.group(head);
   hair.name = 'Villager swept hair and bun';
-  for (const x of [-0.1, 0.1]) d.ball(hair, x, -0.015, -0.045, [0.045, 0.14, 0.085], hairColor);
-  d.ball(hair, 0, 0.015, -0.135, [0.085, 0.085, 0.07], hairColor);
+  hair.scale.setScalar(traits.hairVolume);
+  // Four ways to wear it: swept into a bun, a bob, a ponytail, or two plaits.
+  const plaits = period && hairStyle === 3,
+    bob = period && hairStyle === 1;
+  for (const x of [-0.1, 0.1])
+    if (plaits) d.ball(hair, x, -0.115, 0.02, [0.036, 0.17, 0.04], hairColor);
+    else
+      d.ball(hair, x, bob ? -0.04 : -0.015, -0.045, [0.045, bob ? 0.17 : 0.14, 0.085], hairColor);
+  if (period && hairStyle === 2) {
+    d.ball(hair, 0, 0.03, -0.125, [0.05, 0.05, 0.05], hairColor);
+    d.ball(hair, 0, -0.1, -0.16, [0.045, 0.16, 0.05], hairColor);
+  } else if (bob || plaits) d.ball(hair, 0, -0.035, -0.085, [0.11, 0.15, 0.065], hairColor);
+  else d.ball(hair, 0, 0.015, -0.135, [0.085, 0.085, 0.07], hairColor);
+  const crop = d.group(head);
+  crop.name = 'Villager cropped hair';
+  if (period && !balding) {
+    if (hairStyle === 1) d.ball(crop, 0, 0.125, 0.055, [0.1, 0.05, 0.065], hairColor);
+    else if (hairStyle === 2)
+      d.ball(crop, 0.025, 0.105, -0.005, [0.125, 0.06, 0.105], hairColor).rotation.z = -0.22;
+    else if (hairStyle === 3)
+      for (const x of [-0.112, 0.112]) d.box(crop, 0.02, 0.1, 0.05, x, -0.02, 0.02, hairColor);
+  }
+  crop.visible = !female;
   const jaw = d.ball(head, 0, -0.06, 0.015, [0.105, 0.075, 0.095], skin);
   jaw.name = 'Villager broad jaw';
   hair.visible = female;
@@ -144,6 +217,7 @@ export function addPerson(
   d.ball(head, 0, -0.005, 0.111, [0.022, 0.028, 0.025], skin);
   for (const x of [-0.044, 0.044]) d.ball(head, x, 0.025, 0.105, 0.012, '#39392f');
   const headwear = d.group(head);
+  headwear.visible = traits.hat;
   if (wardrobe.hat === 'cap' || (sheriff && wardrobe.patrol)) {
     d.ball(headwear, 0, 0.11, -0.005, [0.135, 0.065, 0.12], hat);
     d.box(headwear, 0.17, 0.025, 0.11, 0, 0.11, 0.105, hat, true);
@@ -201,28 +275,85 @@ export function addPerson(
     d.ball(fore, 0, -0.19, 0, [0.045, 0.057, 0.04], skin);
     arms.push({ upper: arm, lower: fore });
     const thigh = d.group(body, side * 0.078, -0.065, 0);
-    const legColor = resident?.trousers ?? wardrobe.trousers;
     trousers.push(d.rod(thigh, [0, 0, 0], [0, -0.22, 0], 0.065, legColor));
     const shin = d.group(thigh, 0, -0.22, 0);
     trousers.push(d.rod(shin, [0, 0, 0], [0, -0.21, 0], 0.047, legColor));
     boots.push(
-      d.box(shin, 0.105, 0.08, 0.19, 0, -0.215, 0.035, resident?.boots ?? wardrobe.boots, true),
+      d.box(
+        shin,
+        0.105,
+        0.08,
+        0.19,
+        0,
+        -0.215,
+        0.035,
+        resident?.boots ?? period?.boots ?? wardrobe.boots,
+        true,
+      ),
     );
     legs.push({ upper: thigh, lower: shin });
   }
   const skirt = d.mesh(body, 'cone', [0.2, 0.29, 0.17], [0, -0.085, 0], color);
-  skirt.visible = !!dress || (female && !sheriff && eraEvolution(era).wardrobe === 'frontier');
+  // The period decides who wears a skirt and how long; a dress is always one.
+  dress ||= !!period && female && (!!wardrobe.skirt || traits.skirt);
+  const skirtLength = period ? period.skirtLength : 0.29;
+  // The period's silhouette hangs on the joints it follows. A named VIP wears the VIP
+  // outfit instead, so these stay apart from the clothing a VIP recolours.
+  const silhouette = [head, torso, body].map((joint) => d.group(joint));
+  silhouette.forEach((group) => {
+    group.name = 'Period silhouette';
+  });
+  if (period) {
+    addOutfitParts(
+      d,
+      {
+        head: silhouette[0],
+        torso: silhouette[1],
+        body: silhouette[2],
+        coat: wardrobe.coat,
+        width: female ? 0.26 : 0.32,
+        shirt: color,
+        trousers: resident?.trousers ?? period.trousers,
+        hat,
+        accent: period.accent,
+        hair: hairColor,
+        skirt: !!dress,
+        child,
+      },
+      period.parts,
+    );
+    if (!wardrobe.trim)
+      d.mesh(
+        silhouette[1],
+        'cylinder',
+        [0.088, 0.036, 0.078],
+        [0, 0.13 + wardrobe.coat / 2 + 0.008, 0],
+        period.accent,
+      ).name = 'Villager collar';
+    // Some elders walk with a stick, held in the swinging hand.
+    if (elder && villagerRandom(seed + 421) < 0.6)
+      d.rod(arms[1].lower, [0, -0.19, 0.02], [0, -0.66, 0.1], 0.014, '#7b5b3c').name =
+        'Walking stick';
+  }
   const appearance = {
     hair,
+    crop,
     jaw,
     hips,
     skirt,
+    belt,
     dress,
     sheriff,
     era,
     residentDetails,
+    silhouette,
+    hat: traits.hat,
+    flare: traits.flare,
+    skirtLength,
     gender: identity.gender,
   };
+  skirt.visible = !!dress || (female && !sheriff && eraEvolution(era).wardrobe === 'frontier');
+  dressSkirt(appearance, skirtLength, traits.flare);
   const sampledRoute = [];
   route.forEach((p, i) => {
     const previous = route[i - 1];
@@ -259,8 +390,10 @@ export function addPerson(
     vip,
     shirt,
     appearance,
+    stride: 0.58 * physique.height,
+    stoop: elder ? 0.09 : 0,
     clothing: {
-      shirt: [shirt, hips, skirt, ...sleeves],
+      shirt: [shirt, shoulders, hips, skirt, ...sleeves],
       trousers,
       boots,
       hat: headwear.children,
@@ -273,6 +406,7 @@ export function addPerson(
   };
   actor.originalClothing = [
     shirt,
+    shoulders,
     hips,
     skirt,
     ...sleeves,
@@ -304,16 +438,29 @@ export function addPerson(
 }
 // Every random VIP draw goes through here. A read-only shared town has no VIPs at all;
 // the owner's share-link guest has its own arrival in TownVipArrivals.
+// A skirt of this length hangs from the waist; `flare` widens a full skirt.
+function dressSkirt(appearance, length, flare = 1) {
+  const { skirt } = appearance;
+  skirt.scale.set(0.2 * flare, length, 0.17 * flare);
+  skirt.position.y = length === 0.29 ? -0.085 : 0.025 - length / 2;
+}
 export function setVillagerIdentity(d, actor, identity, outfitSeed = actor.seed ?? 0) {
   actor.root.userData.villager = identity;
   const female = identity.gender === 'female';
   const a = actor.appearance;
   a.hair.visible = a.hips.visible = female;
-  a.jaw.visible = !female;
+  a.jaw.visible = a.crop.visible = !female;
   a.skirt.visible = female && (a.dress || eraEvolution(a.era).wardrobe === 'frontier');
   actor.shirt.scale.x = female ? 0.26 : 0.32;
+  a.belt.scale.x = actor.shirt.scale.x + 0.014;
   actor.vip.visible = !!identity.name;
   a.residentDetails.visible = !identity.name;
+  // The silhouette was cut for the villager first drawn here: a named VIP, or a visit by
+  // someone of the other gender, goes without it.
+  const own = !identity.name && identity.gender === a.gender;
+  a.silhouette.forEach((group) => {
+    group.visible = own;
+  });
   if (identity.name) {
     const profile = eraEvolution(a.era);
     const outfit = identity.live
@@ -327,7 +474,7 @@ export function setVillagerIdentity(d, actor, identity, outfitSeed = actor.seed 
     actor.shirt.scale.y = outfit.coat;
     actor.clothing.headwear.visible = outfit.hatVisible;
     a.skirt.visible = female && outfit.skirt;
-    a.skirt.scale.y = outfit.skirtLength;
+    dressSkirt(a, outfit.skirtLength);
     a.skirt.position.y = 0.025 - outfit.skirtLength / 2;
     for (const [type, group] of Object.entries(actor.clothing.accessories))
       group.visible = outfit.accessory === type;
@@ -346,9 +493,8 @@ export function setVillagerIdentity(d, actor, identity, outfitSeed = actor.seed 
       mesh.material = material;
     });
     actor.shirt.scale.y = townWardrobe(eraEvolution(a.era)).coat;
-    actor.clothing.headwear.visible = true;
-    a.skirt.scale.y = 0.29;
-    a.skirt.position.y = -0.085;
+    actor.clothing.headwear.visible = a.hat || !own;
+    dressSkirt(a, a.skirtLength, a.flare);
   }
 }
 export function animatePerson(d, actor, time) {
@@ -424,7 +570,7 @@ export function animatePerson(d, actor, time) {
   actor.lastPosition.copy(root.position);
   actor.lastPoseTime = time;
   if (actor.motion) walking = actor.motion.state === 'moving';
-  const step = (actor.distance / 0.58) * Math.PI * 2;
+  const step = (actor.distance / (actor.stride ?? 0.58)) * Math.PI * 2;
   body.position.y =
     0.54 + (walking ? Math.cos(step * 2) * 0.013 : Math.sin(time * 1.8 + seed) * 0.005);
   torso.rotation.z = walking ? Math.sin(step) * 0.025 : 0;
@@ -451,29 +597,42 @@ export function animatePerson(d, actor, time) {
     torso.rotation.x = 0;
     arms[1].upper.rotation.z = 0;
   }
+  if (actor.stoop) torso.rotation.x += actor.stoop;
 }
+// Coat, upper leg, lower leg and mane.
+const HORSE_COATS = [
+  ['#a97950', '#986b46', '#b38c63', '#594b34'],
+  ['#8a5a3c', '#7a4f35', '#e9dfcb', '#3d3028'],
+  ['#b9b4a8', '#a6a195', '#8f8a80', '#e8e3d8'],
+  ['#4a4039', '#3f3631', '#4a4039', '#2b2522'],
+  ['#d9b77c', '#c9a76e', '#efe5cf', '#f1e7d0'],
+];
 export function addHorse(d, x, z, rotation, scale = 1) {
   const root = d.group(d.world, x, 0.07, z);
   root.userData.animated = true;
   root.rotation.y = rotation;
   root.scale.setScalar(scale);
-  d.ball(root, 0, 0.73, 0, [0.24, 0.31, 0.55], '#a97950');
+  // Each horse has its own coat, fixed by where it stands: bay, chestnut, grey or black.
+  const [coat, leg, sock, mane] =
+    HORSE_COATS[Math.floor(villagerRandom(Math.round(x * 31 + z * 17)) * HORSE_COATS.length)];
+  d.ball(root, 0, 0.73, 0, [0.24, 0.31, 0.55], coat);
   for (const dx of [-0.15, 0.15])
     for (const dz of [-0.33, 0.33]) {
-      d.rod(root, [dx, 0.64, dz], [dx, 0.3, dz + 0.02], 0.055, '#986b46');
-      d.rod(root, [dx, 0.3, dz + 0.02], [dx, 0.05, dz + 0.04], 0.04, '#b38c63');
+      d.rod(root, [dx, 0.64, dz], [dx, 0.3, dz + 0.02], 0.055, leg);
+      d.rod(root, [dx, 0.3, dz + 0.02], [dx, 0.05, dz + 0.04], 0.04, sock);
       d.box(root, 0.1, 0.08, 0.13, dx, 0.05, dz + 0.06, '#574b36', true);
     }
   const head = d.group(root, 0, 0.84, 0.39);
-  d.ball(head, 0, 0.22, 0.05, [0.13, 0.38, 0.18], '#a97950');
-  d.ball(head, 0, 0.44, 0.18, [0.13, 0.14, 0.23], '#ad8158');
+  d.ball(head, 0, 0.22, 0.05, [0.13, 0.38, 0.18], coat);
+  d.ball(head, 0, 0.44, 0.18, [0.13, 0.14, 0.23], coat);
+  d.ball(head, 0, 0.3, -0.08, [0.04, 0.3, 0.09], mane).name = 'Horse mane';
   for (const dx of [-0.075, 0.075]) {
-    d.ball(head, dx, 0.64, 0.11, [0.035, 0.1, 0.06], '#a97950');
+    d.ball(head, dx, 0.64, 0.11, [0.035, 0.1, 0.06], coat);
     d.ball(head, dx * 1.7, 0.49, 0.22, 0.018, '#393d30');
   }
   d.box(root, 0.35, 0.09, 0.28, 0, 1.04, -0.02, '#637e79', true);
   const tail = d.group(root, 0, 0.86, -0.47);
-  d.rod(tail, [0, 0, 0], [0, -0.46, -0.19], 0.055, '#594b34');
+  d.rod(tail, [0, 0, 0], [0, -0.46, -0.19], 0.055, mane);
   d.motions.push((time) => {
     head.rotation.x = 0.18 + Math.sin(time * 0.9 + rotation) * 0.14;
     tail.rotation.z = Math.sin(time * 1.5 + rotation) * 0.3;

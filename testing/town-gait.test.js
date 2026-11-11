@@ -73,7 +73,14 @@ it('drives valley villagers and Moon settlers with the same skeleton and cycle',
   const settler = { ...moonSuitFigure(kit, { parent: new Group() }), plan: null };
   settler.plan = moonSettlerPlan({ settlerDomes: 1, craterIceWell: 1 }, 0);
   for (const figure of [actor, settler]) {
-    expect(figure.body.parent).toBe(figure.root);
+    // A valley villager's body hangs from a node that only scales it to its own height.
+    const stature = figure.root.children.find((child) => child.name === 'Villager figure');
+    expect(figure.body.parent).toBe(stature ?? figure.root);
+    if (stature) {
+      expect(stature.position.length()).toBe(0);
+      expect(stature.scale.x).toBe(stature.scale.y);
+      expect(stature.scale.x).toBe(stature.scale.z);
+    }
     expect(figure.body.position.y).toBeCloseTo(0.54);
     for (const { upper, lower } of [...figure.arms, ...figure.legs]) {
       expect(lower.parent).toBe(upper);

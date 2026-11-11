@@ -65,6 +65,7 @@ touch a save.
 | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
 | `town-actor-review.html`, `town-actor-review.js`                                               | Villager outfit and construction review page.                                                           |
 | `cozy-building-review.html`, `cozy-building-review.js`                                         | The six cozy-era landmarks with their geometry budgets.                                                 |
+| `era-character-sheet.html`, `era-character-sheet.js`                                           | Any era's villagers, animals and Willowkin in a line (`?eras=`, `?cast=animals`).                       |
 | `cozy-character-review.html`, `cozy-character-review.js`                                       | Canopy and Riverlight villagers and animals.                                                            |
 | `era-art-review.html`, `era-art-review.js`, `era-art-fixtures.js`, `package-era-art-review.py` | Era review galleries built from review towns (`era-art-fixtures.js`), archived under ignored `output/`. |
 

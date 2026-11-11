@@ -587,6 +587,25 @@ images (96 character comparisons, 288 village scenes and 84 inset close-ups),
 writes an offline gallery and image manifest, and creates `output/vip-review.zip`.
 Additional overview captures already in the folder are preserved in the archive.
 
+#### Bodies and period silhouettes
+
+`villagerBody(seed, ages)` (`data/villagers.js`) fixes each villager's age, height, build
+and hairstyle. Only ordinary residents come as children or elders; workers, visitors, the
+sheriff and scripted actors stay adult, and a scripted actor keeps the standard figure its
+props were made for. The figure scales under a `Villager figure` node, so `root` remains
+free for doorway fades and the contact shadow.
+
+Each wardrobe in `data/townWardrobes.js` lists `looks` for both genders: sets of parts
+from `TownOutfitParts.js` (bonnet, overalls, cloche, headphones, sail cape and so on).
+`periodOutfit(profile, seed, gender)` picks the palette and look. Parts are a few shared
+primitives each, live in `appearance.silhouette` and hide under a named VIP's outfit, so
+VIP recolouring is unchanged. A new era needs a wardrobe with looks;
+`testing/era-characters.test.js` fails without them and holds the per-figure part and
+triangle budget. Unknown wardrobes, genders and part names dress plainly.
+
+Review any era with `scripts/era-character-sheet.html?eras=frontier,aviation` on the dev
+server (`&cast=animals` for the animals, `&species=dog,cat&each=4` to narrow them).
+
 ### NPC obstacle avoidance
 
 `TownNavigation` supplies cached pedestrian detours for residents, VIPs, mounted
@@ -699,6 +718,21 @@ disturbances, frozen clocks and a long simulation without scene growth.
 and final building tiers in every era and checks both prepared segments and
 animated animal positions, plus thin unmarked fences, covered landings, solid
 interiors, moving scenery reservations and traffic displacement.
+
+#### Looks, generations and Willowkin stages
+
+`ANIMAL_LOOKS` (`data/townAnimals.js`) gives each species several coats and, where it has
+them, builds: hound, terrier and collie dogs, a rooster among the hens, a stag and a fawn
+among the deer. `animalLook(species, seed, generation)` picks one; a new generation is born
+every second era, so the cast changes over the centuries while an animal stays itself
+within an era. A look may recolour, reshape or shrink the authored model, never outgrow
+its navigation envelope. Horses take one of five coats from where they stand.
+
+Willowkin neighbors have their own crown (umbrella, blossom or plume) and leaf colour.
+Their scarf and satchel take the current era's palette, each period adds a keepsake
+(`WILLOWKIN_KEEPSAKES`, by wardrobe), and from the Stargazer Age one in three is an elder
+with a staff, moss and long fronds. Saplings include smaller seedlings.
+`testing/era-characters.test.js` covers the envelopes, budgets and fallbacks.
 
 ### Loading and renderer ownership
 

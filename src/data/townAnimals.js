@@ -116,6 +116,103 @@ export const TOWN_ANIMALS = {
   },
 };
 
+// Each animal is drawn from one of its species' coats and builds, chosen by its own seed
+// and the era's generation: the village dog of 1958 is not the dog of 1865. Colours are
+// coat, light markings and dark markings; `form` picks a build where a species has more
+// than one, and `size` scales the animal within its navigation envelope.
+export const ANIMAL_LOOKS = {
+  dog: [
+    { form: 'hound', coat: '#c69b6b', light: '#e4c99e', dark: '#96724f', size: 1 },
+    { form: 'terrier', coat: '#eee5d2', light: '#f6f0e2', dark: '#9a6b45', size: 0.82 },
+    { form: 'collie', coat: '#4a4640', light: '#efe9dc', dark: '#35322e', size: 0.96 },
+    { form: 'hound', coat: '#8b6748', light: '#d9c09a', dark: '#5f4633', size: 0.9 },
+  ],
+  cat: [
+    { coat: '#b77e4e', light: '#f0e3cc', dark: '#76543e', size: 1 },
+    { coat: '#8f8d86', light: '#e6e2d8', dark: '#5d5b57', size: 0.94 },
+    { coat: '#3b3936', light: '#f1ede4', dark: '#2a2927', size: 1 },
+    { coat: '#e6d8bd', light: '#f4ecda', dark: '#7a5d49', size: 0.9 },
+  ],
+  hen: [
+    { coat: '#efe2c3', light: '#efe2c3', size: 1 },
+    { coat: '#c89560', light: '#efe2c3', size: 1 },
+    { coat: '#6d5646', light: '#cdb898', size: 0.94 },
+    { form: 'rooster', coat: '#9c5a36', light: '#3f5a55', size: 1 },
+  ],
+  fox: [
+    { coat: '#bd6f3c', light: '#f0dfbb', size: 1 },
+    { coat: '#d18a4c', light: '#f5e8cc', size: 0.9 },
+    { coat: '#7d7b80', light: '#e3e0da', size: 0.96 },
+  ],
+  raccoon: [
+    { coat: '#908b7d', light: '#d8d2bc', size: 1 },
+    { coat: '#a39a85', light: '#e4dcc4', size: 0.9 },
+    { coat: '#7c7870', light: '#cfc9b6', size: 0.95 },
+  ],
+  pigeon: [
+    { coat: '#8497a7', light: '#b2bec4', size: 1 },
+    { coat: '#e9e5dc', light: '#f5f2ea', size: 0.95 },
+    { coat: '#9a8474', light: '#c9b8a6', size: 1 },
+  ],
+  bluebird: [
+    { coat: '#7296ad', light: '#e8dfc8', size: 1 },
+    { coat: '#5d87b5', light: '#e9c9a4', size: 0.95 },
+    { coat: '#86a9b3', light: '#f0e6d0', size: 1 },
+  ],
+  deer: [
+    { form: 'doe', coat: '#c79768', light: '#ead6b3', size: 1 },
+    { form: 'stag', coat: '#b08257', light: '#e6d2ae', size: 1 },
+    { form: 'fawn', coat: '#d0a374', light: '#f1e2c4', size: 0.66 },
+  ],
+  otter: [
+    { coat: '#9c7558', light: '#e6d6b9', size: 1 },
+    { coat: '#7f6450', light: '#d9c8ab', size: 0.9 },
+  ],
+  hedgehog: [
+    { coat: '#9a826a', light: '#dfc8a0', dark: '#806953', size: 1 },
+    { coat: '#b39b80', light: '#eadbbb', dark: '#8f775f', size: 0.86 },
+  ],
+  hare: [
+    { coat: '#ae9273', light: '#e9ddc6', size: 1 },
+    { coat: '#9a9388', light: '#ebe6da', size: 0.92 },
+  ],
+  squirrel: [
+    { coat: '#b77442', light: '#e8cfaa', size: 1 },
+    { coat: '#8d8a84', light: '#e6e1d6', size: 0.94 },
+  ],
+  badger: [
+    { coat: '#87867d', light: '#eee4ce', dark: '#454740', size: 1 },
+    { coat: '#9a9486', light: '#f1e9d6', dark: '#514f47', size: 0.9 },
+  ],
+};
+const PLAIN_LOOK = Object.freeze({ size: 1 });
+/**
+ * The look of one animal. A new generation is born every second era, so the cast changes
+ * over the centuries while each animal stays itself within an era. An unknown species, or
+ * one without looks, keeps its single authored model.
+ */
+export function animalLook(species, seed = 0, generation = 0) {
+  const looks = Object.hasOwn(ANIMAL_LOOKS, species) ? ANIMAL_LOOKS[species] : null;
+  if (!looks?.length) return PLAIN_LOOK;
+  const index = Math.abs(Math.trunc(seed)) + Math.max(0, Math.trunc(generation));
+  return looks[index % looks.length];
+}
+
+// The Willowkin grow up with the town. A crown and a leaf colour belong to each one;
+// elders appear once saplings planted in the Canopy Age have had a century to grow.
+export const WILLOWKIN_CROWNS = ['umbrella', 'blossom', 'plume'];
+export const WILLOWKIN_LEAVES = ['era', '#a9b86a', '#c9a24e'];
+export const WILLOWKIN_ELDERS_FROM = 'stargazer';
+// What a Willowkin neighbor carries in each period, by the era's wardrobe.
+export const WILLOWKIN_KEEPSAKES = {
+  skysail: 'sail',
+  stargazer: 'lantern',
+  moonward: 'visor',
+  twin: 'twinLights',
+  tramline: 'cap',
+  listening: 'longScarf',
+};
+
 // The space-helmet easter egg debuts on the village dog in Tomorrow City and moves
 // to the next wearer in each later era, so players have to find its new animal.
 // Every wearer is a ground species the era casts keep; the list wraps around.
