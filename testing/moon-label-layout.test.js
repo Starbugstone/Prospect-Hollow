@@ -38,18 +38,21 @@ it('separates overlapping Moon action icons by their own drawn size, through the
   const at = (id, x) => ({
     ...label(id, x, 60),
     action: true,
-    marker: { x, y: 55, visible: true, pad: 400 },
+    marker: { x, y: 55, visible: true, span: 400 },
   });
   const placed = layoutMoonLabels([at('workshop', 50), at('garden', 51)], 320, 568);
   const [a, b] = placed.map(({ collection }) => ({
     x: (collection.x * 320) / 100,
     y: (collection.y * 568) / 100,
   }));
-  // Full-size icons keep four fifths of a 68-pixel badge apart.
+  // Full-size icons want four fifths of a 68-pixel badge between them, and each may move
+  // no further than its leash (three tenths of a badge) from its own place.
   expect(placed[0].collection.size).toBe(1);
-  expect(Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y))).toBeGreaterThanOrEqual(54.3);
+  expect(Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y))).toBeGreaterThanOrEqual(43.7);
+  for (const [n, x] of [50, 51].entries())
+    expect(Math.abs(((placed[n].collection.x - x) * 320) / 100)).toBeLessThanOrEqual(20.5);
   // Small icons, as in a phone's overview, need far less room and are barely moved.
-  const small = (id, x) => ({ ...at(id, x), marker: { x, y: 55, visible: true, pad: 40 } });
+  const small = (id, x) => ({ ...at(id, x), marker: { x, y: 55, visible: true, span: 40 } });
   const far = layoutMoonLabels([small('workshop', 50), small('garden', 51)], 320, 568);
   // The floor: 30 pixels drawn, so a phone's overview still reads at a glance.
   expect(far[0].collection.size).toBe(0.6);
@@ -100,7 +103,7 @@ it.each([
   [375, 740],
 ])('keeps a ready hammer at its own marker, or leaves it out, at %sx%s', (width, height) => {
   const top = width < 600 ? 164 : height < 450 ? 110 : 112;
-  const marker = (y) => ({ x: 50, y, visible: true, pad: 120 });
+  const marker = (y) => ({ x: 50, y, visible: true, span: 120 });
   const inside = ((top + 80) / height) * 100,
     under = ((top - 30) / height) * 100;
   const placed = layoutMoonLabels(

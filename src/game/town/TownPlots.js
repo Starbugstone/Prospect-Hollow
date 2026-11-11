@@ -59,6 +59,7 @@ import { TownScenery, sceneryAffectsNavigation } from './TownScenery';
 
 import { PLOTS, visiblePlots } from './TownLayout';
 import { parcelBounds, valleyParcel } from './TownParcels';
+import { markerHeight } from './TownMarkers';
 import { updateTownShadowCoverage } from './TownShadows';
 import { GARDEN_PARCELS } from '../../data/townGardenDistrict';
 import { areasForSettlement, areaUnlocked } from '../../data/townLandmarks';
@@ -699,6 +700,9 @@ export function tryActivatePlot(d) {
   const parcel = valleyParcel(id, group);
   d.parcels?.set(id, parcel);
   if (id !== 'mine') d.upgradeGlow?.add(id, parcelBounds(parcel));
+  // Its action icon follows the new model's roof and width.
+  const anchor = d.anchors?.find((entry) => entry.id === id && !entry.site);
+  if (anchor) Object.assign(anchor, plotMarker(id, parcel));
   d.refreshSelection?.(id);
   timeTown('activate-navigation', () =>
     d.navigation.replaceOwner(
@@ -800,6 +804,23 @@ export function plotsPending(d) {
   return !!work.active || work.queue.length > 0;
 }
 
+// A monument site's action icon hangs over its court and lower works, whatever rises
+// behind; the site's parcel is this share of its radius (valleySites).
+const SITE_MARKER_TOP = 3;
+const SITE_PARCEL_SHARE = 0.75;
+/**
+ * A plot's action icon, by the shared marker contract (TownMarkers.js): anchored just above
+ * what stands on the plot, and sized by the width of the plot's own parcel (its lot, the
+ * airport field or a garden parcel).
+ */
+export function plotMarker(id, parcel) {
+  const [x, z] = PLOTS[id];
+  const { minX, maxX } = parcel.base ?? parcel;
+  return {
+    collection: point(x, markerHeight(parcel.top ?? 0, parcel.bottom ?? 0), z),
+    span: maxX - minX,
+  };
+}
 // Monument and commission sites have no label, only an action icon over the middle of the
 // site. A site can open without a rebuild (a building level opens a commission), so every
 // town change brings the list up to date.
@@ -809,8 +830,16 @@ function syncSiteAnchors(d, town) {
   for (const area of areasForSettlement()) {
     if (!areaUnlocked(town, area)) continue;
     const [x, z] = area.positions[0];
-    const centre = point(x, groundHeight(x, z) + 2, z);
-    d.anchors.push({ id: area.id, site: true, width: 0, position: centre, collection: centre });
+    const ground = groundHeight(x, z);
+    d.anchors.push({
+      id: area.id,
+      site: true,
+      width: 0,
+      position: point(x, ground + 2, z),
+      // The shared marker contract: just above what stands on the site, sized by the site.
+      collection: point(x, markerHeight(SITE_MARKER_TOP, ground), z),
+      span: area.radius * SITE_PARCEL_SHARE * 2,
+    });
   }
 }
 // What follows the saved monument sites rather than a plot. A change that swaps plots in
@@ -1051,8 +1080,7 @@ export function rebuildTown(
       });
     }
     if (id !== 'mine') d.upgradeGlow.add(id, parcelBounds(parcel));
-    // Keep action icons at the front porch, below the roofline.
-    d.anchors.at(-1).collection = point(x, 1, z + 2.2);
+    Object.assign(d.anchors.at(-1), plotMarker(id, parcel));
     // Keep the windmill rotor articulated while batching the rest of its building.
     if (movingPart) attachMovingPart(d, group, movingPart);
     const partKeys = new Map();

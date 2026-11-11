@@ -77,6 +77,7 @@ import {
   moonSpokes,
 } from '../../../data/moonSettlement';
 import { MoonDistricts } from './MoonDistricts';
+import { markerHeight, projectMarker } from '../TownMarkers';
 
 // New Hollow on the Moon: a small scene of its own beside the valley's. One
 // renderer, a crater of lots, the ribbon arriving from the valley, settlers,
@@ -453,12 +454,10 @@ export function moonAccessGeometry(approaches = moonApproaches(), ground = moonH
 }
 
 const labelPoint = new THREE.Vector3();
+const markerPoint = new THREE.Vector3();
 // Tap targets cover a lot's whole pad, up to its building's roof (this tall until the
 // building is drawn).
 const PICK_HEIGHT = 3;
-// An action icon hangs this far above what stands on its pad, measured no higher than this.
-const MOON_MARKER_LIFT = 1.1;
-const MOON_MARKER_CEILING = 4.5;
 const PICK_LAYER = 3;
 // A lot of a later era keeps its tap target here, where no ray looks.
 const HIDDEN_LOT_LAYER = 30;
@@ -1181,18 +1180,9 @@ export class MoonScene extends TownPrimitives {
       // The place's action icon (a finish hammer, a collection) is anchored in the world,
       // as the valley's are: just above what stands on the pad, and sized by how large
       // the place is drawn.
-      const top = this.markerHeight(id);
-      point.set(position.x, top, position.z).project(this.camera);
-      const marker = {
-        x: (point.x + 1) * 50,
-        y: (1 - point.y) * 50,
-        visible: point.z > -1 && point.z < 1,
-      };
-      const markerY = point.y;
-      point.set(position.x, top + 1, position.z).project(this.camera);
-      // How wide the place's pad is drawn: what its icon is sized by.
       const radius = this.parcels?.get(id)?.radius ?? moonPadRadius(id);
-      marker.pad = Math.abs(point.y - markerY) * view * radius;
+      markerPoint.set(position.x, this.markerHeight(id), position.z);
+      const marker = projectMarker(this.camera, markerPoint, radius * 2, view, point);
       point.copy(position).project(this.camera);
       return {
         id,
@@ -1213,7 +1203,7 @@ export class MoonScene extends TownPrimitives {
         .map(
           (l) =>
             `${l.id}${Math.round(l.x * 10)},${Math.round(l.y * 10)}${l.visible}` +
-            `${Math.round(l.marker.y * 10)},${Math.round(l.marker.pad / 4)}`,
+            `${Math.round(l.marker.y * 10)},${Math.round(l.marker.span / 4)}`,
         )
         .join();
     if (key === this.labelKey) return;
@@ -1224,7 +1214,7 @@ export class MoonScene extends TownPrimitives {
   // target reaches that roof), and never higher than a tall landing's first storeys.
   markerHeight(id) {
     const target = this.pickTargets?.children.find((mesh) => mesh.userData.lot === id);
-    return Math.min(MOON_MARKER_CEILING, target?.scale.y ?? PICK_HEIGHT) + MOON_MARKER_LIFT;
+    return markerHeight(target?.scale.y ?? PICK_HEIGHT);
   }
   // What names keep clear of, as rectangles in percent of the view about their centres.
   // A landmark behind the camera or off the view asks for nothing.

@@ -36,13 +36,24 @@ function separateActionTargets(labels, width, height, top, bottom) {
       label,
       x: (label.collection.x * width) / 100,
       y: (label.collection.y * height) / 100,
-      // A map that draws smaller icons gives each one's extent.
+      // A map that draws smaller icons gives each one's extent, and the leash that keeps
+      // it by its own place (TownMarkers.js).
       extent: label.collection.extent ?? ACTION_TARGET,
+      leash: label.collection.leash ?? Infinity,
+      home: [(label.collection.x * width) / 100, (label.collection.y * height) / 100],
       moved: false,
     }));
   const settle = (target) => {
     const half = target.extent / 2;
     target.moved = true;
+    // Never further from its own place than its leash: neighbours overlap first.
+    const [hx, hy] = target.home,
+      away = Math.hypot(target.x - hx, target.y - hy);
+    if (away > target.leash) {
+      target.x = hx + ((target.x - hx) / away) * target.leash;
+      target.y = hy + ((target.y - hy) / away) * target.leash;
+    }
+    if (target.leash < Infinity) return;
     target.x = Math.max(half, Math.min(width - half, target.x));
     target.y = Math.max(top + half, Math.min(bottom - half, target.y));
   };

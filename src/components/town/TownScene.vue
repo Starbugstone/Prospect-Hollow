@@ -87,6 +87,7 @@
         :indicator="indicators[anchor.id]"
         :label="actionLabel(anchor.id)"
         :class="{ 'raid-defense-ready': raidDefenseIds.includes(anchor.id) }"
+        :size="anchor.collection.size ?? 1"
         :data-town-plot="anchor.id"
         :style="{ translate: labelTranslate(anchor.collection) }"
         @focus="anchor.id === 'mine' && prefetchBoard()"
