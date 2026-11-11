@@ -352,6 +352,12 @@ function buildExpansionLevel(id, spec, trial) {
       if (tiles[index] && isPlayableCell(tiles[index])) layout.blockedCells.push(cellAt(index));
   }
   const sporeCells = new Set((spec.spores ?? []).map((spore) => spore.index));
+  // Crystals take their matches on a bare floor, like spore relays: no ice under them.
+  const crystalCells = new Set([
+    ...(spec.chords ?? []),
+    ...(spec.crossgrains ?? []),
+    ...(spec.tracePairs ?? []).flatMap((pair) => pair.cells),
+  ]);
   if (spec.orders?.length) tiles[0].oreOrderGuide = true;
   const iceCells = tiles.flatMap((tile, index) =>
     tile.type === 'standard' &&
@@ -360,6 +366,7 @@ function buildExpansionLevel(id, spec, trial) {
     !isCellFixture(tile) &&
     !fossilCells.has(index) &&
     !sporeCells.has(index) &&
+    !crystalCells.has(index) &&
     (!spec.openExitRows || index < cols * (rows - spec.openExitRows)) &&
     ![0, cols - 1, cols * (rows - 1), cols * rows - 1].includes(index) &&
     !tile.exit &&

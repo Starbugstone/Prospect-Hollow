@@ -6,6 +6,7 @@ import SettingsDrawer from '../src/components/SettingsDrawer.vue';
 import { LEVEL_COUNT } from '../src/data/campaign';
 import { mineRelicAppearance, mineSignalAppearance } from '../src/data/mineThemes';
 import { OBSTACLES } from '../src/data/obstacles';
+import { isCrystalSignal } from '../src/game/engine/CrystalMechanics';
 import { PROTOTYPE_BOARDS, prototypeConfig, prototypeName } from '../src/data/prototypeBoards';
 import { BonusActivator } from '../src/game/engine/BonusActivator';
 import { gravityPath, isGravitySwitch, isPortalPad } from '../src/game/engine/BoardTopology';
@@ -64,6 +65,9 @@ describe.each(boards)('the board on trial %s', (key, board, level) => {
     expect(unreachableStarglass(level)).toEqual([]);
     for (const order of level.oreOrders ?? [])
       expect(level.boardLayout.gemTypes).toContain(order.color);
+    // A crystal takes its matches on a bare floor: no ice is laid under one.
+    for (const cell of cellsWhere(level, (tile) => isCrystalSignal(tile)))
+      expect(iceLayers(level.tiles[cell]), `crystal ${cell}`).toBe(0);
   });
 
   it('finishes beyond 100 moves after its speed target and saves nothing', async () => {
