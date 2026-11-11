@@ -25,6 +25,7 @@
 // Levels whose goal is lighting lanterns or delivering cargo carry no ice.
 // Moves are unlimited; difficulty comes only from these layouts and goals.
 import { parseMineBoard } from './deepMineLevels.js';
+import { CRYSTAL_SEAM_PLANS } from './crystalSeamLevels.js';
 
 const COLS = 7;
 const ROWS = 9;
@@ -63,7 +64,7 @@ const liftPieces = (board) => {
   });
   return { map, floats, relics, lensCells, portals };
 };
-const PLANS = [
+const FLOATING_SEAM_PLANS = [
   {
     id: 'riverglass-seams',
     name: 'Riverglass seams',
@@ -1627,6 +1628,8 @@ const PLANS = [
     ],
   },
 ];
+// Chapters 92–101 (levels 547–606) live in crystalSeamLevels.js.
+const PLANS = [...FLOATING_SEAM_PLANS, ...CRYSTAL_SEAM_PLANS];
 
 // Five colors per board, as before. Ruby, sapphire and emerald stay in every set for
 // seals and orders; peridot joins from chapter 1 and starmetal from chapter 7, each in

@@ -380,6 +380,86 @@ const themes = {
       decoration('M320 360h4M1140 400h4M200 700h4M1260 760h4', 'none', 0.9, 10),
     ],
   },
+  // Chapters 92–101 (src/data/crystalSeamLevels.js).
+  'echo-gallery': {
+    style: palette('#161a2c', '#363d64', '#33395a', '#b4bfe6', '#585f86', '#e9f2ff'),
+    relic: moonGem,
+    decorations: [
+      decoration('M60 880l240-240M1380 880l-240-240', 'none', 0.4, 4),
+      decoration('M120 300q60-40 120 0t120 0M1080 340q60-40 120 0t120 0', 'none', 0.35, 5),
+    ],
+  },
+  'turning-orchard': {
+    style: palette('#18211b', '#344a39', '#334438', '#b2cfa0', '#5d6c4a', '#fff2c4'),
+    decorations: [
+      decoration('M140 980V640q0-60 40-100M1300 980V660q0-60-40-100', 'none', 0.45, 10),
+      decoration('M180 520a40 40 0 1 0 1 0M1260 540a40 40 0 1 0 1 0', 'var(--mine-accent)', 0.25),
+    ],
+  },
+  'deep-lantern': {
+    style: palette('#1e1a16', '#4a3c2c', '#45392c', '#d0b07c', '#6c5840', '#ffe9a0'),
+    decorations: [
+      decoration('M60 620h280M1100 620h280', 'none', 0.5, 10),
+      decoration('M200 360v80m-30 0h60M1240 400v80m-30 0h60', 'none', 0.45, 6),
+    ],
+  },
+  'shifting-survey': {
+    style: palette('#151a2a', '#323c5e', '#303853', '#b8c4e6', '#56607e', '#fff1d2'),
+    decorations: [
+      decoration('M120 820l120-200 140 80 120-220M1100 300l120 160 160-60', 'none', 0.35, 4),
+      decoration('M240 620h4M380 700h4M500 480h4M1220 460h4M1380 400h4', 'none', 0.9, 10),
+    ],
+  },
+  'ember-sidings': {
+    style: palette('#201717', '#4c3030', '#463030', '#d9a68a', '#6e4a40', '#ffd9a6'),
+    relic: moonGem,
+    decorations: [
+      decoration('M40 900h360m640 0h360M60 940h320m700 0h300', 'none', 0.45, 6),
+      decoration(
+        'M160 520q20-60 0-100 40 40 20 100M1280 560q20-60 0-100 40 40 20 100',
+        'none',
+        0.4,
+        5,
+      ),
+    ],
+  },
+  'buried-routes': {
+    style: palette('#201e1c', '#48443f', '#44403b', '#cfc6b6', '#6a645a', '#fff6de'),
+    decorations: [
+      decoration('M60 640h300v200M1380 640h-300v200', 'none', 0.4, 8),
+      decoration('M150 480c-40 20-70-20-50-50 20-30 70-10 60 20', 'none', 0.35),
+    ],
+  },
+  'frost-relays': {
+    style: palette('#141c26', '#2f4458', '#2e3f50', '#b8dcf0', '#4f6678', '#f2fbff'),
+    decorations: [
+      decoration('M140 260l40 70-40 70M1300 300l-40 70 40 70', 'none', 0.45, 5),
+      decoration('M80 760h200M1160 760h200M180 700v120M1260 700v120', 'none', 0.4, 4),
+    ],
+  },
+  'tidal-pearls': {
+    style: palette('#121d24', '#2b4552', '#2a404b', '#a9d6dc', '#4a6670', '#f4fff6'),
+    relic: pearl,
+    decorations: [
+      decoration('M0 560q120-50 240 0t240 0M960 600q120-50 240 0t240 0', 'none', 0.4, 6),
+      decoration('M140 300a30 30 0 1 0 1 0M1300 360a26 26 0 1 0 1 0', 'none', 0.35, 5),
+    ],
+  },
+  'rooted-vault': {
+    style: palette('#1b1f18', '#3d4732', '#394330', '#b8c69a', '#5f6648', '#f6ffd0'),
+    decorations: [
+      decoration('M100 600q60 120 20 260M1340 600q-60 120-20 260', 'none', 0.45, 10),
+      decoration('M60 560h300M1080 560h300', 'none', 0.5, 10),
+    ],
+  },
+  'far-seam': {
+    style: palette('#120f22', '#2c2652', '#2a2546', '#b4a8e6', '#4c4476', '#fff0f6'),
+    relic: pearl,
+    decorations: [
+      decoration('M60 140l220 220M1380 200l-220 220M100 860l200-200', 'none', 0.4, 4),
+      decoration('M300 360h4M1140 420h4M220 720h4M1240 780h4M700 120h4', 'none', 0.9, 10),
+    ],
+  },
 };
 
 // Every deeper chapter uses the same names and pictures when a familiar goal

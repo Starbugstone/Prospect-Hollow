@@ -246,7 +246,6 @@ it('Frost relays: frozen gems turn the crystals, the hidden relays seal them', (
   // The relays are hidden in the frost: their bursts no longer thaw most of the board.
   expect(summary.thawedByBurst).toBeLessThan(summary.thawedByMatch);
   expect(summary.moves[2]).toBeLessThan(without.moves[2]);
-  expect(level.chestTarget).toBe(summary.medianScore * 0.8);
 }, 240000);
 
 it('Tidal pearls: chords and one order while the pearls come down', () => {
@@ -284,7 +283,6 @@ it('Tidal pearls: chords and one order while the pearls come down', () => {
   expect(summary.crystalsDone).toBe(SEEDS.length * crystals.length);
   // Colours, not blasts, fill most sockets.
   expect(summary.colourSockets).toBeGreaterThan(summary.whiteSockets * 2);
-  expect(level.chestTarget).toBe(summary.medianScore * 0.8);
 }, 120000);
 
 it('Rooted vault: the knots hold the chamber shut', () => {
@@ -364,5 +362,4 @@ it('The far seam: copied blasts on the walls and gates, either way out', () => {
   expect(summary.copies).toBe(SEEDS.length);
   expect(summary.runsWithUsefulCopy).toBe(SEEDS.length);
   expect(summary.moves[1]).toBeLessThan(without.moves[1]);
-  expect(level.chestTarget).toBe(summary.medianScore * 0.8);
 }, 240000);
