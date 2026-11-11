@@ -1033,6 +1033,38 @@
     },
     "version": 1
   },
+  "commissioner-bronze": {
+    "goal": 1,
+    "measure": {
+      "kind": "landmarks",
+      "areas": ["earthlight-conservatory", "homecoming-commons"]
+    },
+    "version": 1
+  },
+  "commissioner-silver": {
+    "goal": 2,
+    "measure": {
+      "kind": "landmarks",
+      "areas": ["earthlight-conservatory", "homecoming-commons"]
+    },
+    "version": 1
+  },
+  "keen-eye-bronze": {
+    "goal": 1,
+    "measure": {
+      "kind": "found",
+      "finds": ["helmet", "wanderers"]
+    },
+    "version": 1
+  },
+  "keen-eye-silver": {
+    "goal": 2,
+    "measure": {
+      "kind": "found",
+      "finds": ["helmet", "wanderers"]
+    },
+    "version": 1
+  },
   "endless-seam-bronze": {
     "goal": 2500,
     "measure": {

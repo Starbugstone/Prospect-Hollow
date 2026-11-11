@@ -54,6 +54,7 @@ import { townFauna } from '../src/data/townAnimals';
 import { eraEvolution } from '../src/data/eras';
 import { areasForSettlement } from '../src/data/townLandmarks';
 import schema from '../backend/content/public-schema.json';
+import { HONOURS, createHonours, evaluateHonours } from '../src/data/honours';
 
 const area = AREA_BY_ID['earthlight-conservatory'];
 const commission = commissionFor(area.id);
@@ -117,6 +118,28 @@ describe('the commission contract', () => {
   it.each(COMMISSIONS)('$site gives each outcome its own residents', ({ outcomes }) => {
     const shapes = Object.values(outcomes).map(({ visits }) => JSON.stringify(visits));
     expect(new Set(shapes).size).toBe(Object.keys(outcomes).length);
+  });
+
+  it.each(COMMISSIONS)('$site counts toward a Commissioner rank', ({ site }) => {
+    // A later commission cannot join a shipped list: it needs a new rank whose own
+    // measure lists it, and the server must receive that rank too.
+    const ranks = HONOURS.familyById.commissioner.ranks.filter((rank) =>
+      rank.measure.areas.includes(site),
+    );
+    expect(ranks.length).toBeGreaterThan(0);
+    for (const rank of ranks)
+      expect(schema.honours.definitions[rank.id]?.measure).toEqual(rank.measure);
+  });
+
+  it('earns Commissioner when the first stage is paid, before it is built', () => {
+    const honours = (value) =>
+      evaluateHonours({ records: {}, powers: [], town: value, honours: createHonours() }).added;
+    expect(honours(town())).not.toContain('commissioner-bronze');
+    const paid = buy(town());
+    expect(monumentWork(paid, area).ready).toBe(false);
+    expect(honours(paid)).toContain('commissioner-bronze');
+    expect(honours(paid)).not.toContain('commissioner-silver');
+    expect(honours(paid)).not.toContain('landmark-patron-bronze');
   });
 
   it('returns no commission for an ordinary monument site', () => {

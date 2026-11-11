@@ -12,6 +12,7 @@ import { FUSION_STYLES } from '../game/engine/BonusFusion';
 import { isEraComplete } from '../game/town/TownEras';
 import { LEVEL_COUNT } from './campaign';
 import { ERAS } from './eras';
+import { HIDDEN_FIND_IDS, hiddenFindFields } from './hiddenFinds';
 import { OBSTACLES } from './obstacles';
 import { isPlayerDistinction } from './playerDistinctions';
 import { wholeNumberOrZero } from './saveFormat';
@@ -22,7 +23,7 @@ import { PERSONAL_AREAS } from './townLandmarks';
 // The saved block's shape and the catch-up generation: saves from an older generation
 // are re-evaluated once on load. It is not a requirement version (see `version` on a
 // rank) and a new rank or family raises it so existing saves earn what they prove.
-export const HONOURS_VERSION = 7;
+export const HONOURS_VERSION = 8;
 // Ranks in ladder order. A family may stop early; new ranks only ever append.
 export const RANK_METALS = Object.freeze(['bronze', 'silver', 'gold', 'diamond']);
 const METAL_DIFFICULTY = Object.freeze({
@@ -312,6 +313,12 @@ const HONOUR_MONUMENT_SITES = Object.freeze([
   'moonstone-garden',
   'moonrock-court',
 ]);
+// Commissioner's sites, fixed when it shipped. A later commission joins a new rank whose
+// own measure lists every site so far, never this list.
+const COMMISSION_HONOUR_SITES = Object.freeze(['earthlight-conservatory', 'homecoming-commons']);
+// Keen Eye's hidden finds (src/data/hiddenFinds.js), fixed when it shipped. A later find
+// joins a new rank or NON_FIND_HONOURS, never this list.
+const HONOUR_FINDS = Object.freeze(['helmet', 'wanderers']);
 // Explicit coverage decisions, with reasons for features without a separate tally.
 export const NON_SETTLEMENT_HONOURS = Object.freeze({
   valley: 'Through the Ages covers valley construction and modernization.',
@@ -320,13 +327,11 @@ export const NON_RESOURCE_HONOURS = Object.freeze({
   coins: 'Coins fund progression; no lifetime coin collection counter is saved.',
 });
 export const NON_MONUMENT_HONOURS = Object.freeze({
-  // Landmark Patron's shipped sites are fixed. Commissions get their own family once the
-  // first arc of them is complete enough to set fixed goals.
-  'earthlight-conservatory': 'Commissions earn their own family with the first complete arc.',
-  'homecoming-commons': 'Commissions earn their own family with the first complete arc.',
-  // Landmark Patron's site list shipped fixed, so a later site cannot join it.
+  // Commission sites count for Commissioner, not Landmark Patron. Landmark Patron's site list shipped fixed, so a later site cannot join it.
   'voyagers-court': 'Landmark Patron’s shipped sites are fixed; a later site adds no rank yet.',
 });
+// Every hidden find is counted by Keen Eye; a later one needs a rank or a reason here.
+export const NON_FIND_HONOURS = Object.freeze({});
 function obstacle(id) {
   return OBSTACLES.find((entry) => entry.id === id) ?? { present: () => false };
 }
@@ -394,6 +399,15 @@ const MEASURES = Object.freeze({
   landmarks: {
     value: (state, measure) =>
       measure.areas.reduce((total, area) => total + MEASURES.landmark.value(state, { area }), 0),
+  },
+  // How many of the listed hidden finds the owner has found in this town at least once:
+  // a find saves the completed puzzle count it was found at (`XRun`), which only rises.
+  found: {
+    value: (state, measure) =>
+      measure.finds.filter(
+        (find) =>
+          HIDDEN_FIND_IDS.includes(find) && safeCount(state.town?.[hiddenFindFields(find).run]) > 0,
+      ).length,
   },
   // One counter, or the total of a counter map when no key is named.
   count: {
@@ -754,6 +768,54 @@ export function honourFamilies({
       popup: '{goal} monument sites sponsored',
       progress: '{value} / {goal} monument sites sponsored',
       ranks: [1, 5, 9].map((goal, index) => ({ metal: RANK_METALS[index], goal, since: 5 })),
+    },
+    {
+      id: 'commissioner',
+      tab: 'town',
+      name: 'Commissioner',
+      art: { image: '/art/rewards/commission-letter.svg' },
+      measure: { kind: 'landmarks', areas: COMMISSION_HONOUR_SITES },
+      requirement: 'Sponsor {goal} commissions, in the valley or on the Moon.',
+      popup: '{goal} commissions sponsored',
+      progress: '{value} / {goal} commissions sponsored',
+      ranks: [
+        {
+          metal: 'bronze',
+          goal: 1,
+          name: 'First Commission',
+          requirement: 'Choose the design of a commission and pay for its first stage.',
+          popup: 'Your first commission is under way',
+          since: 8,
+        },
+        { metal: 'silver', goal: 2, since: 8 },
+      ],
+    },
+    {
+      id: 'keen-eye',
+      tab: 'town',
+      name: 'Keen Eye',
+      art: { image: '/art/rewards/wandering-pair.svg' },
+      measure: { kind: 'found', finds: HONOUR_FINDS },
+      progress: '{value} / {goal} hidden finds found',
+      ranks: [
+        {
+          metal: 'bronze',
+          goal: 1,
+          name: 'Sharp Eyes',
+          requirement:
+            'In your own town, find the animal in a space helmet or the raccoon out walking with its Willowkin.',
+          popup: 'Your first hidden find',
+          since: 8,
+        },
+        {
+          metal: 'silver',
+          goal: 2,
+          requirement:
+            'In your own town, find both the animal in a space helmet and the raccoon out walking with its Willowkin.',
+          popup: 'Both hidden finds found',
+          since: 8,
+        },
+      ],
     },
     {
       id: 'endless-seam',
