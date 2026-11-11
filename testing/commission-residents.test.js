@@ -415,7 +415,11 @@ describe('valley townsfolk at the finished commons', () => {
     for (const mode of ['pedestrian', 'car'])
       for (const node of routeGraph(town, mode).nodes.values())
         expect(node[1], mode).toBeGreaterThan(-60);
-    // Before its site opens there is no path, and an unknown site has none.
+    // It is laid with the homecoming hall's plot, so the hall reaching the level that opens
+    // the site changes no street (and so swaps one plot instead of rebuilding the town).
+    const early = { ...town, buildings: { ...town.buildings, homecomingHall: 1 } };
+    expect(JSON.stringify(townTracks(early))).toBe(JSON.stringify(townTracks(town)));
+    // Before the site's era there is no path, and an unknown site has none.
     expect(siteFootpath({ ...town, era: 'moonward' }, valleySite.id)).toBeNull();
     expect(townTracks({ ...town, era: 'moonward' }).some((track) => track.footpath)).toBe(false);
     expect(siteFootpath(town, 'no-such-site')).toBeNull();

@@ -249,15 +249,16 @@ export function gardenTracks(town) {
 }
 // Footpaths lead from a street to a place beyond the streets: a monument or commission
 // site out in the field. Each is a list of corners, `[x, z]`, from a point on a wide street
-// to the edge of the site's court, and appears once its site opens. A footpath is drawn like any other
+// to the edge of the site's court, and appears with the plot of the building that opens
+// its site. A footpath is drawn like any other
 // narrow path and is for walkers only. Those heading to its site walk along its middle;
 // it is not part of the street graph, so no other errand strays down it.
 const SITE_FOOTPATHS = Object.freeze({
   // Between the Great Telescope and the Dewlight Gardens, down the level ground beside
   // Stargazers' Lawn, then across to the Commons' front and up to the edge of its court.
   'homecoming-commons': Object.freeze([
-    [71, -51.5],
-    [71, -93.6],
+    [70.5, -51.5],
+    [70.5, -93.6],
     [67.6, -93.6],
     [67.6, -95.2],
   ]),
@@ -265,11 +266,16 @@ const SITE_FOOTPATHS = Object.freeze({
 /** The footpath to a site, as corners from the street to its front, or null without one. */
 export function siteFootpath(town, site) {
   const area = Object.hasOwn(SITE_FOOTPATHS, site) ? AREA_BY_ID[site] : null;
-  return area && areaUnlocked(town, area) ? SITE_FOOTPATHS[site] : null;
+  if (!area) return null;
+  // Laid with the plot of the building that opens the site, in the site's era: the streets
+  // only ever change with the plots, never when a building's level opens the site itself.
+  const era = { ...town, buildings: { [area.opens?.building]: area.opens?.level } };
+  const laid = areaUnlocked(era, area) && (!area.opens || plotUnlocked(town, area.opens.building));
+  return laid ? SITE_FOOTPATHS[site] : null;
 }
 const FOOTPATH_WIDTH = 0.75;
 /** Every open site's footpath as tracks, for drawing and for keeping the ground clear. */
-export const footpathTracks = (town) =>
+const footpathTracks = (town) =>
   Object.keys(SITE_FOOTPATHS).flatMap((site) => {
     const corners = siteFootpath(town, site) ?? [];
     return corners.slice(1).map((to, n) => ({

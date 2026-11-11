@@ -60,10 +60,12 @@ describe('Monument site layout', () => {
     ];
     for (const area of areasForSettlement()) {
       const [x, z] = area.positions[0];
-      for (const { from, to, width = 0.85 } of tracks)
-        expect(segmentDistance(x, z, from, to) - width / 2, area.id).toBeGreaterThan(
-          area.radius + 2,
-        );
+      // A site's own footpath leads up to it; every other road and path keeps clear.
+      for (const { from, to, width = 0.85, footpath } of tracks)
+        if (footpath !== area.id)
+          expect(segmentDistance(x, z, from, to) - width / 2, area.id).toBeGreaterThan(
+            area.radius + 2,
+          );
       for (const [id, [px, pz], halfWidth, halfDepth] of parcels)
         expect(
           Math.hypot(
