@@ -10,7 +10,7 @@ const keys = (
   process.env.PH_CRYSTAL_KEYS ||
   'trace-twins-first-impression,crossgrain-narrow-neck,chord-changing-colours,arrowhead-inner-spring,twin-windows-crafting-spine'
 ).split(',');
-const folder = 'output/new-mechanics';
+const folder = process.env.PH_CRYSTAL_FOLDER || 'output/new-mechanics';
 (async () => {
   await mkdir(folder, { recursive: true });
   const browser = await chromium.launch({ headless: true, args: SOFTWARE_WEBGL });
@@ -33,6 +33,9 @@ const folder = 'output/new-mechanics';
           key,
         );
         await page.waitForFunction(() => window.stores().get('game').renderer?.animator);
+        // The level's opening guide (its tip and the guide to its pieces), before play.
+        await page.waitForTimeout(1500);
+        await page.screenshot({ path: `${folder}/${key}-${width}x${height}-guide.png` });
         for (
           let i = 0;
           i < 10 && (await page.evaluate(() => window.stores().get('game').inputPaused));

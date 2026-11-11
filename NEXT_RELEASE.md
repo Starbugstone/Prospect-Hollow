@@ -238,21 +238,24 @@ Provisional: each pairing has to prove fun and solvable on the board first.
 | 95      | 565–570 | Shifting survey  | Survey markers, phase seals                  | Follow a numbered trail while the colours shift  |
 | 96      | 571–576 | Ember sidings    | Charge cores, portals, moon gems             | Cores' bombs open the gates on a portal siding   |
 | 97      | 577–582 | Buried routes    | Fossils, route chambers                      | Two ways into a fossil bed; act V finale         |
-| 98      | 583–588 | Frost relays     | Frozen gems, spore relays, lanterns          | Bursts thaw a path to the lanterns               |
-| 99      | 589–594 | Tidal pearls     | Twin gravity, pearls, ore orders             | Pearls above and below a seam, one order to fill |
+| 98      | 583–588 | Frost relays     | Frozen gems, spore relays, crossgrain        | Frost blocks a crystal's row; bursts seal it     |
+| 99      | 589–594 | Tidal pearls     | Pearls, ore orders, chord crystals           | Three colours per crystal while pearls fall      |
 | 100     | 595–600 | Rooted vault     | Root knots, breakthrough chambers, chains    | Cut the roots that hold a sealed chamber shut    |
-| 101     | 601–606 | The far seam     | Lenses, moon dials, route chambers           | The pack's finale: every way in, every way round |
+| 101     | 601–606 | The far seam     | Route chambers, trace twins, moon dials      | The pack's finale: every way in, every way round |
 
 Chapters 95–101 are proposals: each needs a board on trial, played on a phone, before its chapter is
 authored, as 92–94 have. Chapters that introduce a new mechanic or shape replace some of these
 pairings once their trial boards are in; the new mechanics are on trial first, as below. None of these pairings has shared a board yet, and a pairing that doesn't play
 well is swapped for another existing one rather than forced.
 
-Chapter 98's lanterns cannot join frozen gems: a frozen gem sits on ice, and a lantern board
-carries none. Its board on trial pairs frozen gems with spore relays and ordinary ice. Phase
-seals or chains could be the third mechanic. Chapter 99's pairing already ships in Twin
-gravity, apart from the single order. Chapter 101's prisms are only a helper on its first
-board. [The boards on trial](docs/hollow-mine-levels.md#pairing-prototypes-chapters-95101)
+Chapters 98, 99 and 101 now pair with the new crystal mechanics, as the owner approved,
+and their boards on trial were reworked. Chapter 98's lanterns cannot join frozen gems (a
+frozen gem sits on ice, and a lantern board carries none), so Crossgrain crystal is its third
+mechanic: frost blocks a crystal's row and relays hidden in the frost seal it. Chapter 99
+adds Chord crystal and drops twin gravity, which already ships with pearls and played slower
+with chords. Chapter 101 replaces its lens prisms with Trace twins, whose copies break the
+gates; its moon dial stays. All three finish on 60 hint-led seeds (medians 19, 19 and 21
+moves). [The boards on trial](docs/hollow-mine-levels.md#pairing-prototypes-chapters-95101)
 give the numbers.
 
 The Echo gallery pairing has been checked on its prototype. A beam passes over a portal pad as it

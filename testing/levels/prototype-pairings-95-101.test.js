@@ -59,6 +59,7 @@ function summarize(label, runs, extra = {}) {
         share,
       ),
     ),
+    beyond100Moves: runs.filter(({ result }) => result.turns > 100).length,
     medianScore: median(runs.map(({ result }) => result.score)),
     shuffles: sum(runs.map(({ result }) => result.shuffles)),
     medianCraftedBonuses: median(runs.map(({ result }) => result.craftedBonuses)),
@@ -185,55 +186,105 @@ it('Buried routes: either way into the fossil bed', () => {
   expect(results[0].moves[1]).toBeLessThan(Math.min(results[1].moves[1], results[2].moves[1]));
 }, 480000);
 
-it('Frost relays: the relay chain thaws the frozen bands', () => {
-  const level = prototypeConfig('frost-relays-chain');
-  const thaws = (step, context, run) => {
-    for (const update of step.tileUpdates ?? []) {
-      if (update.state !== 'PLAYABLE') continue;
-      const kinds = step.matches.map((match) => match.type);
-      const how = kinds.includes('spore-burst')
-        ? 'burst'
-        : kinds.some((kind) => !GEM_TYPES.includes(kind))
-          ? 'bonus'
-          : 'match';
-      run[how] = (run[how] ?? 0) + 1;
-    }
-  };
+// What sealed each crossgrain crack, and what thawed each frozen gem.
+const crystalsAndThaws = (step, context, run) => {
+  const kinds = step.matches.map((match) => match.type);
+  const how = kinds.includes('spore-burst')
+    ? 'burst'
+    : kinds.includes('trace-copy')
+      ? 'copy'
+      : kinds.some((kind) => !GEM_TYPES.includes(kind))
+        ? 'bonus'
+        : 'match';
+  for (const update of step.tileUpdates ?? [])
+    if (update.state === 'PLAYABLE') run[`thaw-${how}`] = (run[`thaw-${how}`] ?? 0) + 1;
+  for (const change of step.crystalChanges ?? []) {
+    const by = change.blast ? how : 'direction';
+    run[`${change.signal}-${by}`] =
+      (run[`${change.signal}-${by}`] ?? 0) + change.before - change.after;
+    if (change.after === 0) run.crystalsDone = (run.crystalsDone ?? 0) + 1;
+  }
+};
+const total = (runs, name) => sum(runs.map((run) => run[name] ?? 0));
+
+it('Frost relays: frozen gems turn the crystals, the hidden relays seal them', () => {
+  const level = prototypeConfig('frost-relays-grain');
+  const crystals = cellsWhere(level, (tile) => tile.signal === 'crossgrain');
   const figures = (runs) => ({
     medianSporeBursts: median(runs.map(({ result }) => result.sporeBursts)),
-    thawedByBurst: sum(runs.map((run) => run.burst ?? 0)),
-    thawedByBonus: sum(runs.map((run) => run.bonus ?? 0)),
-    thawedByMatch: sum(runs.map((run) => run.match ?? 0)),
+    crystalsDone: total(runs, 'crystalsDone'),
+    medianCrystalsDone: median(runs.map(lastDone(crystals))),
+    sealedByDirection: total(runs, 'crossgrain-direction'),
+    sealedByBurst: total(runs, 'crossgrain-burst'),
+    sealedByBonus: total(runs, 'crossgrain-bonus'),
+    thawedByBurst: total(runs, 'thaw-burst'),
+    thawedByBonus: total(runs, 'thaw-bonus'),
+    thawedByMatch: total(runs, 'thaw-match'),
   });
-  const runs = play(level, thaws);
-  const summary = summarize('frost-relays-chain', runs, figures(runs));
+  // `done` records health; a crystal records signalHealth, so track its last turn here.
+  const watch = (step, context, run) => {
+    crystalsAndThaws(step, context, run);
+    for (const change of step.crystalChanges ?? [])
+      if (change.after === 0) run.done[change.index] ??= context.turn;
+  };
+  const runs = play(level, watch);
+  const summary = summarize('frost-relays-grain', runs, figures(runs));
   const plain = play(
     retiled(level, (tile) =>
       tile.signal === 'spore' ? { ...tile, signal: undefined, signalHealth: 0 } : null,
     ),
-    thaws,
+    watch,
   );
-  const without = summarize('frost-relays-chain without relays', plain, figures(plain));
-  expect(summary.completed).toBe(SEEDS.length);
-  expect(without.completed).toBe(SEEDS.length);
-  expect(summary.thawedByBurst).toBeGreaterThan(summary.thawedByMatch + summary.thawedByBonus);
+  const without = summarize('frost-relays-grain without relays', plain, figures(plain));
+  for (const result of [summary, without]) {
+    expect(result.completed).toBe(SEEDS.length);
+    expect(result.crystalsDone).toBe(SEEDS.length * crystals.length);
+  }
+  // Both cracks matter: matches seal some, the relays' bursts most of the rest.
+  expect(summary.sealedByDirection).toBeGreaterThan(0);
+  expect(summary.sealedByBurst).toBeGreaterThan(summary.sealedByBonus);
+  // The relays are hidden in the frost: their bursts no longer thaw most of the board.
+  expect(summary.thawedByBurst).toBeLessThan(summary.thawedByMatch);
+  expect(summary.moves[2]).toBeLessThan(without.moves[2]);
+  expect(level.chestTarget).toBe(summary.medianScore * 0.8);
 }, 240000);
 
-it('Tidal pearls: pearls on both sides of the seam and one order', () => {
-  const level = prototypeConfig('tidal-pearls-pairs');
+it('Tidal pearls: chords and one order while the pearls come down', () => {
+  const level = prototypeConfig('tidal-pearls-chords');
   const [order] = level.oreOrders;
-  const runs = play(level, (step, { turn }, run) => {
+  const crystals = cellsWhere(level, (tile) => tile.signal === 'chord');
+  const runs = play(level, (step, context, run) => {
+    crystalsAndThaws(step, context, run);
     run.ore =
       (run.ore ?? 0) + (step.collectedJewels ?? []).filter((j) => j.type === order.color).length;
-    if (run.ore >= order.target) run.orderFilled ??= turn;
+    if (run.ore >= order.target) run.orderFilled ??= context.turn;
+    for (const change of step.crystalChanges ?? []) {
+      if (change.after === 0) run.done[change.index] ??= context.turn;
+      if (
+        !change.blast &&
+        step.matches.some(
+          (match) => match.type === order.color && match.indices.includes(change.index),
+        )
+      )
+        run.orderSockets = (run.orderSockets ?? 0) + 1;
+    }
   });
-  const summary = summarize('tidal-pearls-pairs', runs, {
+  const summary = summarize('tidal-pearls-chords', runs, {
+    crystalsDone: total(runs, 'crystalsDone'),
+    medianCrystalsDone: median(runs.map(lastDone(crystals))),
+    colourSockets: total(runs, 'chord-direction'),
+    whiteSockets: SEEDS.length * crystals.length * 3 - total(runs, 'chord-direction'),
+    socketsInOrderColour: total(runs, 'orderSockets'),
     medianFirstDelivery: median(runs.map(({ delivered }) => delivered[0])),
     medianLastDelivery: median(runs.map(({ delivered }) => delivered.at(-1))),
     medianOrderFilled: median(runs.map((run) => run.orderFilled)),
     orderLast: runs.filter((run) => run.orderFilled > run.delivered.at(-1)).length,
   });
   expect(summary.completed).toBe(SEEDS.length);
+  expect(summary.crystalsDone).toBe(SEEDS.length * crystals.length);
+  // Colours, not blasts, fill most sockets.
+  expect(summary.colourSockets).toBeGreaterThan(summary.whiteSockets * 2);
+  expect(level.chestTarget).toBe(summary.medianScore * 0.8);
 }, 120000);
 
 it('Rooted vault: the knots hold the chamber shut', () => {
@@ -264,31 +315,54 @@ it('Rooted vault: the knots hold the chamber shut', () => {
   expect(summary.medianChamberOpens).toBeGreaterThan(without.medianChamberOpens);
 }, 240000);
 
-it('The far seam: either way out, through either shaft', () => {
-  const level = prototypeConfig('far-seam-either-way');
+it('The far seam: copied blasts on the walls and gates, either way out', () => {
+  const level = prototypeConfig('far-seam-traces');
   const walls = cellsWhere(level, (tile) => tile.waist);
-  const runs = play(level, (step, context, run) => {
+  const gates = cellsWhere(level, (tile) => tile.bonusOnly && !tile.waist);
+  const watch = (step, context, run) => {
+    const copied = new Set((step.traceCopies ?? []).flatMap((copy) => copy.targets));
+    run.copies = (run.copies ?? 0) + (step.traceCopies?.length ?? 0);
     for (const update of step.tileUpdates ?? []) {
-      if (update.health == null || !walls.includes(update.index)) continue;
-      run.wallHits = (run.wallHits ?? 0) + 1;
-      if (step.lensBeams?.some((beam) => beam.cells.includes(update.index)))
-        run.prismHits = (run.prismHits ?? 0) + 1;
+      if (update.health == null || !copied.has(update.index)) continue;
+      if (walls.includes(update.index)) run.copiedWallHits = (run.copiedWallHits ?? 0) + 1;
+      if (gates.includes(update.index)) run.copiedGateHits = (run.copiedGateHits ?? 0) + 1;
     }
-  });
+  };
   // A floatstone goes against gravity: it leaves through the floor once the dial has turned.
-  const ways = runs.map((run) => (run.deliveredUp[0] ? 'down' : 'up'));
-  const summary = summarize('far-seam-either-way', runs, {
-    wayUp: ways.filter((way) => way === 'up').length,
-    wayDown: ways.filter((way) => way === 'down').length,
-    runsWithoutFlip: runs.filter(({ flips }) => !flips.length).length,
-    medianDelivery: median(runs.map(({ delivered }) => delivered[0])),
-    shaftFirst: runs.filter(({ opened }) => opened.a != null && !(opened.b < opened.a)).length,
-    floorFirst: runs.filter(({ opened }) => opened.b != null && !(opened.a <= opened.b)).length,
-    wallHits: sum(runs.map((run) => run.wallHits ?? 0)),
-    prismWallHits: sum(runs.map((run) => run.prismHits ?? 0)),
-  });
-  expect(summary.completed).toBe(SEEDS.length);
-  expect(summary.wayUp).toBeGreaterThan(0);
-  expect(summary.wayDown).toBeGreaterThan(0);
-  expect(summary.prismWallHits).toBeGreaterThan(0);
-}, 120000);
+  const figures = (runs) => {
+    const ways = runs.map((run) => (run.deliveredUp[0] ? 'down' : 'up'));
+    return {
+      wayUp: ways.filter((way) => way === 'up').length,
+      wayDown: ways.filter((way) => way === 'down').length,
+      medianDelivery: median(runs.map(({ delivered }) => delivered[0])),
+      shaftFirst: runs.filter(({ opened }) => opened.a != null && !(opened.b < opened.a)).length,
+      floorFirst: runs.filter(({ opened }) => opened.b != null && !(opened.a <= opened.b)).length,
+      copies: total(runs, 'copies'),
+      copiedWallHits: total(runs, 'copiedWallHits'),
+      copiedGateHits: total(runs, 'copiedGateHits'),
+      runsWithUsefulCopy: runs.filter((run) => run.copiedWallHits || run.copiedGateHits).length,
+    };
+  };
+  const runs = play(level, watch);
+  const summary = summarize('far-seam-traces', runs, figures(runs));
+  const plainLevel = edited(
+    'far-seam-traces',
+    {
+      ...board('far-seam-traces').level,
+      board: board('far-seam-traces').level.board.replaceAll('t', '.'),
+    },
+    'pool',
+  );
+  const plain = play(plainLevel, watch);
+  const without = summarize('far-seam-traces without stamps', plain, figures(plain));
+  for (const result of [summary, without]) {
+    expect(result.completed).toBe(SEEDS.length);
+    expect(result.wayUp).toBeGreaterThan(0);
+    expect(result.wayDown).toBeGreaterThan(0);
+  }
+  // Every run fires the pair, and its copy breaks a wall or a gate.
+  expect(summary.copies).toBe(SEEDS.length);
+  expect(summary.runsWithUsefulCopy).toBe(SEEDS.length);
+  expect(summary.moves[1]).toBeLessThan(without.moves[1]);
+  expect(level.chestTarget).toBe(summary.medianScore * 0.8);
+}, 240000);
