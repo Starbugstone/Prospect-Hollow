@@ -423,14 +423,20 @@
           stroke="#ece9e1"
           stroke-width="0.8"
         />
-        <g v-if="level >= 2" fill="none" stroke="#ece9e1" stroke-width="2.5">
-          <path d="M66 72 58 82 72 90M94 72l8 10-14 8" />
-          <path d="m72 90-1 5m1-5 4 3M88 90l1 5m-1-5-4 3" stroke="#e8b84a" stroke-width="1.5" />
+        <g v-if="level >= 2" fill="none" stroke="#f3ecd9" stroke-width="4.5">
+          <path d="M64 70 42 62 72 88M96 70l22-8-30 26" />
+          <path d="m72 88-3 6m3-6 5 4M88 88l3 6m-3-6-5 4" stroke="#e8b84a" stroke-width="2" />
           <g fill="#27365a" stroke="none">
-            <circle cx="66" cy="72" r="2.5" />
-            <circle cx="58" cy="82" r="2.5" />
-            <circle cx="94" cy="72" r="2.5" />
-            <circle cx="102" cy="82" r="2.5" />
+            <circle cx="64" cy="70" r="4" />
+            <circle cx="42" cy="62" r="4" />
+            <circle cx="72" cy="88" r="3.2" />
+            <circle cx="96" cy="70" r="4" />
+            <circle cx="118" cy="62" r="4" />
+            <circle cx="88" cy="88" r="3.2" />
+          </g>
+          <g fill="#fff3d2" stroke="none">
+            <circle cx="76" cy="86" r="2" />
+            <circle cx="84" cy="86" r="2" />
           </g>
         </g>
         <g v-if="level >= 4" stroke="none">

@@ -216,7 +216,7 @@ function twinWheel(d, g, tier, move) {
   if (tier >= 5) {
     // The station stands higher, on a terrace of its own with a lamp at each corner.
     octagon(d, g, 3.3, 0.5, floor + 0.25, SHELL);
-    octagon(d, g, 3.45, 0.08, floor + 0.5, GOLD);
+    octagon(d, g, 3.45, 0.08, floor + 0.42, GOLD);
     for (const side of [-1, 1])
       d.box(g, 0.56, 0.12, 1.16, side * 0.62, floor + 1.4, 0, GOLD).rotation.z = side * 0.16;
     for (let n = 0; n < 4; n++) {
@@ -228,20 +228,30 @@ function twinWheel(d, g, tier, move) {
 
 // One arm of the pod: shoulder, elbow and an open claw, reaching forward and down.
 function podArm(d, pod, side) {
-  const shoulder = [side * 0.75, -0.75, 1.05],
-    elbow = [side * 1.25, -0.6, 2.5],
-    wrist = [side * 0.5, -1.55, 3.2];
-  d.rod(pod, shoulder, elbow, 0.09, SHELL);
-  d.rod(pod, elbow, wrist, 0.07, SHELL);
-  for (const joint of [shoulder, elbow, wrist]) d.ball(pod, ...joint, 0.14, NAVY);
+  // Wide at the elbow so each arm reads as its own shape from the map camera, then in
+  // over the sample. Thick ivory limbs, a navy ball at every joint, a gold claw and one
+  // lit work lamp at the tip.
+  const shoulder = [side * 1.05, -0.95, 0.75],
+    elbow = [side * 2.35, -0.25, 2.2],
+    wrist = [side * 0.62, -1.2, 3.15];
+  d.rod(pod, shoulder, elbow, 0.15, IVORY).name = 'Pod upper arm';
+  d.rod(pod, elbow, wrist, 0.12, IVORY).name = 'Pod forearm';
+  d.ball(pod, ...shoulder, 0.26, NAVY);
+  d.ball(pod, ...elbow, 0.24, NAVY).name = 'Pod elbow';
+  d.ball(pod, ...wrist, 0.2, NAVY);
   for (const finger of [-1, 1])
     d.rod(
       pod,
       wrist,
-      [wrist[0] - side * 0.22 + finger * 0.14, wrist[1] - 0.3, wrist[2] + 0.12],
-      0.035,
+      [wrist[0] - side * 0.3 + finger * 0.16, wrist[1] - 0.36, wrist[2] + finger * 0.14],
+      0.055,
       GOLD,
     );
+  lit(
+    d,
+    d.ball(pod, wrist[0] - side * 0.24, wrist[1] - 0.14, wrist[2], 0.16, '#fff3d2'),
+    '#fff3d2',
+  ).name = 'Pod arm lamp';
 }
 // A small ivory work pod held over a display terrace. Its two arms reach out over a
 // crystal sample from the valley mine; later levels complete the exhibit around it.

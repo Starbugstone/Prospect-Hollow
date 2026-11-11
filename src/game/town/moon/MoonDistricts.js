@@ -84,7 +84,7 @@ function signalLight({ centre, ring, stone }) {
     return mesh;
   };
   const ribbon = strip(0.16, 1, 'Ribbon of light'),
-    glow = strip(0.9, 0.2, 'Ribbon glow');
+    glow = strip(0.42, 0.22, 'Ribbon glow');
   const { stars, path } = starMap(ring);
   const dots = new THREE.InstancedMesh(
     flat(new THREE.CircleGeometry(1, 10)),
