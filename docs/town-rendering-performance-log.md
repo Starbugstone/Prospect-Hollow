@@ -519,3 +519,16 @@ First download after both changes and the newcomer animals and home variants: 45
 against the 500 kB ceiling. The frame budget was not re-measured cleanly on the development machine
 (see the session notes in the commit); run `testing/browser/frame-budget.cjs` on a quiet machine
 before a release.
+
+## Board feel pass, 11 November 2026
+
+`src/game/phaser/BoardJuice.js` adds decoration to ordinary moves: a lift and duck on a swap, a
+squash as a gem lands, a rippled pop with a flash for a match, a rising score, and a small camera
+shake from the third cascade tier. Its tweens run beside the move and are never awaited; a match
+gains at most 48 ms (`CLEAR_RIPPLE`) and the opening cascade about 130 ms. Reduced motion turns
+all of it off. Revert: remove the `this.juice` calls in `BoardAnimator.js`.
+
+Mine script time per frame after the pass, same harness as the table above (4× slowdown, measured
+on a busy development machine): level 13 4.7 ms, level 376 8.7 ms, level 397 5.5 ms, against the
+12 ms ceiling. `testing/browser/board-motion.cjs` reports no stutter or stacked gems on levels 13,
+373, 376, 385 and 397.

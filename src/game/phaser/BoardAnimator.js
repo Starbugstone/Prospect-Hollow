@@ -9,6 +9,7 @@ import { chapterIndexOf } from '../../data/chapters';
 import { mineSignalAppearance, mineRelicAppearance } from '../../data/mineThemes';
 import { BonusEffects } from './BonusEffects';
 import { FloatstoneTrail } from './FloatstoneTrail';
+import { BoardJuice, burstCount, clearRipple } from './BoardJuice';
 import {
   isCellFixture,
   isGravitySwitch,
@@ -33,9 +34,10 @@ import {
   multiMatchLabel,
   tierCoins,
   MULTI_MATCH_COIN_STEP,
+  clearScore,
 } from '../engine/MatchRewards';
 
-const MOTION = Object.freeze({ swap: 115, reject: 75, clear: 90, intro: 160 });
+const MOTION = Object.freeze({ swap: 115, reject: 75, clear: 90, intro: 260 });
 const CRACKS = [
   [
     [88, 10],
@@ -112,6 +114,7 @@ export class BoardAnimator {
     });
     this.bonuses = new BonusEffects(this);
     this.floatTrail = new FloatstoneTrail(this);
+    this.juice = new BoardJuice(this);
     this.iceSprites = new Map();
     this.fossilSprites = new Map();
     this.fixtureSprites = new Map();
@@ -347,17 +350,16 @@ export class BoardAnimator {
         const sprite = this.gemSprites.get(id);
         if (!sprite) return;
         const p = this.position(index);
-        sprite.y -= this.cellSize * 0.5;
-        sprite.alpha = 0.6;
+        const { lift, delay } = this.juice.introStart(index);
+        sprite.y -= lift;
+        sprite.alpha = 0;
+        this.juice.land(sprite, MOTION.intro + delay * 2.75, 2);
         return this.tween(sprite, {
           y: p.y,
-          alpha: 1,
-          delay: Math.min(
-            90,
-            (index % this.boardCols) * 7 + Math.floor(index / this.boardCols) * 4,
-          ),
+          alpha: { from: 0, to: 1 },
+          delay,
           duration: MOTION.intro,
-          ease: 'Back.easeOut',
+          ease: 'Bounce.easeOut',
         });
       }),
     );
@@ -368,9 +370,10 @@ export class BoardAnimator {
     const a = this.gemSprites.get(this.indexToGemId[aIndex]);
     const b = this.gemSprites.get(this.indexToGemId[bIndex]);
     if (!a || !b) return;
+    this.juice.swap(a, b, MOTION.swap);
     await Promise.all([
-      this.tween(a, { ...this.position(bIndex), duration: MOTION.swap, ease: 'Cubic.easeOut' }),
-      this.tween(b, { ...this.position(aIndex), duration: MOTION.swap, ease: 'Cubic.easeOut' }),
+      this.tween(a, { ...this.position(bIndex), duration: MOTION.swap, ease: 'Back.easeOut' }),
+      this.tween(b, { ...this.position(aIndex), duration: MOTION.swap, ease: 'Back.easeOut' }),
     ]);
     if (generation !== this.generation) return;
     [this.indexToGemId[aIndex], this.indexToGemId[bIndex]] = [
@@ -383,6 +386,7 @@ export class BoardAnimator {
     const a = this.gemSprites.get(this.indexToGemId[aIndex]);
     const b = this.gemSprites.get(this.indexToGemId[bIndex]);
     if (!a || !b) return;
+    this.juice.refuse([a, b], MOTION.reject * 2);
     await Promise.all([
       this.tween(a, {
         ...this.position(bIndex),
@@ -420,6 +424,8 @@ export class BoardAnimator {
         const combo = cascadeTier(step, i);
         this.audio?.playMatch?.({ comboCount: combo });
         if (combo > 1) this.celebrate(combo);
+        this.juice.rumble(combo);
+        this.juice.score(clearScore(step, i), step.cleared, combo);
         const matchCount = simultaneousMatchCount(step);
         if (matchCount >= 2) {
           this.onBanner?.({
@@ -445,7 +451,7 @@ export class BoardAnimator {
             this.gemSprites.get(gem.id),
             fallRoute(withPortalPads(this.tiles, path), this.boardCols),
           );
-      await this.clearGems(step.cleared, step.bonusFusion);
+      await this.clearGems(step.cleared, step.bonusFusion, cascadeTier(step, i));
       if (generation !== this.generation) return;
       if (step.collectedRelics?.length) {
         await this.clearGems(step.collectedRelics.map(({ index }) => index));
@@ -583,11 +589,9 @@ export class BoardAnimator {
   }
 
   fall(sprite, index, distance) {
-    return this.tween(sprite, {
-      ...this.position(index),
-      duration: this.fallDuration(distance),
-      ease: 'Bounce.easeOut',
-    });
+    const duration = this.fallDuration(distance);
+    this.juice.land(sprite, duration, distance);
+    return this.tween(sprite, { ...this.position(index), duration, ease: 'Bounce.easeOut' });
   }
 
   // A refill queues above its entry cell. Below a wall or a hole shallower than the
@@ -646,6 +650,7 @@ export class BoardAnimator {
       });
     }
     const duration = motion.duration;
+    const generation = this.generation;
     // The wait is part of the tween: a Phaser delay only ends on a frame boundary, and
     // gems waiting behind one another must keep to the planned time exactly.
     const total = delay + duration;
@@ -668,6 +673,9 @@ export class BoardAnimator {
       duration: total,
       ease: 'Linear',
       onUpdate: place,
+    }).then(() => {
+      // A routed gem settles into its cell as a straight fall does.
+      if (!float && generation === this.generation) this.juice.land(sprite, 0, route.length - 1);
     });
   }
 
@@ -951,7 +959,7 @@ export class BoardAnimator {
     );
   }
 
-  async clearGems(indices, fusion) {
+  async clearGems(indices, fusion, combo = 1) {
     const generation = this.generation;
     const detonate = fusion && !this.reducedMotion;
     const origins = detonate ? fusion.pair.map(({ index }) => this.position(index)) : [];
@@ -963,15 +971,22 @@ export class BoardAnimator {
       id: this.indexToGemId[index],
       sprite: this.gemSprites.get(this.indexToGemId[index]),
     }));
+    // An ordinary match pops gem by gem; a detonation keeps its own outward timing.
+    const ripple = detonate || this.reducedMotion ? [] : clearRipple(entries.length);
     await Promise.all(
-      entries.map(({ sprite, index }) => {
+      entries.map(({ sprite, index }, order) => {
         if (!sprite) return;
         const p = this.position(index);
         const dx = detonate ? p.x - center.x : 0,
           dy = detonate ? p.y - center.y : 0;
         const distance = Math.max(1, Math.hypot(dx, dy));
-        if (!detonate) this.particles?.emitBurst(p, GEM_COLORS[sprite.__gemType], 9);
+        const pop = () => {
+          this.particles?.emitBurst(p, GEM_COLORS[sprite.__gemType], burstCount(combo));
+          if (ripple.length && entries.length <= 12) this.juice.flash(p);
+        };
+        if (!detonate && !ripple[order]) pop();
         return this.tween(sprite, {
+          ...(!detonate && ripple[order] ? { delay: ripple[order], onStart: pop } : {}),
           ...(detonate
             ? {
                 x: p.x + (dx / distance) * this.cellSize * 1.8,
