@@ -56,7 +56,7 @@ const settledTown = (era) => ({
 
 describe('save formats', () => {
   it('writes the newest supported format and exports the same list to the server', () => {
-    expect(SUPPORTED_SAVE_SCHEMAS).toEqual([2, 3, 4]);
+    expect(SUPPORTED_SAVE_SCHEMAS).toEqual([2, 3, 4, 5]);
     expect(SUPPORTED_SAVE_SCHEMAS.at(-1)).toBe(SAVE_SCHEMA_VERSION);
     expect(freshProfile().schemaVersion).toBe(SAVE_SCHEMA_VERSION);
     const rules = buildSaveRules();
