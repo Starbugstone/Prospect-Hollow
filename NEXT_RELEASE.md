@@ -398,20 +398,30 @@ opening order blocks it.
 
 ## Step 5: honours family
 
-**Size: small.**
+**Size: small. Built on `t3/honours-1-3` except what waits on the new levels.** The design, the
+rejected ideas and the calibration are in
+[the honours guide](docs/honours.md#release-130-honours-generation-8-2026-11-11).
 
-- [ ] Add one family, working name **Commissioner**, using the existing `landmarks` measure over a
-      fixed list of the three sites, which the server already supports
-- [ ] Ranks: bronze 1, silver 2, gold 3 commissions sponsored
-- [ ] Raise `HONOURS_VERSION` to 6 and set `since: 6`
-- [ ] Remove the sites from `NON_MONUMENT_HONOURS`, since the test requires one or the other
-- [ ] Add the ranks to `testing/fixtures/shipped-honour-ranks.json`
-- [ ] Calibrate with `scripts/measure-honours.mjs` and record the evidence in `docs/honours.md`
-- [ ] Regenerate catalogs and keep `testing/honours.test.js` and `backend/tests/honours.php` green
+- [x] **Commissioner** on the existing `landmarks` measure over the two commission sites:
+      bronze 1, silver 2 commissions sponsored. The sites left `NON_MONUMENT_HONOURS`
+- [ ] Commissioner gold, 3: append it with step 4, with its own measure over all three sites (the
+      shipped list can't gain the third site). `testing/commissions.test.js` fails until every
+      commission counts toward a Commissioner rank
+- [x] **Keen Eye**: find 1, then both, of the space helmet and the wandering pair in your own
+      town. New `found` measure on client and server, read from the replay-protected `XRun` fields
+- [x] `HONOURS_VERSION` 8 and `since: 8` (the plan's 6 was taken by Outer Ring Builder, 7 by Far Rim
+      Listener); shipped ranks recorded, French text, catalogs regenerated
+- [x] Calibrated with `scripts/measure-honours.mjs` (three seeds, 546 levels): Commissioner bronze
+      and silver at runs 1028 and 1034, Keen Eye at 329 and 973 (earliest finds)
+- [x] `testing/honours.test.js`, `testing/commissions.test.js` and `backend/tests/honours.php`
+      extended
+- [ ] Crystal masteries (Twin Tracer, Crossgrain Mender, Crystal Harmonist) and the **Far Seam
+      Prospector** milestone (complete levels 552, 582, 606) wait on chapters 92–101. They are one
+      commit on `t3/honours-1-3-crystals`; the elements stay in `NON_MASTERY_ELEMENTS` until then.
+      After the chapters merge: rebase, regenerate the catalogs, calibrate the provisional mastery
+      goals against the real levels, and record the evidence
 
 A later commission can't join a shipped list. It gets new ranks at the end or a new family.
-
-No rank is needed for the boards, because they add no gem, element, era or fusion.
 
 **Done when** existing saves catch up once and see the new ranks as new, and the server verifies them.
 

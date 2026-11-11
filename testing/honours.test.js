@@ -16,6 +16,7 @@ import {
   NON_SETTLEMENT_HONOURS,
   NON_RESOURCE_HONOURS,
   NON_MONUMENT_HONOURS,
+  NON_FIND_HONOURS,
   QUARTERMASTER,
   RANK_METALS,
   SCORE_FROM_LEVEL,
@@ -48,6 +49,8 @@ import {
 import { elementLevels, levelHonourElements } from '../src/data/honourLevels';
 import honourLevels from '../src/data/honourLevels.json';
 import { PERSONAL_AREAS } from '../src/data/townLandmarks';
+import { COMMISSIONS } from '../src/data/commissions';
+import { HIDDEN_FIND_IDS, hiddenFindFields } from '../src/data/hiddenFinds';
 import shippedRanks from './fixtures/shipped-honour-ranks.json';
 import { GEM_TYPES } from '../src/game/engine/GemFactory';
 import { FUSION_STYLES } from '../src/game/engine/BonusFusion';
@@ -190,6 +193,8 @@ describe('The honours registry', () => {
         measures.some((m) => m.area === id || m.areas?.includes(id)) !== !!NON_MONUMENT_HONOURS[id],
         id,
       ).toBe(true);
+    for (const id of HIDDEN_FIND_IDS)
+      expect(measures.some((m) => m.finds?.includes(id)) !== !!NON_FIND_HONOURS[id], id).toBe(true);
     // New Moon buildings must not be hidden behind the settlement's existing coverage.
     for (const building of BUILDINGS.filter((b) => b.settlement === 'moon'))
       expect(
@@ -273,14 +278,72 @@ describe('Measures', () => {
   });
 
   it('sponsors every monument site with valid choices while preserving Monument Square’s shipped meaning', () => {
+    const commissions = new Set(COMMISSIONS.map(({ site }) => site));
     for (const area of PERSONAL_AREAS.filter(({ id }) => !NON_MONUMENT_HONOURS[id])) {
+      // A commission counts for Commissioner and never for Landmark Patron's fixed list.
+      const [counts, other] = commissions.has(area.id)
+        ? ['commissioner-bronze', 'landmark-patron-bronze']
+        : ['landmark-patron-bronze', 'commissioner-bronze'];
       const t = town({ personalisation: { areas: { [area.id]: [area.choices[0]] } } });
       const ids = added({ town: t });
-      expect(ids, area.id).toContain('landmark-patron-bronze');
+      expect(ids, area.id).toContain(counts);
+      expect(ids, area.id).not.toContain(other);
       expect(ids.includes('monument-gold'), area.id).toBe(area.id === 'monument');
       t.personalisation.areas[area.id] = ['invented-design'];
-      expect(added({ town: t }), area.id).not.toContain('landmark-patron-bronze');
+      expect(added({ town: t }), area.id).not.toContain(counts);
     }
+  });
+
+  it('counts commissions sponsored: one, then both of the shipped sites', () => {
+    const both = town({
+      personalisation: {
+        areas: {
+          'earthlight-conservatory': ['crystal-nursery'],
+          'homecoming-commons': ['bandstand'],
+        },
+      },
+    });
+    expect(added({ town: both })).toEqual(
+      expect.arrayContaining(['commissioner-bronze', 'commissioner-silver']),
+    );
+    expect(added({ town: both })).not.toContain('landmark-patron-bronze');
+    expect(HONOURS.byId['commissioner-silver'].progress(state()).value).toBe(0);
+  });
+
+  it('counts the hidden finds the owner found in their own town, once each', () => {
+    const found = (fields) => town(fields);
+    const run = (id) => hiddenFindFields(id).run;
+    expect(added({ town: found({ [run('wanderers')]: 912 }) })).toContain('keen-eye-bronze');
+    expect(added({ town: found({ [run('helmet')]: 3 }) })).toContain('keen-eye-bronze');
+    const both = found({ [run('helmet')]: 3, [run('wanderers')]: 912 });
+    expect(added({ town: both })).toEqual(
+      expect.arrayContaining(['keen-eye-bronze', 'keen-eye-silver']),
+    );
+    // A find made while visiting another town, an unknown find or a malformed run is not
+    // a find in this town.
+    for (const fields of [
+      { [hiddenFindFields('wanderers').visitAt]: 1_700_000_000_000 },
+      { [run('wanderers')]: 0 },
+      { [run('wanderers')]: -4 },
+      { [run('wanderers')]: '912' },
+      { [run('wanderers')]: 1.5 },
+      { [run('unicorn')]: 12 },
+    ])
+      expect(added({ town: found(fields) }), JSON.stringify(fields)).not.toContain(
+        'keen-eye-bronze',
+      );
+    const catalog = buildHonourCatalog(
+      honourFamilies().map((family) =>
+        family.id === 'keen-eye'
+          ? { ...family, measure: { kind: 'found', finds: ['helmet', 'unicorn'] } }
+          : family,
+      ),
+    );
+    expect(
+      catalog.byId['keen-eye-silver'].progress(
+        state({ town: found({ helmetRun: 3, unicornRun: 5 }) }),
+      ).value,
+    ).toBe(1);
   });
 
   it('credits continuous collection cumulatively with version 2 mastery and leaves completion measures untouched', () => {
@@ -616,6 +679,8 @@ describe('Saved honours', () => {
       'saucer-welcome',
       'moonstone-reserve',
       'landmark-patron',
+      'commissioner',
+      'keen-eye',
     ]);
     expect(friends.families.map((family) => family.id)).toEqual(['visitors', 'explorer']);
   });
@@ -799,6 +864,25 @@ describe('First monument: one permanent distinction', () => {
     expect(catalog.byId['monument-gold'].progress(view).value).toBe(0);
     expect(evaluateHonours(view, { catalog }).added).not.toContain('monument-gold');
   });
+  it('catches up generation 7 saves with commissions and finds they already made', () => {
+    const old = state({
+      town: town({
+        era: 'quiet-signal',
+        helmetRun: 40,
+        personalisation: { areas: { 'homecoming-commons': ['story-hall'] } },
+      }),
+      honours: { ...createHonours(), version: 7, backfilled: 7, seenGeneration: 7 },
+    });
+    const honours = backfillHonours(old);
+    for (const id of ['commissioner-bronze', 'keen-eye-bronze'])
+      expect(honours.earned[id], id).toMatchObject({ at: null, backfilled: true, version: 1 });
+    expect(honours.earned['commissioner-silver']).toBeUndefined();
+    const view = honourCollection(old)
+      .find((tab) => tab.id === 'town')
+      .families.filter((family) => ['commissioner', 'keen-eye'].includes(family.id));
+    expect(view.map((family) => family.newRank)).toEqual([true, true]);
+  });
+
   it('catches up saves from the previous honour generation once', () => {
     const old = state({
       town: monumentTown('world-tree'),

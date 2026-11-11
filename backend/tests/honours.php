@@ -164,7 +164,7 @@ $adminAudit = 'honours-test-' . bin2hex(random_bytes(4));
 try {
     // ---------- Shared definitions ----------
     check(
-        $schema['honours']['version'] === 7 &&
+        $schema['honours']['version'] === 8 &&
             $schema['honours']['showcaseSlots'] === 3 &&
             $schema['honours']['counters'] === [
                 'gems' => 'map',
@@ -192,6 +192,7 @@ try {
         'buildingLevels',
         'resource',
         'landmarks',
+        'found',
     ];
     foreach ($definitions as $id => $definition) {
         check(
@@ -325,6 +326,16 @@ try {
                 ),
             'a validated purchase at ' . $area['id'] . ' follows the shared site measure',
         );
+        // Commissions count for Commissioner alone, from the same validated purchase.
+        check(
+            in_array('commissioner-bronze', $saved->honours->verified, true) ===
+                in_array(
+                    $area['id'],
+                    $definitions['commissioner-bronze']['measure']['areas'],
+                    true,
+                ),
+            'a validated purchase at ' . $area['id'] . ' follows the commission measure',
+        );
         if ($area['id'] === 'earthrise-plaza') {
             check(
                 in_array('new-hollow-gold', $saved->honours->verified, true) &&
@@ -339,6 +350,111 @@ try {
             );
         }
     }
+    // Hidden finds verify from the validated town: the replay saves `XRun` for an owner's
+    // own find. A find while visiting, or a run uploaded without the replay, proves nothing.
+    $findFlow = flow('space helmet found once for its completed puzzle');
+    $findTown = '11111111-1111-4111-8111-000000000950';
+    // The fixture town found the helmet on an earlier puzzle; this one has found nothing yet.
+    $findBefore = asArray($findFlow->before);
+    $findBefore['town']['helmetRun'] = 0;
+    $findBefore = asObject($findBefore);
+    $withHonours = function (object $profile): object {
+        $profile->honours ??= asObject(['version' => 8, 'earned' => (object) []]);
+        return $profile;
+    };
+    $findStart = $catalog->keep(
+        $withHonours(
+            $validator->accept($findBefore, null, $findFlow->serverNow, false, [], $findTown),
+        ),
+        null,
+        $noSocial,
+    );
+    check(
+        !in_array('keen-eye-bronze', $findStart->honours->verified, true),
+        'no find, no Keen Eye',
+    );
+    $helmetFound = $catalog->keep(
+        $withHonours(
+            $validator->accept(
+                $findFlow->after,
+                $findStart,
+                $findFlow->serverNow,
+                false,
+                [],
+                $findTown,
+            ),
+        ),
+        $findStart,
+        $noSocial,
+    );
+    check(
+        $helmetFound->town->helmetRun > 0 &&
+            in_array('keen-eye-bronze', $helmetFound->honours->verified, true) &&
+            !in_array('keen-eye-silver', $helmetFound->honours->verified, true),
+        'the replayed helmet find verifies Keen Eye bronze, and only bronze',
+    );
+    // The pair's debut is brought forward so the helmet's fixture town has both finds out.
+    $pairRules = $rules;
+    $pairRules['economy']['hiddenFinds']['wanderers']['debut'] = 'tomorrow';
+    $pairValidator = new SaveIntegrity($pairRules);
+    $both = asArray($findFlow->after);
+    $both['integrity']['actions'][] = array_replace($both['integrity']['actions'][0], [
+        'sequence' => $both['integrity']['actions'][0]['sequence'] + 1,
+        'id' => '11111111-1111-4111-8111-000000000951',
+        'kind' => 'wanderers-find',
+    ]);
+    $both['town']['coins'] += $both['town']['coins'] - $findBefore->town->coins;
+    $both['town']['wanderersRun'] = $both['town']['helmetRun'];
+    $pairStart = $catalog->keep(
+        $withHonours(
+            $pairValidator->accept($findBefore, null, $findFlow->serverNow, false, [], $findTown),
+        ),
+        null,
+        $noSocial,
+    );
+    $bothFound = $catalog->keep(
+        $withHonours(
+            $pairValidator->accept(
+                asObject($both),
+                $pairStart,
+                $findFlow->serverNow,
+                false,
+                [],
+                $findTown,
+            ),
+        ),
+        $pairStart,
+        $noSocial,
+    );
+    check(
+        in_array('keen-eye-silver', $bothFound->honours->verified, true),
+        'the replayed helmet and wandering pair finds verify Keen Eye silver',
+    );
+    $claimed = asObject([
+        'schemaVersion' => 2,
+        'town' => ['helmetRun' => 9, 'wanderersRun' => 9],
+        'honours' => [
+            'version' => 8,
+            'earned' => ['keen-eye-silver' => earnedEntry(), 'keen-eye-bronze' => earnedEntry()],
+        ],
+    ]);
+    check(
+        $catalog->keep($claimed, null, $noSocial)->honours->verified === [] &&
+            !isset(published($claimed)['earned']['keen-eye-bronze']),
+        'finds uploaded without the replay verify and publish nothing',
+    );
+    $visiting = asObject(asArray($findStart));
+    $visiting->town->wanderersVisitAt = 1_700_000_000_000;
+    $visiting->town->helmetVisitAt = 1_700_000_000_000;
+    check(
+        !in_array(
+            'keen-eye-bronze',
+            $catalog->keep($visiting, null, $noSocial)->honours->verified,
+            true,
+        ),
+        'finds made while visiting other towns are not finds in this town',
+    );
+
     $continuousFlow = flow('continuous honours grow beyond the coin allowance without a victory');
     $continuousBase = $validator->accept(
         $continuousFlow->before,
@@ -1074,7 +1190,7 @@ try {
         check(
             str_contains(
                 $public->projection($odd, 'Odd', 'honours'),
-                '"honours":{"version":7,"earned":{},"showcase":[]}',
+                '"honours":{"version":8,"earned":{},"showcase":[]}',
             ),
             'garbage still projects an empty object',
         );

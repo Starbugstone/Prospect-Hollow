@@ -17,6 +17,7 @@ try {
   const { createTown } = await loader.ssrLoadModule('/src/data/town.js');
   const { miningDepthBonus } = await loader.ssrLoadModule('/src/data/economy.js');
   const { CONTINUOUS_COIN_CAP } = await loader.ssrLoadModule('/src/data/rewards.js');
+  const finds = await loader.ssrLoadModule('/src/data/hiddenFinds.js');
   const { eraGate, advanceEra } = await loader.ssrLoadModule('/src/game/town/TownEras.js');
   const { PERSONAL_AREAS, landmarkOffer, purchaseLandmark, advanceMonumentWorks } =
     await loader.ssrLoadModule('/src/data/townLandmarks.js');
@@ -57,6 +58,13 @@ try {
           town = advanceEra(town, town.era);
           town.transition.pending = false;
           if (town.era === 'twin-hollows') twinAt ??= town.completedRuns;
+        }
+        // Hidden finds: the earliest possible find, on the first village visit after a
+        // completed puzzle once the find is out. Real players find it later, or never.
+        for (const id of finds.HIDDEN_FIND_IDS) {
+          const { run } = finds.hiddenFindFields(id);
+          if (!town[run] && town.completedRuns > 0 && rules.hiddenFindOut(town, id))
+            town = { ...town, [run]: town.completedRuns };
         }
         for (let i = 0; i < 100; i++) {
           const goal = rules.nextGoal(town);
