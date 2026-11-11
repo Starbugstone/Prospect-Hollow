@@ -201,7 +201,7 @@ import {MoonScene} from '/src/game/town/moon/MoonScene.js';
 import {MOON_LOTS} from '/src/data/moonSettlement.js';
 import {AREA_BY_ID} from '/src/data/townLandmarks.js';
 window.area=AREA_BY_ID['earthlight-conservatory'];
-window.town={era:'twin-hollows',personalisation:{areas:{},areaLevels:{},construction:{}},buildings:{airport:3,spaceElevator:3,...Object.fromEntries(Object.keys(MOON_LOTS).map((id)=>[id,3]))},projects:{},coins:0};
+window.town={era:'twin-hollows',buildingEras:{},buildingEraLevels:{},personalisation:{areas:{},areaLevels:{},construction:{}},buildings:{airport:3,spaceElevator:3,...Object.fromEntries(Object.keys(MOON_LOTS).map((id)=>[id,3]))},projects:{},coins:0};
 window.moon=new MoonScene(document.querySelector('canvas'));
 moon.update(town); moon.renderer.setAnimationLoop(null);moon.render();window.ready=true;
 `,
