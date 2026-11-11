@@ -165,6 +165,8 @@ export const MINE_ELEMENTS = Object.freeze([
     id: 'surveys',
     name: 'Trail Surveyor',
     goals: [5, 20, 60],
+    // Chapter 95 (levels 565–570) took a campaign to 50 trails, so gold fell to 1.2 campaigns.
+    diamond: { goal: 75, since: 8 },
     obstacle: 'survey',
     label: 'Survey trails',
     requirement: 'Complete {goal} survey trails.',
@@ -203,14 +205,48 @@ export const MINE_ELEMENTS = Object.freeze([
     requirement: 'Break {goal} blast gates.',
     popup: '{goal} blast gates broken',
   },
+  // The crystal mechanics of levels 547–606 (honours generation 8), calibrated on the authored
+  // chapters: bronze is the teaching board, silver within one campaign, gold about 1.5.
+  {
+    id: 'traceTwins',
+    name: 'Twin Tracer',
+    goals: [1, 8, 15],
+    since: 8,
+    obstacle: 'trace-twins',
+    label: 'Trace twins',
+    requirement: 'Fire {goal} pairs of trace twins.',
+    popup: '{goal} pairs of trace twins fired',
+    // Bronze asks for one pair, in the singular.
+    first: { requirement: 'Fire a pair of trace twins.', popup: 'A pair of trace twins fired' },
+    // Both stamps of a pair vanish together when either fires. Rounding up the stamps left
+    // means a pair is never credited while one of its stamps still stands.
+    count: (config, tiles) =>
+      Math.ceil(tiles.filter((tile) => obstacle('trace-twins').present(tile)).length / 2),
+  },
+  {
+    id: 'crossgrain',
+    name: 'Crossgrain Mender',
+    goals: [3, 25, 50],
+    since: 8,
+    obstacle: 'crossgrain',
+    label: 'Crossgrain crystals',
+    requirement: 'Seal {goal} crossgrain crystals.',
+    popup: '{goal} crossgrain crystals sealed',
+  },
+  {
+    id: 'chords',
+    name: 'Crystal Harmonist',
+    goals: [2, 20, 45],
+    since: 8,
+    obstacle: 'chord',
+    label: 'Chord crystals',
+    requirement: 'Complete {goal} chord crystals.',
+    popup: '{goal} chord crystals completed',
+  },
 ]);
 // Every other mine element is deliberately not a mastery family: common obstacles, or
 // too few levels. A new obstacle must join MINE_ELEMENTS or this list.
 export const NON_MASTERY_ELEMENTS = Object.freeze([
-  // Trial-only crystal mechanics have no campaign mastery tally yet.
-  'trace-twins',
-  'crossgrain',
-  'chord',
   'encased-fossil',
   'fossil',
   'spore',
@@ -400,6 +436,17 @@ const MEASURES = Object.freeze({
     value: (state, measure) =>
       measure.areas.reduce((total, area) => total + MEASURES.landmark.value(state, { area }), 0),
   },
+  // The highest level with a completion record: a fixed level number is a named milestone.
+  level: {
+    value: (state) =>
+      Object.entries(state.records ?? {}).reduce(
+        (best, [id, record]) =>
+          /^[1-9]\d{0,5}$/.test(id) && record && typeof record === 'object'
+            ? Math.max(best, Number(id))
+            : best,
+        0,
+      ),
+  },
   // How many of the listed hidden finds the owner has found in this town at least once:
   // a find saves the completed puzzle count it was found at (`XRun`), which only rises.
   found: {
@@ -562,12 +609,34 @@ export function honourFamilies({
       // Diamond ranks arrived with the floating seam (levels 403–546), when the longer
       // campaign passed the shipped gold goals. Shipped goals never change.
       ranks: [
-        ...element.goals.map((goal, index) => ({ metal: RANK_METALS[index], goal })),
+        ...element.goals.map((goal, index) => ({
+          metal: RANK_METALS[index],
+          goal,
+          ...(element.since ? { since: element.since } : {}),
+          ...(index === 0 ? element.first : {}),
+        })),
         ...(element.diamond
           ? [{ metal: 'diamond', goal: element.diamond.goal, since: element.diamond.since }]
           : []),
       ],
     })),
+    {
+      id: 'far-seam',
+      tab: 'mine',
+      name: 'Far Seam Prospector',
+      art: { image: '/art/rewards/far-seam.svg' },
+      measure: { kind: 'level' },
+      requirement: 'Complete level {goal}.',
+      popup: 'Level {goal} completed',
+      progress: 'Furthest level {value} of {goal}',
+      // Fixed level numbers, never "all levels": the first new chapter's last level, act V's
+      // finale and the pack's finale. A later pack appends a rank with its own level.
+      ranks: [
+        { metal: 'bronze', goal: 552, since: 8 },
+        { metal: 'silver', goal: 582, since: 8 },
+        { metal: 'gold', goal: 606, name: 'The Far Seam', since: 8 },
+      ],
+    },
     {
       id: 'ages',
       tab: 'town',

@@ -57747,7 +57747,8 @@
         "3": 23750
       },
       "honourElements": {
-        "gates": 4
+        "gates": 4,
+        "traceTwins": 1
       }
     },
     "549": {
@@ -57794,7 +57795,8 @@
         "3": 23750
       },
       "honourElements": {
-        "gates": 4
+        "gates": 4,
+        "traceTwins": 2
       }
     },
     "552": {
@@ -57842,6 +57844,9 @@
         "1": 46500,
         "2": 4000,
         "3": 24000
+      },
+      "honourElements": {
+        "crossgrain": 3
       }
     },
     "555": {
@@ -57871,7 +57876,8 @@
       },
       "honourElements": {
         "relics": 3,
-        "oreOrders": 1
+        "oreOrders": 1,
+        "crossgrain": 2
       }
     },
     "557": {
@@ -57905,7 +57911,8 @@
       },
       "honourElements": {
         "relics": 3,
-        "oreOrders": 2
+        "oreOrders": 2,
+        "crossgrain": 4
       }
     },
     "559": {
@@ -57935,6 +57942,9 @@
         "1": 47000,
         "2": 4000,
         "3": 24250
+      },
+      "honourElements": {
+        "chords": 2
       }
     },
     "561": {
@@ -57951,7 +57961,8 @@
       },
       "honourElements": {
         "lanterns": 4,
-        "oreOrders": 1
+        "oreOrders": 1,
+        "chords": 2
       }
     },
     "562": {
@@ -57968,7 +57979,8 @@
       },
       "honourElements": {
         "lanterns": 2,
-        "oreOrders": 1
+        "oreOrders": 1,
+        "chords": 2
       }
     },
     "563": {
@@ -58001,7 +58013,8 @@
       },
       "honourElements": {
         "lanterns": 4,
-        "oreOrders": 2
+        "oreOrders": 2,
+        "chords": 2
       }
     },
     "565": {
@@ -58331,6 +58344,9 @@
         "1": 49000,
         "2": 4000,
         "3": 25250
+      },
+      "honourElements": {
+        "crossgrain": 4
       }
     },
     "584": {
@@ -58344,6 +58360,9 @@
         "1": 49000,
         "2": 4000,
         "3": 25250
+      },
+      "honourElements": {
+        "crossgrain": 4
       }
     },
     "585": {
@@ -58357,6 +58376,9 @@
         "1": 49000,
         "2": 4000,
         "3": 25250
+      },
+      "honourElements": {
+        "crossgrain": 4
       }
     },
     "586": {
@@ -58370,6 +58392,9 @@
         "1": 49000,
         "2": 4000,
         "3": 25250
+      },
+      "honourElements": {
+        "crossgrain": 6
       }
     },
     "587": {
@@ -58383,6 +58408,9 @@
         "1": 49000,
         "2": 4000,
         "3": 25250
+      },
+      "honourElements": {
+        "crossgrain": 2
       }
     },
     "588": {
@@ -58406,7 +58434,8 @@
       },
       "honourElements": {
         "oreOrders": 1,
-        "gates": 2
+        "gates": 2,
+        "crossgrain": 6
       }
     },
     "589": {
@@ -58423,7 +58452,8 @@
       },
       "honourElements": {
         "relics": 2,
-        "oreOrders": 1
+        "oreOrders": 1,
+        "chords": 3
       }
     },
     "590": {
@@ -58440,7 +58470,8 @@
       },
       "honourElements": {
         "relics": 1,
-        "oreOrders": 1
+        "oreOrders": 1,
+        "chords": 3
       }
     },
     "591": {
@@ -58457,7 +58488,8 @@
       },
       "honourElements": {
         "relics": 3,
-        "oreOrders": 2
+        "oreOrders": 2,
+        "chords": 3
       }
     },
     "592": {
@@ -58474,7 +58506,8 @@
       },
       "honourElements": {
         "relics": 3,
-        "oreOrders": 2
+        "oreOrders": 2,
+        "chords": 4
       }
     },
     "593": {
@@ -58491,7 +58524,8 @@
       },
       "honourElements": {
         "relics": 1,
-        "oreOrders": 1
+        "oreOrders": 1,
+        "chords": 1
       }
     },
     "594": {
@@ -58509,7 +58543,8 @@
       "honourElements": {
         "relics": 4,
         "oreOrders": 2,
-        "gates": 2
+        "gates": 2,
+        "chords": 8
       }
     },
     "595": {
@@ -58611,7 +58646,8 @@
       },
       "honourElements": {
         "relics": 1,
-        "gates": 2
+        "gates": 2,
+        "traceTwins": 1
       }
     },
     "602": {
@@ -58628,7 +58664,8 @@
       },
       "honourElements": {
         "relics": 1,
-        "oreOrders": 1
+        "oreOrders": 1,
+        "traceTwins": 1
       }
     },
     "603": {
@@ -58646,7 +58683,8 @@
       "honourElements": {
         "relics": 2,
         "oreOrders": 1,
-        "gates": 2
+        "gates": 2,
+        "traceTwins": 1
       }
     },
     "604": {
@@ -58663,7 +58701,8 @@
       },
       "honourElements": {
         "relics": 2,
-        "oreOrders": 1
+        "oreOrders": 1,
+        "traceTwins": 1
       }
     },
     "605": {
@@ -58680,7 +58719,8 @@
       },
       "honourElements": {
         "relics": 1,
-        "oreOrders": 1
+        "oreOrders": 1,
+        "traceTwins": 1
       }
     },
     "606": {
@@ -58698,7 +58738,8 @@
       "honourElements": {
         "relics": 3,
         "oreOrders": 2,
-        "gates": 4
+        "gates": 4,
+        "traceTwins": 2
       }
     }
   },
@@ -60755,5 +60796,5 @@
       "seenGeneration": 8
     }
   },
-  "contentDigest": "09a1806d295b3c7de52f06173ac2b33cc17c2e62629f7734d6a70a68c75dfb6b"
+  "contentDigest": "836bf1c72f2aa900f31c880d2a8d8fd9ce64ef18cb5d79753c2f6af829016e89"
 }

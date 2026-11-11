@@ -47,6 +47,7 @@ import {
   validShowcase,
 } from '../src/data/honours';
 import { elementLevels, levelHonourElements } from '../src/data/honourLevels';
+import { chapterLevelIds } from '../src/data/chapters';
 import honourLevels from '../src/data/honourLevels.json';
 import { PERSONAL_AREAS } from '../src/data/townLandmarks';
 import { COMMISSIONS } from '../src/data/commissions';
@@ -211,20 +212,28 @@ describe('The honours registry', () => {
     );
     expect(honourLevels).toEqual(live);
     expect(levelHonourElements(247)).toEqual({ lanterns: 2 });
-    expect(elementLevels('lanterns')).toMatchObject({ pieces: 183, chapters: [42, 90] });
+    expect(elementLevels('lanterns')).toMatchObject({ pieces: 198, chapters: [42, 94] });
   });
 
   it('sets mine silver within one campaign and the top rank near one and a half campaigns', () => {
-    // Shipped goals never move; when the campaign outgrows gold, a diamond rank is added.
+    // Shipped goals never move. A top rank is set at 1.3–1.7 campaigns; as later levels grow
+    // the campaign it may drift down, and once it no longer asks for more than 1.2 campaigns
+    // the family gets a new rank at the end (docs/honours.md, "Mine families and longer
+    // campaigns").
     for (const element of MINE_ELEMENTS) {
       const perCampaign = elementLevels(element.id).pieces;
       const [bronze, silver, gold] = element.goals;
-      const top = element.diamond?.goal ?? gold;
+      const top = element.diamond ?? { goal: gold, since: element.since ?? 1 };
       expect(bronze, element.id).toBeLessThan(silver);
       expect(silver, element.id).toBeLessThanOrEqual(perCampaign);
       if (element.diamond) expect(element.diamond.goal, element.id).toBeGreaterThan(gold);
-      expect(top / perCampaign, element.id).toBeGreaterThan(1.3);
-      expect(top / perCampaign, element.id).toBeLessThan(1.7);
+      expect(top.goal / perCampaign, element.id).toBeGreaterThan(1.2);
+      expect(top.goal / perCampaign, element.id).toBeLessThan(1.7);
+      if (top.since === HONOURS_VERSION)
+        expect(
+          top.goal / perCampaign,
+          `${element.id} is set at 1.3 campaigns or more`,
+        ).toBeGreaterThanOrEqual(1.3);
     }
   });
 
@@ -308,6 +317,64 @@ describe('Measures', () => {
     );
     expect(added({ town: both })).not.toContain('landmark-patron-bronze');
     expect(HONOURS.byId['commissioner-silver'].progress(state()).value).toBe(0);
+  });
+
+  it('counts fired trace pairs, sealed crossgrain and completed chord crystals', () => {
+    const tiles = [
+      ...Array.from({ length: 4 }, () => ({ signal: 'trace', signalHealth: 1 })),
+      ...Array.from({ length: 3 }, () => ({ signal: 'crossgrain', signalHealth: 2 })),
+      ...Array.from({ length: 2 }, () => ({ signal: 'chord', signalHealth: 3 })),
+      { signal: 'lantern' },
+    ];
+    expect(levelElements({ tiles })).toMatchObject({ traceTwins: 2, crossgrain: 3, chords: 2 });
+    // Continuous play credits a pair once both stamps have gone.
+    const config = { tiles };
+    const rest = (gone) =>
+      tiles.map((tile, index) => (gone.includes(index) ? { ...tile, signalHealth: 0 } : tile));
+    expect(consumedElements(config, { tiles: rest([0]) }).traceTwins).toBeUndefined();
+    expect(consumedElements(config, { tiles: rest([0, 1]) }).traceTwins).toBe(1);
+    const honours = creditRun(createHonours(), { mine: { traceTwins: 1, chords: 3 } });
+    expect(added({ honours })).toEqual(
+      expect.arrayContaining(['mine-trace-twins-bronze', 'mine-chords-bronze']),
+    );
+    expect(added({ honours })).not.toContain('mine-crossgrain-bronze');
+    expect(HONOURS.byId['mine-trace-twins-bronze']).toMatchObject({
+      requirement: 'Fire a pair of trace twins.',
+      popup: 'A pair of trace twins fired',
+    });
+    expect(HONOURS.byId['mine-trace-twins-silver'].requirement).toBe(
+      'Fire {goal} pairs of trace twins.',
+    );
+  });
+
+  it('places Far Seam Prospector on the last levels of chapters 92, 97 and 101', () => {
+    expect(LEVEL_COUNT).toBeGreaterThanOrEqual(606);
+    const finale = (chapter) => Math.max(...chapterLevelIds(chapter - 1));
+    expect(ranks('far-seam').map((id) => HONOURS.byId[id].goal)).toEqual([
+      finale(92),
+      finale(97),
+      finale(101),
+    ]);
+    const levels = new Map(generateLevelConfigs().map((level) => [level.id, level]));
+    for (const id of [552, 582, 606]) expect(levels.get(id), `level ${id}`).toBeTruthy();
+    // A replayed normal victory on the real level records it, and the milestone follows.
+    expect(added({ records: { 606: { score: getLevelStarTarget(606, null), stars: 3 } } })).toEqual(
+      expect.arrayContaining(['far-seam-bronze', 'far-seam-silver', 'far-seam-gold']),
+    );
+  });
+
+  it('reaches Far Seam Prospector at fixed levels, never "all levels"', () => {
+    const done = (...ids) => Object.fromEntries(ids.map((id) => [id, { score: 1000, stars: 1 }]));
+    expect(added({ records: done(1, 551) })).not.toContain('far-seam-bronze');
+    expect(added({ records: done(552) })).toContain('far-seam-bronze');
+    expect(added({ records: done(582) })).toEqual(
+      expect.arrayContaining(['far-seam-bronze', 'far-seam-silver']),
+    );
+    expect(added({ records: done(606) })).toContain('far-seam-gold');
+    for (const records of [{ 606: null }, { '0606': { score: 1 } }, { 'level-606': { score: 1 } }])
+      expect(added({ records }), JSON.stringify(records)).not.toContain('far-seam-bronze');
+    expect(HONOURS.byId['far-seam-gold'].progress(state({ records: done(560) })).value).toBe(560);
+    expect(ranks('far-seam').map((id) => HONOURS.byId[id].goal)).toEqual([552, 582, 606]);
   });
 
   it('counts the hidden finds the owner found in their own town, once each', () => {

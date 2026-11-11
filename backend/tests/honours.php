@@ -193,6 +193,7 @@ try {
         'resource',
         'landmarks',
         'found',
+        'level',
     ];
     foreach ($definitions as $id => $definition) {
         check(
@@ -453,6 +454,59 @@ try {
             true,
         ),
         'finds made while visiting other towns are not finds in this town',
+    );
+
+    // Far Seam Prospector reads the highest completed level in the replayed records.
+    $farSeam = function (array $records) use ($catalog, $noSocial): array {
+        $profile = asObject([
+            'schemaVersion' => 2,
+            'records' => $records,
+            'integrity' => ['version' => 1, 'context' => ['honours' => replayed()]],
+            'honours' => ['version' => 8, 'earned' => (object) []],
+        ]);
+        return $catalog->keep($profile, null, $noSocial)->honours->verified;
+    };
+    check(
+        !array_filter(
+            $farSeam(['551' => ['score' => 1, 'stars' => 1]]),
+            fn($id) => str_starts_with($id, 'far-seam'),
+        ) &&
+            in_array('far-seam-bronze', $farSeam(['552' => ['score' => 1, 'stars' => 1]]), true) &&
+            in_array('far-seam-gold', $farSeam(['606' => ['score' => 1, 'stars' => 1]]), true) &&
+            !in_array(
+                'far-seam-bronze',
+                $farSeam(['606' => 'x', 'level-606' => ['score' => 1]]),
+                true,
+            ),
+        'Far Seam Prospector verifies from the highest completed level in the records',
+    );
+    // Its goals are the real last levels of chapters 92, 97 and 101, which the replay knows.
+    check(
+        array_map(fn($metal) => $definitions['far-seam-' . $metal]['goal'], [
+            'bronze',
+            'silver',
+            'gold',
+        ]) === [552, 582, 606] &&
+            !array_filter(
+                [552 => 91, 582 => 96, 606 => 100],
+                fn($chapter, $id) => ($rules['levels'][$id]['chapterIndex'] ?? null) !== $chapter ||
+                    (isset($rules['levels'][$id + 1]) &&
+                        $rules['levels'][$id + 1]['chapterIndex'] === $chapter) ||
+                    $validator->starScoreTarget($id) === null,
+                ARRAY_FILTER_USE_BOTH,
+            ),
+        'Far Seam Prospector names the last levels of chapters 92, 97 and 101 in the exported rules',
+    );
+    // The replay credits the crystal elements from each level's authored pieces.
+    check(
+        ($rules['levels'][548]['honourElements']['traceTwins'] ?? null) === 1 &&
+            ($rules['levels'][554]['honourElements']['crossgrain'] ?? null) === 3 &&
+            ($rules['levels'][560]['honourElements']['chords'] ?? null) === 2,
+        'the save rules export the crystal pieces of their teaching boards',
+    );
+    check(
+        !in_array('far-seam-bronze', $farSeam([]), true),
+        'a town with no records verifies no level milestone',
     );
 
     $continuousFlow = flow('continuous honours grow beyond the coin allowance without a victory');

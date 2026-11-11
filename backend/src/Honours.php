@@ -509,6 +509,18 @@ final class Honours
                     is_array($measure['areas'] ?? null) ? $measure['areas'] : [],
                 ),
             ),
+            // The highest level with a completion record, as `level` in honours.js.
+            'level' => max([
+                0,
+                ...array_map(
+                    'intval',
+                    array_filter(
+                        array_keys($state['records']),
+                        fn($id) => preg_match('/^[1-9]\d{0,5}$/D', (string) $id) === 1 &&
+                            is_array($state['records'][$id]),
+                    ),
+                ),
+            ]),
             // The listed hidden finds the owner found at least once: a find saves the
             // completed puzzle count it was found at (`XRun`), a field the replay protects.
             'found' => count(
