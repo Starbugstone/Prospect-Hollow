@@ -74,10 +74,21 @@ function separateActionTargets(labels, width, height, top, bottom) {
       label.collection = { ...label.collection, x: (x / width) * 100, y: (y / height) * 100 };
 }
 
+// The gap a name keeps from something it steps aside for.
+const AVOID_GAP = 6;
 // Every map keeps names attached to their projected places. Higher priority wins
 // a collision; it never pushes another name into a new slot. Map adapters supply
 // their chrome bounds and projected action points, not their own density policy.
-export function layoutTownLabels(labels, width, height, { top = 0, bottom = height } = {}) {
+// `avoid` lists things on the map no name may cover, as screen rectangles
+// `{ id, x, y, width, height }` about their centres: a name that would cover one steps
+// sideways, just clear of it, and is then placed like any other. The thing's own name
+// (the same `id`) is left where it is.
+export function layoutTownLabels(
+  labels,
+  width,
+  height,
+  { top = 0, bottom = height, avoid = [] } = {},
+) {
   const result = labels.map((label) => ({ ...label }));
   if (width > 0 && height > 0) separateActionTargets(result, width, height, top, bottom);
   const occupied = result
@@ -109,6 +120,15 @@ export function layoutTownLabels(labels, width, height, { top = 0, bottom = heig
         ownAction.y -
         rect.y +
         direction * ((rect.height + ownAction.height) / 2 + 5);
+      rect = labelRect(label, width, height);
+    }
+    for (const obstacle of avoid) {
+      if (obstacle.id === label.id || !labelsOverlap(rect, obstacle, AVOID_GAP)) continue;
+      // To the side the name already leans toward; ties go right.
+      const side = rect.x < obstacle.x ? -1 : 1;
+      const clear = obstacle.x + side * ((rect.width + obstacle.width) / 2 + AVOID_GAP + 1);
+      label.nudge = (label.nudge ?? 0) + clear - rect.x;
+      label.x += ((clear - rect.x) / width) * 100;
       rect = labelRect(label, width, height);
     }
     label.visible =

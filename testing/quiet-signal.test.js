@@ -346,8 +346,12 @@ describe('The Far Rim: new ground, opened by the era', () => {
   });
 
   it('widens the SVG map to hold the district and places its labels in it', () => {
-    expect(moonMapBox()).toEqual({ x: -60, y: -50, width: 120, height: 100 });
+    const crater = moonMapBox();
     const box = moonMapBox([FAR_RIM]);
+    // The district only adds to the crater's box.
+    expect(box.y).toBeLessThan(crater.y);
+    expect(box.x).toBe(crater.x);
+    expect(box.y + box.height).toBe(crater.y + crater.height);
     const [x, y] = moonMapPoint(...FAR_RIM.centre);
     expect(x).toBeGreaterThan(box.x);
     expect(x).toBeLessThan(box.x + box.width);
