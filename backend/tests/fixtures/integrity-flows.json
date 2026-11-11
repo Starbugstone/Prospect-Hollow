@@ -26613,7 +26613,20 @@
         "settledRun": 0,
         "honours": {
           "version": 8,
-          "earned": {},
+          "earned": {
+            "far-seam-bronze": {
+              "at": 1780000000000,
+              "version": 1,
+              "seen": false,
+              "announced": false
+            },
+            "far-seam-silver": {
+              "at": 1780000000000,
+              "version": 1,
+              "seen": false,
+              "announced": false
+            }
+          },
           "counts": {
             "gems": {},
             "mine": {},
@@ -27665,7 +27678,26 @@
         "settledRun": 1,
         "honours": {
           "version": 8,
-          "earned": {},
+          "earned": {
+            "far-seam-bronze": {
+              "at": 1780000000000,
+              "version": 1,
+              "seen": false,
+              "announced": false
+            },
+            "far-seam-silver": {
+              "at": 1780000000000,
+              "version": 1,
+              "seen": false,
+              "announced": false
+            },
+            "far-seam-gold": {
+              "at": 1780000000000,
+              "version": 1,
+              "seen": false,
+              "announced": false
+            }
+          },
           "counts": {
             "gems": {},
             "mine": {},
@@ -28066,7 +28098,26 @@
         "settledRun": 0,
         "honours": {
           "version": 8,
-          "earned": {},
+          "earned": {
+            "far-seam-bronze": {
+              "at": 1780000000000,
+              "version": 1,
+              "seen": false,
+              "announced": false
+            },
+            "far-seam-silver": {
+              "at": 1780000000000,
+              "version": 1,
+              "seen": false,
+              "announced": false
+            },
+            "far-seam-gold": {
+              "at": 1780000000000,
+              "version": 1,
+              "seen": false,
+              "announced": false
+            }
+          },
           "counts": {
             "gems": {},
             "mine": {},
@@ -28475,7 +28526,26 @@
         "settledRun": 0,
         "honours": {
           "version": 8,
-          "earned": {},
+          "earned": {
+            "far-seam-bronze": {
+              "at": 1780000000000,
+              "version": 1,
+              "seen": false,
+              "announced": false
+            },
+            "far-seam-silver": {
+              "at": 1780000000000,
+              "version": 1,
+              "seen": false,
+              "announced": false
+            },
+            "far-seam-gold": {
+              "at": 1780000000000,
+              "version": 1,
+              "seen": false,
+              "announced": false
+            }
+          },
           "counts": {
             "gems": {},
             "mine": {},
