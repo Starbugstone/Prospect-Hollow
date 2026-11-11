@@ -292,7 +292,12 @@ Frontier homes add a cupola, a ridge walk, an attic window or a fieldstone chimn
 the shared cabin, and farms a weathervane or a hay hoist. In the Skysail, Stargazer,
 Moonward and Twin Hollows architectures each home takes its own massing inside the first
 home's width: one block, a main house with a side room, a tall narrow house or twin
-gables. Regenerate footprints after changing a variant (`npm run assets:footprints`).
+gables. Tomorrow's dome homes (`rounded.js`) and the garden cottages (`cozy.js`) rearrange
+their own family of shapes: a side dome or glasshouse, a tall narrow house, a lantern room
+or pergola, a pair. The imported 1920–2005 shell is one model, so `addHomeCharacter` in
+`city.js` adds a garden room, a roof room, a chimney and hedge or a shed and tree against
+the measured house, in the era's wall and roof colours. The first home always stays as
+authored. Regenerate footprints after changing a variant (`npm run assets:footprints`).
 
 ### Partial modernization: `modernizes`
 
@@ -750,6 +755,24 @@ disturbances, frozen clocks and a long simulation without scene growth.
 and final building tiers in every era and checks both prepared segments and
 animated animal positions, plus thin unmarked fences, covered landings, solid
 interiors, moving scenery reservations and traffic displacement.
+
+#### Era newcomers
+
+Every era after the first brings one species the valley has not seen: crow, duck, tortoise,
+heron, peacock, gull, owl, crane, swan, goat and lynx join the deer, otter, hedgehog,
+bluebird and Willowkin that earlier eras introduced. Each era names its fauna profile
+(`wildlife`), and a profile is the previous one `joinedBy` a species in `townAnimals.js`,
+so a successor era inherits the cast it follows and an unknown profile falls back to
+`standard`. The cast stays bounded: an era keeps the newest `PASSING_NEIGHBORS` ground
+newcomers and one newcomer bird species (one or two birds), and earlier newcomers move on.
+The long-standing animals, which include every space-helmet wearer, never leave.
+
+A ground newcomer needs a `TOWN_ANIMALS` entry with `model: 'garden'`, a `home` patch on
+the southern verge or a `riverbank` offset downstream of the town, a builder in
+`NewcomerAnimalModels.js` and at least two `ANIMAL_LOOKS`. A bird needs `flying: true` and
+looks (`neck`, `bars` and `form` shape the shared bird body). Newcomers are not helmet
+wearers. `testing/town-animals.test.js` ("Era newcomers") checks one arrival per era, the
+bound, the fallbacks and a planned route or flight for each newcomer in a full town.
 
 #### Looks, generations and Willowkin stages
 

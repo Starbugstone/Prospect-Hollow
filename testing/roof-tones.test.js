@@ -192,4 +192,22 @@ describe('Plots of one kind', () => {
     // Other kinds keep their one authored form on every plot.
     expect(plot('moonward', 'farm2').triangles).toBe(plot('moonward', 'farm').triangles);
   });
+
+  // Tomorrow's domes, the garden cottages and the 1920–2005 shells: one family, five homes.
+  it.each(['post-war', 'motor-age', 'aviation', 'broadcast', 'contemporary', 'tomorrow', 'canopy'])(
+    'tells the %s homes apart and leaves the first as authored',
+    (era) => {
+      const built = HOMES.map((id) => plot(era, id));
+      // Its own shape: a different part count or a different outline.
+      const shape = ({ triangles, bounds }) =>
+        [triangles, ...bounds.min.toArray(), ...bounds.max.toArray()]
+          .map((n) => n.toFixed(1))
+          .join(' ');
+      expect(new Set(built.map(shape)).size, era).toBe(HOMES.length);
+      const first = built[HOMES.indexOf('home')];
+      expect(first.root.getObjectByName('Home character')).toBeUndefined();
+      // A home's own touch stays small beside the house.
+      for (const home of built) expect(home.triangles).toBeLessThan(first.triangles + 1500);
+    },
+  );
 });

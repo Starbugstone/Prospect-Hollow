@@ -243,7 +243,22 @@ const FORMS = {
   homes(d, g, s) {
     const p = s.palette;
     if (['porch', 'row', 'court'].includes(s.identity)) {
-      if (s.identity === 'porch') return cottage(d, g, s, 0, -0.25, 1.12, 2.3);
+      if (s.identity === 'porch') {
+        // One cottage family; each home plot arranges it differently.
+        const variant = (d.plotVariant ?? 0) % 5;
+        if (variant === 2) return cottage(d, g, s, 0, -0.25, 0.95, 2.95);
+        if (variant === 4) {
+          cottage(d, g, s, 0.95, -0.05, 0.62, 1.45);
+          return cottage(d, g, s, -0.6, -0.3, 0.9, 2.1);
+        }
+        const home = cottage(d, g, s, 0, -0.25, 1.12, 2.3);
+        if (variant === 1) greenhouse(d, g, s, -1.6, 0.25, 0.5);
+        else if (variant === 3) {
+          pergola(d, g, 1.65, 0.1, 0.25, 0.9, 1.2, p);
+          planter(d, g, -1.5, 0.6, p);
+        }
+        return home;
+      }
       for (const x of [-1.55, 0, 1.55]) cottage(d, g, s, x, x ? -0.35 : -0.7, 0.68, x ? 1.4 : 1.7);
       return { top: 2.2, radius: 0.7, x: 0, z: -0.7 };
     }

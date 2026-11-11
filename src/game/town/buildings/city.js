@@ -1,3 +1,4 @@
+import { Box3, Matrix4 } from 'three';
 import { cityAppearance } from '../../../data/cityAppearance';
 import { parkedVehicle } from '../TownVehicles';
 import { addSquareModernization } from '../TownSquare';
@@ -66,6 +67,54 @@ export const cityModel = (d, parent, name) => {
       )
     : root;
 };
+
+// The five home plots share one shell. Each gets its own addition in the era's wall and
+// roof colours, so a street of homes reads as five households; the first stays plain.
+function addHomeCharacter(d, root, { wall, roof, brick }, variant) {
+  if (!(variant % 5)) return;
+  // The additions stand against the house as built so far: its shell, wing and finishes.
+  root.updateWorldMatrix(true, true);
+  const bounds = new Box3()
+    .setFromObject(root)
+    .applyMatrix4(new Matrix4().copy(root.matrixWorld).invert());
+  if (bounds.isEmpty()) return;
+  const side = bounds.max.x,
+    west = bounds.min.x,
+    height = bounds.max.y,
+    front = bounds.max.z;
+  const extra = d.group(root);
+  extra.name = 'Home character';
+  switch (variant % 5) {
+    case 1:
+      // A garden room on the west side.
+      d.box(extra, 1.05, 1.3, 1.5, west - 0.45, 0.72, -0.35, wall, true);
+      d.box(extra, 1.25, 0.12, 1.7, west - 0.45, 1.43, -0.35, roof, true);
+      d.box(extra, 0.6, 0.5, 0.06, west - 0.45, 0.85, 0.42, '#8fb0a8');
+      break;
+    case 2:
+      // A roof room behind a parapet.
+      d.box(extra, 1.25, 0.75, 1.1, 0.35, height + 0.37, -0.6, wall, true);
+      d.box(extra, 1.45, 0.1, 1.3, 0.35, height + 0.8, -0.6, roof, true);
+      d.box(extra, 0.7, 0.36, 0.06, 0.35, height + 0.4, -0.03, '#8fb0a8');
+      break;
+    case 3:
+      // A tall brick chimney on the east gable and a clipped hedge.
+      d.box(extra, 0.44, height + 0.85, 0.44, side + 0.12, (height + 0.85) / 2, -0.7, brick, true);
+      d.box(extra, 0.56, 0.1, 0.56, side + 0.12, height + 0.9, -0.7, roof, true);
+      for (const x of [-0.5, 0, 0.5])
+        d.ball(extra, west + 0.6 + x * 0.9, 0.3, front + 0.3, [0.3, 0.26, 0.26], '#7f9a6a');
+      break;
+    case 4: {
+      // A shed and a tree in the east garden.
+      d.box(extra, 0.85, 0.85, 0.85, side + 0.5, 0.5, -0.95, brick, true);
+      d.box(extra, 1, 0.1, 1, side + 0.5, 0.97, -0.95, roof, true);
+      d.rod(extra, [side + 0.55, 0.05, 0.7], [side + 0.55, 1.15, 0.7], 0.07, '#7a5f45');
+      d.ball(extra, side + 0.55, 1.6, 0.7, [0.55, 0.6, 0.55], '#7f9a6a');
+      break;
+    }
+    default:
+  }
+}
 
 // Meshes are shared architectural pieces exported from Blender, not per-plot copies.
 // `lifecycleEra` lets a later style reuse a shell while keeping its own stages
@@ -179,7 +228,8 @@ export function renderCityBuilding(
     addSquareModernization(d, root, level, appearance.roof);
     return true;
   } else {
-    cityModel(d, root, asset ?? `${era}-${family}`).userData.buildingPart = 'main';
+    const shell = cityModel(d, root, asset ?? `${era}-${family}`);
+    shell.userData.buildingPart = 'main';
     if (asset !== appearance.asset) root.userData.substitute = true;
     if (structureLevel >= 2) {
       const wing = cityModel(d, root, `${era}-wing`);
@@ -188,6 +238,7 @@ export function renderCityBuilding(
     }
     if (moduleLevel >= 2) addCityFinish(d, root, kind, era, finishLevel, moduleLevel);
     addConnectedCityIdentity(d, root, kind, era);
+    if (kind === 'home') addHomeCharacter(d, root, appearance, d.plotVariant ?? 0);
     if (['garage', 'stable', 'busDepot'].includes(kind)) {
       // A shell with a drive-in canopy parks its car beneath it, clear of the columns
       // and the forecourt lamp.

@@ -72,10 +72,25 @@ function cottage(d, g, x, z, r, wall, color = P.shell) {
 const FORMS = {
   tower(d, g, s) {
     if (s.identity === 'porch') {
-      const top = cottage(d, g, 0, -0.1, 1.2, 1.45);
-      disc(d, g, 0.9, 1.5, 0, 1.15, P.shell, 0.1, 0.45);
-      doorway(d, g, 0, 1.12);
-      return { top, radius: 1.2 };
+      // The valley's homes share one family of domes; each plot has its own arrangement.
+      const variant = (d.plotVariant ?? 0) % 5;
+      const [r, wall] = variant === 2 ? [1.02, 2.15] : variant === 4 ? [0.98, 1.35] : [1.2, 1.45];
+      const x = variant === 4 ? -0.45 : 0;
+      let top = cottage(d, g, x, -0.1, r, wall);
+      disc(d, g, 0.9, 1.5, x, r - 0.05, P.shell, 0.1, 0.45);
+      doorway(d, g, x, r - 0.08);
+      if (variant === 1) cottage(d, g, -1.6, 0.25, 0.6, 0.85, P.warm);
+      else if (variant === 2) disc(d, g, r + 0.16, 1.2, x, -0.1, P.accent, 0.1);
+      else if (variant === 3) {
+        // A glazed lantern room on the crown.
+        drum(d, g, 0.42, 0.4, 0, top - 0.12, -0.1, P.glass);
+        top = top + 0.28 + 0.3;
+        pod(d, g, 0.5, 0.3, 0.5, 0, top - 0.3, -0.1, P.shell);
+      } else if (variant === 4) {
+        cottage(d, g, 0.95, 0.05, 0.7, 0.95, P.warm);
+        shrub(d, g, 1.75, 0.95, 0.24);
+      }
+      return { top, radius: r, x };
     }
     if (s.identity === 'row') {
       for (const x of [-1.5, 0, 1.5]) {
