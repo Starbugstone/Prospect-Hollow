@@ -744,11 +744,25 @@ it.each(ERAS.map((era) => era.id))('dresses at most one %s animal as a space ani
     expect(wearer).toBeTruthy();
 });
 
-// Later eras keep the latest cast, so every wearer can be picked there.
-it('casts every space-helmet wearer in the latest era town', () => {
+// Later eras keep the long-standing cast and the newcomers still in the valley; every
+// ground animal in town can be picked, and a newcomer that has moved on cannot.
+it('casts every long-standing wearer in the latest era town and the newcomers living there', () => {
   const d = fixture(ERAS.at(-1).id);
   addTownAnimals(d, d.town);
-  for (const species of SPACE_HELMET.wearers) expect(castOf(d).has(species), species).toBe(true);
+  const cast = castOf(d);
+  const passing = SPACE_HELMET.wearers.filter((species) => TOWN_ANIMALS[species].seed >= 371);
+  expect(passing).toHaveLength(8);
+  for (const species of SPACE_HELMET.wearers.filter((s) => !passing.includes(s)))
+    expect(cast.has(species), species).toBe(true);
+  expect(passing.filter((species) => cast.has(species)).sort()).toEqual(['goat', 'lynx', 'swan']);
+  for (const animal of d.animals)
+    if (!animal.companion && !animal.townsfolk && !flyingAnimal(animal.species))
+      expect(SPACE_HELMET.wearers, animal.species).toContain(animal.species);
+  const picked = new Set();
+  for (let runs = 0; runs < 60; runs++)
+    picked.add(spaceHelmetWearer({ ...d.town, completedRuns: runs }, cast));
+  expect(picked.has('lynx')).toBe(true);
+  expect(picked.has('duck')).toBe(false);
 });
 
 // Wild animals only visit the town now and then; a wild wearer stays out to be found.
@@ -1129,7 +1143,10 @@ describe('Era newcomers', () => {
     expect(eraCast('post-war').has('duck')).toBe(true);
     expect(eraCast(ERAS.at(-1).id).has('duck')).toBe(false);
     for (const era of ERAS.slice(ERAS.findIndex(({ id }) => id === SPACE_HELMET.debut)))
-      for (const species of SPACE_HELMET.wearers.filter((s) => eraCast('tomorrow').has(s)))
+      for (const species of SPACE_HELMET.wearers.filter(
+        (s) =>
+          eraCast('tomorrow').has(s) && !townFauna(eraEvolution('tomorrow')).passing.includes(s),
+      ))
         expect(eraCast(era.id).has(species), `${era.id}: ${species}`).toBe(true);
   });
 

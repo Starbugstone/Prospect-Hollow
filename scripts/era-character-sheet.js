@@ -129,7 +129,8 @@ for (const era of eras) {
     let x = 0;
     for (const name of shown)
       for (let n = 0; n < each; n++) {
-        const model = animalModel(d, name, n);
+        // `?costume=space-helmet` dresses every animal for the helmet game.
+        const model = animalModel(d, name, n, query.get('costume'));
         model.root.position.x = x;
         model.root.rotation.y = -0.55;
         x += name.startsWith('willowkin') ? 1.3 : 1.05;

@@ -770,8 +770,9 @@ The long-standing animals, which include every space-helmet wearer, never leave.
 A ground newcomer needs a `TOWN_ANIMALS` entry with `model: 'garden'`, a `home` patch on
 the southern verge or a `riverbank` offset downstream of the town, a builder in
 `NewcomerAnimalModels.js` and at least two `ANIMAL_LOOKS`. A bird needs `flying: true` and
-looks (`neck`, `bars` and `form` shape the shared bird body). Newcomers are not helmet
-wearers. `testing/town-animals.test.js` ("Era newcomers") checks one arrival per era, the
+looks (`neck`, `bars` and `form` shape the shared bird body). Ground newcomers are
+space-helmet wearers while they live in the valley (add one to `SPACE_HELMET.wearers`, and
+to `suits` if its coat would hide the white suit); birds are not. `testing/town-animals.test.js` ("Era newcomers") checks one arrival per era, the
 bound, the fallbacks and a planned route or flight for each newcomer in a full town.
 
 #### Looks, generations and Willowkin stages

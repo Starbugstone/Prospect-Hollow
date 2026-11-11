@@ -372,7 +372,9 @@ export const WILLOWKIN_KEEPSAKES = {
 
 // The space-helmet easter egg debuts on the village dog in Tomorrow City and moves
 // to the next wearer in each later era, so players have to find its new animal.
-// Every wearer is a ground species the era casts keep; the list wraps around.
+// Every wearer is a ground species. The long-standing animals are in every later cast;
+// an era newcomer is only picked while it lives in the valley (`spaceHelmetWearer`
+// chooses among the wearers present).
 export const SPACE_HELMET = {
   debut: 'tomorrow',
   wearers: [
@@ -387,9 +389,24 @@ export const SPACE_HELMET = {
     'hare',
     'squirrel',
     'badger',
+    // Era newcomers take their turn for as long as they live in the valley.
+    'duck',
+    'tortoise',
+    'heron',
+    'peacock',
+    'crane',
+    'swan',
+    'goat',
+    'lynx',
   ],
   // Suit colors for wearers whose own coat would hide the white suit.
-  suits: { hen: '#e5873a' },
+  suits: {
+    hen: '#e5873a',
+    heron: '#e5873a',
+    crane: '#e5873a',
+    swan: '#e5873a',
+    goat: '#e5873a',
+  },
   // Finding the wearer pays this share of an hour of saloon takings: a full hour in the
   // owner's own town, half an hour to a visitor's own town.
   rewardHours: { owner: 1, visitor: 0.5 },

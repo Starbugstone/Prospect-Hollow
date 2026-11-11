@@ -182,7 +182,7 @@ function lynx(d, root, { look }) {
     // Cheek ruffs and tufted ears are what make a lynx.
     d.ball(head, side * 0.12, -0.06, 0.03, [0.055, 0.07, 0.06], light);
     d.mesh(head, 'cone', [0.06, 0.14, 0.05], [side * 0.09, 0.14, -0.03], coat);
-    d.rod(head, [side * 0.09, 0.2, -0.03], [side * 0.105, 0.29, -0.04], 0.008, dark);
+    d.rod(head, [side * 0.09, 0.2, -0.03], [side * 0.1, 0.245, -0.035], 0.009, dark);
   }
   const legs = fourLegs(d, body, 0.26, 0.12, 0.23, coat, light, 0.046);
   const tail = d.group(body, 0, 0.4, -0.36);
