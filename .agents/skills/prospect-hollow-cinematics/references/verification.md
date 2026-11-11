@@ -16,6 +16,7 @@ change; do not treat the current site list as final.
 | Monument poses and temporary staging                       | `src/game/town/TownMonumentUnveiling.js`, `src/game/town/TownMonumentWorks.js`                                                     |
 | Site positions, facing, designs, levels                    | `src/data/townLandmarks.js`; `monumentModel()` measures the real design                                                            |
 | Moon surface and crater parameters                         | `moonHeight()` in `src/game/town/moon/MoonScene.js`, `src/data/moonSettlement.js`                                                  |
+| Era cinematic camera path                                  | `src/game/town/TownEraShots.js`, checked by `testing/era-cinematic-shots.test.js`                                                  |
 | Railway, mine era, campaign finale effects                 | `src/game/town/TownRailwayOpening.js`, `src/game/town/TownMineEraConstruction.js`, `src/game/town/TownCompletionFireworks.js`      |
 | Scene definitions, captions, pending/seen receipts         | `src/data/townPresentations.js` and `src/stores/campaignStore.js`                                                                  |
 | Clock, modal, reduced motion, pause, completion            | `src/composables/useCinematic.js`, `src/components/town/TownPresentationCinematic.vue`, `src/components/town/TownEraCinematic.vue` |

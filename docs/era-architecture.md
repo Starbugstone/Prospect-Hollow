@@ -274,6 +274,26 @@ instead of adding conditionals. Large parcels may declare an `access` road inste
 of joining the garden lane; shadow coverage grows only with the clearings that
 hold a visible parcel. See [the future eras guide](future-eras.md).
 
+### Roof tones and plot variants
+
+Each era keeps one palette, but a building's purpose picks its roof tone from it
+(`data/roofTones.js`): homes keep the era's roof, civic buildings take a deeper tone, shops
+a warm one and working buildings a plain one. `toneRoof()` repaints a finished plot's roof
+colours after its renderer has drawn it, so every renderer and the imported shells get the
+same rule and no geometry, footprint or sign mount changes. Styles are keyed by the era's
+capabilities (`cozyStyle`, `architecture`, `cityAssets`, `style`), so a successor inherits
+its architecture's tones. An era with a new architecture needs a `ROOF_STYLES` entry or a
+place in `OWN_ROOF_COLOURS`; `testing/roof-tones.test.js` fails otherwise. The 2D drawings
+keep the era's single roof colour.
+
+Plots that share a kind are told apart. `plotVariant(id, kind)` numbers them, `buildPlot`
+exposes it to renderers as `d.plotVariant`, and `plotShade` shifts the roof tone a little.
+Frontier homes add a cupola, a ridge walk, an attic window or a fieldstone chimney above
+the shared cabin, and farms a weathervane or a hay hoist. In the Skysail, Stargazer,
+Moonward and Twin Hollows architectures each home takes its own massing inside the first
+home's width: one block, a main house with a side room, a tall narrow house or twin
+gables. Regenerate footprints after changing a variant (`npm run assets:footprints`).
+
 ### Partial modernization: `modernizes`
 
 An era may list the building ids it modernizes (`modernizes` in its evolution
@@ -435,6 +455,18 @@ saved receipts, future milestone definitions, visual disposal and this final hol
 To reproduce a silent video, generate era demos and run
 `scripts/capture-completion-fireworks.js` through Playwright CLI in a disposable
 browser. Encode `output/playwright/completion-fireworks-frames/%05d.jpg` at 24 fps.
+
+#### The era cinematic's camera
+
+`TownEraShots.js` owns the era cinematic's camera as one continuous move: the town from
+the south, a crane to the mine, a slow circle of the works with the crew close by, a lift
+as the builders leave, and a closing wide shot that leans toward the valley plots the new
+era introduces (`eraNewGround`; an era that builds only on the Moon closes on the town's
+heart). `eraShot(time, { to, aspect })` is pure: keys are data, the path passes each key
+without stopping, and a portrait screen stands farther back. `TownMineEraConstruction`
+supplies the scene and `TownPresentation` still owns the approach, terrain clearance and
+return. `testing/era-cinematic-shots.test.js` samples every era in landscape and portrait
+for ground clearance, an unobstructed subject, speed and stalls.
 
 ### Incident scripts
 
