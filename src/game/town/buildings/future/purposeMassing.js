@@ -188,10 +188,11 @@ export function purposeForms(house, tower) {
         d.box(g, 0.42, 0.38, 0.6, x, y, 1.15, p.light);
       return crown;
     },
-    // The garage: a low wide bay and a taller office beside it.
+    // The garage: a low bay as wide as the forecourt, so the parked car stands between its
+    // porch posts, and a taller office rising behind it.
     garage(d, g, s) {
-      const crown = house(d, g, s, { x: 0.5, w: 2.7, dep: 2.4, h: 1.7 });
-      house(d, g, s, { x: -1.4, z: -0.35, w: 1, dep: 1.6, h: 2.6, accent: true, door: false });
+      const crown = house(d, g, s, { w: 3.6, dep: 2.2, h: 1.7 });
+      house(d, g, s, { x: 1.05, z: -1.25, w: 1.3, dep: 1.2, h: 2.8, accent: true, door: false });
       return crown;
     },
   };
