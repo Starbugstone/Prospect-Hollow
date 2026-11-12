@@ -301,8 +301,10 @@ const FORMS = {
   },
   hall(d, g, s) {
     const p = s.palette,
-      r = Math.min(1.4, s.width * 0.34),
-      h = Math.max(1.7, s.height * 0.72);
+      // The sheriff's office is a tall narrow keep, the school a broad low classroom.
+      shape = { patrol: [0.82, 0.5], bell: [1.05, -0.3] }[s.identity] ?? [1, 0],
+      r = Math.min(1.4, s.width * 0.34) * shape[0],
+      h = Math.max(1.7, s.height * 0.72) + shape[1];
     const crown = cottage(d, g, s, 0, -0.25, r, h);
     if (s.identity === 'columns') {
       const porch = d.group(g);
@@ -312,7 +314,7 @@ const FORMS = {
       d.box(porch, 2.42, 0.15, 0.65, 0, 2.2, 1.1, p.green);
       addCozyRoof(d, porch, 0, 2.24, 0.85, 1.15, s.era, 0.65);
     }
-    if (['clock', 'bell', 'patrol', 'post'].includes(s.identity)) {
+    if (['clock', 'patrol', 'post'].includes(s.identity)) {
       drum(d, g, 0.3, 0.65, 0, crown.top - 0.1, -0.25, p.shell);
       addCozyRoof(d, g, 0, crown.top + 0.55, -0.25, 0.45, s.era);
       d.box(g, 0.32, 0.3, 0.07, 0, crown.top + 0.19, 0.07, p.light, true);
@@ -321,12 +323,31 @@ const FORMS = {
       d.box(g, 0.45, 0.13, 0.09, 0, 1.8, r - 0.15, p.deep);
       d.box(g, 0.13, 0.45, 0.09, 0, 1.8, r - 0.15, p.deep);
     }
+    // What stands beside each hall tells it from its neighbors. Everything is on the side
+    // away from the rear service annex, clear of the door and the forecourt.
+    const side = d.group(g);
+    side.name = 'Cozy hall side feature';
+    if (s.identity === 'clock') cottage(d, side, s, 1.6, -0.45, 0.55, 1.2);
+    if (s.identity === 'bell') {
+      // A free-standing bell tower beside the classroom.
+      drum(d, side, 0.3, 2.9, 1.65, 0.1, -0.2, p.shell);
+      d.box(side, 0.3, 0.34, 0.07, 1.65, 2.5, 0.11, p.light, true);
+      addCozyRoof(d, side, 1.65, 3, -0.2, 0.5, s.era);
+    }
+    if (s.identity === 'post') {
+      // The parcel store: a low round room with a lid.
+      drum(d, side, 0.48, 0.9, 1.55, 0.1, 0.15, p.shell);
+      disc(d, side, 0.54, 1.05, 1.55, 0.15, p.timber, 0.54, 0.1);
+    }
+    if (s.identity === 'clinic') greenhouse(d, side, s, 1.55, -0.3, 0.62);
     return crown;
   },
   arcade(d, g, s) {
     const p = s.palette,
-      r = Math.min(1.45, s.width * 0.4),
-      h = s.kind === 'saloon' ? 1.75 : 1.35;
+      // The trading post is a tall narrow shopfront; the diner sits low and wide.
+      shape = { shop: [0.85, 0.3], diner: [1, -0.1] }[s.identity] ?? [1, 0],
+      r = Math.min(1.45, s.width * 0.4) * shape[0],
+      h = (s.kind === 'saloon' ? 1.75 : 1.35) + shape[1];
     drum(d, g, r, h, 0, 0.15, -0.35, p.shell, 1.05);
     drum(d, g, r * 0.91, h * 0.64, 0, 0.3, -0.35, p.glass, 1.08);
     for (const x of [-r * 0.82, r * 0.82])
@@ -338,6 +359,12 @@ const FORMS = {
       medallion.rotation.x = Math.PI / 2;
       medallion.name = 'Golden Hour saloon medallion';
     }
+    const side = d.group(g);
+    side.name = 'Cozy shop side feature';
+    // The diner's terrace, the market's glasshouse of produce, the food hall's second room.
+    if (s.identity === 'diner') pergola(d, side, 1.95, 0.05, -0.2, 0.95, 1.2, p);
+    if (s.identity === 'market') greenhouse(d, side, s, 1.95, -0.35, 0.6);
+    if (s.identity === 'supermarket') cottage(d, side, s, 2.05, -0.55, 0.6, 1.15);
     return { top: h + 0.65, radius: r, z: -0.35 };
   },
   workshop(d, g, s) {
@@ -350,6 +377,25 @@ const FORMS = {
     if (['forge', 'mill', 'warehouse'].includes(s.identity)) {
       drum(d, g, 0.22, h + 1.05, -w * 0.3, 0.1, -0.8, p.shell);
       disc(d, g, 0.27, h + 1.2, -w * 0.3, -0.8, p.deep, 0.27, 0.13);
+    }
+    const side = d.group(g);
+    side.name = 'Cozy workshop side feature';
+    const x = w / 2 + 0.5;
+    if (s.identity === 'fire') {
+      // The hose tower.
+      drum(d, side, 0.3, h + 1.5, x - 0.1, 0.1, -0.9, p.shell);
+      addCozyRoof(d, side, x - 0.1, h + 1.6, -0.9, 0.5, s.era);
+    }
+    if (s.identity === 'mill') {
+      drum(d, side, 0.5, h + 0.4, x + 0.05, 0.1, -0.6, p.shell);
+      addCozyRoof(d, side, x + 0.05, h + 0.5, -0.6, 0.72, s.era);
+    }
+    if (s.identity === 'stable') pergola(d, side, x + 0.05, 0.05, -0.45, 0.9, 1.3, p);
+    if (s.identity === 'garage') cottage(d, side, s, x + 0.1, -0.8, 0.55, 1.3);
+    if (s.identity === 'freight') {
+      d.box(side, 0.5, 0.5, 0.5, x - 0.1, 0.3, 0.3, p.timber);
+      d.box(side, 0.4, 0.4, 0.4, x + 0.05, 0.25, -0.35, p.timber);
+      d.box(side, 0.36, 0.36, 0.36, x - 0.08, 0.72, 0.3, p.light);
     }
     return { top: h + 0.5, roofY: h + 0.22, radius: w * 0.4, z: -0.35 };
   },

@@ -308,6 +308,9 @@ portico, the school a long range and a bell tower, the fire station a hose tower
 an open hall between two kiosks. An identity without an entry keeps its family's plain form;
 `testing/purpose-massing.test.js` fails when two kinds of a family share a shape and when a
 new identity has not been decided.
+The garden eras (`cozy.js`) keep their round cottages and tell halls, shops and workshops
+apart with a feature on the side away from the service annex: the school's bell tower, the
+fire station's hose tower, the diner's terrace, the mill's silo. The same test covers them.
 
 ### Partial modernization: `modernizes`
 

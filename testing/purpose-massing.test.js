@@ -8,6 +8,7 @@ import { CITY_FAMILIES } from '../src/data/city';
 import buildingStyles from '../src/data/cityBuildingStyles.json';
 import { FUTURE_ARCHITECTURES } from '../src/data/futureArchitecture';
 import { renderFutureBuilding } from '../src/game/town/buildings/future';
+import { renderCozyBuilding } from '../src/game/town/buildings/cozy';
 import { PURPOSE_MASSINGS } from '../src/game/town/buildings/future/purposeMassing';
 
 beforeAll(() => loadFamilies(ALL_MESH_FAMILIES));
@@ -20,14 +21,14 @@ const FAMILIES = ['civic', 'retail', 'depot', 'station', 'culture'];
 const kindsOf = (family) =>
   Object.keys(buildingStyles).filter((kind) => CITY_FAMILIES[kind] === family);
 
-function render(era, kind) {
+function render(era, kind, draw = renderFutureBuilding) {
   const d = Object.create(TownDiorama.prototype);
   d.geometries = createTownGeometries();
   d.materials = new Map();
   d.contactShadowMaterial = new MeshBasicMaterial();
   d.sign = vi.fn();
   const root = new Group();
-  expect(renderFutureBuilding(d, root, kind, kind, 1, era, 1)).toBe(true);
+  expect(draw(d, root, kind, kind, 1, era, 1)).toBe(true);
   root.updateMatrixWorld(true);
   let triangles = 0,
     blocks = 0;
@@ -73,4 +74,23 @@ describe('Working buildings of the eras after Riverlight', () => {
     expect(plain.blocks).toBe(1);
     expect(plain.shape).not.toBe(render('moonward', 'bank').shape);
   });
+});
+
+describe('Working buildings of the garden eras', () => {
+  // Station and culture houses already differ there; the stables, smithy and warehouse are
+  // told apart by their own width and height.
+  it.each(['canopy', 'riverlight'])(
+    'gives every %s hall, shop and workshop its own shape',
+    (era) => {
+      for (const family of ['civic', 'retail', 'depot']) {
+        const kinds = kindsOf(family);
+        const shapes = new Map(
+          kinds.map((kind) => [kind, render(era, kind, renderCozyBuilding).shape]),
+        );
+        expect(new Set(shapes.values()).size, `${era} ${family}: ${[...shapes]}`).toBe(
+          kinds.length,
+        );
+      }
+    },
+  );
 });
