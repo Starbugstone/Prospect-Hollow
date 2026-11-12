@@ -49,6 +49,7 @@ import {
   dressMoonVip,
   moonClimberArrival,
   moonClimberLift,
+  moonVipAhead,
 } from './MoonVips';
 import { outerRingRovers } from '../../../data/moonModernizations';
 import { moonRoverAngle, moonRoverStep, rememberWalkers } from './MoonRovers';
