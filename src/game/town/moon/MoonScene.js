@@ -80,9 +80,14 @@ import {
 } from '../../../data/moonSettlement';
 import { MoonDistricts } from './MoonDistricts';
 import { markerHeight, projectMarker } from '../TownMarkers';
-// Where a settler's own day puts them a moment from now; visitors have no such plan.
+// Where someone on foot will be a moment from now: a settler's own day, or a touring
+// VIP's route. Anyone else is only seen where they stand.
 const settlerAhead = (person, time, out) =>
-  person.plan ? moonSettlerPose(person.plan, time, out) : null;
+  person.plan
+    ? moonSettlerPose(person.plan, time, out)
+    : person.itinerary
+      ? moonVipAhead(person, time, out)
+      : null;
 
 // New Hollow on the Moon: a small scene of its own beside the valley's. One
 // renderer, a crater of lots, the ribbon arriving from the valley, settlers,

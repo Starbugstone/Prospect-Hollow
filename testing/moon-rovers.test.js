@@ -13,7 +13,9 @@ import {
   moonRoverStep,
   roverPace,
 } from '../src/game/town/moon/MoonRovers';
-import { MOON_WALK_LANE } from '../src/game/town/moon/MoonSettlers';
+import { MOON_WALK_LANE, MOON_WALK_SPEED } from '../src/game/town/moon/MoonSettlers';
+import { moonVipAhead } from '../src/game/town/moon/MoonVips';
+import { walkPath } from '../src/game/town/TownNavigation';
 
 describe.each([-1, 1])('Moon rovers travelling in direction %s', (dir) => {
   it('points its actual cabin along the road with wheel axles across its motion', () => {
@@ -203,5 +205,70 @@ describe('Moon rovers and people on foot', () => {
     // A walker with no plan (a visitor) is simply not predicted.
     moonRoverAngle(passing, 0.032, 0.016, [beside], [passing], () => null);
     expect(passing.held ?? 0).toBe(0);
+  });
+});
+
+describe('Moon rovers and touring VIPs', () => {
+  // A visitor walking straight across the ring road, 2 m short of its middle.
+  const vip = (extra = {}) => {
+    const root = new Group();
+    root.position.set(MOON_RING_ROAD - 2, 0, 0);
+    return {
+      root,
+      itinerary: { plans: [] },
+      walkPath: walkPath([
+        [MOON_RING_ROAD - 4, 0, 0],
+        [MOON_RING_ROAD + 4, 0, 0],
+      ]),
+      motion: { routeDistance: 2, time: 10 },
+      ...extra,
+    };
+  };
+
+  it('reads where a walking VIP will be from their route', () => {
+    const soon = moonVipAhead(vip(), 10 + 1.5 / MOON_WALK_SPEED);
+    expect(soon.visible).toBe(true);
+    expect(soon.x).toBeCloseTo(MOON_RING_ROAD - 0.5, 5);
+    expect(soon.z).toBeCloseTo(0, 5);
+    // Never beyond the next stop of the tour, nor back in time.
+    expect(moonVipAhead(vip({ routeLimit: 2.4 }), 99).x).toBeCloseTo(MOON_RING_ROAD - 1.6, 5);
+    expect(moonVipAhead(vip(), 3).x).toBeCloseTo(MOON_RING_ROAD - 2, 5);
+  });
+
+  it('leaves a resting, routeless or malformed VIP where they stand', () => {
+    for (const actor of [
+      vip({ routeResting: true }),
+      vip({ walkPath: null }),
+      vip({ motion: undefined }),
+      vip({ walkPath: walkPath([[0, 0, 0]]) }),
+    ])
+      expect(moonVipAhead(actor, 40).x).toBeCloseTo(MOON_RING_ROAD - 2, 5);
+    expect(moonVipAhead(vip(), NaN).x).toBeCloseTo(MOON_RING_ROAD - 2, 5);
+    expect(moonVipAhead(null, 10)).toBeNull();
+    expect(moonVipAhead({}, 10)).toBeNull();
+  });
+
+  it('brakes a rover for a VIP about to step into the road, not for one walking away', () => {
+    // At time 10 the rover is 3.7 m short of where the VIP will cross.
+    const rover = () => ({ radius: MOON_RING_ROAD, phase: -0.18 - 1.1, speed: 0.11, dir: 1 });
+    const predict = (person, time, out) => moonVipAhead(person, time, out);
+    const crossing = rover(),
+      free = rover();
+    const step = 1 / 60;
+    moonRoverAngle(crossing, 10, step, [vip()], [crossing], predict);
+    expect(crossing.pace).toBeLessThan(1);
+    // Without the look-ahead the same rover drives on: the VIP is still off the road.
+    moonRoverAngle(free, 10, step, [vip()], [free], null);
+    expect(free.pace ?? 1).toBe(1);
+    const leaving = rover();
+    const away = vip({
+      walkPath: walkPath([
+        [MOON_RING_ROAD - 2, 0, 0],
+        [MOON_RING_ROAD - 10, 0, 0],
+      ]),
+      motion: { routeDistance: 0, time: 10 },
+    });
+    moonRoverAngle(leaving, 10, step, [away], [leaving], predict);
+    expect(leaving.pace ?? 1).toBe(1);
   });
 });
