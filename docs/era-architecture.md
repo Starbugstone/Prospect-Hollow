@@ -299,6 +299,14 @@ or pergola, a pair. The imported 1920–2005 shell is one model, so `addHomeChar
 the measured house, in the era's wall and roof colours. The first home always stays as
 authored. Regenerate footprints after changing a variant (`npm run assets:footprints`).
 
+Working buildings are told apart by purpose too. In those four architectures a hall, shop,
+workshop, station or culture house takes the massing of its `identity`
+(`cityBuildingStyles.json`) from `buildings/future/purposeMassing.js`: the bank a columned
+portico, the school a long range and a bell tower, the fire station a hose tower, the market
+an open hall between two kiosks. An identity without an entry keeps its family's plain form;
+`testing/purpose-massing.test.js` fails when two kinds of a family share a shape and when a
+new identity has not been decided.
+
 ### Partial modernization: `modernizes`
 
 An era may list the building ids it modernizes (`modernizes` in its evolution

@@ -24,6 +24,7 @@ import {
   purposeStructure,
 } from './future/finishes';
 import { gardenLandmarkForms } from './future/gardenLandmarks';
+import { purposeForms } from './future/purposeMassing';
 
 // The eras after Riverlight share one set of archetypes. Each architecture's kit
 // draws its own walls, roofs, doors, annex and finishing flourish, so a family
@@ -75,6 +76,7 @@ function beds(d, g, s, x, z, w, rows = 3) {
   }
 }
 
+const PURPOSE = purposeForms(house, tower);
 const FORMS = {
   ...gardenLandmarkForms(house, tower),
   homes(d, g, s) {
@@ -128,65 +130,37 @@ const FORMS = {
     }
     return house(d, g, s, { w, dep: 2.1, h: tall });
   },
-  hall(d, g, s) {
-    const crown = house(d, g, s, { w: Math.min(3.6, s.width ?? 3.6), dep: 2.4, h: 2.3 });
-    if (['clock', 'bell', 'patrol', 'post'].includes(s.identity)) {
-      const r = 0.42;
-      const top = s.kit.round(d, g, s, { x: 0, z: -1.05, r, h: crown.top + 0.7 });
-      s.kit.cap(d, g, s, { x: 0, z: -1.05, r, y: top, accent: true });
-    }
-    return crown;
-  },
-  shop(d, g, s) {
+  // Civic halls, shops, workshops, stations and culture houses take the massing of their
+  // identity (`purposeMassing.js`); these plain forms serve an identity it does not know.
+  hall: PURPOSE.pick(PURPOSE.HALL, (d, g, s) =>
+    house(d, g, s, { w: Math.min(3.6, s.width ?? 3.6), dep: 2.4, h: 2.3 }),
+  ),
+  shop: PURPOSE.pick(PURPOSE.SHOP, (d, g, s) => {
     const w = Math.min(3.7, (s.width ?? 3.4) + 0.2);
-    const crown = house(d, g, s, { w, dep: 2.2, h: s.kind === 'saloon' ? 2.4 : 2, accent: true });
-    // A long market counter under the eaves.
-    // Two stalls leave a real central route to the existing door.
-    for (const side of [-1, 1]) {
-      const width = Math.max(0.55, (w * 0.7 - 0.9) / 2);
-      const x = side * (0.45 + width / 2);
-      d.box(g, width, 0.42, 0.34, x, 0.36, 1.05, s.palette.timber);
-      d.box(g, width + 0.04, 0.06, 0.4, x, 0.6, 1.05, s.palette.shell);
-    }
-    if (s.kind === 'saloon') {
-      const medallion = d.mesh(
-        g,
-        'cylinder',
-        [0.3, 0.1, 0.3],
-        [0, crown.eave + 0.35, 0.82],
-        s.palette.light,
-      );
-      medallion.rotation.x = Math.PI / 2;
-      medallion.name = 'Golden Hour saloon medallion';
-    }
+    const crown = house(d, g, s, { w, dep: 2.2, h: 2, accent: true });
+    PURPOSE.stalls(d, g, s, w);
     return crown;
-  },
-  workshop(d, g, s) {
-    const w = Math.min(3.7, s.width ?? 3.6);
-    const crown = house(d, g, s, { w, dep: 2.4, h: 2.3 });
-    if (['forge', 'mill', 'warehouse', 'fire'].includes(s.identity)) {
-      const top = s.kit.round(d, g, s, { x: -w * 0.32, z: -1.1, r: 0.32, h: crown.top + 0.5 });
-      s.kit.cap(d, g, s, { x: -w * 0.32, z: -1.1, r: 0.32, y: top, accent: true });
-    }
-    return crown;
-  },
+  }),
+  workshop: PURPOSE.pick(PURPOSE.WORKSHOP, (d, g, s) =>
+    house(d, g, s, { w: Math.min(3.7, s.width ?? 3.6), dep: 2.4, h: 2.3 }),
+  ),
   water(d, g, s) {
     if (s.identity === 'well') return tower(d, g, s, { r: 0.75, h: 1.25, z: -0.1, door: false });
     tower(d, g, s, { x: 0.95, r: 0.62, h: 1.6, accent: true, door: false });
     return tower(d, g, s, { x: -0.8, r: 0.82, h: 2.1 });
   },
-  station(d, g, s) {
+  station: PURPOSE.pick(PURPOSE.STATION, (d, g, s) => {
     const crown = house(d, g, s, { w: 3.6, dep: 1.8, h: 2.2, z: -0.7 });
     // A long platform canopy on slender posts.
     for (const x of [-1.6, 1.6]) d.rod(g, [x, 0, 0.7], [x, 1.7, 0.7], 0.05, s.palette.deep);
     d.box(g, 3.7, 0.08, 0.9, 0, 1.72, 0.55, s.palette.roof);
     return crown;
-  },
-  culture(d, g, s) {
+  }),
+  culture: PURPOSE.pick(PURPOSE.CULTURE, (d, g, s) => {
     const crown = house(d, g, s, { x: -0.5, w: 2.4, dep: 2.2, h: 2.4 });
     tower(d, g, s, { x: 1.25, z: -0.2, r: 0.7, h: 1.6, accent: true, door: false });
     return crown;
-  },
+  }),
   research(d, g, s) {
     for (const x of [-1.35, 1.35]) house(d, g, s, { x, w: 1.1, dep: 1.6, h: 1.6, door: false });
     return tower(d, g, s, { r: 1.05, h: 2.6 });
