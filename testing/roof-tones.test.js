@@ -1,4 +1,7 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest';
+import { createSSRApp, h } from 'vue';
+import { renderToString } from 'vue/server-renderer';
+import TownBuilding from '../src/components/town/TownBuilding.vue';
 import { Box3, Group, MeshBasicMaterial } from 'three';
 import { TownDiorama } from '../src/game/town/TownDiorama';
 import { createTownGeometries } from '../src/game/town/TownGeometries';
@@ -15,6 +18,7 @@ import {
   ROOF_STYLES,
   plotShade,
   plotVariant,
+  roofPaint,
   roofRole,
   roofStyle,
   roofTone,
@@ -210,4 +214,47 @@ describe('Plots of one kind', () => {
       for (const home of built) expect(home.triangles).toBeLessThan(first.triangles + 1500);
     },
   );
+});
+
+describe('The 2D drawings wear the same roof tones', () => {
+  const drawing = (era, id) =>
+    renderToString(
+      createSSRApp({
+        render: () => h('svg', [h(TownBuilding, { id, era, stage: 3, eraLevel: 3 })]),
+      }),
+    );
+  // Frontier shops and the bank have a false front and no drawn roof; the gabled school does.
+  it('paints the frontier school in its civic tone', async () => {
+    const tone = roofTone(eraEvolution('frontier'), 'school', 'school');
+    expect(tone.role).toBe('civic');
+    expect(await drawing('frontier', 'school')).toContain(tone.to);
+    expect(await drawing('frontier', 'farm')).not.toContain(tone.to);
+  });
+
+  // One era per family of drawings: period shells, garden and future kits.
+  it.each(['aviation', 'canopy', 'moonward'])(
+    'paints the %s bank and trading post in the tones of the 3D town',
+    async (era) => {
+      const profile = eraEvolution(era);
+      for (const id of ['bank', 'shop']) {
+        const tone = roofTone(profile, id, BUILDING_BY_ID[id].kind);
+        expect(await drawing(era, id), `${era} ${id}`).toContain(tone.to);
+      }
+      const bank = roofTone(profile, 'bank', 'bank').to,
+        shop = roofTone(profile, 'shop', 'shop').to;
+      expect(bank).not.toBe(shop);
+      expect(await drawing(era, 'shop')).not.toContain(bank);
+    },
+  );
+
+  it('keeps the drawn roof where the era or the kind has no tone', async () => {
+    expect(roofPaint(eraEvolution('skysail'), 'bank', 'bank', '#abcdef')).toBe('#abcdef');
+    expect(roofPaint(eraEvolution('aviation'), 'airport', 'airport', '#abcdef')).toBe('#abcdef');
+    expect(roofPaint(null, 'bank', 'bank', '#abcdef')).toBe('#abcdef');
+    // A card with no plot uses the kind's first plot: no shade.
+    expect(roofPaint(eraEvolution('aviation'), undefined, 'bank', '#abcdef')).toBe(
+      ROOF_STYLES.aviation.civic,
+    );
+    expect(await drawing('frontier', 'home')).toContain('#869b90');
+  });
 });

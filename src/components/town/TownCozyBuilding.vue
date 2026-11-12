@@ -425,6 +425,8 @@
   </g>
 </template>
 <script setup>
+import { roofPaint } from '../../data/roofTones';
+import { eraEvolution } from '../../data/eras';
 import { computed } from 'vue';
 import { cozyAppearance, cozyForm, COZY_LANDMARKS } from '../../data/cozyArchitecture';
 import { buildingStages } from '../../data/buildingStages';
@@ -437,6 +439,7 @@ import TownSquare from './TownSquare.vue';
 import TownTowerGallery from './TownTowerGallery.vue';
 import { t } from '../../i18n';
 const props = defineProps({
+  id: String,
   kind: String,
   era: String,
   level: Number,
@@ -447,7 +450,13 @@ const stages = computed(() =>
 );
 const purpose = computed(() => heritageUpgrade(props.kind));
 const appearance = computed(() => cozyAppearance(props.era));
-const p = computed(() => appearance.value.palette);
+const p = computed(() => {
+  const palette = appearance.value.palette;
+  return {
+    ...palette,
+    roof: roofPaint(eraEvolution(props.era), props.id, props.kind, palette.roof),
+  };
+});
 const roof = computed(() => ({ palette: p.value, cozyStyle: appearance.value.style }));
 const form = computed(() => cozyForm(props.kind) ?? props.kind);
 const landmark = computed(() => !!COZY_LANDMARKS[props.kind]);

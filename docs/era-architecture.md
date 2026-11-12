@@ -284,7 +284,9 @@ same rule and no geometry, footprint or sign mount changes. Styles are keyed by 
 capabilities (`cozyStyle`, `architecture`, `cityAssets`, `style`), so a successor inherits
 its architecture's tones. An era with a new architecture needs a `ROOF_STYLES` entry or a
 place in `OWN_ROOF_COLOURS`; `testing/roof-tones.test.js` fails otherwise. The 2D drawings
-keep the era's single roof colour.
+read the same tone through `roofPaint()`: the frontier gables, the 1920–2005 shells, the
+garden cottages and the four future kits. The River & Rail, Industrial, Motor Age and
+Tomorrow drawings hard-code their roof and keep one colour.
 
 Plots that share a kind are told apart. `plotVariant(id, kind)` numbers them, `buildPlot`
 exposes it to renderers as `d.plotVariant`, and `plotShade` shifts the roof tone a little.

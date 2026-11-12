@@ -173,3 +173,10 @@ export function roofTone(profile, id, kind) {
   const tones = ROOF_STYLES[style];
   return { from: tones.from, to: shade(tones[role], plotShade(id, kind)), role, style };
 }
+/**
+ * The roof colour a drawing should use: the tone of the plot's purpose, or `drawn` when the
+ * era or the kind has none. The 2D map and building cards read it, so they agree with the
+ * 3D town. `id` may be omitted (a card with no plot); the kind's first plot is used.
+ */
+export const roofPaint = (profile, id, kind, drawn) =>
+  roofTone(profile, id ?? kind, kind)?.to ?? drawn;

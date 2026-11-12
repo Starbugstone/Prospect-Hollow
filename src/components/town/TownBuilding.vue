@@ -22,6 +22,7 @@
       v-else-if="
         built && isFutureEra(era) && (futureForm(kind) || ['bridge', 'airport'].includes(kind))
       "
+      :id="id"
       :kind="kind"
       :era="era"
       :level="eraLevel"
@@ -31,6 +32,7 @@
       v-else-if="
         built && isCozyEra(era) && (cozyForm(kind) || ['bridge', 'airport'].includes(kind))
       "
+      :id="id"
       :kind="kind"
       :era="era"
       :level="eraLevel"
@@ -38,6 +40,7 @@
     />
     <TownCityBuilding
       v-else-if="built && isCityEra(era)"
+      :id="id"
       :kind="kind"
       :era="era"
       :level="eraLevel"
@@ -558,6 +561,7 @@ import TownHeritageUpgrade from './TownHeritageUpgrade.vue';
 import TownWatermill from './TownWatermill.vue';
 import { isCityEra } from '../../data/city';
 import { eraEvolution } from '../../data/eras';
+import { roofTone, shade } from '../../data/roofTones';
 import TownCityBuilding from './TownCityBuilding.vue';
 import TownRoundedBuilding from './TownRoundedBuilding.vue';
 import TownCozyBuilding from './TownCozyBuilding.vue';
@@ -636,6 +640,18 @@ const sideColor = computed(
       market: '#7c886a',
     })[kind.value],
 );
-const roofColor = computed(() => (kind.value === 'home' ? '#869b90' : '#96764f'));
-const roofSide = computed(() => (kind.value === 'home' ? '#5e7e77' : '#735c3e'));
+// Homes and working buildings keep the drawing's own roof; civic buildings and shops take
+// the tone of their purpose, as in the 3D town.
+const roofColor = computed(() => {
+  const drawn = kind.value === 'home' ? '#869b90' : '#96764f';
+  const tone = roofTone(eraEvolution(props.era), props.id, kind.value);
+  return tone && ['civic', 'trade'].includes(tone.role) ? tone.to : drawn;
+});
+const roofSide = computed(() =>
+  roofColor.value === '#869b90'
+    ? '#5e7e77'
+    : roofColor.value === '#96764f'
+      ? '#735c3e'
+      : shade(roofColor.value, -0.24),
+);
 </script>
