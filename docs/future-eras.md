@@ -416,6 +416,10 @@ rover depot).
 - **Strollers on the outer ring.** Once lots stand on the outer ring, up to four settlers walk
   it in both directions (`moonOuterStrollers`), so the long road is never empty. They are
   added after every other settler, whose days do not change.
+- **Settlers are told apart.** `MOON_SETTLER_LOOKS` gives each settler a suit colour, a build
+  and one piece of kit (an antenna, twin tanks, a helmet lamp, a satchel, a crest) on the
+  shared skeleton; the build scales a frame inside the root, so the feet stay on the ground.
+  A figure built without a look (VIP visitors, the unveiling crowd) is unchanged.
 
 ### The wandering pair
 

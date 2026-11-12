@@ -266,32 +266,80 @@ export function moonSettlerPose(plan, time, out = {}) {
  * lower }` arms and legs), so the shared walk cycle and the unveiling crowd drive it.
  * One builder serves the settlers and the monument unveiling's visitors.
  */
-export function moonSuitFigure(d, { parent, suit = p.shell, pack = p.roof }) {
+export function moonSuitFigure(d, { parent, suit = p.shell, pack = p.roof, look = null }) {
   const root = d.group(parent);
   root.name = 'New Hollow settler';
-  const body = d.group(root, 0, 0.54, 0);
+  // A look's build scales a frame around the skeleton, so the feet stay on the ground and
+  // the shared walk cycle still finds the body at hip height.
+  const frame = look ? d.group(root) : root;
+  if (look) {
+    frame.scale.set(look.girth ?? 1, look.height ?? 1, look.girth ?? 1);
+    suit = look.suit ?? suit;
+    pack = look.pack ?? pack;
+  }
+  const visor = look?.visor ?? p.light,
+    limb = look?.limb ?? p.deep;
+  const body = d.group(frame, 0, 0.54, 0);
   const torso = d.group(body, 0, 0.1, 0);
   d.box(torso, 0.36, 0.5, 0.24, 0, 0.13, 0, suit, true);
-  d.box(torso, 0.26, 0.32, 0.12, 0, 0.18, -0.17, pack);
+  if (look?.tanks)
+    // Twin air tanks instead of the square pack.
+    for (const side of [-1, 1])
+      d.mesh(torso, 'cylinder', [0.075, 0.36, 0.075], [side * 0.09, 0.18, -0.18], pack);
+  else d.box(torso, 0.26, 0.32, 0.12, 0, 0.18, -0.17, pack);
+  if (look?.band)
+    d.box(torso, 0.375, 0.08, 0.255, 0, look.band === 'chest' ? 0.24 : 0, 0, look.trim);
+  if (look?.badge) d.box(torso, 0.1, 0.1, 0.03, 0.09, 0.26, 0.125, look.trim);
+  if (look?.satchel) d.box(torso, 0.13, 0.17, 0.2, -0.24, -0.06, 0.02, look.trim);
   const head = d.group(torso, 0, 0.58, 0);
   d.ball(head, 0, 0, 0, 0.2, p.shell);
-  d.box(head, 0.22, 0.1, 0.06, 0, 0.01, 0.17, p.light);
+  d.box(head, 0.22, 0.1, 0.06, 0, 0.01, 0.17, visor);
+  if (look?.antenna) {
+    d.rod(head, [0.13, 0.12, -0.05], [0.13, 0.42, -0.05], 0.014, p.deep);
+    d.ball(head, 0.13, 0.43, -0.05, 0.035, look.trim);
+  }
+  if (look?.lamp) d.box(head, 0.1, 0.06, 0.08, 0, 0.2, 0.08, look.trim);
+  if (look?.crest) d.box(head, 0.05, 0.07, 0.3, 0, 0.19, -0.02, look.trim);
   const arms = [-1, 1].map((side) => {
     const upper = d.group(torso, side * 0.22, 0.32, 0);
     d.box(upper, 0.1, 0.22, 0.11, 0, -0.1, 0, suit);
     const lower = d.group(upper, 0, -0.22, 0);
-    d.box(lower, 0.1, 0.22, 0.1, 0, -0.11, 0, p.deep);
+    d.box(lower, 0.1, 0.22, 0.1, 0, -0.11, 0, limb);
     return { upper, lower };
   });
   const legs = [-1, 1].map((side) => {
     const upper = d.group(body, side * 0.085, -0.065, 0);
     d.box(upper, 0.12, 0.22, 0.13, 0, -0.11, 0, suit);
     const lower = d.group(upper, 0, -0.22, 0);
-    d.box(lower, 0.12, 0.26, 0.17, 0, -0.14, 0.02, p.deep);
+    d.box(lower, 0.12, 0.26, 0.17, 0, -0.14, 0.02, limb);
     return { upper, lower };
   });
   return { root, body, torso, head, arms, legs };
 }
+/**
+ * The settlers of New Hollow, told apart at a glance: suit, pack and trim colours, build,
+ * and one piece of kit each (an antenna, twin tanks, a helmet lamp, a satchel, a crest).
+ * Suits come in eight colours that read from the map's height; packs and trim reuse the
+ * Moon palette. A settler takes the look of its place in the settlement.
+ */
+export const MOON_SETTLER_LOOKS = Object.freeze(
+  [
+    { suit: p.shell, pack: p.roof, trim: p.flower, band: 'waist' },
+    { suit: '#f2b880', pack: p.deep, trim: p.shell, antenna: true, height: 1.07, girth: 0.97 },
+    { suit: '#9fc3e0', pack: p.timber, trim: p.light, tanks: true, height: 0.9, visor: p.shell },
+    { suit: '#e8e1cf', pack: p.flower, trim: p.flower, lamp: true, girth: 1.1, limb: p.roof },
+    { suit: '#b7d9b5', pack: p.roof, trim: p.shell, band: 'chest', crest: true, height: 1.03 },
+    { suit: '#e3a8a0', pack: p.green, trim: p.timber, satchel: true, height: 0.95, girth: 1.05 },
+    { suit: '#d9dde6', pack: p.light, trim: p.roof, badge: true, tanks: true, limb: p.timber },
+    { suit: '#f1d67a', pack: p.timber, trim: p.flower, satchel: true, antenna: true, height: 0.86 },
+  ].map(Object.freeze),
+);
+/** The look of the `n`th settler; any number, negative or fractional, lands on one. */
+export const moonSettlerLook = (n) =>
+  MOON_SETTLER_LOOKS[
+    ((Math.trunc(Number(n) || 0) % MOON_SETTLER_LOOKS.length) + MOON_SETTLER_LOOKS.length) %
+      MOON_SETTLER_LOOKS.length
+  ];
 
 /** The valley's walk cycle on a suited figure `distance` along its walk, with a hop at
  * each footfall. Settlers and the Moon's VIP visitors share it. */
@@ -349,9 +397,8 @@ export const MOON_OUTER_STROLLERS = 4;
 /** Completed homes add neighbors. A construction project alone never spawns them. */
 export function createMoonSettlers(d, parent, levels = {}, venues = []) {
   const homes = HOMES.reduce((sum, id) => sum + (levels[id] ?? 0), 0);
-  const suits = [p.shell, '#d9dde6', '#e8e1cf'];
   const settlers = Array.from({ length: Math.min(10, 2 + homes * 2) }, (_, n) => {
-    const figure = moonSuitFigure(d, { parent, suit: suits[n % suits.length] });
+    const figure = moonSuitFigure(d, { parent, look: moonSettlerLook(n) });
     const plan = moonSettlerPlan(levels, n, null, venues);
     // Only a settler whose day brings something home holds the item.
     const carry = plan.segments?.find((segment) => segment.carry)?.carry;
@@ -369,7 +416,7 @@ export function createMoonSettlers(d, parent, levels = {}, venues = []) {
   const rim = levels[FAR_RIM_HOME] ?? 0;
   for (let n = 0; n < (rim > 0 ? rim + 1 : 0); n++)
     settlers.push({
-      ...moonSuitFigure(d, { parent, suit: suits[n % suits.length] }),
+      ...moonSuitFigure(d, { parent, look: moonSettlerLook(n + 3) }),
       plan: moonSettlerPlan(levels, 200 + n, FAR_RIM_HOME, venues, 'settler', { local: true }),
     });
   const kin = FAR_RIM_WILLOWKIN.filter((id) => levels[id] > 0);
@@ -382,7 +429,7 @@ export function createMoonSettlers(d, parent, levels = {}, venues = []) {
   );
   // Appended last: every settler above keeps its place and its day.
   moonOuterStrollers(levels).forEach((plan, n) =>
-    settlers.push({ ...moonSuitFigure(d, { parent, suit: suits[n % suits.length] }), plan }),
+    settlers.push({ ...moonSuitFigure(d, { parent, look: moonSettlerLook(n + 5) }), plan }),
   );
   return settlers;
 }

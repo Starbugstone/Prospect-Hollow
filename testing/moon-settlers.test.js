@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Group } from 'three';
+import { Box3, Group } from 'three';
 import {
   MOON_LOTS,
   MOON_RING_ROAD,
@@ -12,6 +12,8 @@ import {
 import {
   MOON_DOOR_TIME,
   MOON_OUTER_STROLLERS,
+  MOON_SETTLER_LOOKS,
+  moonSettlerLook,
   MOON_WALK_LANE,
   MOON_WALK_SPEED,
   animateMoonSettler,
@@ -384,5 +386,64 @@ describe('strollers on the outer ring', () => {
     expect(after.filter(({ plan }) => plan.radius === outer)).toHaveLength(2);
     expect(after.slice(-2).every(({ plan }) => plan.radius === outer)).toBe(true);
     expect(after.length - 2).toBe(before.length);
+  });
+});
+
+describe('settlers told apart', () => {
+  const d = new TownPrimitives();
+  const signature = (figure) => {
+    const parts = [];
+    figure.root.updateMatrixWorld(true);
+    figure.root.traverse((part) => {
+      if (part.isMesh)
+        parts.push(
+          `${part.material.color.getHexString()} ${part.matrixWorld.elements.map((n) => n.toFixed(2))}`,
+        );
+    });
+    return parts.sort().join('|');
+  };
+  const build = (look) => moonSuitFigure(d, { parent: new Group(), look });
+
+  it('gives each look its own outline and colours', () => {
+    const looks = MOON_SETTLER_LOOKS.map((look) => signature(build(look)));
+    expect(new Set(looks).size).toBe(MOON_SETTLER_LOOKS.length);
+    expect(new Set(MOON_SETTLER_LOOKS.map(({ suit }) => suit)).size).toBeGreaterThanOrEqual(6);
+  });
+
+  it('keeps the villager skeleton and the feet on the ground under every build', () => {
+    for (const look of MOON_SETTLER_LOOKS) {
+      const figure = build(look);
+      expect(figure.body.position.y).toBeCloseTo(0.54, 6);
+      expect(figure.legs).toHaveLength(2);
+      for (const { upper } of figure.legs) expect(upper.parent).toBe(figure.body);
+      expect(new Box3().setFromObject(figure.root).min.y).toBeCloseTo(0, 1);
+      // The root stays unscaled: the walk's door scale is applied to it each frame.
+      expect(figure.root.scale.toArray()).toEqual([1, 1, 1]);
+    }
+  });
+
+  it('leaves a figure with no look as it was, for visitors and the unveiling crowd', () => {
+    const plain = build(null);
+    expect(plain.body.parent).toBe(plain.root);
+    expect(signature(plain)).toBe(signature(moonSuitFigure(d, { parent: new Group() })));
+    expect(signature(plain)).not.toBe(signature(build(MOON_SETTLER_LOOKS[0])));
+  });
+
+  it('lands any settler number on a look', () => {
+    for (const n of [0, 7, 8, 205, -1, 2.9, NaN, undefined])
+      expect(MOON_SETTLER_LOOKS).toContain(moonSettlerLook(n));
+    expect(moonSettlerLook(8)).toBe(moonSettlerLook(0));
+  });
+
+  it('dresses a full settlement in several looks', () => {
+    const settlers = createMoonSettlers(
+      d,
+      new Group(),
+      Object.fromEntries(Object.keys(MOON_LOTS).map((id) => [id, 3])),
+    );
+    const suits = new Set();
+    for (const settler of settlers.filter(({ root }) => root.name === 'New Hollow settler'))
+      suits.add(settler.torso.children[0].material.color.getHexString());
+    expect(suits.size).toBeGreaterThanOrEqual(5);
   });
 });
