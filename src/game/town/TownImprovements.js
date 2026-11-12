@@ -61,7 +61,8 @@ function balcony(d, parent, y, width = 3.0) {
 }
 function upperRoom(d, parent, color) {
   d.box(parent, 2.65, 1.12, 2.35, 0, 3.08, 0, color);
-  for (const y of [2.56, 3.62]) d.box(parent, 2.85, 0.12, 2.5, 0, y, 0, '#e0c89c');
+  // Floor bands cover the retained gable ends instead of sharing their faces.
+  for (const y of [2.56, 3.62]) d.box(parent, 2.85, 0.12, 2.56, 0, y, 0, '#e0c89c');
   for (const x of [-0.85, 0.85]) addWindow(d, parent, x, 3.12, 1.21);
   for (const side of [-1, 1]) {
     const roof = d.box(parent, 1.65, 0.12, 2.7, side * 0.72, 3.99, 0, '#648880');
@@ -151,7 +152,8 @@ export function addImprovements(d, parent, kind, stage, era = 'frontier') {
       d.box(parent, 0.15, 2.3, 0.15, x, 1.15, 2.6, '#e1cf9e');
       d.box(parent, 0.35, 0.25, 0.35, x, 2.35, 2.6, '#c9b27d');
     }
-    d.box(parent, 3.65, 0.22, 0.8, 0, 2.5, 2.6, '#71988a');
+    // The beam overhangs both capitals, including their outside faces.
+    d.box(parent, 3.75, 0.22, 0.8, 0, 2.5, 2.6, '#71988a');
     for (const x of [-1.2, -0.6, 0, 0.6, 1.2])
       d.box(parent, 0.12, 0.13, 1.1, x, 2.67, 2.6, '#e1cf9e');
   }

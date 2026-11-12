@@ -16,6 +16,7 @@ function eyes(d, head, x, y, z, color = '#353f35') {
 }
 
 function quadruped(d, body, height, spread, length, coat, foot) {
+  // These are hip sockets inside the rounded flank, not the outside foot spread.
   const legs = [];
   for (const side of [-1, 1])
     for (const z of [-length, length]) {
@@ -61,7 +62,7 @@ function deer(d, root, { look }) {
       [0.06, -0.24],
     ])
       d.ball(body, x, 0.87, z, [0.035, 0.02, 0.04], light);
-  const legs = quadruped(d, body, 0.58, 0.13, 0.25, coat, '#78634b');
+  const legs = quadruped(d, body, 0.64, 0.115, 0.23, coat, '#78634b');
   const tail = d.group(body, 0, 0.7, -0.37);
   d.ball(tail, 0, 0.015, -0.08, [0.065, 0.065, 0.12], light);
   return { root, body, head, legs, wings: [], tail };
@@ -81,7 +82,7 @@ function otter(d, root, { look }) {
   }
   eyes(d, head, 0.085, 0.025, 0.119);
   d.ball(head, 0, -0.014, 0.168, [0.032, 0.022, 0.025], '#403b32');
-  const legs = quadruped(d, body, 0.18, 0.13, 0.23, coat, '#77563f');
+  const legs = quadruped(d, body, 0.23, 0.11, 0.2, coat, '#77563f');
   const tail = d.group(body, 0, 0.21, -0.32);
   d.rod(tail, [0, 0, 0], [0, -0.14, -0.37], 0.085, coat);
   d.ball(tail, 0, -0.15, -0.39, [0.035, 0.028, 0.055], coat);
@@ -109,7 +110,7 @@ function hedgehog(d, root, { look }) {
   d.ball(head, 0, 0, 0, [0.105, 0.105, 0.13], look.light);
   d.ball(head, 0, -0.02, 0.12, [0.045, 0.035, 0.06], '#554537');
   eyes(d, head, 0.068, 0.025, 0.085);
-  const legs = quadruped(d, body, 0.06, 0.11, 0.14, look.coat, '#755e46');
+  const legs = quadruped(d, body, 0.12, 0.1, 0.11, look.coat, '#755e46');
   const tail = d.group(body);
   return { root, body, head, legs, wings: [], tail };
 }
@@ -131,7 +132,7 @@ function hare(d, root, { look }) {
   }
   eyes(d, head, 0.097, 0.025, 0.082);
   d.ball(head, 0, -0.025, 0.157, [0.025, 0.02, 0.019], '#71544c');
-  const legs = quadruped(d, body, 0.16, 0.12, 0.17, coat, light);
+  const legs = quadruped(d, body, 0.25, 0.09, 0.14, coat, light);
   const tail = d.group(body, 0, 0.32, -0.3);
   d.ball(tail, 0, 0, 0, 0.09, light);
   return { root, body, head, legs, wings: [], tail };
@@ -151,7 +152,7 @@ function squirrel(d, root, { look }) {
   }
   eyes(d, head, 0.08, 0.02, 0.085);
   d.ball(head, 0, -0.01, 0.14, 0.022, '#463b30');
-  const legs = quadruped(d, body, 0.13, 0.1, 0.15, coat, '#775034');
+  const legs = quadruped(d, body, 0.2, 0.08, 0.13, coat, '#775034');
   const tail = d.group(body, 0, 0.25, -0.2);
   d.ball(tail, 0, 0.18, -0.15, [0.13, 0.27, 0.15], coat);
   d.ball(tail, 0, 0.43, -0.13, [0.14, 0.18, 0.13], coat);
@@ -172,7 +173,7 @@ function badger(d, root, { look }) {
     d.ball(head, side * 0.137, 0.025, 0.12, 0.018, '#191f1b');
   }
   d.ball(head, 0, -0.035, 0.21, [0.045, 0.03, 0.035], dark);
-  const legs = quadruped(d, body, 0.16, 0.17, 0.22, dark, dark);
+  const legs = quadruped(d, body, 0.23, 0.14, 0.17, dark, dark);
   const tail = d.group(body, 0, 0.28, -0.4);
   d.ball(tail, 0, -0.015, -0.055, [0.065, 0.06, 0.12], light);
   return { root, body, head, legs, wings: [], tail };
@@ -200,6 +201,14 @@ export function willowkinCharacter(variant = 0, era) {
     elder: seed % 3 === 1 && eraAt(era) >= eraAt(WILLOWKIN_ELDERS_FROM) && eraAt(era) >= 0,
     keepsake: WILLOWKIN_KEEPSAKES[eraEvolution(era)?.wardrobe] ?? null,
   };
+}
+
+function hangingFronds(d, head, anchor, x, first, step, count, size, color) {
+  // Root the stalk inside a crown lobe; every hanging leaf overlaps its stalk.
+  d.rod(head, anchor, [x, first, 0], 0.012, color).name = 'Willowkin frond attachment';
+  d.rod(head, [x, first + 0.02, 0], [x, first - (count - 1) * step - 0.02, 0], 0.012, color);
+  for (let n = 0; n < count; n++)
+    d.mesh(head, 'rock', size, [x, first - n * step, 0], color).name = 'Willowkin hanging frond';
 }
 
 // Three crowns on the same head: the sideways willow umbrella, a round crown in bloom
@@ -233,13 +242,13 @@ function willowCrown(d, head, crown, reach, leaf, deep, bloom, fronds) {
       [0.3, 0.15, -0.065, [0.19, 0.13, 0.19]],
     ])
       d.mesh(head, 'rock', scale, [x, y, z], leaf);
-    d.rod(head, [reach, 0.08, 0], [reach + 0.02, -0.065, 0], 0.013, '#dfc99e');
+    d.rod(head, [0.4, 0.16, -0.065], [reach + 0.02, -0.08, 0], 0.013, '#dfc99e');
     d.mesh(head, 'rock', [0.045, 0.052, 0.045], [reach + 0.02, -0.11, 0], bloom);
   }
   // Hanging fronds; an elder's have grown long.
   const side = crown === 'umbrella' ? -reach : -0.22;
-  for (let n = 0; n < fronds; n++)
-    d.mesh(head, 'rock', [0.035, 0.058, 0.022], [side, 0.05 - n * 0.085, 0], deep);
+  const anchor = crown === 'plume' ? [-0.1, 0.2, -0.03] : [side + 0.08, 0.18, -0.03];
+  hangingFronds(d, head, anchor, side, 0.05, 0.085, fronds, [0.035, 0.058, 0.022], deep);
 }
 
 function willowkin(d, root, { variant = 0, era } = {}) {
@@ -264,9 +273,8 @@ function willowkin(d, root, { variant = 0, era } = {}) {
     [0.4, 0.14, -0.075, [0.25, 0.15, 0.25]],
   ])
     d.mesh(head, 'rock', scale, [x, y, z], leaf);
-  for (let n = 0; n < 3; n++)
-    d.mesh(head, 'rock', [0.045, 0.075, 0.025], [-0.55, 0.04 - n * 0.1, 0], deep);
-  d.rod(head, [0.57, 0.1, 0], [0.6, -0.08, 0], 0.015, wood);
+  hangingFronds(d, head, [-0.48, 0.17, -0.06], -0.55, 0.04, 0.1, 3, [0.045, 0.075, 0.025], deep);
+  d.rod(head, [0.52, 0.15, -0.075], [0.6, -0.08, 0], 0.015, wood);
   d.mesh(head, 'rock', [0.062, 0.072, 0.062], [0.6, -0.12, 0], '#d3a37d');
   for (const side of [-1, 1]) {
     const collar = d.mesh(body, 'rock', [0.07, 0.13, 0.025], [side * 0.075, 1.055, 0.1], leaf);
@@ -283,7 +291,7 @@ function willowkin(d, root, { variant = 0, era } = {}) {
   const legs = [];
   for (const side of [-1, 1]) {
     const leg = d.group(body, side * 0.085, 0.56, 0);
-    d.rod(leg, [0, 0, 0], [side * 0.025, -0.45, 0], 0.04, wood);
+    d.rod(leg, [0, 0, 0], [side * 0.025, -0.505, 0.04], 0.04, wood);
     for (const offset of [-0.04, 0, 0.04])
       d.ball(leg, offset, -0.515, 0.075, [0.03, 0.045, 0.11], wood);
     legs.push(leg);
@@ -370,7 +378,7 @@ function willowkinResident(d, root, { variant = 0, era } = {}) {
   const legs = [];
   for (const side of [-1, 1]) {
     const leg = d.group(body, side * 0.085, 0.63, 0);
-    d.rod(leg, [0, 0, 0], [side * 0.025, -0.51, 0], 0.04, wood);
+    d.rod(leg, [0, 0, 0], [side * 0.025, -0.575, 0.04], 0.04, wood);
     for (const offset of [-0.04, 0, 0.04])
       d.ball(leg, offset, -0.585, 0.08, [0.03, 0.045, 0.11], wood);
     legs.push(leg);

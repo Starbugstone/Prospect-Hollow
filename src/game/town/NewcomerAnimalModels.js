@@ -113,7 +113,7 @@ function tortoise(d, root, { look }) {
   d.rod(head, [0, -0.03, -0.08], [0, 0, 0], 0.04, light);
   d.ball(head, 0, 0.01, 0.03, [0.06, 0.055, 0.075], light);
   eyes(d, head, 0.048, 0.03, 0.05);
-  const legs = fourLegs(d, body, 0.12, 0.15, 0.16, light, dark, 0.04);
+  const legs = fourLegs(d, body, 0.15, 0.13, 0.14, light, dark, 0.04);
   const tail = d.group(body, 0, 0.13, -0.25);
   d.ball(tail, 0, 0, -0.03, [0.025, 0.02, 0.05], light);
   return { root, body, head, legs, wings: [], tail };
@@ -171,7 +171,7 @@ function goat(d, root, { look }) {
     const ear = d.ball(head, side * 0.12, 0.02, -0.03, [0.06, 0.03, 0.04], coat);
     ear.rotation.z = side * 0.4;
   }
-  const legs = fourLegs(d, body, 0.46, 0.11, 0.21, coat, dark);
+  const legs = fourLegs(d, body, 0.52, 0.095, 0.2, coat, dark);
   const tail = d.group(body, 0, 0.66, -0.32);
   d.ball(tail, 0, 0.04, -0.02, [0.035, 0.07, 0.04], light);
   return { root, body, head, legs, wings: [], tail };
@@ -200,7 +200,7 @@ function lynx(d, root, { look }) {
     d.mesh(head, 'cone', [0.06, 0.14, 0.05], [side * 0.09, 0.14, -0.03], coat);
     d.rod(head, [side * 0.09, 0.2, -0.03], [side * 0.1, 0.245, -0.035], 0.009, dark);
   }
-  const legs = fourLegs(d, body, 0.26, 0.12, 0.23, coat, light, 0.046);
+  const legs = fourLegs(d, body, 0.32, 0.1, 0.21, coat, light, 0.046);
   const tail = d.group(body, 0, 0.4, -0.36);
   d.ball(tail, 0, 0, -0.04, [0.045, 0.045, 0.075], coat);
   d.ball(tail, 0, 0, -0.1, [0.035, 0.035, 0.035], dark);

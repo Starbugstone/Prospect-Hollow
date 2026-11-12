@@ -26,7 +26,7 @@ function slitDome(d, g, x, y, z, r, p) {
   }
 }
 function arched(d, g, x, y, z, p, w = 0.3, h = 0.8) {
-  d.box(g, w + 0.1, h + 0.1, 0.06, x, y, z, p.timber);
+  d.box(g, w + 0.08, h + 0.1, 0.06, x, y, z, p.timber);
   d.box(g, w, h, 0.08, x, y, z + 0.01, p.glass);
 }
 
@@ -41,8 +41,17 @@ export const observatoryKit = {
     d.box(g, w + 0.3, 0.26, dep + 0.3, x, 0.13, z, p.shell);
     d.box(g, w, h - 0.26, dep, x, 0.26 + (h - 0.26) / 2, z, p.roof);
     d.box(g, w + 0.16, 0.16, dep + 0.16, x, h - 0.08, z, p.timber);
+    // Whole frames stay below the parapet and inside even the narrowest bay.
     for (let y = 0.95; y < h - 0.4; y += 1.15)
-      for (const side of [-1, 1]) arched(d, g, x + side * w * 0.3, y + 0.25, z + dep / 2 + 0.02, p);
+      for (const side of [-1, 1])
+        arched(
+          d,
+          g,
+          x + side * Math.min(w * 0.3, w / 2 - 0.22),
+          Math.min(y + 0.25, h - 0.68),
+          z + dep / 2 + 0.02,
+          p,
+        );
     stars(d, g, x, 0.4, z + dep / 2 + 0.05, w, h - 0.6, p, Math.round(w * 1.6));
     return h;
   },
@@ -81,8 +90,8 @@ export const observatoryKit = {
   },
   door(d, g, s, x, z) {
     const p = s.palette;
-    d.box(g, 0.72, 1.18, 0.1, x, 0.85, z, p.timber, true);
-    d.box(g, 0.56, 1.04, 0.12, x, 0.8, z + 0.02, p.deep, true);
+    d.box(g, 0.72, 1.18, 0.1, x, 0.85, z + 0.025, p.timber, true);
+    d.box(g, 0.56, 1.04, 0.12, x, 0.8, z + 0.045, p.deep, true);
     d.ball(g, x, 1.5, z + 0.08, 0.07, p.light);
   },
   wing(d, g, s, { x, z, r = 0.7 }) {

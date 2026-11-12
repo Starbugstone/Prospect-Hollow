@@ -57,7 +57,7 @@ const DETAILS = {
     d.box(parent, 0.72, 1.28, 0.14, 0, 0.89, 1.33, '#657783');
     d.ball(parent, 0, 1, 1.45, [0.23, 0.23, 0.06], '#e3c476');
     for (let n = 0; n < stage; n++)
-      d.box(parent, 0.25, 0.16, 0.25, -0.4 + n * 0.4, 3.08, 1.25, '#edcc74');
+      d.box(parent, 0.25, 0.16, 0.25, -0.4 + n * 0.38, 3.08, 1.25, '#edcc74');
   },
   shop(d, parent, stage) {
     for (let n = 0; n < 6; n++)

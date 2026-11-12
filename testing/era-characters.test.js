@@ -2,7 +2,8 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { Box3, Group, MeshBasicMaterial, Scene, Vector3 } from 'three';
 import { TownDiorama } from '../src/game/town/TownDiorama';
 import { createTownGeometries } from '../src/game/town/TownGeometries';
-import { animalModel } from '../src/game/town/TownAnimalModels';
+import { animalModel, animateAnimal } from '../src/game/town/TownAnimalModels';
+import { insideMesh, socketEmbedded } from './helpers/meshAttachment';
 import { willowkinCharacter } from '../src/game/town/GardenAnimalModels';
 import { OUTFIT_PARTS, outfitTraits } from '../src/game/town/TownOutfitParts';
 import { ERAS, eraEvolution } from '../src/data/eras';
@@ -169,6 +170,29 @@ describe('Villagers of every era', () => {
 
 describe('Animals of every era', () => {
   const species = Object.keys(ANIMAL_LOOKS);
+  it.each([...species, 'willowkin', 'willowkinResident'])(
+    'embeds every %s leg socket in its skin while walking and resting',
+    (id) => {
+      for (const era of ERAS) {
+        const d = fixture(era.id);
+        for (let variant = 0; variant < (ANIMAL_LOOKS[id]?.length ?? 36); variant++) {
+          const model = animalModel(d, id, variant);
+          for (const moving of [false, true]) {
+            for (const time of [0, 0.17, 0.46, 0.9]) {
+              animateAnimal(model, time, moving ? 'walking' : TOWN_ANIMALS[id].idle, moving);
+              model.root.updateMatrixWorld(true);
+              const skin = model.body.children.filter((part) => part.isMesh);
+              for (const [n, leg] of model.legs.entries())
+                expect(
+                  socketEmbedded(leg, skin),
+                  `${id} leg ${n}, time ${time}, moving ${moving}`,
+                ).toBe(true);
+            }
+          }
+        }
+      }
+    },
+  );
   it('gives every ordinary species a set of looks', () => {
     for (const [id, animal] of Object.entries(TOWN_ANIMALS)) {
       if (animal.companion || animal.townsfolk) continue;
@@ -205,6 +229,87 @@ describe('Animals of every era', () => {
 });
 
 describe('Willowkin through the eras', () => {
+  it.each(['willowkin', 'willowkinResident'])(
+    'anchors the %s hanging charm in the crown',
+    (species) => {
+      for (const era of ERAS) {
+        const d = fixture(era.id);
+        for (let variant = 0; variant < 36; variant++) {
+          const model = animalModel(d, species, variant);
+          if (species === 'willowkinResident' && model.root.userData.willowkin.crown !== 'umbrella')
+            continue;
+          for (const moving of [false, true]) {
+            animateAnimal(model, 0.46, moving ? 'walking' : 'tending', moving);
+            model.root.updateMatrixWorld(true);
+            const crown = model.head.children.filter((part) => part.isMesh && part.scale.x >= 0.18);
+            const stem = model.head.children.find(
+              (part) =>
+                part.isMesh && part.geometry === d.geometries.cylinder && part.position.x > 0.3,
+            );
+            const top = [-0.5, 0.5]
+              .map((y) => new Vector3(0, y, 0).applyMatrix4(stem.matrixWorld))
+              .sort((a, b) => b.y - a.y)[0];
+            expect(crown.some((mesh) => insideMesh(mesh, top))).toBe(true);
+            const charm = model.head.children.find(
+              (part) =>
+                part.isMesh &&
+                part.position.x > 0.3 &&
+                part.scale.x < 0.08 &&
+                part.geometry === d.geometries.rock,
+            );
+            const bottom = [-0.5, 0.5]
+              .map((y) => new Vector3(0, y, 0).applyMatrix4(stem.matrixWorld))
+              .sort((a, b) => a.y - b.y)[0];
+            expect(insideMesh(charm, bottom)).toBe(true);
+          }
+        }
+      }
+    },
+  );
+  it.each(['willowkin', 'willowkinResident'])(
+    'joins %s toes and hanging fronds to their supports',
+    (species) => {
+      for (const era of ['canopy', 'riverlight', 'stargazer', 'quiet-signal']) {
+        const d = fixture(era);
+        for (let variant = 0; variant < 36; variant++) {
+          const model = animalModel(d, species, variant);
+          for (const moving of [false, true]) {
+            animateAnimal(model, 0.46, moving ? 'walking' : 'tending', moving);
+            model.root.updateMatrixWorld(true);
+            for (const leg of model.legs) {
+              const rod = leg.children[0];
+              const toes = leg.children.slice(1);
+              const ends = [-0.5, 0.5].map((y) =>
+                new Vector3(0, y, 0).applyMatrix4(rod.matrixWorld),
+              );
+              expect(ends.some((end) => toes.some((toe) => insideMesh(toe, end)))).toBe(true);
+            }
+            const fronds = model.head.children.filter(
+              (part) => part.name === 'Willowkin hanging frond',
+            );
+            expect(fronds.length).toBeGreaterThanOrEqual(3);
+            const stems = model.head.children.filter(
+              (part) =>
+                part.isMesh && part.geometry === d.geometries.cylinder && part.position.x < -0.1,
+            );
+            const leaves = model.head.children.filter(
+              (part) => part.isMesh && part.scale.x >= 0.18,
+            );
+            expect(
+              stems.some((stem) =>
+                [-0.5, 0.5].some((y) =>
+                  leaves.some((leaf) =>
+                    insideMesh(leaf, new Vector3(0, y, 0).applyMatrix4(stem.matrixWorld)),
+                  ),
+                ),
+              ),
+            ).toBe(true);
+            for (const frond of fronds) expect(socketEmbedded(frond, stems)).toBe(true);
+          }
+        }
+      }
+    },
+  );
   it('gives each its own crown and grows elders only a century after the first saplings', () => {
     const crowns = new Set();
     for (let seed = 0; seed < 18; seed++) {

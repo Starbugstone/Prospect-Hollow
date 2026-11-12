@@ -57,8 +57,9 @@ export function addHomeWing(d, parent, wins) {
   }
   d.box(wing, 1.35, 0.18, 1.9, 0, 0.12, 0, '#a99579');
   if (wins === 1) return;
+  // Corner posts stand proud of the planks, so their faces never share a plane.
   for (const x of [-0.6, 0.6])
-    for (const z of [-0.87, 0.87]) d.box(wing, 0.08, 1.25, 0.08, x, 0.81, z, '#b39469');
+    for (const z of [-0.87, 0.87]) d.box(wing, 0.1, 1.25, 0.1, x, 0.81, z, '#b39469');
   for (let row = 0; row < (wins === 2 ? 3 : 7); row++) {
     const y = 0.32 + row * 0.16;
     for (const x of [-0.6, 0.6]) d.box(wing, 0.08, 0.145, 1.75, x, y, 0, '#d4ad89');

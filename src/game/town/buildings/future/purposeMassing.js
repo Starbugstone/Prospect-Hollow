@@ -83,7 +83,7 @@ export function purposeForms(house, tower) {
     // The post office: a counter hall, a sorting room and the signal tower behind.
     post(d, g, s) {
       const crown = house(d, g, s, { x: -0.45, w: 2.4, dep: 2.2, h: 2.2 });
-      house(d, g, s, { x: 1.3, z: -0.55, w: 1.1, dep: 1.5, h: 1.4, door: false });
+      house(d, g, s, { x: 1.3, z: -0.52, w: 1.1, dep: 1.5, h: 1.4, door: false });
       shaft(d, g, s, { x: -0.45, z: -1.1, r: 0.4, h: crown.top + 0.7 });
       crates(d, g, s, 1.15, 0.75);
       return crown;
@@ -207,7 +207,7 @@ export function purposeForms(house, tower) {
     transit(d, g, s) {
       const crown = house(d, g, s, { x: 0.5, w: 2.7, dep: 1.8, h: 2.7, z: -0.7 });
       tower(d, g, s, { x: -1.45, z: -0.7, r: 0.7, h: 3.3, accent: true, door: false });
-      canopy(d, g, s, { x: 0.5, z: 0.6, w: 2.7, dep: 0.9, y: 1.7 });
+      canopy(d, g, s, { x: 0.5, z: 0.6, w: 2.8, dep: 0.9, y: 1.7 });
       return crown;
     },
     // The maglev loop: a low hall under a raised guideway carrying a pod.
