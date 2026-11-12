@@ -405,21 +405,34 @@ function addSpaceSuit(d, { root, body, head, legs, species }) {
   torso.material = suit;
   // A model may mark more of its coat as suited: a bird's wings, a long neck's lower half.
   for (const mesh of coat) if (mesh.userData.suited) mesh.material = suit;
-  // A life-support pack rides on the back of animals built with such a suit.
-  if (coat.some((mesh) => mesh.userData.suited)) {
-    const size = trunk.getSize(new Vector3());
-    d.box(
-      body,
-      size.x * 0.5,
-      size.y * 0.3,
-      size.z * 0.42,
-      (trunk.min.x + trunk.max.x) / 2,
-      trunk.max.y + size.y * 0.06,
-      (trunk.min.z + trunk.max.z) / 2 - size.z * 0.08,
-      '#c9ced0',
-      true,
-    ).name = 'Space suit pack';
-  }
+  // Every wearer carries a life-support pack: on the back of an animal on all fours, behind
+  // the shoulders of one that sits or stands upright.
+  const size = trunk.getSize(new Vector3()),
+    upright = size.y > size.z * 1.15;
+  const pack = upright
+    ? d.box(
+        body,
+        size.x * 0.5,
+        size.y * 0.36,
+        size.z * 0.3,
+        (trunk.min.x + trunk.max.x) / 2,
+        trunk.min.y + size.y * 0.62,
+        trunk.min.z - size.z * 0.04,
+        '#c9ced0',
+        true,
+      )
+    : d.box(
+        body,
+        size.x * 0.5,
+        size.y * 0.3,
+        size.z * 0.42,
+        (trunk.min.x + trunk.max.x) / 2,
+        trunk.max.y + size.y * 0.06,
+        (trunk.min.z + trunk.max.z) / 2 - size.z * 0.08,
+        '#c9ced0',
+        true,
+      );
+  pack.name = 'Space suit pack';
   const middle = trunk.getCenter(new Vector3()),
     half = trunk.getSize(new Vector3()).multiplyScalar(0.5);
   for (const side of [-1, 1])

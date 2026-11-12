@@ -740,6 +740,9 @@ it.each(ERAS.map((era) => era.id))('dresses at most one %s animal as a space ani
   const wearer = spaceHelmetWearer(d.town, castOf(d));
   expect(helmeted(d).map((a) => a.species)).toEqual(wearer ? [wearer] : []);
   expect(helmeted(d).every((a) => a.costume === 'space-helmet')).toBe(true);
+  // Whoever wears the helmet this round carries the whole outfit, life-support pack included.
+  for (const wearer of helmeted(d))
+    expect(wearer.root.getObjectByName('Space suit pack'), `${era} ${wearer.species}`).toBeTruthy();
   if (ERAS.findIndex(({ id }) => id === era) >= ERAS.findIndex(({ id }) => id === 'tomorrow'))
     expect(wearer).toBeTruthy();
 });
