@@ -2,15 +2,22 @@ import { describe, expect, it } from 'vitest';
 import { Vector3 } from 'three';
 import { ERAS } from '../src/data/eras';
 import { ERA_CONSTRUCTION } from '../src/data/mineEvolution';
-import { ERA_SHOT_TIMES, eraNewGround, eraShot } from '../src/game/town/TownEraShots';
+import {
+  ERA_OPENING_LEAN,
+  ERA_SHOT_TIMES,
+  eraNewGround,
+  eraOrbitMirrored,
+  eraShot,
+} from '../src/game/town/TownEraShots';
 import { cameraTerrainHeight, clearCinematicTerrain } from '../src/game/town/TownLandscape';
 
 const eras = ERAS.filter((era) => era.enabled).map((era) => era.id);
 const MINE = new Vector3(-2.8, 1.6, -17.8);
-const samples = (to, aspect, step = 0.1) => {
+const before = (to) => ERAS[Math.max(0, ERAS.findIndex(({ id }) => id === to) - 1)].id;
+const samples = (to, aspect, step = 0.1, from = before(to)) => {
   const shots = [];
   for (let time = 0; time <= ERA_CONSTRUCTION.duration + 1e-9; time += step)
-    shots.push({ time, ...eraShot(time, { to, aspect }) });
+    shots.push({ time, ...eraShot(time, { from, to, aspect }) });
   return shots;
 };
 
@@ -79,5 +86,46 @@ describe('Era cinematic shots', () => {
     );
     expect([...ERA_SHOT_TIMES]).toEqual([...ERA_SHOT_TIMES].sort((a, b) => a - b));
     expect(ERA_SHOT_TIMES.at(-1)).toBe(ERA_CONSTRUCTION.duration);
+  });
+
+  it('opens on what the departing era built and never plays two eras alike', () => {
+    // River & Rail opened the east bank: leaving it, the film opens leaning east.
+    expect(eraNewGround('river-rail')[0]).toBeGreaterThan(20);
+    const east = eraShot(0, { from: 'river-rail', to: 'industrial' }),
+      west = eraShot(0, { from: 'aviation', to: 'broadcast' }),
+      plain = eraShot(0, { to: 'industrial' });
+    expect(east.focus[0]).toBeGreaterThan(plain.focus[0] + 5);
+    expect(east.eye[0]).toBeGreaterThan(plain.eye[0] + 5);
+    expect(west.focus[0]).toBeLessThan(plain.focus[0] - 5);
+    // The lean is bounded, so the town stays in the frame, and never looks north.
+    for (const era of ERAS) {
+      const { focus } = eraShot(0, { from: era.id, to: era.id });
+      expect(Math.hypot(focus[0], focus[2] - 1), era.id).toBeLessThanOrEqual(
+        ERA_OPENING_LEAN + 1e-9,
+      );
+      expect(focus[2], era.id).toBeGreaterThanOrEqual(1);
+    }
+    // Consecutive eras circle the works in opposite directions.
+    const mid = (ERA_CONSTRUCTION.buildStart + ERA_CONSTRUCTION.buildEnd) / 2 - 3;
+    for (let n = 2; n < eras.length; n++) {
+      expect(eraOrbitMirrored(eras[n])).not.toBe(eraOrbitMirrored(eras[n - 1]));
+      const now = eraShot(mid, { from: eras[n - 1], to: eras[n] }),
+        last = eraShot(mid, { from: eras[n - 2], to: eras[n - 1] });
+      expect(Math.sign(now.eye[0] + 2.8), eras[n]).toBe(-Math.sign(last.eye[0] + 2.8));
+    }
+    const films = eras
+      .slice(1)
+      .map((to) =>
+        JSON.stringify([0, 8, 22].map((time) => eraShot(time, { from: before(to), to }).eye)),
+      );
+    expect(new Set(films).size).toBe(films.length);
+  });
+
+  it('falls back to the plain film for an unknown or missing departing era', () => {
+    const plain = eraShot(1.5, { to: 'aviation' });
+    expect(eraShot(1.5, { from: 'no-such-era', to: 'aviation' })).toEqual(plain);
+    expect(eraShot(1.5, { from: null, to: 'aviation' })).toEqual(plain);
+    expect(eraOrbitMirrored('no-such-era')).toBe(false);
+    expect(eraShot(11)).toEqual(eraShot(11, { to: 'no-such-era' }));
   });
 });

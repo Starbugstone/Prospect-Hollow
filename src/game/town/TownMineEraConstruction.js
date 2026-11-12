@@ -10,6 +10,7 @@ export class TownMineEraConstruction {
   constructor(d, definition) {
     this.d = d;
     this.to = definition.to;
+    this.from = definition.from;
     this.root = d.group(d.scene);
     this.root.name = 'Mine era construction';
     this.previous = addMineSite(d, this.root, definition.from);
@@ -82,7 +83,11 @@ export class TownMineEraConstruction {
       time > 3 && this.sequence.crew.some(({ worker }) => worker.root.visible);
     this.next.userData.mineUpdate?.(still ? 0 : time);
     // One continuous move: the old town, the works, then the new era seen wide.
-    const shot = eraShot(time, { to: this.to, aspect: this.d.camera.aspect });
+    const shot = eraShot(time, {
+      from: this.from,
+      to: this.to,
+      aspect: this.d.camera.aspect,
+    });
     const focus = new Vector3(...shot.focus);
     const eye = new Vector3(...shot.eye);
     return {

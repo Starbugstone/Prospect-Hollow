@@ -477,7 +477,10 @@ browser. Encode `output/playwright/completion-fireworks-frames/%05d.jpg` at 24 f
 the south, a crane to the mine, a slow circle of the works with the crew close by, a lift
 as the builders leave, and a closing wide shot that leans toward the valley plots the new
 era introduces (`eraNewGround`; an era that builds only on the Moon closes on the town's
-heart). `eraShot(time, { to, aspect })` is pure: keys are data, the path passes each key
+heart). No two eras play the same move, and none needs authoring: the opening leans toward
+the ground the departing era opened (bounded by `ERA_OPENING_LEAN`, never north), and the
+circle round the works runs the other way in every second era (`eraOrbitMirrored`). An
+unknown era gets the plain film. `eraShot(time, { from, to, aspect })` is pure: keys are data, the path passes each key
 without stopping, and a portrait screen stands farther back. `TownMineEraConstruction`
 supplies the scene and `TownPresentation` still owns the approach, terrain clearance and
 return. `testing/era-cinematic-shots.test.js` samples every era in landscape and portrait
