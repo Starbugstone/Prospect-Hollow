@@ -205,14 +205,14 @@ export function expeditionRover(d, g, x, z, turn = 0) {
 }
 
 export const RISING_FORMS = {
-  // The outer road's station: a ticket drum, a glazed platform and a tram at the kerb.
+  // The outer road's station: a ticket drum and a glazed platform facing the ring road. Its
+  // tram is not parked here: it runs the ring and rests in front of the platform (MoonTram.js),
+  // one car at level 1 and two from level 2.
   ringTram(d, g, level) {
     dome(d, g, 0, -2.5, 1.5, 1);
     d.box(g, 6.8, 0.16, 1.1, 0, 0.33, 2.55, p.roof).name = 'Tram platform';
     d.box(g, 6.8, 0.05, 0.14, 0, 0.42, 3.03, p.light);
     platformCanopy(d, g, 0, 2.5, 7, { posts: [-3, -1, 1, 3], foot: 0.41 });
-    for (const z of [3.7, 4.2]) d.box(g, 6.6, 0.05, 0.08, 0, 0.275, z, p.deep);
-    for (const x of level >= 2 ? [-1.95, 0, 1.95] : [-0.975, 0.975]) tramCar(d, g, x, 3.95);
     if (level >= 2) {
       // A waiting room faces the ticket drum, and the platform gets benches.
       module(d, g, 3.4, -1.6, 1.5, 1.3, 1.1, -Math.PI / 2);

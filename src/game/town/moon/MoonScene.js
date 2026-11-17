@@ -52,7 +52,8 @@ import {
   moonVipAhead,
 } from './MoonVips';
 import { outerRingRovers } from '../../../data/moonModernizations';
-import { moonRoverAngle, moonRoverStep, rememberWalkers } from './MoonRovers';
+import { OUTER_RING_ROVER, moonRoverAngle, moonRoverStep, rememberWalkers } from './MoonRovers';
+import { createMoonTram, moonTramRails } from './MoonTram';
 import {
   MOON_FLOOR_RADIUS,
   MOON_LOTS,
@@ -566,6 +567,10 @@ export class MoonScene extends TownPrimitives {
     this.access.name = 'Moon public entrance paths';
     this.access.receiveShadow = true;
     this.scene.add(this.access);
+    // The tram's rails round the outer ring, laid once its stop is built.
+    this.tramRails = moonTramRails();
+    this.tramRails.visible = false;
+    this.scene.add(this.tramRails);
     // The ribbon always arrives from the valley, even before the landing is built.
     const ribbon = this.d.mesh(
       this.scene,
@@ -852,7 +857,7 @@ export class MoonScene extends TownPrimitives {
     this.signature = '';
     this.update(this.town);
   }
-  /** Settlers walk the ring road and rovers circle it; more homes, more neighbors. */
+  /** Settlers walk the ring roads, rovers and the tram circle them; more homes, more neighbors. */
   populate(town) {
     this.d.clearGroup(this.life);
     this.life = this.d.group(this.scene);
@@ -879,11 +884,15 @@ export class MoonScene extends TownPrimitives {
         this.walkers.push({
           root: moonRover(this.d, this.life),
           radius: MOON_ROADS.rings.at(-1),
-          speed: 0.06,
-          phase: 1 + n * Math.PI,
-          dir: -1,
+          speed: OUTER_RING_ROVER.speed,
+          phase: OUTER_RING_ROVER.phase + n * Math.PI,
+          dir: OUTER_RING_ROVER.dir,
         });
     }
+    // The ring tram runs the outer ring once its stop is built, among the rovers.
+    const tram = createMoonTram(this.d, this.life, town?.buildings);
+    if (tram) this.walkers.push(tram);
+    if (this.tramRails) this.tramRails.visible = !!tram;
     this.move(this.elapsed);
   }
   move(time) {
@@ -896,7 +905,8 @@ export class MoonScene extends TownPrimitives {
     this.monuments?.userData.update(this.reducedMotion ? 0 : time);
     for (const settler of this.settlers ?? []) animateMoonSettler(settler, time);
     if (this.wanderers) animateMoonSettler(this.wanderers, time);
-    // Rovers circle the ring road down its middle and wait for anyone crossing ahead.
+    // Rovers and the tram circle the ring roads down their middle and wait for anyone
+    // crossing ahead.
     const people = [
       ...(this.settlers ?? []),
       ...(this.wanderers ? [this.wanderers] : []),
