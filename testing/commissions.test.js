@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createSSRApp, h } from 'vue';
 import { renderToString } from 'vue/server-renderer';
-import { Box3, Group, Scene } from 'three';
+import { Box3, Group, Scene, Vector3 } from 'three';
 import { createTown } from '../src/data/town';
 import {
   COMMISSIONS,
@@ -32,7 +32,7 @@ import {
   MOON_RING_ROAD,
   MOON_SITE_PAD,
   moonApproaches,
-  moonCommissionRoute,
+  moonSiteRoute,
   moonCommissionVenues,
   moonLetters,
   moonParcels,
@@ -42,7 +42,7 @@ import { moonHeight } from '../src/game/town/moon/MoonScene';
 import { buildMoonMonuments, moonLabelAnchors } from '../src/game/town/moon/MoonMonuments';
 import { moonHatch, moonSettlerPlan } from '../src/game/town/moon/MoonSettlers';
 import { buildLandmark } from '../src/game/town/TownLandmarks';
-import { monumentStatus } from '../src/game/town/TownBuildingFeedback';
+import { monumentOpening, monumentStatus } from '../src/game/town/TownBuildingFeedback';
 import { TownPrimitives } from '../src/game/town/TownPrimitives';
 import TownLandmarkPreview from '../src/components/town/TownLandmarkPreview.vue';
 import TownMonumentSite from '../src/components/town/TownMonumentSite.vue';
@@ -252,7 +252,7 @@ describe('residents', () => {
   });
 
   it('walk a public path to the door, on the pad, off every other lot', () => {
-    const route = moonCommissionRoute(area);
+    const route = moonSiteRoute(area);
     const [x, z] = area.positions[0];
     expect(route.clear).toBe(true);
     const door = moonHatch(route);
@@ -316,7 +316,7 @@ describe.each(MOON_COMMISSION_AREAS)('the Moon site $id and its art', (area) => 
   });
 
   it('walks a public path from its door to the nearest ring road inside it, off every lot', () => {
-    const route = moonCommissionRoute(area);
+    const route = moonSiteRoute(area);
     const [x, z] = area.positions[0];
     expect(route.clear).toBe(true);
     const door = moonHatch(route);
@@ -426,6 +426,40 @@ describe.each(MOON_COMMISSION_AREAS)('the Moon site $id and its art', (area) => 
       [1, 2, 3, 4, 5].map((stage) => render(TownLandmarkPreview, { choice, stage })),
     );
     expect(new Set(stages).size).toBe(5);
+  });
+});
+
+describe('watching a Moon commission', () => {
+  // Visitors to a gathering outcome stand at its door (`commissionUse` stay 'gather'), so
+  // nothing that moves, a model rover say, may pass through where they stand.
+  const gatherings = COMMISSIONS.flatMap(({ site, outcomes }) =>
+    AREA_BY_ID[site].settlement === 'moon'
+      ? Object.entries(outcomes)
+          .filter(([, outcome]) => commissionUse(outcome).stay === 'gather')
+          .map(([choice]) => choice)
+      : [],
+  );
+  it('has gathering outcomes to check', () => expect(gatherings.length).toBeGreaterThan(0));
+  it.each(gatherings)('%s moves nothing through its watchers at any stage', (choice) => {
+    const d = fixture();
+    const watcher = new Box3(
+      new Vector3(-0.3, MOON_PAD_TOP + 0.3, MOON_COMMISSION_DOOR - 0.3),
+      new Vector3(0.3, MOON_PAD_TOP + 1.7, MOON_COMMISSION_DOOR + 0.3),
+    );
+    for (let stage = 1; stage <= 5; stage++) {
+      const root = buildLandmark(d, new Group(), choice, stage);
+      // Long enough for a full turn at the slowest landmark speed.
+      for (let time = 0; time < 24; time += 0.2) {
+        root.userData.sceneryUpdate?.(time);
+        root.updateMatrixWorld(true);
+        for (const part of root.userData.movingParts ?? [])
+          part.traverse((mesh) => {
+            if (!mesh.isMesh) return;
+            const box = new Box3().setFromObject(mesh);
+            expect(box.intersectsBox(watcher), `${choice} ${stage} at ${time}`).toBe(false);
+          });
+      }
+    }
   });
 });
 
@@ -606,6 +640,11 @@ describe('the third commission', () => {
     expect(
       areaUnlocked(buyAt(both(), commons), { ...glade, opens: { sites: [commons.id], level: 2 } }),
     ).toBe(false);
+    // Its locked words don't break either: an unknown opening reads as the site's era.
+    const unknown = { ...glade, opens: { visitors: 3 } };
+    expect(monumentOpening(unknown)).toEqual({ kind: 'era', era: 'Twin Hollows' });
+    expect(monumentOpening(glade)).toMatchObject({ kind: 'sites' });
+    expect(monumentOpening(area)).toMatchObject({ kind: 'building', level: 3 });
   });
 
   it.each(glade.choices)('%s builds on the shared 2M schedule as a permanent choice', (choice) => {

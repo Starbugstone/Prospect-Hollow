@@ -92,18 +92,24 @@ export function buildingStatus(
   return status;
 }
 
-// What a site waits for, in the words of its locked messages: a finished building
-// (`building`, `level`) or a commission at one of several sites (`sites`).
-export const monumentOpening = ({ opens }) =>
-  opens?.sites
-    ? {
-        sites: opens.sites
-          .map((id) => AREA_BY_ID[id])
-          .filter(Boolean)
-          .map((area) => t(area.label))
-          .join(t(' or ')),
-      }
-    : { building: t(BUILDING_BY_ID[opens.building].shortName), level: opens.level };
+// What a site waits for, in the words of its locked messages: a commission at one of
+// several sites (`sites`), a finished building (`building`, `level`) or its era. An opening
+// this build does not know keeps the site closed (`areaOpensMet`) and reads as its era.
+export function monumentOpening(area) {
+  const opens = area?.opens;
+  if (Array.isArray(opens?.sites))
+    return {
+      kind: 'sites',
+      sites: opens.sites
+        .map((id) => AREA_BY_ID[id])
+        .filter(Boolean)
+        .map((site) => t(site.label))
+        .join(t(' or ')),
+    };
+  const building = BUILDING_BY_ID[opens?.building];
+  if (building) return { kind: 'building', building: t(building.shortName), level: opens.level };
+  return { kind: 'era', era: t(ERA_BY_ID[area?.era]?.label ?? '') };
+}
 // A monument site's state, highest priority first.
 function monumentState(town, area) {
   if (!areaUnlocked(town, area)) return 'locked';
@@ -126,12 +132,12 @@ const MONUMENT = {
     timeless: () => t('Monument'),
   },
   card: {
-    locked: (town, area) =>
-      area.opens?.sites
-        ? t('Opens after another commission')
-        : area.opens
-          ? t('Opens at {building} level {level}', monumentOpening(area))
-          : t('Opens in {era}', { era: t(ERA_BY_ID[area.era].label) }),
+    locked: (town, area) => {
+      const opening = monumentOpening(area);
+      if (opening.kind === 'sites') return t('Opens after another commission');
+      if (opening.kind === 'building') return t('Opens at {building} level {level}', opening);
+      return t('Opens in {era}', opening);
+    },
     open: (town, area) => t(commissionFor(area.id) ? 'New commission' : 'Open site · optional'),
     work: () => t('Under construction'),
     ready: () => t('Ready to unveil'),

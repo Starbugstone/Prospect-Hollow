@@ -451,17 +451,26 @@ function modelRover(d, g, colour) {
   d.box(g, 0.2, 0.12, 0.24, -0.1, 0.32, 0, p.glass);
   for (const x of [-0.17, 0.17]) d.box(g, 0.12, 0.12, 0.36, x, 0.08, 0, p.deep);
 }
+// The racing line, inside the door: visitors stand at the door to watch, so the racers and
+// the start arch pass in front of them rather than through them.
+const ROVER_TRACK = MOON_COMMISSION_DOOR - 0.7;
 function buildRoverTrack(d, g, o, tier, move) {
   // A raised oval track round an infield, open to watch from every side.
   d.mesh(g, 'cylinder', [3.9, 0.12, 3.9], [0, FLOOR + 0.06, 0], p.shell);
-  const track = d.mesh(g, 'ring', [3.1, 3.1, 0.6], [0, FLOOR + 0.14, 0], p.deep);
+  const track = d.mesh(g, 'ring', [ROVER_TRACK, ROVER_TRACK, 0.6], [0, FLOOR + 0.14, 0], p.deep);
   track.rotation.x = Math.PI / 2;
-  d.mesh(g, 'cylinder', [2.4, 0.1, 2.4], [0, FLOOR + 0.12, 0], o.colour);
+  d.mesh(
+    g,
+    'cylinder',
+    [ROVER_TRACK - 0.7, 0.1, ROVER_TRACK - 0.7],
+    [0, FLOOR + 0.12, 0],
+    o.colour,
+  );
   // The racers go round together, one more at alternate stages.
   const racers = d.group(g, 0, FLOOR + 0.18, 0);
   for (let n = 0; n < Math.ceil(tier / 2); n++) {
     const a = (n * Math.PI * 2) / 3;
-    const rover = d.group(racers, Math.cos(a) * 3.1, 0, Math.sin(a) * 3.1);
+    const rover = d.group(racers, Math.cos(a) * ROVER_TRACK, 0, Math.sin(a) * ROVER_TRACK);
     rover.rotation.y = -a;
     modelRover(d, rover, n % 2 ? GOLD : o.colour);
   }
@@ -481,9 +490,10 @@ function buildRoverTrack(d, g, o, tier, move) {
       );
   if (tier >= 4) {
     // The start arch over the track at the front, chequered.
-    for (const x of [-0.8, 0.8]) d.rod(g, [x, FLOOR, 3.1], [x, FLOOR + 1.3, 3.1], 0.05, p.deep);
+    for (const x of [-0.8, 0.8])
+      d.rod(g, [x, FLOOR, ROVER_TRACK], [x, FLOOR + 1.3, ROVER_TRACK], 0.05, p.deep);
     for (let n = 0; n < 4; n++)
-      d.box(g, 0.4, 0.2, 0.08, -0.6 + n * 0.4, FLOOR + 1.3, 3.1, n % 2 ? p.deep : p.shell);
+      d.box(g, 0.4, 0.2, 0.08, -0.6 + n * 0.4, FLOOR + 1.3, ROVER_TRACK, n % 2 ? p.deep : p.shell);
   }
   if (tier >= 5) {
     // The crews' trophy, in the middle of the infield.

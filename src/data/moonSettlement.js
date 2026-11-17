@@ -1,6 +1,11 @@
 import { ERAS, eraEvolution } from './eras';
 import { areaUnlocked, areasForSettlement, siteYaw } from './townLandmarks';
-import { commissionLetters, commissionUse, finishedCommissions } from './commissions';
+import {
+  commissionFor,
+  commissionLetters,
+  commissionUse,
+  finishedCommissions,
+} from './commissions';
 import { MOON_SETTLEMENT } from './settlements';
 // Read inside functions only, after town.js (which needs moonstones.js) loads.
 import { BUILDING_BY_ID, MOONSTONE_BUILDINGS } from './town';
@@ -686,49 +691,30 @@ export function moonPathDistance(x, z, approaches = defaultMoonApproaches()) {
 
 // A commission's door, on its raised pad. Every finished commission keeps its door here.
 export const MOON_COMMISSION_DOOR = 3.1;
-const commissionRoutes = new Map();
 /** The ring road a site's path joins: the outermost one inside the site, as a lot's. */
 export const moonSiteRing = ([x, z]) =>
   MOON_ROADS.rings.filter((ring) => ring < Math.hypot(x, z)).at(-1) ?? MOON_RING_ROAD;
-/** The public path to a commission site's door, from the same route search as a lot's. */
-export function moonCommissionRoute(area) {
-  if (!commissionRoutes.has(area.id)) {
-    const [x, z] = area.positions[0];
-    commissionRoutes.set(
-      area.id,
-      moonApproach(
-        area.id,
-        3,
-        { ...MOON_LOTS, [area.id]: [x, z] },
-        {
-          pose: { x, z, rotation: siteYaw(area) },
-          padRadius: MOON_SITE_PAD,
-          ring: moonSiteRing([x, z]),
-          arrival: [
-            [0, MOON_COMMISSION_DOOR],
-            [0, 6],
-          ],
-        },
-      ),
-    );
-  }
-  return commissionRoutes.get(area.id);
-}
-// Monument sites with a public path of their own, from the side of the site facing a ring
-// road: `arrival` in the site's frame (local +z its front, as on a lot) and the index of the
-// ring it joins. A site added later that stands off the roads adds one entry.
+// Monument sites with a public path, as `arrival` in the site's frame (local +z its front,
+// as on a lot), leading out to the ring road inside the site. A commission's path reaches
+// its door; another site standing off the roads adds one entry here.
+const COMMISSION_ARRIVAL = Object.freeze([
+  Object.freeze([0, MOON_COMMISSION_DOOR]),
+  Object.freeze([0, 6]),
+]);
 const MOON_SITE_PATHS = Object.freeze({
   // On the outer ring's far side, facing the camera: its path leaves the back of the square.
-  'hollowborn-square': Object.freeze({
-    arrival: Object.freeze([Object.freeze([0, -4.5]), Object.freeze([0, -6])]),
-    ring: 1,
-  }),
+  'hollowborn-square': Object.freeze([Object.freeze([0, -4.5]), Object.freeze([0, -6])]),
 });
+const siteArrival = (area) =>
+  commissionFor(area?.id) ? COMMISSION_ARRIVAL : (MOON_SITE_PATHS[area?.id] ?? null);
 const siteRoutes = new Map();
-/** The public path from a monument site to its ring road, or null for a site without one. */
+/**
+ * The public path from a monument site to its ring road, from the same route search as a
+ * lot's, or null for a site without one. Commissions and other sites share it.
+ */
 export function moonSiteRoute(area) {
-  const path = Object.hasOwn(MOON_SITE_PATHS, area?.id ?? '') ? MOON_SITE_PATHS[area.id] : null;
-  if (!path) return null;
+  const arrival = siteArrival(area);
+  if (!arrival) return null;
   if (!siteRoutes.has(area.id)) {
     const [x, z] = area.positions[0];
     siteRoutes.set(
@@ -740,8 +726,8 @@ export function moonSiteRoute(area) {
         {
           pose: { x, z, rotation: siteYaw(area) },
           padRadius: MOON_SITE_PAD,
-          arrival: path.arrival,
-          ring: MOON_ROADS.rings[path.ring] ?? MOON_RING_ROAD,
+          arrival,
+          ring: moonSiteRing([x, z]),
         },
       ),
     );
@@ -762,7 +748,7 @@ export const moonSiteRoutes = (town) =>
 export const moonCommissionVenues = (town) =>
   finishedCommissions(town, MOON_SETTLEMENT).map(({ site, area, outcome }) => ({
     id: site,
-    route: moonCommissionRoute(area),
+    route: moonSiteRoute(area),
     visits: outcome.visits,
     use: commissionUse(outcome),
   }));

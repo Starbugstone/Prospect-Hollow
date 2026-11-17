@@ -15,19 +15,16 @@
     </p>
     <p v-if="!unlocked" class="monument-note">
       <TownIcon name="lock" />{{
-        area.opens?.sites
-          ? t(
+        t(
+          {
+            sites:
               'This site opens once you commission {sites}. Monuments are optional and never block progress.',
-              monumentOpening(area),
-            )
-          : area.opens
-            ? t(
-                'This site opens at {building} level {level}. Monuments are optional and never block progress.',
-                monumentOpening(area),
-              )
-            : t('This site opens in {era}. Monuments are optional and never block progress.', {
-                era: t(era.label),
-              })
+            building:
+              'This site opens at {building} level {level}. Monuments are optional and never block progress.',
+            era: 'This site opens in {era}. Monuments are optional and never block progress.',
+          }[monumentOpening(area).kind],
+          monumentOpening(area),
+        )
       }}
     </p>
 

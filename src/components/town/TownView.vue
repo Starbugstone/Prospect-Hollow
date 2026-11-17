@@ -455,20 +455,14 @@
           </div>
           <p v-if="nextMonumentSite" class="town-directory-hint">
             {{
-              nextMonumentSite.opens?.sites
-                ? t('Next monument site: {site}, opening once you commission {sites}.', {
-                    site: t(nextMonumentSite.label),
-                    ...monumentOpening(nextMonumentSite),
-                  })
-                : nextMonumentSite.opens
-                  ? t('Next monument site: {site}, opening at {building} level {level}.', {
-                      site: t(nextMonumentSite.label),
-                      ...monumentOpening(nextMonumentSite),
-                    })
-                  : t('Next monument site: {site}, opening in {era}.', {
-                      site: t(nextMonumentSite.label),
-                      era: t(ERA_BY_ID[nextMonumentSite.era].label),
-                    })
+              t(
+                {
+                  sites: 'Next monument site: {site}, opening once you commission {sites}.',
+                  building: 'Next monument site: {site}, opening at {building} level {level}.',
+                  era: 'Next monument site: {site}, opening in {era}.',
+                }[monumentOpening(nextMonumentSite).kind],
+                { site: t(nextMonumentSite.label), ...monumentOpening(nextMonumentSite) },
+              )
             }}
           </p>
         </section>

@@ -1,3 +1,4 @@
+import { commissionFor } from '../src/data/commissions';
 import { expect, it } from 'vitest';
 import { createSSRApp, h } from 'vue';
 import { renderToString } from 'vue/server-renderer';
@@ -145,20 +146,21 @@ it('joins the outer ring by a public path of its own, clear of every other parce
   }
   expect(low).toBeGreaterThanOrEqual(0);
   expect(high).toBeLessThan(0.3);
-  // Other sites have no path of their own yet.
+  // Commissions share the builder, with a path to their door; other sites have none yet.
   for (const other of areasForSettlement('moon').filter((site) => site !== area))
-    expect(moonSiteRoute(other)).toBeNull();
+    if (commissionFor(other.id)) expect(moonSiteRoute(other).clear, other.id).toBe(true);
+    else expect(moonSiteRoute(other), other.id).toBeNull();
   expect(moonSiteRoute(undefined)).toBeNull();
 });
 
 it('opens with New Hollow Rising: no label, path or offer before it', () => {
   const before = town('twin-hollows');
   expect(areaUnlocked(before, area)).toBe(false);
-  expect(moonSiteRoutes(before)).toEqual([]);
+  expect(moonSiteRoutes(before).map(({ id }) => id)).not.toContain(area.id);
   expect(moonLabelAnchors(before).map(({ id }) => id)).not.toContain(area.id);
   expect(landmarkOffer(before, area, area.choices[0])).toBeNull();
   const open = town();
-  expect(moonSiteRoutes(open)).toEqual([moonSiteRoute(area)]);
+  expect(moonSiteRoutes(open)).toContain(moonSiteRoute(area));
   expect(moonLabelAnchors(open).map(({ id }) => id)).toContain(area.id);
   expect(landmarkOffer(open, area, area.choices[0])).toMatchObject({ level: 1, price: 20 });
   // Every later era keeps it open.

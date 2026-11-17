@@ -751,7 +751,7 @@ export class MoonScene extends TownPrimitives {
     // A later era's lots stay off the map: no pad, building or tap target.
     const shown = new Set(moonLotsShown(town));
     this.showLotTargets(shown);
-    // A commission first unveiled brings its public path and its visitors.
+    // A site opened brings its public path; a commission first unveiled brings its visitors.
     const signature = `${[...shown]}|${finishes.join('|')}|${venues.map(({ id, visits, use }) => [id, visits.settler, visits.willowkin, use.stay, use.carry])}|${sitePaths.map(({ id }) => id)}`;
     if (signature === this.signature) return;
     // A lot finished while the Moon is open settles into place with the valley's
@@ -785,7 +785,7 @@ export class MoonScene extends TownPrimitives {
     );
     this.access.geometry.dispose();
     this.access.geometry = moonAccessGeometry(
-      [...moonApproaches(town?.buildings ?? {}), ...venues.map(({ route }) => route), ...sitePaths],
+      [...moonApproaches(town?.buildings ?? {}), ...sitePaths],
       this.terrainHeight,
     );
     this.previousLevels = levels;
