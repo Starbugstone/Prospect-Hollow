@@ -99,12 +99,20 @@ async function openValley(browser, site, choice, stage) {
   return { page, errors };
 }
 
-// The residents' walks in the real town: every leg across the field is clear of every
-// footprint, and each walk ends inside the site's court.
+// The residents' walks in the real town: every leg off the streets (a footpath or the field)
+// is clear of every footprint, and each walk ends inside the site's court. Street legs are the
+// itineraries' own certified walks; a visitor from across the river crosses the bridge deck,
+// which the field's navigation does not cover.
 const checkValley = (page, [sx, sz]) =>
   page.evaluate(
-    ([sx, sz]) => {
+    async ([sx, sz]) => {
       const { scene } = window;
+      const { segmentDistance, townTracks } = await import('/src/game/town/TownLayout.js');
+      const streets = townTracks(scene.town).filter(
+        ({ modes, footpath }) => modes.includes('pedestrian') && !footpath,
+      );
+      const onStreet = ([x, , z]) =>
+        streets.some(({ from, to }) => segmentDistance(x, z, from, to) <= 1.6);
       const residents = scene.commissionResidents ?? [];
       return residents.map(({ day }) => {
         const out = day.segments[0].route.points;
@@ -114,6 +122,7 @@ const checkValley = (page, [sx, sz]) =>
             b = [out[n][0], 0.07, out[n][2]];
           // The court itself is the site's own ground; its art is checked in unit tests.
           if (Math.hypot(b[0] - sx, b[2] - sz) < 8.4) break;
+          if (onStreet(a) && onStreet(b)) continue;
           if (!scene.navigation.segment(a, b, 0.25)) blocked++;
         }
         const end = out.at(-1);

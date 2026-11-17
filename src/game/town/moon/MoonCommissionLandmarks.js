@@ -276,7 +276,7 @@ function buildPlanetarium(d, g, o, tier, move) {
       const x = Math.cos(a) * 4.2,
         z = Math.sin(a) * 4.2 - 0.3;
       d.rod(g, [x, FLOOR, z], [x, FLOOR + 0.7, z], 0.04, p.deep);
-      d.ball(g, x, FLOOR + 0.78, z, 0.12, GLASS, 'rock');
+      d.ball(g, x, FLOOR + 0.78, z, 0.12, p.glass, 'rock');
     }
   if (tier >= 5) {
     const ring = d.group(g, 0, FLOOR + 1.3 + height, -0.3);
@@ -298,12 +298,11 @@ function buildStudio(d, g, o, tier, move) {
   drum(d, g, 3, o.colour);
   const height = 1.6 + tier * 0.15;
   d.box(g, 4.4, height, 2.8, 0, FLOOR + 0.5 + height / 2, -0.6, p.shell);
-  // The glass wall looks out to Earth over the door; the roof slopes up toward it.
-  const glass = d.material(GLASS);
-  glass.transparent = true;
-  glass.opacity = 0.28;
-  glass.depthWrite = false;
-  d.box(g, 4.2, height - 0.1, 0.08, 0, FLOOR + 0.5 + height / 2, 0.84, GLASS).castShadow = false;
+  // The glazed front looks out to Earth over the door, its panes framed by mullions; the
+  // roof slopes up toward it.
+  d.box(g, 4.2, height - 0.2, 0.08, 0, FLOOR + 0.5 + height / 2, 0.84, p.glass);
+  for (const x of [-1.4, 0, 1.4])
+    d.box(g, 0.08, height - 0.2, 0.1, x, FLOOR + 0.5 + height / 2, 0.86, p.deep);
   const roof = d.box(g, 4.7, 0.16, 3.3, 0, FLOOR + 0.62 + height, -0.6, o.colour);
   roof.rotation.x = -0.12;
   for (const [x, z, turn] of [
@@ -350,15 +349,12 @@ function buildCanteen(d, g, o, tier, move) {
     [0, FLOOR + 1.8 + tier * 0.1, -0.7],
     o.colour,
   );
-  // The kitchen chimney and its steam.
-  d.mesh(g, 'cylinder', [0.26, 1.2, 0.26], [-1.6, FLOOR + 2.5 + tier * 0.1, -1.3], p.deep);
-  move(
-    d.ball(g, -1.6, FLOOR + 3.3 + tier * 0.1, -1.3, 0.22, p.shell, 'rock'),
-    'lift',
-    'y',
-    0.8,
-    0.25,
-  );
+  // The kitchen chimney, rising clear of the vault, and its steam.
+  const vault = FLOOR + 1.8 + tier * 0.1,
+    rise = 0.9 + tier * 0.1;
+  const flue = vault + rise * 0.78 + 0.7;
+  d.mesh(g, 'cylinder', [0.26, flue - vault, 0.26], [-1.6, (vault + flue) / 2, -1.3], p.deep);
+  move(d.ball(g, -1.6, flue + 0.3, -1.3, 0.22, p.shell, 'rock'), 'lift', 'y', 0.8, 0.25);
   for (const [x, z] of [
     [-3.4, 1.7],
     [3.4, 1.7],
@@ -383,7 +379,7 @@ function buildCanteen(d, g, o, tier, move) {
     const rover = d.group(g, -3.1, FLOOR, -2.9);
     rover.rotation.y = 0.5;
     d.box(rover, 1.5, 0.5, 0.9, 0, 0.55, 0, p.shell);
-    d.box(rover, 0.6, 0.35, 0.7, -0.3, 0.98, 0, GLASS);
+    d.box(rover, 0.6, 0.35, 0.7, -0.3, 0.98, 0, p.glass);
     for (const [x, z] of [
       [-0.5, 0.5],
       [0.5, 0.5],
@@ -393,9 +389,10 @@ function buildCanteen(d, g, o, tier, move) {
       d.mesh(rover, 'cylinder', [0.25, 0.15, 0.25], [x, 0.25, z], p.deep).rotation.x = Math.PI / 2;
   }
   if (tier >= 5) {
-    // The great soup pot on the roof, its lid lifting.
-    d.mesh(g, 'cylinder', [0.7, 0.6, 0.7], [1.2, FLOOR + 2.9, -0.7], GOLD);
-    const lid = d.mesh(g, 'cylinder', [0.74, 0.08, 0.74], [1.2, FLOOR + 3.25, -0.7], p.deep);
+    // The great soup pot on top of the vault, its lid lifting.
+    const top = vault + rise * 0.95;
+    d.mesh(g, 'cylinder', [0.6, 0.6, 0.6], [0.8, top + 0.2, -0.7], GOLD);
+    const lid = d.mesh(g, 'cylinder', [0.64, 0.08, 0.64], [0.8, top + 0.54, -0.7], p.deep);
     move(lid, 'lift', 'y', 1.2, 0.08);
   }
 }
@@ -451,7 +448,7 @@ function buildMapHall(d, g, o, tier, move) {
 // A model rover on the track: body, cab and wheels.
 function modelRover(d, g, colour) {
   d.box(g, 0.5, 0.18, 0.3, 0, 0.17, 0, colour);
-  d.box(g, 0.2, 0.12, 0.24, -0.1, 0.32, 0, GLASS);
+  d.box(g, 0.2, 0.12, 0.24, -0.1, 0.32, 0, p.glass);
   for (const x of [-0.17, 0.17]) d.box(g, 0.12, 0.12, 0.36, x, 0.08, 0, p.deep);
 }
 function buildRoverTrack(d, g, o, tier, move) {
