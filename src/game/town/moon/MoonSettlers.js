@@ -7,12 +7,13 @@ import {
   moonApproachHeight,
   moonApproaches,
 } from '../../../data/moonSettlement';
-import { swingLimbs } from '../TownGait';
+import { CHILD_SCALE, swingLimbs } from '../TownGait';
 import { animalModel, animateAnimal } from '../TownAnimalModels';
 import { addCarriedItem, holdCarried, routineDay, routinePose } from '../TownCommissionUse';
 import { hash01 as hash } from '../TownMath';
 import { walkPath } from '../TownNavigation';
 import { WANDERERS } from '../TownWanderers';
+import { MAX_COMMISSION_VILLAGERS } from '../../../data/commissions';
 
 // New Hollow's settlers: suited figures who leave one building's hatch, walk its
 // public path to the ring road, cross to another building and step inside. Each
@@ -203,35 +204,112 @@ export function moonSettlerPlan(
     const visit =
       venue?.route ??
       (others.length ? others[Math.floor(hash(n * 13 + trip * 7 + 1) * others.length)] : home);
-    // A commission's outcome decides what happens there (`commissionUse`): settlers go in
-    // through its door, or stand before it, and may bring something home.
-    // An open gathering place (a lot with an `outlook`) is stood at, not entered.
-    const stay = venue?.use?.stay ?? (visit.outlook ? 'gather' : 'enter');
-    const enters = stay === 'enter';
-    const there = moonSettlerRoute(home, visit);
-    steps.push({ route: there, toDoor: enters });
-    const pause = 3 + hash(n * 5 + trip) * 6;
-    steps.push(
-      enters
-        ? { inside: visit.id, duration: pause }
-        : {
-            stand: there,
-            face: visit.outlook
-              ? [visit.outlook[0], moonHatch(visit)[1], visit.outlook[1]]
-              : moonCommissionFront(visit),
-            duration: pause * 2,
-          },
-    );
-    steps.push({
-      route: moonSettlerRoute(visit, home),
-      fromDoor: enters,
-      carry: venue?.use?.carry ?? null,
-    });
+    steps.push(...visitSteps(home, visit, home, venue, 3 + hash(n * 5 + trip) * 6));
     steps.push({ inside: home.id, duration: 5 + hash(n * 3 + trip + 40) * 8 });
   }
   const { segments, duration } = routineDay(steps, MOON_WALK_SPEED);
   return { segments, duration, offset: hash(n + 70) * duration, home: home.id };
 }
+/**
+ * A walk from `from` to `visit`, a stay there of about `pause` seconds and the walk on to
+ * `to`. A commission's outcome decides what happens there (`commissionUse`): settlers go in
+ * through its door, or stand before it, and may bring something home. An open gathering
+ * place (a lot with an `outlook`) is stood at, not entered.
+ */
+function visitSteps(from, visit, to, venue, pause) {
+  const stay = venue?.use?.stay ?? (visit.outlook ? 'gather' : 'enter');
+  const enters = stay === 'enter';
+  const there = moonSettlerRoute(from, visit);
+  return [
+    { route: there, toDoor: enters },
+    enters
+      ? { inside: visit.id, duration: pause }
+      : {
+          stand: there,
+          face: visit.outlook
+            ? [visit.outlook[0], moonHatch(visit)[1], visit.outlook[1]]
+            : moonCommissionFront(visit),
+          duration: pause * 2,
+        },
+    { route: moonSettlerRoute(visit, to), fromDoor: enters, carry: venue?.use?.carry ?? null },
+  ];
+}
+
+// New Hollow's first Moon-born children. Once the Crater School stands, a few of them leave
+// the outer ring's homes each morning, one after another, walk the public paths to the school
+// door and go in; after lessons they walk home and go in. They wear the settlers' suit, helmet
+// and life-support pack at the valley's child scale.
+export const MOON_SCHOOL = 'craterSchool';
+export const MOON_CHILD_HOMES = Object.freeze(['lanternRow', 'earthviewTerraces']);
+/** Never a crowd: at most as many children as walk to a valley commission. */
+export const MAX_MOON_CHILDREN = MAX_COMMISSION_VILLAGERS;
+// A school day, in seconds, and its parts: lessons, the walks and at least a rest at home.
+export const MOON_SCHOOL_DAY = 200;
+const LESSONS = 60,
+  EVENING = 20;
+// Children set off this many seconds apart, the first a few seconds after the Moon opens.
+const SETTING_OFF = 3,
+  FIRST_OFF = 4;
+
+/** How many children walk to school: one for each level of the homes, once the school stands. */
+export function moonChildCount(levels) {
+  if (!((levels?.[MOON_SCHOOL] ?? 0) > 0)) return 0;
+  const homes = MOON_CHILD_HOMES.reduce((sum, id) => sum + (levels[id] ?? 0), 0);
+  return Math.min(MAX_MOON_CHILDREN, homes);
+}
+
+/**
+ * The `n`th child's day: home → school → home, from the first built home of the outer ring
+ * in turn, or null with no school or no home. A finished commission whose outcome sends the
+ * young (`use.young`) gets the children after school, on their way home: this is how a Moon
+ * commission sends children.
+ */
+export function moonChildPlan(levels, n, venues = []) {
+  const buildings = moonSettlerBuildings(levels);
+  const school = buildings.find(({ id }) => id === MOON_SCHOOL);
+  const homes = MOON_CHILD_HOMES.map((id) => buildings.find((route) => route.id === id)).filter(
+    Boolean,
+  );
+  if (!school || !homes.length) return null;
+  const home = homes[n % homes.length];
+  const outing = venues.find(({ use }) => use?.young)?.route ?? null;
+  const venue = outing ? venues.find(({ route }) => route === outing) : null;
+  const steps = [
+    { route: moonSettlerRoute(home, school), toDoor: true },
+    { inside: school.id, duration: LESSONS },
+    ...(outing
+      ? visitSteps(school, outing, home, venue, 8)
+      : [{ route: moonSettlerRoute(school, home), fromDoor: true }]),
+  ];
+  const away = routineDay(steps, MOON_WALK_SPEED).duration;
+  steps.push({ inside: home.id, duration: Math.max(EVENING, MOON_SCHOOL_DAY - away) });
+  const { segments, duration } = routineDay(steps, MOON_WALK_SPEED);
+  // Every child's day starts on the same clock, the next child a few seconds behind.
+  return { segments, duration, offset: -FIRST_OFF - n * SETTING_OFF, home: home.id, child: true };
+}
+
+/** A child's suit: bright colours, a school satchel and the full helmet and pack. */
+const MOON_CHILD_LOOKS = Object.freeze(
+  [
+    { suit: '#f1d67a', pack: p.roof, trim: p.flower, satchel: true },
+    { suit: '#9fc3e0', pack: p.timber, trim: p.flower, satchel: true, antenna: true },
+    { suit: '#e3a8a0', pack: p.deep, trim: p.light, satchel: true, band: 'waist' },
+    { suit: '#b7d9b5', pack: p.roof, trim: p.timber, satchel: true, lamp: true },
+  ].map(Object.freeze),
+);
+
+/** The children walking to school, on the settlers' skeleton at the valley's child scale. */
+function createMoonChildren(d, parent, levels = {}, venues = []) {
+  return Array.from({ length: moonChildCount(levels) }, (_, n) => {
+    const figure = moonSuitFigure(d, {
+      parent,
+      look: MOON_CHILD_LOOKS[n % MOON_CHILD_LOOKS.length],
+    });
+    figure.root.name = 'New Hollow child';
+    return { ...figure, plan: moonChildPlan(levels, n, venues), size: CHILD_SCALE };
+  }).filter(({ plan }) => plan);
+}
+
 // Standing at a commission without going in, a settler faces its door.
 const moonCommissionFront = (route) => {
   const [x, y, z] = moonHatch(route);
@@ -431,6 +509,7 @@ export function createMoonSettlers(d, parent, levels = {}, venues = []) {
   moonOuterStrollers(levels).forEach((plan, n) =>
     settlers.push({ ...moonSuitFigure(d, { parent, look: moonSettlerLook(n + 5) }), plan }),
   );
+  settlers.push(...createMoonChildren(d, parent, levels, venues));
   return settlers;
 }
 
@@ -443,8 +522,10 @@ export function animateMoonSettler(settler, time) {
   if (!pose.visible) return pose;
   root.position.set(pose.x, pose.y, pose.z);
   root.rotation.y = pose.heading;
-  root.scale.setScalar(pose.scale);
-  (settler.stride ?? strideMoonFigure)(settler, pose.distance, pose.walking);
+  // A child is drawn smaller and takes shorter strides, as in the valley.
+  const size = settler.size ?? 1;
+  root.scale.setScalar(pose.scale * size);
+  (settler.stride ?? strideMoonFigure)(settler, pose.distance / size, pose.walking);
   holdCarried(settler.item, settler.arms, !!pose.carry);
   return pose;
 }

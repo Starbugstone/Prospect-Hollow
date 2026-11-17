@@ -12,7 +12,7 @@ import {
   routinePose,
   routineRoute,
 } from './TownCommissionUse';
-import { swingLimbs, VILLAGER_WALK_SPEED } from './TownGait';
+import { CHILD_SCALE as CHILD, swingLimbs, VILLAGER_WALK_SPEED } from './TownGait';
 import { groundHeight } from './TownLandscape';
 import { finishWork, scheduleWork } from '../PresentationWork';
 import { PLOTS, segmentDistance, siteFootpath, townTracks } from './TownLayout';
@@ -28,8 +28,6 @@ export const COMMISSION_DOOR_TIME = 0.5;
 // (radius 5). Walkers climb a little outside each step, so their feet stay on top of it.
 const CLIMB = { from: 6.3, to: 5.5 };
 const COURT_STEP = 0.25;
-// Children are drawn at this scale on the villager skeleton.
-const CHILD = 0.68;
 
 const toWorld = (area, [lx, lift, lz]) => {
   const [x, z] = area.positions[0],

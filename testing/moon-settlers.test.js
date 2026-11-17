@@ -10,8 +10,12 @@ import {
   moonPadRadius,
 } from '../src/data/moonSettlement';
 import {
+  MAX_MOON_CHILDREN,
+  MOON_CHILD_HOMES,
   MOON_DOOR_TIME,
   MOON_OUTER_STROLLERS,
+  MOON_SCHOOL,
+  MOON_SCHOOL_DAY,
   MOON_SETTLER_LOOKS,
   moonSettlerLook,
   MOON_WALK_LANE,
@@ -25,7 +29,11 @@ import {
   moonSettlerPose,
   moonSettlerRoute,
   moonRoadWalk,
+  moonChildCount,
+  moonChildPlan,
+  moonHatch,
 } from '../src/game/town/moon/MoonSettlers';
+import { CHILD_SCALE } from '../src/game/town/TownGait';
 import { TownPrimitives } from '../src/game/town/TownPrimitives';
 
 const ALL = Object.fromEntries(Object.keys(MOON_LOTS).map((id) => [id, 1]));
@@ -445,5 +453,143 @@ describe('settlers told apart', () => {
     for (const settler of settlers.filter(({ root }) => root.name === 'New Hollow settler'))
       suits.add(settler.torso.children[0].material.color.getHexString());
     expect(suits.size).toBeGreaterThanOrEqual(5);
+  });
+});
+
+// The era promises "the first children born under Earthlight are walking to school": once the
+// Crater School stands, a few small settlers walk there from the outer ring's homes and back.
+describe('Moon-born children', () => {
+  const town = { lanternRow: 1, craterSchool: 1, ringTram: 1 };
+  const hatchOf = (id) => moonHatch(moonApproaches({ [id]: 1 })[0]);
+  const children = (levels) =>
+    createMoonSettlers(new TownPrimitives(), new Group(), levels).filter(
+      ({ root }) => root.name === 'New Hollow child',
+    );
+
+  it('walk only once the school and a home both stand, never more than the cap', () => {
+    expect(moonChildCount({})).toBe(0);
+    expect(moonChildCount(null)).toBe(0);
+    // Homes without a school, or a school still being built, send nobody.
+    expect(moonChildCount({ lanternRow: 3, earthviewTerraces: 3 })).toBe(0);
+    expect(moonChildCount({ lanternRow: 3, craterSchool: 0 })).toBe(0);
+    expect(children({ lanternRow: 3, settlerDomes: 3 })).toEqual([]);
+    expect(moonChildPlan({ craterSchool: 1 }, 0)).toBeNull();
+    expect(moonChildCount(town)).toBe(1);
+    expect(children(town)).toHaveLength(1);
+    const full = { lanternRow: 3, earthviewTerraces: 3, craterSchool: 3 };
+    expect(MAX_MOON_CHILDREN).toBe(4);
+    expect(moonChildCount(full)).toBe(MAX_MOON_CHILDREN);
+    expect(children(full)).toHaveLength(MAX_MOON_CHILDREN);
+    expect(children({ ...ALL, ...full })).toHaveLength(MAX_MOON_CHILDREN);
+  });
+
+  it('come after every other settler, whose days stay as they were', () => {
+    const d = new TownPrimitives();
+    const before = createMoonSettlers(d, new Group(), { ...ALL, craterSchool: 0 });
+    const after = createMoonSettlers(d, new Group(), ALL);
+    expect(after.slice(0, before.length).map(({ plan }) => plan.home ?? plan.phase)).toEqual(
+      before.map(({ plan }) => plan.home ?? plan.phase),
+    );
+    expect(after.slice(before.length).every(({ root }) => root.name === 'New Hollow child')).toBe(
+      true,
+    );
+  });
+
+  it('leave a home through its door, walk the public paths and go in at the school door', () => {
+    const full = { lanternRow: 2, earthviewTerraces: 1, craterSchool: 1 };
+    const homes = new Set();
+    for (let n = 0; n < moonChildCount(full); n++) {
+      const plan = moonChildPlan(full, n);
+      homes.add(plan.home);
+      expect(MOON_CHILD_HOMES).toContain(plan.home);
+      const [toSchool, lessons, home, evening] = plan.segments;
+      expect(toSchool.route.from).toBe(plan.home);
+      expect(toSchool.route.to).toBe(MOON_SCHOOL);
+      expect(flat(toSchool.route.points[0])).toEqual(flat(hatchOf(plan.home)));
+      expect(flat(toSchool.route.points.at(-1))).toEqual(flat(hatchOf(MOON_SCHOOL)));
+      expect(toSchool.toDoor).toBe(true);
+      expect(lessons.inside).toBe(MOON_SCHOOL);
+      expect([home.route.from, home.route.to]).toEqual([MOON_SCHOOL, plan.home]);
+      expect(home.fromDoor).toBe(true);
+      expect(evening.inside).toBe(plan.home);
+      // The same paths as every settler: each lot's public path, then the ring road's lanes.
+      expect(toSchool.route).toEqual(
+        moonSettlerRoute(
+          ...[plan.home, MOON_SCHOOL].map((id) => moonApproaches(full).find((r) => r.id === id)),
+        ),
+      );
+      // One school day each, on one clock: they set off one after another.
+      expect(plan.duration).toBe(MOON_SCHOOL_DAY);
+      expect(plan).toEqual(moonChildPlan(full, n));
+    }
+    expect(homes).toEqual(new Set(MOON_CHILD_HOMES));
+    const offsets = [0, 1, 2].map((n) => moonChildPlan(full, n).offset);
+    expect(offsets[0] - offsets[1]).toBeGreaterThan(0);
+    expect(offsets[1] - offsets[2]).toBeCloseTo(offsets[0] - offsets[1], 9);
+  });
+
+  it('appear and disappear only at a door, shrinking through it', () => {
+    const plan = moonChildPlan(town, 0);
+    const doors = [hatchOf('lanternRow'), hatchOf(MOON_SCHOOL)].map(flat);
+    let previous = null,
+      changes = 0;
+    const problems = [];
+    for (let t = 0; t <= plan.duration + STEP; t += STEP) {
+      const pose = { ...moonSettlerPose(plan, t) };
+      if (previous && previous.visible !== pose.visible) {
+        changes++;
+        const shown = pose.visible ? pose : previous;
+        if (Math.min(...doors.map((door) => gap([shown.x, shown.z], door))) >= 0.3)
+          problems.push(`appears or vanishes away from a door at ${t.toFixed(2)}`);
+        if (shown.scale >= 0.1) problems.push(`pops through a door at ${t.toFixed(2)}`);
+      }
+      previous = pose;
+    }
+    expect(problems).toEqual([]);
+    // Out of home, into school, out of school, into home.
+    expect(changes).toBe(4);
+  });
+
+  it('is drawn at the valley child scale in the full suit, helmet and pack', () => {
+    const [child] = children(town);
+    expect(CHILD_SCALE).toBe(0.68);
+    const plan = child.plan;
+    const walking = at(plan, plan.segments[0], plan.segments[0].duration / 2);
+    const pose = animateMoonSettler(child, walking);
+    expect(pose.walking).toBe(true);
+    expect(child.root.visible).toBe(true);
+    expect(child.root.scale.x).toBeCloseTo(CHILD_SCALE, 9);
+    child.root.updateMatrixWorld(true);
+    const box = new Box3().setFromObject(child.root);
+    // The settler's full height (helmet included), at child scale.
+    const adult = moonSuitFigure(new TownPrimitives(), { parent: new Group() }).root;
+    adult.updateMatrixWorld(true);
+    const height = new Box3().setFromObject(adult).max.y;
+    expect(box.max.y - child.root.position.y).toBeLessThan(height * 0.75);
+    expect(box.max.y - child.root.position.y).toBeGreaterThan(height * 0.55);
+    // The helmet's visor, the life-support pack and the suit's satchel.
+    expect(child.head.children.length).toBeGreaterThanOrEqual(2);
+    expect(child.torso.children.filter(({ isMesh }) => isMesh).length).toBeGreaterThanOrEqual(3);
+  });
+
+  it('lets a commission that sends the young have them after school (the Moon hook)', () => {
+    const levels = { ...town, ringMarket: 1 };
+    const market = moonApproaches(levels).find(({ id }) => id === 'ringMarket');
+    const plain = moonChildPlan(levels, 0, [
+      { id: 'adults', route: market, visits: {}, use: { stay: 'enter', young: false } },
+    ]);
+    expect(plain.segments.some((segment) => segment.inside === 'ringMarket')).toBe(false);
+    const plan = moonChildPlan(levels, 0, [
+      { id: 'meadow', route: market, visits: {}, use: { stay: 'enter', carry: null, young: true } },
+    ]);
+    const visits = plan.segments.map((segment) => segment.inside ?? segment.route?.to);
+    expect(visits).toEqual([
+      MOON_SCHOOL,
+      MOON_SCHOOL,
+      'ringMarket',
+      'ringMarket',
+      'lanternRow',
+      'lanternRow',
+    ]);
   });
 });
