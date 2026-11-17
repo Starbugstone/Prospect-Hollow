@@ -19,6 +19,9 @@ try {
   const marks = await load('data/townLandmarks');
   const { createTown } = await load('data/town');
   const { eraGate, advanceEra } = await load('game/town/TownEras');
+  // The required town ends with the last playable era, not with Twin Hollows.
+  const { ERAS } = await load('data/eras');
+  const FINAL_ERA = ERAS.filter((era) => era.enabled !== false).at(-1).id;
   const { miningDepthBonus } = await load('data/economy');
   const { CONTINUOUS_COIN_CAP } = await load('data/rewards');
   const { vipSpend, VIP_SPEND_VERSION } = await load('data/vipVisits');
@@ -134,7 +137,7 @@ try {
           town.transition.pending = false;
           eras[town.era] = town.completedRuns;
         }
-        if (town.era === 'twin-hollows' && eraGate(town).townComplete)
+        if (town.era === FINAL_ERA && eraGate(town).townComplete)
           townComplete ??= town.completedRuns;
         for (let n = 0; n < 100; n++) {
           const goal = rules.nextGoal(town);
@@ -264,7 +267,16 @@ try {
       const windows = Object.fromEntries(
         [
           ['lateCampaign', ledger.filter((r) => r.n >= 403 && r.n <= LEVELS)],
-          ['twinHollows', ledger.filter((r) => r.n > eras['twin-hollows'] && r.n <= townComplete)],
+          [
+            'twinHollows',
+            ledger.filter(
+              (r) => r.n > eras['twin-hollows'] && r.n <= (eras['hollow-rising'] ?? townComplete),
+            ),
+          ],
+          [
+            'moonEras',
+            ledger.filter((r) => r.n > (eras['hollow-rising'] ?? Infinity) && r.n <= townComplete),
+          ],
         ].map(([name, rows]) => [
           name,
           {
@@ -298,7 +310,7 @@ try {
         horizon: HORIZON,
       });
       process.stderr.write(
-        `seed ${seed} ${pattern.id}: Twin ${eras['twin-hollows']}, town ${townComplete}, monuments ${bothComplete}\n`,
+        `seed ${seed} ${pattern.id}: Twin ${eras['twin-hollows']}, Rising ${eras['hollow-rising']}, Signal ${eras['quiet-signal']}, town ${townComplete}, monuments ${bothComplete}\n`,
       );
     }
   }
