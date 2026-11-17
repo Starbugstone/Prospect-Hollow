@@ -565,3 +565,23 @@ is simply there.
 Honours: Far Rim Listener (1, 9 and 18 of 21 Far Rim levels); see
 [the honours guide](honours.md). `testing/quiet-signal.test.js` covers the district, the
 stone, the paths and residents, the story, the art and the move from New Hollow Rising.
+
+## Commissions (release 1.3.0)
+
+Beyond the eras, a settlement can ask for something. A commission's letter offers three
+permanent outcomes; the player chooses one, pays 2M coins in five stages of 400,000, each built
+over the shared seven completed puzzles, and residents then use the result. Commissions are
+optional, open at a finished building level (or once another commission stands) and never gate
+an era, a puzzle or a reward.
+
+| Site                    | Map    | Era               | Opens                                    | Outcomes                                              |
+| ----------------------- | ------ | ----------------- | ---------------------------------------- | ----------------------------------------------------- |
+| Earthlight Conservatory | Moon   | Twin Hollows      | Earthlight Greenhouse 3                  | Earthlight Orchard, Crystal Nursery, Bakehouse        |
+| Homecoming Commons      | Valley | Twin Hollows      | Homecoming Hall 3                        | Story Hall, Bandstand, Wild Meadow                    |
+| Willowkin Glade         | Valley | Twin Hollows      | Either commission above has a paid stage | Seedling Grove, Lantern Orchard, Story Tree           |
+| Schoolyard Court        | Moon   | New Hollow Rising | Crater School 3                          | Lamplit Library, Little Planetarium, Earthview Studio |
+| Crew Yard               | Moon   | New Hollow Rising | Expedition Garage 3                      | Crew Canteen, Mapmakers' Hall, Little Rover Track     |
+
+Honours: Commissioner (bronze 1 and silver 2 over the first two sites, gold 3 and diamond 5
+over all five). The contract and how to add a commission are in
+[era architecture](era-architecture.md#commissions).

@@ -1,7 +1,7 @@
 # Documentation
 
-Current content: **606 puzzles, 101 six-level chapters and 15 playable eras**
-(reviewed 20 October 2026). The runtime definitions in `src/data/campaign.js` and
+Current content: **606 puzzles, 101 six-level chapters and 17 playable eras**
+(reviewed 17 November 2026). The runtime definitions in `src/data/campaign.js` and
 `src/data/eras.js` own those catalogs. Mine progression and town-era advancement
 are independent; puzzle moves remain unlimited.
 

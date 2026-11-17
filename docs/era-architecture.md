@@ -239,7 +239,7 @@ equipment within the same reserved envelope. Pots, lamps, rails and nameboards
 do not count as either paid step. Native construction keeps its original tier
 sequence. Regression coverage checks semantic counterparts across handovers,
 structural volume, fixed envelopes, actual frontage/operation grade changes and
-per-building geometry ceilings across all fifteen eras.
+per-building geometry ceilings across all seventeen eras.
 
 One narrow replacement exception is the River & Rail well reservoir: the old
 pitched canopy physically intersects the new tank's frame, and the tank takes
@@ -1167,6 +1167,34 @@ their cabin and wheel axles therefore agree with the heading sampled by the map.
 using the canvas/container dimensions and fixed label widths to keep lot and
 monument controls separate. Neither settlement creates its own purchase,
 construction or unveiling state machine for these new sites.
+
+### Commissions
+
+A commission is a settlement asking for something: the player chooses what it becomes, and its
+residents use the result. Release 1.3.0 ships five: the Earthlight Conservatory, Schoolyard
+Court and Crew Yard on the Moon, and the Homecoming Commons and Willowkin Glade in the valley.
+Each is an ordinary monument site in `townLandmarks.js` (position, designs, `commissionLevelPrices`,
+`opens`) plus one entry in `COMMISSIONS` (`src/data/commissions.js`): who writes, the request, and
+each outcome's thanks, `visits` and `use`. Everything else is derived from the saved site, so a
+commission saves nothing new:
+
+- `commissionStatus()` gives one signal, most pressing first (`ready`, `request`, `work`,
+  `funding`); the map pill, the Build sheet pill and the letter over the site read it.
+- `commissionLetters()` sends the request once the site opens and the thanks once the first stage
+  stands. `finishedCommissions()` and `commissionUse()` tell residents where to go: valley
+  villagers through `TownCommissionResidents.js`, Moon settlers through `MoonSettlers.js`
+  (`young: true` sends the town's children; Moon children come from the Crater School).
+- Purchases, construction and unveiling are the shared monument lifecycle, replayed by the server
+  from the exported catalog.
+
+To add a commission: add its site (with an `opens` the server already understands, or a new kind
+added to both sides as above), its designs, 3D and SVG art and previews, its `COMMISSIONS` entry,
+French text and an honours decision. A commission joins no shipped Commissioner list: it gets a
+later rank whose own list names it (`COMMISSION_HONOUR_SITES_1_3` holds the five of 1.3.0), and
+`testing/commissions.test.js` fails until it counts toward one. Commissions never gate an era, a
+puzzle or a reward, and the choice is permanent. `testing/commissions.test.js`,
+`testing/commission-residents.test.js`, `testing/browser/town-commission-signal.cjs` and
+`testing/browser/commission-residents.cjs` cover the contract on both maps.
 
 ## Hidden finds
 
