@@ -592,4 +592,27 @@ describe('Moon-born children', () => {
       'lanternRow',
     ]);
   });
+
+  it('shares the children between several commissions that send the young', () => {
+    const levels = { ...town, ringMarket: 1, craterInn: 1 };
+    const [market, inn] = ['ringMarket', 'craterInn'].map((id) =>
+      moonApproaches(levels).find((route) => route.id === id),
+    );
+    const venues = [market, inn].map((route) => ({
+      id: route.id,
+      route,
+      visits: {},
+      use: { stay: 'enter', carry: null, young: true },
+    }));
+    const outing = (n) =>
+      moonChildPlan(levels, n, venues).segments.find(
+        ({ inside }) => inside && inside !== MOON_SCHOOL && !MOON_CHILD_HOMES.includes(inside),
+      )?.inside;
+    expect([0, 1, 2, 3].map(outing)).toEqual([
+      'ringMarket',
+      'craterInn',
+      'ringMarket',
+      'craterInn',
+    ]);
+  });
 });

@@ -283,8 +283,10 @@ export function moonChildPlan(levels, n, venues = []) {
   );
   if (!school || !homes.length) return null;
   const home = homes[n % homes.length];
-  const outing = venues.find(({ use }) => use?.young)?.route ?? null;
-  const venue = outing ? venues.find(({ route }) => route === outing) : null;
+  // With several commissions that send the young, each child goes to one in turn.
+  const young = venues.filter(({ use }) => use?.young);
+  const venue = young.length ? young[n % young.length] : null;
+  const outing = venue?.route ?? null;
   const steps = [
     { route: moonSettlerRoute(home, school), toDoor: true },
     { inside: school.id, duration: LESSONS },
@@ -510,11 +512,11 @@ export function createMoonSettlers(d, parent, levels = {}, venues = []) {
   // The Far Rim's own residents: researchers, craftspeople and families from its homes, and
   // the Willowkin who live and work beside the stone. They keep to the district.
   const rim = levels[FAR_RIM_HOME] ?? 0;
-  for (let n = 0; n < (rim > 0 ? rim + 1 : 0); n++)
-    settlers.push({
-      ...moonSuitFigure(d, { parent, look: moonSettlerLook(n + 3) }),
-      plan: moonSettlerPlan(levels, 200 + n, FAR_RIM_HOME, venues, 'settler', { local: true }),
-    });
+  for (let n = 0; n < (rim > 0 ? rim + 1 : 0); n++) {
+    const figure = moonSuitFigure(d, { parent, look: moonSettlerLook(n + 3) });
+    const plan = moonSettlerPlan(levels, 200 + n, FAR_RIM_HOME, venues, 'settler', { local: true });
+    settlers.push({ ...figure, plan, items: carriedItems(d, figure, plan) });
+  }
   const kin = FAR_RIM_WILLOWKIN.filter((id) => levels[id] > 0);
   kin.forEach((home, n) =>
     settlers.push({
