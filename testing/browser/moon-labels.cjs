@@ -159,10 +159,15 @@ window.getMoon=()=>app._instance.subTree.component.setupState;
           const source = moon.unavailable
             ? moon.allLots.map((lot) => window.moonMapLabel(lot, moon.viewport, moon.mapBox))
             : moon.labels;
+          // A name that would cover the Quiet Stone steps sideways by its `nudge`, as the
+          // shared layout promises; it keeps its row and moves by exactly that step.
+          const width = moon.viewport.width || 1;
           return moon.shownLots
             .filter((lot) => {
               const anchor = source.find((point) => point.id === lot.id);
-              return !anchor || lot.x !== anchor.x || lot.y !== anchor.y;
+              if (!anchor || lot.y !== anchor.y) return true;
+              const step = lot.nudge ? (lot.nudge / width) * 100 : 0;
+              return Math.abs(lot.x - anchor.x - step) > 1e-6;
             })
             .map((lot) => lot.id);
         });

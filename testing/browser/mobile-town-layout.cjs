@@ -278,16 +278,18 @@ async function checkSharedTown(browser, viewport, language) {
   await footer.waitFor();
   const notice = page.locator('.town-visitor-notice');
   const caption = page.locator('.village-fullscreen-caption');
-  const run = (handler) =>
+  const run = (handler, arg) =>
     frame.evaluate(
-      (node, handler) => node.__vueParentComponent.setupState[handler]('gone'),
-      handler,
+      (node, [handler, arg]) => node.__vueParentComponent.setupState[handler](arg),
+      [handler, arg],
     );
-  for (const [name, handler] of [
-    ['astronaut', 'notifyHelmet'],
-    ['visitor', 'findVisitor'],
+  // The helmet's notice comes from the shared hidden-find contract; an unknown visitor id
+  // answers with the "unavailable" notice.
+  for (const [name, handler, arg] of [
+    ['astronaut', 'notifyFind', 'helmet'],
+    ['visitor', 'findVisitor', 'gone'],
   ]) {
-    await run(handler);
+    await run(handler, arg);
     await notice.waitFor();
     // ResizeObserver reports the wrapped buttons on a following frame.
     await page.waitForFunction(
