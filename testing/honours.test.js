@@ -290,16 +290,50 @@ describe('Measures', () => {
     const commissions = new Set(COMMISSIONS.map(({ site }) => site));
     for (const area of PERSONAL_AREAS.filter(({ id }) => !NON_MONUMENT_HONOURS[id])) {
       // A commission counts for Commissioner and never for Landmark Patron's fixed list.
-      const [counts, other] = commissions.has(area.id)
-        ? ['commissioner-bronze', 'landmark-patron-bronze']
-        : ['landmark-patron-bronze', 'commissioner-bronze'];
+      // A later commission only counts toward the later ranks whose own list names it.
+      const ranks = commissions.has(area.id)
+        ? HONOURS.familyById.commissioner.ranks.filter((rank) =>
+            rank.measure.areas.includes(area.id),
+          )
+        : [HONOURS.byId['landmark-patron-bronze']];
+      const other = commissions.has(area.id) ? 'landmark-patron-bronze' : 'commissioner-bronze';
       const t = town({ personalisation: { areas: { [area.id]: [area.choices[0]] } } });
       const ids = added({ town: t });
-      expect(ids, area.id).toContain(counts);
+      expect(ranks.length, area.id).toBeGreaterThan(0);
+      for (const rank of ranks) expect(rank.progress(state({ town: t })).value, rank.id).toBe(1);
+      if (ranks[0].goal === 1) expect(ids, area.id).toContain(ranks[0].id);
       expect(ids, area.id).not.toContain(other);
       expect(ids.includes('monument-gold'), area.id).toBe(area.id === 'monument');
       t.personalisation.areas[area.id] = ['invented-design'];
-      expect(added({ town: t }), area.id).not.toContain(counts);
+      for (const rank of ranks) expect(rank.progress(state({ town: t })).value, rank.id).toBe(0);
+    }
+  });
+
+  it('counts the five 1.3.0 commissions for gold and diamond, the shipped two for silver', () => {
+    const sponsored = (...sites) =>
+      town({
+        personalisation: {
+          areas: Object.fromEntries(
+            sites.map((site) => [site, [PERSONAL_AREAS.find(({ id }) => id === site).choices[0]]]),
+          ),
+        },
+      });
+    // Three commissions without the Commons: gold, but silver's shipped pair is not complete.
+    const three = added({
+      town: sponsored('earthlight-conservatory', 'schoolyard-court', 'crew-yard'),
+    });
+    expect(three).toEqual(expect.arrayContaining(['commissioner-bronze', 'commissioner-gold']));
+    expect(three).not.toContain('commissioner-silver');
+    expect(three).not.toContain('commissioner-diamond');
+    // A Moon commission alone counts only toward the later ranks.
+    expect(added({ town: sponsored('crew-yard') })).not.toContain('commissioner-bronze');
+    const all = sponsored(...COMMISSIONS.map(({ site }) => site));
+    expect(added({ town: all })).toEqual(
+      expect.arrayContaining(['commissioner-silver', 'commissioner-gold', 'commissioner-diamond']),
+    );
+    for (const id of ['commissioner-gold', 'commissioner-diamond']) {
+      expect(HONOURS.byId[id].since).toBe(9);
+      expect(HONOURS.byId[id].progress(state({ town: all })).value).toBe(5);
     }
   });
 
@@ -948,6 +982,40 @@ describe('First monument: one permanent distinction', () => {
       .find((tab) => tab.id === 'town')
       .families.filter((family) => ['commissioner', 'keen-eye'].includes(family.id));
     expect(view.map((family) => family.newRank)).toEqual([true, true]);
+  });
+
+  it('catches up generation 8 saves with three commissions once, showing gold as new', () => {
+    const areas = {
+      'earthlight-conservatory': ['crystal-nursery'],
+      'homecoming-commons': ['story-hall'],
+      'willowkin-glade': ['story-tree'],
+    };
+    const old = state({
+      town: town({ era: 'hollow-rising', personalisation: { areas } }),
+      honours: {
+        ...createHonours(),
+        version: 8,
+        backfilled: 8,
+        seenGeneration: 8,
+        earned: Object.fromEntries(
+          ['commissioner-bronze', 'commissioner-silver'].map((id) => [
+            id,
+            { at: 1, version: 1, evidence: {} },
+          ]),
+        ),
+      },
+    });
+    const honours = backfillHonours(old);
+    expect(honours.earned['commissioner-gold']).toMatchObject({ at: null, backfilled: true });
+    expect(honours.earned['commissioner-diamond']).toBeUndefined();
+    // Earned ranks keep what they were earned under.
+    expect(honours.earned['commissioner-bronze']).toMatchObject({ at: 1, version: 1 });
+    expect(honours.earned['commissioner-bronze'].backfilled).toBeFalsy();
+    expect(backfillHonours({ ...old, honours })).toEqual(honours);
+    const family = honourCollection(old)
+      .find((tab) => tab.id === 'town')
+      .families.find((entry) => entry.id === 'commissioner');
+    expect(family.newRank).toBe(true);
   });
 
   it('catches up saves from the previous honour generation once', () => {

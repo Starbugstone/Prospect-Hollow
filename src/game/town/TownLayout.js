@@ -4,7 +4,7 @@ import { MINE_POSITION } from '../../data/mineSite';
 import { WATERMILL_SITE } from '../../data/watermill';
 import { SQUARE_POSITION } from '../../data/townSquare';
 import { BUILDING_BY_ID } from '../../data/town';
-import { AREA_BY_ID, areaUnlocked } from '../../data/townLandmarks';
+import { AREA_BY_ID, areaEraReached } from '../../data/townLandmarks';
 import { plotUnlocked } from './TownRules';
 import { BRIDGE, riverPath } from './TownRiver';
 import { TOWN_EDGE } from './TownAtmosphere';
@@ -262,15 +262,25 @@ const SITE_FOOTPATHS = Object.freeze({
     [67.6, -93.6],
     [67.6, -95.2],
   ]),
+  // On from the west end of the Mission Homesteads' street, past Founders' Meadow, down the
+  // open ground between the two rows of sites and across to the Glade's front.
+  'willowkin-glade': Object.freeze([
+    [48, -51.5],
+    [31, -51.5],
+    [31, -93.6],
+    [15.6, -93.6],
+    [15.6, -95.2],
+  ]),
 });
 /** The footpath to a site, as corners from the street to its front, or null without one. */
 export function siteFootpath(town, site) {
   const area = Object.hasOwn(SITE_FOOTPATHS, site) ? AREA_BY_ID[site] : null;
   if (!area) return null;
-  // Laid with the plot of the building that opens the site, in the site's era: the streets
-  // only ever change with the plots, never when a building's level opens the site itself.
-  const era = { ...town, buildings: { [area.opens?.building]: area.opens?.level } };
-  const laid = areaUnlocked(era, area) && (!area.opens || plotUnlocked(town, area.opens.building));
+  // Laid in the site's era, with the plot of the building that opens it when one does: the
+  // streets only ever change with the era and the plots, never when a building's level or a
+  // purchase elsewhere opens the site itself.
+  const building = area.opens?.building;
+  const laid = areaEraReached(town, area) && (!building || plotUnlocked(town, building));
   return laid ? SITE_FOOTPATHS[site] : null;
 }
 const FOOTPATH_WIDTH = 0.75;

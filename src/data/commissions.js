@@ -76,11 +76,101 @@ export const COMMISSIONS = Object.freeze([
       }),
     }),
   }),
+  // Opens once either commission above is under way (`opens` in townLandmarks.js).
+  Object.freeze({
+    site: 'willowkin-glade',
+    writer: 'The Willowkin neighbours',
+    request:
+      'We have lived beside you since the first canopy went up, and we have never asked for anything. Now we would like one green place behind Riverlight Court. The elders want a grove of seedlings for the Moon, the young ones want an orchard hung with lanterns and the animals want a tree big enough for everyone. What should it be?',
+    outcomes: Object.freeze({
+      'seedling-grove': Object.freeze({
+        thanks:
+          'The first seedlings are in their rows. We sing to them in the mornings, and the strongest go up to New Hollow with the next climber.',
+        visits: Object.freeze({ resident: 3, wild: 0, villager: 2 }),
+        use: Object.freeze({ stay: 'roam', carry: 'sapling' }),
+      }),
+      'lantern-orchard': Object.freeze({
+        thanks:
+          'We lit the lanterns for the first time tonight. The animals came for the windfalls, the town came for the light, and everyone went home with fruit.',
+        visits: Object.freeze({ resident: 2, wild: 2, villager: 3 }),
+        use: Object.freeze({ stay: 'roam', carry: 'fruit' }),
+      }),
+      'story-tree': Object.freeze({
+        thanks:
+          'Someone told the story of the first prospector under the old tree last night. The animals listened from the roots, and the children made everyone hear it twice.',
+        visits: Object.freeze({ resident: 0, wild: 3, villager: 4 }),
+        use: Object.freeze({ stay: 'gather', young: true }),
+      }),
+    }),
+  }),
+  // New Hollow Rising's two commissions, on the outer ring.
+  Object.freeze({
+    site: 'schoolyard-court',
+    writer: 'The teachers of the Crater School',
+    request:
+      'The first children born under Earthlight have filled every desk, shelf and window of the school. The librarian wants a reading room, the science teacher wants a dome for the stars and the art teacher wants a studio that looks at Earth. There is room on the outer ring for one. What should we build?',
+    outcomes: Object.freeze({
+      'lamplit-library': Object.freeze({
+        thanks:
+          'The library opened with one shelf for every child in New Hollow. The smallest readers sit nearest the lamps, and nobody hurries them home.',
+        visits: Object.freeze({ settler: 2, willowkin: 1 }),
+        use: Object.freeze({ stay: 'enter', carry: 'book' }),
+      }),
+      'little-planetarium': Object.freeze({
+        thanks:
+          'The planetarium showed its first sky tonight: the stars as they look from the valley. The children cheered when we turned it round and they found home.',
+        visits: Object.freeze({ settler: 3, willowkin: 0 }),
+        use: Object.freeze({ stay: 'enter', carry: 'chart' }),
+      }),
+      'earthview-studio': Object.freeze({
+        thanks:
+          'The easels outside the studio are never empty. Every painting of Earth comes out blue and white, and every one is different.',
+        visits: Object.freeze({ settler: 1, willowkin: 2 }),
+        use: Object.freeze({ stay: 'gather', carry: 'painting' }),
+      }),
+    }),
+  }),
+  Object.freeze({
+    site: 'crew-yard',
+    writer: 'The rover crews',
+    request:
+      'We drive out past the rim every week and come home dusty, cold and full of stories. Most of the crews want a canteen, the mappers want a hall for the maps we keep drawing on napkins and the youngest drivers want a track for racing model rovers. There is one spot left by the outer ring. What should it be?',
+    outcomes: Object.freeze({
+      'crew-canteen': Object.freeze({
+        thanks:
+          'The canteen is open and the soup is always on. Crews come in from the plains, warm their hands on a flask and tell the same stories, only louder.',
+        visits: Object.freeze({ settler: 3, willowkin: 1 }),
+        use: Object.freeze({ stay: 'enter', carry: 'flask' }),
+      }),
+      'mapmakers-hall': Object.freeze({
+        thanks:
+          'The great floor map is laid. Every crew that comes home paints in the road it found, and the Moon looks a little less empty every week.',
+        visits: Object.freeze({ settler: 2, willowkin: 0 }),
+        use: Object.freeze({ stay: 'enter', carry: 'map' }),
+      }),
+      'rover-track': Object.freeze({
+        thanks:
+          'The first model rover race went three laps before anyone remembered to wave the flag. Nobody minded, and everyone wants a rematch.',
+        visits: Object.freeze({ settler: 2, willowkin: 2 }),
+        use: Object.freeze({ stay: 'gather' }),
+      }),
+    }),
+  }),
 ]);
 export const commissionFor = (siteId) => COMMISSIONS.find(({ site }) => site === siteId) ?? null;
 
 export const COMMISSION_STAYS = Object.freeze(['enter', 'gather', 'roam']);
-export const COMMISSION_CARRIES = Object.freeze(['book', 'fruit', 'crystal', 'pie']);
+export const COMMISSION_CARRIES = Object.freeze([
+  'book',
+  'fruit',
+  'crystal',
+  'pie',
+  'sapling',
+  'chart',
+  'painting',
+  'flask',
+  'map',
+]);
 /**
  * How residents use a finished commission, with every field filled: an outcome without
  * `use`, or with a value this build does not know, gathers at the front and carries nothing.

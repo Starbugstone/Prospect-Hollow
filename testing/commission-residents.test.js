@@ -43,6 +43,8 @@ import {
   townTracks,
 } from '../src/game/town/TownLayout';
 import { swingLimbs, VILLAGER_WALK_SPEED } from '../src/game/town/TownGait';
+import { areaUnlocked } from '../src/data/townLandmarks';
+import { openSite } from './helpers/siteOpening';
 import { TownPrimitives } from '../src/game/town/TownPrimitives';
 import {
   MOON_DOOR_TIME,
@@ -60,6 +62,9 @@ import {
 const valleySite = AREA_BY_ID['homecoming-commons'];
 const moonSite = AREA_BY_ID['earthlight-conservatory'];
 const valleyEntry = commissionFor(valleySite.id);
+const VALLEY_SITES = COMMISSIONS.map(({ site }) => AREA_BY_ID[site]).filter(
+  (site) => site.settlement === 'valley',
+);
 const moonEntry = commissionFor(moonSite.id);
 const views = [];
 afterEach(() => {
@@ -221,18 +226,18 @@ const trim = (points, length) => {
 };
 
 describe('the valley commission grounds', () => {
-  const cases = valleySite.choices.flatMap((choice) =>
-    [1, 2, 3, 4, 5].map((stage) => [choice, stage]),
+  const cases = VALLEY_SITES.flatMap((site) =>
+    site.choices.flatMap((choice) => [1, 2, 3, 4, 5].map((stage) => [choice, stage, site])),
   );
   it.each(cases)(
     '%s at stage %i lets every visitor reach its place clear of the art',
-    (choice, stage) => {
-      const outcome = valleyEntry.outcomes[choice];
+    (choice, stage, site) => {
+      const outcome = commissionFor(site.id).outcomes[choice];
       const use = commissionUse(outcome);
       const size = use.young ? 0.68 : 1;
       const boxes = solids(choice, stage);
       for (let n = 0; n < commissionVillagers(outcome); n++) {
-        const court = commissionGrounds(LANDMARK_BY_ID[choice].form, use, n, valleySite.radius);
+        const court = commissionGrounds(LANDMARK_BY_ID[choice].form, use, n, site.radius);
         expect(court.stay).toBe(use.stay);
         const approach = court.stay === 'enter' ? trim(court.approach, 0.35) : court.approach;
         for (const walk of [approach, court.loop ?? []])
@@ -288,6 +293,40 @@ describe('the valley commission grounds', () => {
     }
   });
 
+  it.each(['seedling-grove', 'lantern-orchard'])(
+    'keeps %s visitors on its lawn once through its gate',
+    (form) => {
+      const outcome = commissionFor('willowkin-glade').outcomes[form];
+      const { lawn } = VALLEY_COMMISSION_GROUNDS[form];
+      for (let n = 0; n < commissionVillagers(outcome); n++) {
+        const { stay, loop } = commissionGrounds(form, commissionUse(outcome), n, 7);
+        expect(stay).toBe('roam');
+        expect(loop[0]).toEqual(loop.at(-1));
+        for (const point of loop) expect(Math.hypot(point[0], point[2])).toBeLessThan(lawn - 0.5);
+      }
+    },
+  );
+
+  it('gathers the story tree’s audience on its arc, apart, facing the tree', () => {
+    const outcome = commissionFor('willowkin-glade').outcomes['story-tree'];
+    const use = commissionUse(outcome);
+    expect(use).toMatchObject({ stay: 'gather', young: true });
+    const places = Array.from({ length: commissionVillagers(outcome) }, (_, n) =>
+      commissionGrounds('story-tree', use, n, 7),
+    );
+    for (const { approach, face } of places) {
+      const end = approach.at(-1);
+      expect(Math.hypot(end[0], end[2])).toBeCloseTo(
+        VALLEY_COMMISSION_GROUNDS['story-tree'].audience,
+      );
+      expect(end[2]).toBeGreaterThan(0);
+      expect([face[0], face[2]]).toEqual([0, 0]);
+    }
+    for (let a = 0; a < places.length; a++)
+      for (let b = a + 1; b < places.length; b++)
+        expect(gap(places[a].approach.at(-1), places[b].approach.at(-1))).toBeGreaterThan(1);
+  });
+
   it('gathers a future form without grounds before the site, outside its court', () => {
     for (const use of [commissionUse(undefined), { stay: 'enter', carry: null, young: false }]) {
       const places = [0, 1, 2].map((n) =>
@@ -304,97 +343,95 @@ describe('the valley commission grounds', () => {
   });
 });
 
-describe('valley townsfolk at the finished commons', () => {
+describe.each(VALLEY_SITES)('valley townsfolk at the finished $id', (site) => {
+  const entry = commissionFor(site.id);
+  // The valley town with the site open: its building finished or an earlier commission paid.
+  const siteTown = () => openSite(valleyTown(), site);
   it.each([
     ['no choice yet', (town) => town],
-    ['a design still being built', (town) => buy(town, valleySite, 'bandstand')],
+    ['a design still being built', (town) => buy(town, site, site.choices[1])],
     [
       'a saved design this build does not know',
       (town) => {
-        const built = finish(buy(town, valleySite, 'bandstand'), valleySite);
-        built.personalisation.areas[valleySite.id] = ['retired-design'];
+        const built = finish(buy(town, site, site.choices[1]), site);
+        built.personalisation.areas[site.id] = ['retired-design'];
         return built;
       },
     ],
   ])('draws nobody for %s', (_, change) => {
-    const d = valley(change(valleyTown()));
+    const d = valley(change(siteTown()));
     expect(d.commissionResidents ?? []).toEqual([]);
     expect(d.world.children).toEqual([]);
   });
 
-  it.each(valleySite.choices)(
-    '%s sends its residents along the streets from real homes',
-    (choice) => {
-      const town = finish(buy(valleyTown(), valleySite, choice), valleySite);
-      const d = valley(town);
-      const outcome = valleyEntry.outcomes[choice];
-      expect(d.commissionResidents).toHaveLength(commissionVillagers(outcome));
-      const roads = townTracks(town).filter(({ modes }) => modes.includes('pedestrian'));
-      const homes = valleyHomes(town);
-      for (const { day } of d.commissionResidents) {
-        const there = walks(day)[0].route.points;
-        // Out of a home's own door...
-        const home = day.segments.at(-1).inside;
-        expect(homes).toContain(home);
-        expect(gap(there[0], d.itineraries.endpoint(home, true))).toBeLessThan(1e-6);
-        // ...straight onto the streets, along them without cutting across a lot, then down
-        // the site's footpath: every step from the home to the site's front is on a street
-        // or on the middle of that path, and never out across the open field.
-        const footpath = siteFootpath(town, valleySite.id);
-        expect(footpath).toBeTruthy();
-        const streets = roads.filter((road) => !road.footpath);
-        const onStreet = (p) =>
-          streets.some(({ from, to }) => segmentDistance(p[0], p[2], from, to) <= 1.6);
-        const onPath = (p) =>
-          footpath.slice(1).some((to, n) => segmentDistance(p[0], p[2], footpath[n], to) <= 0.05);
-        // The path's last corner but one is the court's front; its last stretch runs on to
-        // the court's edge, under the court's own lane.
-        const front = [footpath.at(-2)[0], 0, footpath.at(-2)[1]];
-        const [sx0, sz0] = valleySite.positions[0];
-        expect(Math.hypot(footpath.at(-1)[0] - sx0, footpath.at(-1)[1] - sz0)).toBeLessThan(
-          valleySite.radius,
-        );
-        const arrives = there.findIndex((p) => gap(p, front) < 0.05);
-        expect(arrives).toBeGreaterThan(0);
-        const kinds = there.slice(0, arrives + 1).map((p) => (onPath(p) ? 'path' : onStreet(p)));
-        const joins = kinds.indexOf(true),
-          takesPath = kinds.indexOf('path');
-        expect(joins).toBeLessThanOrEqual(2);
-        expect(takesPath).toBeGreaterThan(joins);
-        expect(kinds.slice(joins, takesPath).every((kind) => kind === true)).toBe(true);
-        expect(kinds.slice(takesPath).every((kind) => kind === 'path')).toBe(true);
-        // The path is walked from end to end, and no step along it is longer than a stride.
-        expect(gap(there[takesPath], [footpath[0][0], 0, footpath[0][1]])).toBeLessThan(1.1);
-        for (let n = takesPath + 1; n <= arrives; n++)
-          expect(gap(there[n], there[n - 1])).toBeLessThanOrEqual(0.76);
-        // The path starts on a wide street and ends where the court's own lane begins.
-        const wide = streets.filter(({ width }) => width >= 0.85);
-        expect(
-          Math.min(...wide.map(({ from, to }) => segmentDistance(...footpath[0], from, to))),
-        ).toBeLessThan(1e-6);
-        const court = commissionGrounds(
-          LANDMARK_BY_ID[choice].form,
-          commissionUse(outcome),
-          0,
-          valleySite.radius,
-        );
-        expect(gap(front, toWorld(valleySite, court.approach[0]))).toBeLessThan(0.05);
-        // ...and ends in the site's court.
-        const [sx, sz] = valleySite.positions[0];
-        expect(Math.hypot(there.at(-1)[0] - sx, there.at(-1)[2] - sz)).toBeLessThan(
-          valleySite.radius,
-        );
-      }
-    },
-  );
+  it.each(site.choices)('%s sends its residents along the streets from real homes', (choice) => {
+    const town = finish(buy(siteTown(), site, choice), site);
+    const d = valley(town);
+    const outcome = entry.outcomes[choice];
+    expect(d.commissionResidents).toHaveLength(commissionVillagers(outcome));
+    const roads = townTracks(town).filter(({ modes }) => modes.includes('pedestrian'));
+    const homes = valleyHomes(town);
+    for (const { day } of d.commissionResidents) {
+      const there = walks(day)[0].route.points;
+      // Out of a home's own door...
+      const home = day.segments.at(-1).inside;
+      expect(homes).toContain(home);
+      expect(gap(there[0], d.itineraries.endpoint(home, true))).toBeLessThan(1e-6);
+      // ...straight onto the streets, along them without cutting across a lot, then down
+      // the site's footpath: every step from the home to the site's front is on a street
+      // or on the middle of that path, and never out across the open field.
+      const footpath = siteFootpath(town, site.id);
+      expect(footpath).toBeTruthy();
+      const streets = roads.filter((road) => !road.footpath);
+      const onStreet = (p) =>
+        streets.some(({ from, to }) => segmentDistance(p[0], p[2], from, to) <= 1.6);
+      const onPath = (p) =>
+        footpath.slice(1).some((to, n) => segmentDistance(p[0], p[2], footpath[n], to) <= 0.05);
+      // The path's last corner but one is the court's front; its last stretch runs on to
+      // the court's edge, under the court's own lane.
+      const front = [footpath.at(-2)[0], 0, footpath.at(-2)[1]];
+      const [sx0, sz0] = site.positions[0];
+      expect(Math.hypot(footpath.at(-1)[0] - sx0, footpath.at(-1)[1] - sz0)).toBeLessThan(
+        site.radius,
+      );
+      const arrives = there.findIndex((p) => gap(p, front) < 0.05);
+      expect(arrives).toBeGreaterThan(0);
+      const kinds = there.slice(0, arrives + 1).map((p) => (onPath(p) ? 'path' : onStreet(p)));
+      const joins = kinds.indexOf(true),
+        takesPath = kinds.indexOf('path');
+      expect(joins).toBeLessThanOrEqual(2);
+      expect(takesPath).toBeGreaterThan(joins);
+      expect(kinds.slice(joins, takesPath).every((kind) => kind === true)).toBe(true);
+      expect(kinds.slice(takesPath).every((kind) => kind === 'path')).toBe(true);
+      // The path is walked from end to end, and no step along it is longer than a stride.
+      expect(gap(there[takesPath], [footpath[0][0], 0, footpath[0][1]])).toBeLessThan(1.1);
+      for (let n = takesPath + 1; n <= arrives; n++)
+        expect(gap(there[n], there[n - 1])).toBeLessThanOrEqual(0.76);
+      // The path starts on a wide street and ends where the court's own lane begins.
+      const wide = streets.filter(({ width }) => width >= 0.85);
+      expect(
+        Math.min(...wide.map(({ from, to }) => segmentDistance(...footpath[0], from, to))),
+      ).toBeLessThan(1e-6);
+      const court = commissionGrounds(
+        LANDMARK_BY_ID[choice].form,
+        commissionUse(outcome),
+        0,
+        site.radius,
+      );
+      expect(gap(front, toWorld(site, court.approach[0]))).toBeLessThan(0.05);
+      // ...and ends in the site's court.
+      const [sx, sz] = site.positions[0];
+      expect(Math.hypot(there.at(-1)[0] - sx, there.at(-1)[2] - sz)).toBeLessThan(site.radius);
+    }
+  });
 
   it('opens the footpath with its site, draws it as a narrow path and keeps errands off it', () => {
-    const town = valleyTown();
-    const footpath = siteFootpath(town, valleySite.id);
-    const tracks = townTracks(town).filter((track) => track.footpath);
+    const town = siteTown();
+    const footpath = siteFootpath(town, site.id);
+    const tracks = townTracks(town).filter((track) => track.footpath === site.id);
     expect(tracks).toHaveLength(footpath.length - 1);
     for (const track of tracks) {
-      expect(track).toMatchObject({ width: 0.75, modes: ['pedestrian'], footpath: valleySite.id });
+      expect(track).toMatchObject({ width: 0.75, modes: ['pedestrian'], footpath: site.id });
       // Axis-aligned, like every valley path.
       expect(track.from[0] === track.to[0] || track.from[1] === track.to[1]).toBe(true);
     }
@@ -405,7 +442,7 @@ describe('valley townsfolk at the finished commons', () => {
         expect(segmentDistance(x, z, from, to), id).toBeGreaterThan(5.5);
     }
     for (const area of Object.values(AREA_BY_ID).filter(
-      (area) => area.settlement === 'valley' && area.id !== valleySite.id,
+      (area) => area.settlement === 'valley' && area.id !== site.id,
     ))
       for (const { from, to } of tracks)
         expect(segmentDistance(...area.positions[0], from, to), area.id).toBeGreaterThan(
@@ -415,17 +452,24 @@ describe('valley townsfolk at the finished commons', () => {
     for (const mode of ['pedestrian', 'car'])
       for (const node of routeGraph(town, mode).nodes.values())
         expect(node[1], mode).toBeGreaterThan(-60);
-    // It is laid with the homecoming hall's plot, so the hall reaching the level that opens
-    // the site changes no street (and so swaps one plot instead of rebuilding the town).
-    const early = { ...town, buildings: { ...town.buildings, homecomingHall: 1 } };
+    // It is laid with the plot of the building that opens the site, or with the era, so
+    // whatever opens the site itself (that building's level, or a purchase elsewhere)
+    // changes no street, and so swaps one plot instead of rebuilding the town.
+    const building = site.opens.building;
+    const early = building
+      ? { ...town, buildings: { ...town.buildings, [building]: 1 } }
+      : valleyTown();
+    expect(areaUnlocked(early, site)).toBe(false);
     expect(JSON.stringify(townTracks(early))).toBe(JSON.stringify(townTracks(town)));
     // Before the site's era there is no path, and an unknown site has none.
-    expect(siteFootpath({ ...town, era: 'moonward' }, valleySite.id)).toBeNull();
+    expect(siteFootpath({ ...town, era: 'moonward' }, site.id)).toBeNull();
     expect(townTracks({ ...town, era: 'moonward' }).some((track) => track.footpath)).toBe(false);
     expect(siteFootpath(town, 'no-such-site')).toBeNull();
     expect(siteFootpath(town, 'meadow')).toBeNull();
   });
+});
 
+describe('valley townsfolk at the finished commons', () => {
   const pose = (resident, segment, elapsed) =>
     routinePose(
       resident.day,
@@ -504,6 +548,57 @@ describe('valley townsfolk at the finished commons', () => {
       if (Math.abs(legs[0].upper.rotation.x) > 0.1) strides++;
     }
     expect(strides).toBeGreaterThan(10);
+  });
+});
+
+describe('valley townsfolk at the finished Willowkin Glade', () => {
+  const glade = AREA_BY_ID['willowkin-glade'];
+  const outcomes = commissionFor(glade.id).outcomes;
+  const pose = (resident, segment, elapsed) =>
+    routinePose(
+      resident.day,
+      segment.start + elapsed,
+      VILLAGER_WALK_SPEED,
+      COMMISSION_DOOR_TIME,
+      {},
+    );
+  const village = (choice) =>
+    valley(finish(buy(openSite(valleyTown(), glade), glade, choice), glade));
+  const residents = (choice) => village(choice).commissionResidents;
+
+  it.each([
+    ['seedling-grove', 'sapling'],
+    ['lantern-orchard', 'fruit'],
+  ])('%s visitors wander its lawn and carry a %s home', (choice, carry) => {
+    const [sx, sz] = glade.positions[0];
+    const { lawn } = VALLEY_COMMISSION_GROUNDS[choice];
+    const list = residents(choice);
+    expect(list).toHaveLength(commissionVillagers(outcomes[choice]));
+    for (const resident of list) {
+      const laps = walks(resident.day).slice(1, -1);
+      expect(laps.length).toBeGreaterThanOrEqual(3);
+      for (const lap of laps)
+        for (const [x, , z] of lap.route.points)
+          expect(Math.hypot(x - sx, z - sz)).toBeLessThan(lawn);
+      const home = walks(resident.day).at(-1);
+      expect(pose(resident, home, 1).carry).toBe(carry);
+      expect(pose(resident, walks(resident.day)[0], 1).carry).toBe(null);
+    }
+  });
+
+  it('story tree children gather facing the tree and are drawn child-sized', () => {
+    const [sx, sz] = glade.positions[0];
+    const d = village('story-tree');
+    const list = d.commissionResidents;
+    expect(list).toHaveLength(commissionVillagers(outcomes['story-tree']));
+    for (const resident of list) {
+      const stand = resident.day.segments.find((segment) => segment.stand);
+      const place = pose(resident, stand, 10);
+      expect(place).toMatchObject({ visible: true, standing: true, walking: false });
+      expect(Math.cos(place.heading - Math.atan2(sx - place.x, sz - place.z))).toBeCloseTo(1, 6);
+      animateCommissionResident(d, resident, stand.start + 10 - resident.offset);
+      expect(resident.actor.root.scale.x).toBeCloseTo(0.68);
+    }
   });
 });
 

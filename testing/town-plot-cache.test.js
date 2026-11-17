@@ -585,3 +585,25 @@ it('sends townsfolk to a commission unveiled on the map, as a fresh village woul
   view.changeTown({ ...unveiled }, labels, 0, null);
   expect(view.commissionResidents).toEqual(residents);
 });
+
+it('hangs the Willowkin Glade’s icon once a commission elsewhere opens it, without a rebuild', () => {
+  const GLADE = AREA_BY_ID['willowkin-glade'];
+  const { view, town, labels } = commissionValley();
+  view.update(town, labels);
+  const glade = () => view.anchors.find((anchor) => anchor.site && anchor.id === GLADE.id);
+  expect(glade()).toBeUndefined();
+  const rebuild = vi.spyOn(view, 'update');
+  // A purchase on the Moon opens it; the valley's streets and plots stay as they were.
+  const conservatory = AREA_BY_ID['earthlight-conservatory'];
+  const greenhouse = { ...town, buildings: { ...town.buildings, earthlightGreenhouse: 3 } };
+  const opened = purchaseLandmark(greenhouse, {
+    id: conservatory.id,
+    slot: 0,
+    value: conservatory.choices[0],
+    ...landmarkOffer(greenhouse, conservatory, conservatory.choices[0]),
+  });
+  view.changeTown(opened, labels, 0, null, { instant: true });
+  while (view.tryActivatePlot() === false);
+  expect(rebuild).not.toHaveBeenCalled();
+  expect(glade()).toBeDefined();
+});

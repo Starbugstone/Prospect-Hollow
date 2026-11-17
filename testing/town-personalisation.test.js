@@ -48,6 +48,7 @@ import { villageAppearance } from '../src/services/publicVillage';
 import { useCampaignStore } from '../src/stores/campaignStore';
 import { HONOURS } from '../src/data/honours';
 import { addPerson } from '../src/game/town/TownPeople';
+import { openEverySite, openSite } from './helpers/siteOpening';
 
 const edit = (town, command, earned = []) =>
   personaliseTown(town, command, CREST_EMBLEM_IDS, earned);
@@ -95,11 +96,8 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-// A town that has finished whatever building a site waits for, on top of its era.
-const withOpening = (town, area) =>
-  area.opens
-    ? { ...town, buildings: { ...town.buildings, [area.opens.building]: area.opens.level } }
-    : town;
+// A town that has met whatever a site waits for, on top of its era.
+const withOpening = openSite;
 describe('Personalisation save and progression contract', () => {
   it('keeps a legacy town visually original and normalization idempotent', () => {
     const old = createTown();
@@ -456,8 +454,7 @@ describe('Personalisation rendering', () => {
   it('turns every site, open or built, so its monument fronts the declared direction', () => {
     const town = createTown();
     town.era = ERAS.at(-1).id;
-    for (const area of areasForSettlement())
-      if (area.opens) town.buildings[area.opens.building] = area.opens.level;
+    Object.assign(town, openEverySite(town, areasForSettlement()));
     const open = buildPersonalAreas(fixture(town), town);
     for (const area of areasForSettlement()) {
       town.personalisation.areas[area.id] = [area.choices.at(-1)];

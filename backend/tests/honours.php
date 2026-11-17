@@ -164,7 +164,7 @@ $adminAudit = 'honours-test-' . bin2hex(random_bytes(4));
 try {
     // ---------- Shared definitions ----------
     check(
-        $schema['honours']['version'] === 8 &&
+        $schema['honours']['version'] === 9 &&
             $schema['honours']['showcaseSlots'] === 3 &&
             $schema['honours']['counters'] === [
                 'gems' => 'map',
@@ -294,6 +294,31 @@ try {
         'visitors see the verified monument distinction',
     );
 
+    // Every commission sponsored: the server replays each purchase, the Glade opening from
+    // the Moon's, and verifies Commissioner's later ranks on their own five-site measure.
+    $f = flow('every commission sponsored, the Willowkin Glade opened from the Moon');
+    $base = $validator->accept($f->before, null, $f->serverNow, false, [], 'all-commissions');
+    $saved = $catalog->keep(
+        $validator->accept($f->after, $base, $f->serverNow, false, [], 'all-commissions'),
+        null,
+        $noSocial,
+    );
+    foreach (['bronze', 'silver', 'gold', 'diamond'] as $metal) {
+        check(
+            in_array('commissioner-' . $metal, $saved->honours->verified, true),
+            'five validated commissions verify Commissioner ' . $metal,
+        );
+    }
+    check(
+        $definitions['commissioner-gold']['measure'] ===
+            $definitions['commissioner-diamond']['measure'] &&
+            count($definitions['commissioner-gold']['measure']['areas']) === 5 &&
+            $definitions['commissioner-silver']['measure']['areas'] === [
+                'earthlight-conservatory',
+                'homecoming-commons',
+            ],
+        'Commissioner gold and diamond count all five 1.3.0 sites; silver keeps its shipped two',
+    );
     foreach ($schema['personalisation']['areas'] as $area) {
         // A site of an era still being built has no playable town, so no fixture yet.
         if (!$rules['eras'][$area['era']]['enabled']) {
@@ -327,13 +352,14 @@ try {
                 ),
             'a validated purchase at ' . $area['id'] . ' follows the shared site measure',
         );
-        // Commissions count for Commissioner alone, from the same validated purchase.
+        // Commissions count for Commissioner alone, from the same validated purchase. A site
+        // that waits for another commission is bought after a first stage at that one.
+        $bought = [$area['id'], ...array_slice($area['opens']['sites'] ?? [], 0, 1)];
         check(
             in_array('commissioner-bronze', $saved->honours->verified, true) ===
-                in_array(
-                    $area['id'],
+                (bool) array_intersect(
+                    $bought,
                     $definitions['commissioner-bronze']['measure']['areas'],
-                    true,
                 ),
             'a validated purchase at ' . $area['id'] . ' follows the commission measure',
         );
@@ -360,7 +386,7 @@ try {
     $findBefore['town']['helmetRun'] = 0;
     $findBefore = asObject($findBefore);
     $withHonours = function (object $profile): object {
-        $profile->honours ??= asObject(['version' => 8, 'earned' => (object) []]);
+        $profile->honours ??= asObject(['version' => 9, 'earned' => (object) []]);
         return $profile;
     };
     $findStart = $catalog->keep(
@@ -435,7 +461,7 @@ try {
         'schemaVersion' => 2,
         'town' => ['helmetRun' => 9, 'wanderersRun' => 9],
         'honours' => [
-            'version' => 8,
+            'version' => 9,
             'earned' => ['keen-eye-silver' => earnedEntry(), 'keen-eye-bronze' => earnedEntry()],
         ],
     ]);
@@ -462,7 +488,7 @@ try {
             'schemaVersion' => 2,
             'records' => $records,
             'integrity' => ['version' => 1, 'context' => ['honours' => replayed()]],
-            'honours' => ['version' => 8, 'earned' => (object) []],
+            'honours' => ['version' => 9, 'earned' => (object) []],
         ]);
         return $catalog->keep($profile, null, $noSocial)->honours->verified;
     };
@@ -1244,7 +1270,7 @@ try {
         check(
             str_contains(
                 $public->projection($odd, 'Odd', 'honours'),
-                '"honours":{"version":8,"earned":{},"showcase":[]}',
+                '"honours":{"version":9,"earned":{},"showcase":[]}',
             ),
             'garbage still projects an empty object',
         );

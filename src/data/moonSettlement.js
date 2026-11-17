@@ -687,6 +687,9 @@ export function moonPathDistance(x, z, approaches = defaultMoonApproaches()) {
 // A commission's door, on its raised pad. Every finished commission keeps its door here.
 export const MOON_COMMISSION_DOOR = 3.1;
 const commissionRoutes = new Map();
+/** The ring road a site's path joins: the outermost one inside the site, as a lot's. */
+export const moonSiteRing = ([x, z]) =>
+  MOON_ROADS.rings.filter((ring) => ring < Math.hypot(x, z)).at(-1) ?? MOON_RING_ROAD;
 /** The public path to a commission site's door, from the same route search as a lot's. */
 export function moonCommissionRoute(area) {
   if (!commissionRoutes.has(area.id)) {
@@ -700,6 +703,7 @@ export function moonCommissionRoute(area) {
         {
           pose: { x, z, rotation: siteYaw(area) },
           padRadius: MOON_SITE_PAD,
+          ring: moonSiteRing([x, z]),
           arrival: [
             [0, MOON_COMMISSION_DOOR],
             [0, 6],

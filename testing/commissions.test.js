@@ -51,10 +51,14 @@ import { buildingActionLabel, TOWN_ACTIONS } from '../src/data/townIndicators';
 import { buildingIndicators } from '../src/game/town/TownRules';
 import { monumentCast } from '../src/game/town/TownMonumentLife';
 import { townFauna } from '../src/data/townAnimals';
-import { eraEvolution } from '../src/data/eras';
+import { ERAS, eraEvolution } from '../src/data/eras';
 import { areasForSettlement } from '../src/data/townLandmarks';
 import schema from '../backend/content/public-schema.json';
 import { HONOURS, createHonours, evaluateHonours } from '../src/data/honours';
+import { commissionUse } from '../src/data/commissions';
+import { MOON_ROADS, moonSiteRing, moonSpokes } from '../src/data/moonSettlement';
+import { siteYaw } from '../src/data/townLandmarks';
+import { openSite } from './helpers/siteOpening';
 
 const area = AREA_BY_ID['earthlight-conservatory'];
 const commission = commissionFor(area.id);
@@ -266,11 +270,36 @@ describe('residents', () => {
   });
 });
 
-describe('the site and its art', () => {
-  it('reserves level ground clear of lots, ring, approaches and the saucer corridor', () => {
+const MOON_COMMISSION_AREAS = COMMISSIONS.map(({ site }) => AREA_BY_ID[site]).filter(
+  (site) => site.settlement === 'moon',
+);
+const VALLEY_COMMISSION_AREAS = COMMISSIONS.map(({ site }) => AREA_BY_ID[site]).filter(
+  (site) => site.settlement === 'valley',
+);
+// A town with the site's era and opening met, rich enough for every stage.
+const openTown = (site) => ({ ...openSite(town(), site), era: site.era });
+const buyAt = (value, site, choice = site.choices[0]) => {
+  const offer = landmarkOffer(value, site, choice);
+  return offer && purchaseLandmark(value, { id: site.id, slot: 0, value: choice, ...offer });
+};
+const finishAt = (value, site, level = 1) => {
+  while (!monumentWork(value, site).ready) value = advanceMonumentWorks(value);
+  return unveilLandmark(value, site.id, level);
+};
+
+describe.each(MOON_COMMISSION_AREAS)('the Moon site $id and its art', (area) => {
+  it('reserves level ground clear of lots, rings, approaches and the saucer corridor', () => {
     const [x, z] = area.positions[0];
     expect(Math.hypot(x, z) + area.radius).toBeLessThan(MOON_CRATER_RADIUS);
-    expect(Math.abs(Math.hypot(x, z) - MOON_RING_ROAD)).toBeGreaterThan(area.radius + 1);
+    for (const ring of MOON_ROADS.rings)
+      expect(Math.abs(Math.hypot(x, z) - ring)).toBeGreaterThan(area.radius + 1);
+    for (const spoke of moonSpokes())
+      expect(moonSegmentDistance(x, z, ...spoke)).toBeGreaterThan(area.radius + 1);
+    for (const other of areasForSettlement('moon').filter((site) => site !== area))
+      expect(
+        Math.hypot(other.positions[0][0] - x, other.positions[0][1] - z),
+        other.id,
+      ).toBeGreaterThan(area.radius + other.radius + 2);
     for (const [id, [px, pz]] of Object.entries(MOON_LOTS))
       expect(Math.hypot(px - x, pz - z), id).toBeGreaterThan(area.radius + MOON_LOT_RADIUS + 1);
     for (const route of moonApproaches())
@@ -286,10 +315,76 @@ describe('the site and its art', () => {
         if (Math.hypot(dx, dz) <= 7) expect(moonHeight(x + dx, z + dz)).toBeCloseTo(0, 7);
   });
 
+  it('walks a public path from its door to the nearest ring road inside it, off every lot', () => {
+    const route = moonCommissionRoute(area);
+    const [x, z] = area.positions[0];
+    expect(route.clear).toBe(true);
+    const door = moonHatch(route);
+    const yaw = siteYaw(area);
+    expect(door[0]).toBeCloseTo(x + Math.sin(yaw) * MOON_COMMISSION_DOOR);
+    expect(door[2]).toBeCloseTo(z + Math.cos(yaw) * MOON_COMMISSION_DOOR);
+    const end = route.points.at(-1);
+    expect(Math.hypot(end[0], end[1])).toBeCloseTo(moonSiteRing(area.positions[0]));
+    expect(route.ring).toBe(moonSiteRing(area.positions[0]));
+    for (const [id, [lx, lz]] of Object.entries(MOON_LOTS))
+      for (let n = 1; n < route.points.length; n++)
+        expect(
+          moonSegmentDistance(lx, lz, route.points[n - 1], route.points[n]),
+          id,
+        ).toBeGreaterThan(MOON_LOT_RADIUS);
+  });
+
+  it('opens with its building level in its era, and never before', () => {
+    const { building, level } = area.opens;
+    const at = (value) => ({
+      ...town(),
+      era: area.era,
+      buildings: { ...town().buildings, [building]: value },
+    });
+    expect(areaUnlocked(at(level - 1), area)).toBe(false);
+    expect(landmarkOffer(at(level - 1), area, area.choices[0])).toBeNull();
+    expect(areaUnlocked(at(level), area)).toBe(true);
+    const before = ERAS[ERAS.findIndex(({ id }) => id === area.era) - 1].id;
+    expect(areaUnlocked({ ...at(level), era: before }, area)).toBe(false);
+    expect(moonLetters(at(level - 1)).map(({ id }) => id)).not.toContain(`${area.id}-request`);
+    expect(moonLetters(at(level)).map(({ id }) => id)).toContain(`${area.id}-request`);
+    expect(schema.personalisation.areas.find(({ id }) => id === area.id)).toEqual(area);
+  });
+
+  it.each(area.choices)(
+    '%s sends the residents its outcome promises, carrying its item',
+    (choice) => {
+      const value = finishAt(buyAt(openTown(area), area, choice), area);
+      const venue = moonCommissionVenues(value).find(({ id }) => id === area.id);
+      const outcome = commissionFor(area.id).outcomes[choice];
+      const use = commissionUse(outcome);
+      expect(venue).toMatchObject({ visits: outcome.visits, use });
+      for (const [kind, home] of [
+        ['settler', null],
+        ['willowkin', 'willowkinDome'],
+      ]) {
+        const { segments } = moonSettlerPlan(value.buildings, 1, home, [venue], kind);
+        const trips = outcome.visits[kind];
+        if (use.stay === 'enter')
+          expect(
+            segments.filter(({ inside }) => inside === area.id),
+            kind,
+          ).toHaveLength(trips);
+        else
+          expect(segments.filter(({ stand }) => stand).length, kind).toBeGreaterThanOrEqual(trips);
+        expect(
+          segments.filter(({ carry }) => carry && carry === use.carry),
+          kind,
+        ).toHaveLength(use.carry ? trips : 0);
+      }
+    },
+  );
+
   it('stands on the shared octagonal pad in every state, raised to its walkers', () => {
     const parcel = moonParcels().find(({ id }) => id === area.id);
     expect(parcel).toMatchObject({ kind: 'site', radius: MOON_SITE_PAD, sides: MOON_PARCEL_SIDES });
-    for (const value of [town(), buy(town()), finish(buy(town()), 1)]) {
+    const open = openTown(area);
+    for (const value of [open, buyAt(open, area), finishAt(buyAt(open, area), area)]) {
       const d = fixture(value);
       const mesh = vi.spyOn(d, 'mesh');
       buildMoonMonuments(d, d.scene, value);
@@ -365,7 +460,6 @@ describe('the letters', () => {
 
 describe('the valley commission', () => {
   const site = AREA_BY_ID['homecoming-commons'];
-  const entry = commissionFor(site.id);
   const valley = (hall = 3) => {
     const base = createTown();
     return {
@@ -375,15 +469,6 @@ describe('the valley commission', () => {
       buildings: { ...base.buildings, homecomingHall: hall },
     };
   };
-  const buyHere = (value, choice = site.choices[0]) => {
-    const offer = landmarkOffer(value, site, choice);
-    return offer && purchaseLandmark(value, { id: site.id, slot: 0, value: choice, ...offer });
-  };
-  const finishHere = (value, level = 1) => {
-    while (!monumentWork(value, site).ready) value = advanceMonumentWorks(value);
-    return unveilLandmark(value, site.id, level);
-  };
-
   it('stands in the valley and opens with the finished homecoming hall', () => {
     expect(areasForSettlement()).toContain(site);
     expect(areaUnlocked(valley(2), site)).toBe(false);
@@ -395,17 +480,28 @@ describe('the valley commission', () => {
     // Valley letters never appear among New Hollow's.
     expect(moonLetters(valley(3)).map(({ id }) => id)).not.toContain(`${site.id}-request`);
   });
+});
 
+describe.each(VALLEY_COMMISSION_AREAS)('the valley site $id and its art', (site) => {
+  const entry = commissionFor(site.id);
   it.each(site.choices)('%s draws the visitors its outcome promises', (choice) => {
-    const open = valley();
+    const open = openTown(site);
     const fauna = townFauna(eraEvolution(open.era));
     const before = monumentCast(open, fauna).filter(({ area }) => area === site).length;
-    const value = finishHere(buyHere(open, choice));
+    const value = finishAt(buyAt(open, site, choice), site);
     const cast = monumentCast(value, fauna).filter(({ area }) => area === site);
     const { resident, wild } = entry.outcomes[choice].visits;
     const expected = wild + (fauna.companions?.species ? resident : 0);
     expect(cast.length - before).toBeLessThanOrEqual(expected);
+    expect(cast.length - before).toBeGreaterThan(0);
     expect(new Set(cast.map(({ seed }) => seed)).size).toBe(cast.length);
+  });
+
+  it.each(site.choices)('%s has fallback art that changes with its stage', async (choice) => {
+    const stages = await Promise.all(
+      [1, 2, 3, 4, 5].map((stage) => render(TownLandmarkPreview, { choice, stage })),
+    );
+    expect(new Set(stages).size).toBe(5);
   });
 
   it.each(site.choices)('%s stays within budget at every stage', (choice) => {
@@ -426,8 +522,107 @@ describe('the valley commission', () => {
   });
 });
 
+describe('the third commission', () => {
+  const glade = AREA_BY_ID['willowkin-glade'];
+  const conservatory = area,
+    commons = AREA_BY_ID['homecoming-commons'];
+  // A Twin Hollows town where both earlier commissions are open and neither is chosen.
+  const both = () => ({ ...town(), buildings: { ...town().buildings, homecomingHall: 3 } });
+  const open = (value) => areaUnlocked(value, glade);
+
+  it('waits for either of the first two commissions, read from the exported catalog', () => {
+    expect(glade).toMatchObject({ era: 'twin-hollows', settlement: 'valley' });
+    expect(glade.opens).toEqual({ sites: [conservatory.id, commons.id], level: 1 });
+    expect(schema.personalisation.areas.find(({ id }) => id === glade.id)).toEqual(glade);
+    expect(open(both())).toBe(false);
+    expect(landmarkOffer(both(), glade, glade.choices[0])).toBeNull();
+    expect(commissionLetters(both(), 'valley').map(({ id }) => id)).not.toContain(
+      `${glade.id}-request`,
+    );
+    expect(monumentStatus(both(), glade.id, { context: 'card' }).text).toBe(
+      'Opens after another commission',
+    );
+  });
+
+  // Every order a player can take: Moon first, valley first, both, and each interleaved
+  // with building, unveiling and further stages. The Glade opens with the first paid stage
+  // anywhere and never closes again.
+  const steps = {
+    moon: (value) => buyAt(value, conservatory),
+    valley: (value) => buyAt(value, commons),
+    puzzle: (value) => advanceMonumentWorks(value),
+    unveil: (value) => {
+      for (const site of [conservatory, commons]) {
+        const work = monumentWork(value, site);
+        if (work?.ready) value = unveilLandmark(value, site.id, work.level);
+      }
+      return value;
+    },
+  };
+  const orders = [[]];
+  for (let length = 0; length < 4; length++)
+    for (const order of orders.filter((entry) => entry.length === length))
+      for (const step of Object.keys(steps)) orders.push([...order, step]);
+  it.each(orders.filter((order) => order.length === 4).map((order) => [order.join(' → '), order]))(
+    'opens and stays open: %s',
+    (_, order) => {
+      let value = both(),
+        wasOpen = false;
+      for (const step of order) {
+        value = steps[step](value) ?? value;
+        const bought = [conservatory, commons].some((site) => areaChoice(value, site));
+        expect(open(value), step).toBe(bought);
+        if (wasOpen) expect(open(value), `${step} closed it`).toBe(true);
+        wasOpen = open(value);
+        // It never gates either earlier commission.
+        for (const site of [conservatory, commons]) expect(areaUnlocked(value, site)).toBe(true);
+      }
+    },
+  );
+
+  it('opens for a Moon-first player who has not reached the homecoming hall', () => {
+    const moonFirst = buyAt(town(), conservatory);
+    expect(areaUnlocked(moonFirst, commons)).toBe(false);
+    expect(open(moonFirst)).toBe(true);
+    expect(commissionLetters(moonFirst, 'valley').map(({ id }) => id)).toEqual([
+      `${glade.id}-request`,
+    ]);
+    const valleyFirst = buyAt(
+      { ...both(), buildings: { ...both().buildings, earthlightGreenhouse: 2 } },
+      commons,
+    );
+    expect(areaUnlocked(valleyFirst, conservatory)).toBe(false);
+    expect(open(valleyFirst)).toBe(true);
+  });
+
+  it('fails closed on a saved choice this build does not know, or an unknown opening', () => {
+    const value = buyAt(both(), conservatory);
+    value.personalisation.areas[conservatory.id] = ['retired-design'];
+    expect(open(value)).toBe(false);
+    expect(areaUnlocked(value, { ...glade, opens: { level: 1 } })).toBe(false);
+    expect(areaUnlocked(value, { ...glade, opens: { sites: ['no-such-site'], level: 1 } })).toBe(
+      false,
+    );
+    expect(
+      areaUnlocked(buyAt(both(), commons), { ...glade, opens: { sites: [commons.id], level: 2 } }),
+    ).toBe(false);
+  });
+
+  it.each(glade.choices)('%s builds on the shared 2M schedule as a permanent choice', (choice) => {
+    let value = buyAt(both(), commons);
+    const coins = value.coins;
+    for (let level = 1; level <= 5; level++) {
+      value = finishAt(buyAt(value, glade, choice), glade, level);
+      expect(coins - value.coins).toBe(level * 400000);
+      for (const other of glade.choices.filter((id) => id !== choice))
+        expect(buyAt(value, glade, other)).toBeNull();
+    }
+    expect(landmarkOffer(value, glade, choice)).toBeNull();
+  });
+});
+
 describe('seeing a commission', () => {
-  const status = (value) => commissionStatus(value)[0];
+  const status = (value) => commissionStatus(value).find(({ site }) => site === area.id);
 
   it('is silent until a commission opens', () => {
     expect(commissionStatus(town(2))).toEqual([]);
@@ -447,15 +642,20 @@ describe('seeing a commission', () => {
     value = unveilLandmark(value, area.id, 1);
     expect(status(value)).toMatchObject({ state: 'funding', done: 1, total: 5 });
     for (let level = 2; level <= 5; level++) value = finish(buy(value), level);
-    expect(commissionStatus(value)).toEqual([]);
+    expect(status(value)).toBeUndefined();
   });
 
-  it('puts what needs the player first when two are open', () => {
+  it('puts what needs the player first when several are open', () => {
     const value = {
       ...buy(town()),
       buildings: { ...buy(town()).buildings, homecomingHall: 3 },
     };
-    expect(commissionStatus(value).map(({ state }) => state)).toEqual(['request', 'work']);
+    // The paid conservatory also opened the Willowkin Glade.
+    expect(commissionStatus(value).map(({ site, state }) => [site, state])).toEqual([
+      ['homecoming-commons', 'request'],
+      ['willowkin-glade', 'request'],
+      [area.id, 'work'],
+    ]);
   });
 
   it('hangs a letter over a site awaiting a choice, and then takes it down', () => {

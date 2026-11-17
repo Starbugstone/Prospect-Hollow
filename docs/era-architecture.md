@@ -1127,6 +1127,13 @@ Coin and moonstone payments are implemented through the shared currency contract
 and `TownPersonalisation::purchase`. Moonstone Garden and Moonrock Court use
 moonstones; Earthrise Plaza uses coins. Unsupported currencies fail closed.
 Regenerate public content after adding sites, IDs, prices or currency metadata.
+
+A site's `opens` is the one opening contract beyond its era, evaluated by `areaOpensMet()` and
+mirrored by `TownPersonalisation::opens` from the exported catalog: `{ building, level }` waits
+for a finished building level, `{ sites, level }` for a stage paid at any listed site (the
+Willowkin Glade waits for either earlier commission). Both read values that only rise, so a site
+never closes, and an unknown kind stays closed on both sides. A new kind is added to both
+functions and to `testing/helpers/siteOpening.js`, which every test that opens all sites uses.
 `testing/moon-monument.test.js` checks the lunar layout, the shared lifecycle,
 price export, fallback art, unsupported-currency rejection, geometry budgets and
 Moon camera restoration. `testing/moonstone-monuments.test.js` covers the

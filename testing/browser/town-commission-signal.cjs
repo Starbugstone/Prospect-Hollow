@@ -1,5 +1,6 @@
 // A player can see a commission from the moment it arrives until it stands, in the real game
-// at desktop and phone sizes, in English and French. One real puzzle is won on the way. Needs `npm run demo:eras` first, then the
+// at desktop and phone sizes, in English and French, with all five commissions open (a New
+// Hollow Rising town; the Willowkin Glade opens with the first one chosen). One real puzzle is won on the way. Needs `npm run demo:eras` first, then the
 // Docker Vite/Playwright setup of moon-input.cjs. PH_SCREENSHOT_DIR saves captures.
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -34,7 +35,7 @@ async function openTown(browser, viewport) {
     const { createSaveFile } = await import('/src/services/saveTransfer.js');
     const pinia = document.querySelector('#app').__vue_app__.config.globalProperties.$pinia;
     const campaign = pinia._s.get('campaign');
-    const profile = await (await fetch('/output/era-demo/twin-hollows-complete.json')).json();
+    const profile = await (await fetch('/output/era-demo/hollow-rising-complete.json')).json();
     profile.town.coins = 1e7;
     campaign.importSave(createSaveFile({ ...campaign.profile(), ...profile }));
     window.campaign = campaign;
@@ -122,13 +123,18 @@ const state = (page, expected) =>
   page.locator(`${PILL}[data-commission-state="${expected}"]`).waitFor({ timeout: 20000 });
 async function assertPillClear(page, viewport, label) {
   // An honours toast slides over the foot of the map for a few seconds; a player closes it
-  // or waits. The layout below is what stays on screen.
-  for (const close of await page.locator('.honour-toast-close').all())
-    await close.click().catch(() => {});
-  await page
-    .locator('.honour-toast')
-    .waitFor({ state: 'detached', timeout: 15000 })
-    .catch(() => {});
+  // or waits. Several commissions bought in a row earn several ranks, so another may follow.
+  // The layout below is what stays on screen.
+  for (let toasts = 0; toasts < 6; toasts++) {
+    for (const close of await page.locator('.honour-toast-close').all())
+      await close.click().catch(() => {});
+    await page
+      .locator('.honour-toast')
+      .waitFor({ state: 'detached', timeout: 15000 })
+      .catch(() => {});
+    await page.waitForTimeout(800);
+    if (!(await page.locator('.honour-toast').count())) break;
+  }
   const box = await page.locator(PILL).boundingBox();
   assert.ok(box.x >= 0 && box.x + box.width <= viewport.width, `${label}: within the width`);
   assert.ok(box.height >= 44, `${label}: large enough to tap`);
@@ -188,11 +194,24 @@ async function run(browser, viewport, name) {
 
   // The Moon's letter hangs over its site, and tapping it opens the same request.
   await page.waitForFunction(() => document.querySelector('.moon-view, [data-moon-action]'));
-  const letter = page.locator('[data-moon-action="earthlight-conservatory"]').first();
-  await letter.waitFor();
-  await letter.click();
-  await page.locator('[data-commission-request]').waitFor();
-  await closeDialog(page);
+  for (const site of ['earthlight-conservatory', 'schoolyard-court', 'crew-yard']) {
+    // The outer ring's front sites lie behind the overview camera: the player turns the view
+    // toward the site, as the camera gestures do, before tapping its letter.
+    await page.evaluate(async (site) => {
+      const { AREA_BY_ID } = await import('/src/data/townLandmarks.js');
+      const moon = document.querySelector('.town-moon-view').__vueParentComponent.setupState.scene;
+      const [x, z] = AREA_BY_ID[site].positions[0];
+      moon.controls.target.set(x, 0, z);
+      moon.camera.position.set(x + 4, 22, z + (z > 0 ? -26 : 26));
+      moon.controls.update();
+    }, site);
+    const letter = page.locator(`[data-moon-action="${site}"]`).first();
+    await letter.waitFor();
+    await letter.click();
+    await page.locator('[data-commission-request]').waitFor();
+    if (site !== 'earthlight-conservatory') await save(page, `${name}-letter-${site}`);
+    await closeDialog(page);
+  }
   await page.evaluate(async () => {
     const { locale, loadFrench } = await import('/src/i18n/index.js');
     await loadFrench();
@@ -205,11 +224,20 @@ async function run(browser, viewport, name) {
     locale.value = 'en';
   });
 
-  // Choosing it takes the letter down and starts the progress; the other waits behind it.
-  await choose(page, 'earthlight-conservatory', 'Earthlight Bakehouse');
-  await state(page, 'request');
-  await choose(page, 'homecoming-commons', 'Homecoming Bandstand');
-  await state(page, 'work');
+  // Choosing one takes its letter down and starts the progress; the others wait behind it,
+  // and the first choice opens the Willowkin Glade.
+  const choices = [
+    ['earthlight-conservatory', 'Earthlight Bakehouse'],
+    ['homecoming-commons', 'Homecoming Bandstand'],
+    ['willowkin-glade', 'Story Tree'],
+    ['schoolyard-court', 'Lamplit Library'],
+    ['crew-yard', 'Little Rover Track'],
+  ];
+  for (const [n, [site, design]] of choices.entries()) {
+    await choose(page, site, design);
+    await state(page, n < choices.length - 1 ? 'request' : 'work');
+    if (!n) await save(page, `${name}-glade-request`);
+  }
   await page
     .locator(`${PILL} progress`)
     .waitFor({ state: viewport.width < 600 ? 'attached' : 'visible' });
@@ -240,9 +268,11 @@ async function run(browser, viewport, name) {
   await save(page, `${name}-ready`);
 
   // Unveiled, each commission has four more stages to pay for: the pill counts them.
-  await finishWork(page, 'homecoming-commons');
-  await unveil(page);
-  await state(page, 'ready');
+  for (const [site] of choices.slice(1)) await finishWork(page, site);
+  for (let n = 1; n < choices.length; n++) {
+    await unveil(page);
+    await state(page, 'ready');
+  }
   await unveil(page);
   await state(page, 'funding');
   assert.equal(await count(page), '1/5', `${name}: one stage of five stands`);
@@ -258,7 +288,9 @@ async function run(browser, viewport, name) {
   try {
     await run(browser, { width: 1440, height: 900 }, 'desktop');
     await run(browser, { width: 375, height: 740 }, 'phone');
-    console.log('The commission signal is clear on desktop and phone, in English and French.');
+    console.log(
+      'The commission signal is clear on desktop and phone, in English and French, with five commissions.',
+    );
   } finally {
     await browser.close();
   }
