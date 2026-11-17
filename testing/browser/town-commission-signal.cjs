@@ -123,13 +123,18 @@ const state = (page, expected) =>
   page.locator(`${PILL}[data-commission-state="${expected}"]`).waitFor({ timeout: 20000 });
 async function assertPillClear(page, viewport, label) {
   // An honours toast slides over the foot of the map for a few seconds; a player closes it
-  // or waits. The layout below is what stays on screen.
-  for (const close of await page.locator('.honour-toast-close').all())
-    await close.click().catch(() => {});
-  await page
-    .locator('.honour-toast')
-    .waitFor({ state: 'detached', timeout: 15000 })
-    .catch(() => {});
+  // or waits. Several commissions bought in a row earn several ranks, so another may follow.
+  // The layout below is what stays on screen.
+  for (let toasts = 0; toasts < 6; toasts++) {
+    for (const close of await page.locator('.honour-toast-close').all())
+      await close.click().catch(() => {});
+    await page
+      .locator('.honour-toast')
+      .waitFor({ state: 'detached', timeout: 15000 })
+      .catch(() => {});
+    await page.waitForTimeout(800);
+    if (!(await page.locator('.honour-toast').count())) break;
+  }
   const box = await page.locator(PILL).boundingBox();
   assert.ok(box.x >= 0 && box.x + box.width <= viewport.width, `${label}: within the width`);
   assert.ok(box.height >= 44, `${label}: large enough to tap`);
@@ -190,6 +195,16 @@ async function run(browser, viewport, name) {
   // The Moon's letter hangs over its site, and tapping it opens the same request.
   await page.waitForFunction(() => document.querySelector('.moon-view, [data-moon-action]'));
   for (const site of ['earthlight-conservatory', 'schoolyard-court', 'crew-yard']) {
+    // The outer ring's front sites lie behind the overview camera: the player turns the view
+    // toward the site, as the camera gestures do, before tapping its letter.
+    await page.evaluate(async (site) => {
+      const { AREA_BY_ID } = await import('/src/data/townLandmarks.js');
+      const moon = document.querySelector('.town-moon-view').__vueParentComponent.setupState.scene;
+      const [x, z] = AREA_BY_ID[site].positions[0];
+      moon.controls.target.set(x, 0, z);
+      moon.camera.position.set(x + 4, 22, z + (z > 0 ? -26 : 26));
+      moon.controls.update();
+    }, site);
     const letter = page.locator(`[data-moon-action="${site}"]`).first();
     await letter.waitFor();
     await letter.click();
