@@ -92,11 +92,18 @@ export function buildingStatus(
   return status;
 }
 
-// The finished building a site waits for, in the words of its locked messages.
-export const monumentOpening = ({ opens }) => ({
-  building: t(BUILDING_BY_ID[opens.building].shortName),
-  level: opens.level,
-});
+// What a site waits for, in the words of its locked messages: a finished building
+// (`building`, `level`) or a commission at one of several sites (`sites`).
+export const monumentOpening = ({ opens }) =>
+  opens?.sites
+    ? {
+        sites: opens.sites
+          .map((id) => AREA_BY_ID[id])
+          .filter(Boolean)
+          .map((area) => t(area.label))
+          .join(t(' or ')),
+      }
+    : { building: t(BUILDING_BY_ID[opens.building].shortName), level: opens.level };
 // A monument site's state, highest priority first.
 function monumentState(town, area) {
   if (!areaUnlocked(town, area)) return 'locked';
@@ -120,9 +127,11 @@ const MONUMENT = {
   },
   card: {
     locked: (town, area) =>
-      area.opens
-        ? t('Opens at {building} level {level}', monumentOpening(area))
-        : t('Opens in {era}', { era: t(ERA_BY_ID[area.era].label) }),
+      area.opens?.sites
+        ? t('Opens after another commission')
+        : area.opens
+          ? t('Opens at {building} level {level}', monumentOpening(area))
+          : t('Opens in {era}', { era: t(ERA_BY_ID[area.era].label) }),
     open: (town, area) => t(commissionFor(area.id) ? 'New commission' : 'Open site · optional'),
     work: () => t('Under construction'),
     ready: () => t('Ready to unveil'),

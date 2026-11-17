@@ -339,7 +339,8 @@ Screenshots (a seeded mid-campaign town in the dev build, 2026-10-05):
   earned-coin field exists. Inventory powers remain covered by Master Quartermaster.
 - Every monument site needs a named landmark measure, a fixed-list landmarks measure or
   `NON_MONUMENT_HONOURS` decision (currently Voyagers' Court). Every commission must count toward
-  a Commissioner rank (`testing/commissions.test.js`).
+  a Commissioner rank (`testing/commissions.test.js`); a later commission joins a later rank's own
+  site list, never a shipped one.
 - Every hidden find (`src/data/hiddenFinds.js`) needs a `found` measure or a `NON_FIND_HONOURS`
   decision.
 - Every rank must match `testing/fixtures/shipped-honour-ranks.json`.
@@ -893,3 +894,54 @@ the lanterns and cores, because those visits are extra play on the same boards. 
 Prospector arrives on its three levels in every seed. Twin Hollows now begins at runs 877–908,
 so Keen Eye's silver (the pair's debut) moves from 973 to 948; Commissioner barely moves. No
 level data, star target or reward changed, so `npm run test:levels` was not needed.
+
+## Release 1.3.0: honours generation 9 (2026-11-17)
+
+The last three commissions of 1.3.0 landed: the Willowkin Glade in the valley (it opens once the
+Earthlight Conservatory or the Homecoming Commons is commissioned) and, on New Hollow Rising's
+outer ring, Schoolyard Court (Crater School 3) and Crew Yard (Expedition Garage 3). Each costs 2M
+coins in five stages, like the first two.
+
+| Rank ID              | Metal   | Goal | Measure                                                                      |
+| -------------------- | ------- | ---: | ---------------------------------------------------------------------------- |
+| commissioner-bronze  | Bronze  |    1 | Unchanged: `earthlight-conservatory`, `homecoming-commons`                   |
+| commissioner-silver  | Silver  |    2 | Unchanged: same                                                              |
+| commissioner-gold    | Gold    |    3 | landmarks: the two above, `willowkin-glade`, `schoolyard-court`, `crew-yard` |
+| commissioner-diamond | Diamond |    5 | same                                                                         |
+
+`HONOURS_VERSION` rises from 8 to 9 and both new ranks have `since: 9` and requirement version 1,
+so a save that already sponsored three commissions catches up once and shows Commissioner's new
+rank as new. The five sites are `COMMISSION_HONOUR_SITES_1_3`, fixed like the shipped pair: a
+commission added later gets a later rank whose own list names it. The server needed no new code:
+`Honours.php` already evaluates `landmarks` from each rank's exported area list, and
+`backend/tests/honours.php` replays a flow that sponsors all five (the Glade opened from the
+Moon's purchase) and verifies all four ranks from the server's own replay.
+
+**Why gold 3 and diamond 5.** Three is the plan's gold: one more than the shipped pair. Five is
+every 1.3.0 commission. Bronze and silver keep their shipped two-site list, so two quirks follow,
+both accepted rather than changing shipped ranks: a player who sponsors only Moon commissions
+first earns no bronze until the Conservatory or the Commons, and a player with three commissions
+but not both shipped ones holds gold without silver. Silver arrives with the missing one.
+
+Considered and rejected: a new Commissioner family for the later sites (one ladder is clearer,
+and Commissioner already reads "{goal} commissions sponsored"), and a rank per settlement
+(the valley and the Moon share one count by design).
+
+**Calibration.** Same method as generation 8 on this branch: seeds 1–3, all 606 levels,
+20-move continuous visits, the mining-only town that buys recommended progression first and
+then one foundation per open site as funds allow. Measurements in `output/honours-1-3-gen9/`
+(git-ignored).
+
+| Family       | Goals B / S / G / D | Normal only                                                               | +1 continuous visit / level | +3 continuous visits / level |
+| ------------ | ------------------- | ------------------------------------------------------------------------- | --------------------------- | ---------------------------- |
+| Commissioner | 1 / 2 / 3 / 5       | 1026 (1024–1044) / 1034 (1032–1052) / 1044 (1042–1060) / 1057 (1056–1074) | 1026 / 1033 / 1043 / 1057   | 1026 / 1033 / 1043 / 1057    |
+
+Twin Hollows began at runs 877–908 as before, and Keen Eye's silver stayed at 948 (944–971).
+Bronze and silver did not move.
+
+**Assessment.** Gold comes about ten runs after silver and diamond thirteen after gold, at the
+same coin pace as the first two: each first stage is 400,000 coins, about five boards of late
+mining. The model buys every required Moon building first, so in it the Moon commissions open
+with the last New Hollow Rising buildings and all five first stages fall in the endgame; a player
+who prefers a commission to the next building reaches gold sooner. Continuous visits change
+nothing, as before, because a stage is paid in mine coins.

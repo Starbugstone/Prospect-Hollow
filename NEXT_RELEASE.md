@@ -378,17 +378,20 @@ since Canopy and have never yet asked for anything.
 
 ### Tasks
 
-- [ ] Choose a site. `[14, -102]` and `[-4, -102]` look clear on distance alone. The layout, fog and
-      road tests have the final say, as they caught the first valley position
-- [ ] Add an `opens` kind that waits for another commission, such as `{ site, level: 1 }`, on client
-      and server (`areaUnlocked`, `TownPersonalisation::purchase`). It must never close once open, so
-      read the bought level, which only rises
-- [ ] Open the third commission after either of the first two stands, so a Moon-first and a
-      valley-first player both reach it
-- [ ] Add the site, designs, art and fallback previews, on the same 2M schedule
-- [ ] Add the letters and French text
-- [ ] Add the honours decision, regenerate the catalogs and extend `testing/commissions.test.js`
-- [ ] Run `testing/browser/town-commission-signal.cjs` with three commissions open
+- [x] Site `[14, -102]`, behind Riverlight Court: the layout, fog, road and valley-parcel tests
+      pass there. Named **the Willowkin Glade**, not "Commons": two valley commissions both
+      labelled "… Commons" would be told apart only by their first word on a phone label
+- [x] An `opens` kind that waits for other sites, `{ sites, level }`, on client
+      (`areaOpensMet`) and server (`TownPersonalisation::opens`), read from the exported
+      catalog. It reads the bought level, which only rises, so the site never closes
+- [x] It opens after either of the first two: `testing/commissions.test.js` plays every order of
+      four steps (Moon purchase, valley purchase, a puzzle, an unveiling) and the server test
+      every order of the two purchases
+- [x] Site, designs, 3D and SVG art at every stage, on the same 2M schedule
+- [x] Letters and French text
+- [x] Honours decision (Commissioner gold and diamond, generation 9), catalogs regenerated,
+      `testing/commissions.test.js` extended
+- [x] `testing/browser/town-commission-signal.cjs` runs with all five commissions open
 
 ### Residents using the result
 
@@ -397,8 +400,8 @@ says what residents do there, read through `commissionUse` on both maps (`TownCo
 `TownCommissionResidents.js`, `MoonSettlers.js`). A third commission adds its own `use`, or its visitors
 gather at the front.
 
-- [ ] Valley streets end about 40 units short of the Commons, so villagers cross the open field for the
-      last stretch. `AGENTS.md` asks for public paths: a footpath to the site is the proposed fix
+- [x] Valley streets end about 40 units short of the Commons, so villagers crossed the open field
+      for the last stretch. Both valley commissions now have a footpath (`SITE_FOOTPATHS`)
 - [x] The Bandstand audience stays capped at 4 (`MAX_COMMISSION_VILLAGERS`), children at 0.68 scale,
       and Moon outcomes differ only in what settlers carry (owner, 11 November 2026)
 
@@ -413,8 +416,9 @@ rejected ideas and the calibration are in
 
 - [x] **Commissioner** on the existing `landmarks` measure over the two commission sites:
       bronze 1, silver 2 commissions sponsored. The sites left `NON_MONUMENT_HONOURS`
-- [ ] Commissioner gold, 3: append it with step 4, with its own measure over all three sites (the
-      shipped list can't gain the third site). `testing/commissions.test.js` fails until every
+- [x] Commissioner gold 3 and diamond 5 on their own measure over all five 1.3.0 commission sites
+      (the shipped list can't gain them), `HONOURS_VERSION` 9, `since: 9`; calibrated at runs 1044
+      and 1057 (docs/honours.md, generation 9). `testing/commissions.test.js` fails until every
       commission counts toward a Commissioner rank
 - [x] **Keen Eye**: find 1, then both, of the space helmet and the wandering pair in your own
       town. New `found` measure on client and server, read from the replay-protected `XRun` fields

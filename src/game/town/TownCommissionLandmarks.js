@@ -1,7 +1,14 @@
 // Valley commissions stand on the shared monument pedestal, inside its flanking pavilions,
 // colonnade and crown, so each outcome adds only its own centrepiece. Every stage adds
 // something of its own and each form moves from the shared animation stage on.
-export const VALLEY_COMMISSION_FORMS = ['story-hall', 'bandstand', 'wild-meadow'];
+export const VALLEY_COMMISSION_FORMS = [
+  'story-hall',
+  'bandstand',
+  'wild-meadow',
+  'seedling-grove',
+  'lantern-orchard',
+  'story-tree',
+];
 const FLOOR = 0.6,
   TIMBER = '#8a6a4a',
   CREAM = '#f4ead5',
@@ -9,7 +16,9 @@ const FLOOR = 0.6,
   GOLD = '#edc66e',
   LEAF = '#6f9a4d',
   PETAL = '#e6a9b5',
-  WATER = '#8cc4d8';
+  WATER = '#8cc4d8',
+  SOIL = '#6b5038',
+  LANTERN = '#f2b65a';
 
 function buildStoryHall(d, g, o, tier, move) {
   const height = 2.2 + tier * 0.3;
@@ -127,6 +136,193 @@ function buildMeadow(d, g, o, tier, move) {
     for (const x of [-0.9, 0.9]) d.rod(sign, [x, FLOOR, 0], [x, FLOOR + 1.25, 0], 0.06, TIMBER);
   }
 }
+// The Willowkin Glade's outcomes share a lawn walkers step onto, as the meadow's.
+function gladeLawn(d, g, colour) {
+  d.mesh(g, 'cylinder', [3.9, 0.12, 3.9], [0, FLOOR + 0.06, 0], colour);
+}
+// A young tree: a thin stem and a small round crown.
+function sapling(d, g, x, z, height, leaf) {
+  d.rod(g, [x, FLOOR + 0.3, z], [x, FLOOR + 0.3 + height, z], 0.04, TIMBER);
+  return d.ball(g, x, FLOOR + 0.35 + height, z, [0.22, 0.24, 0.22], leaf, 'rock');
+}
+// Raised beds of seedlings, a row more at each stage, with aisles the Willowkin walk.
+const GROVE_BEDS = [-2.6, -0.9, 2.9];
+function buildSeedlingGrove(d, g, o, tier, move) {
+  gladeLawn(d, g, LEAF);
+  for (const [b, x] of GROVE_BEDS.slice(0, tier >= 2 ? 3 : 2).entries()) {
+    d.box(g, 0.8, 0.3, 3.4, x, FLOOR + 0.27, -0.3, TIMBER);
+    d.box(g, 0.66, 0.06, 3.26, x, FLOOR + 0.43, -0.3, SOIL);
+    const count = 3 + Math.min(tier, 3);
+    for (let n = 0; n < count; n++) {
+      const z = -1.8 + (n * 3) / (count - 1);
+      const tree = sapling(
+        d,
+        g,
+        x,
+        z,
+        0.35 + ((n + b) % 3) * 0.12 + tier * 0.05,
+        b % 2 ? o.colour : LEAF,
+      );
+      if (n % 2 === b % 2) move(tree, 'pulse', 'y', 0.6, 0.05, n + b);
+    }
+  }
+  // A potting bench at the back.
+  d.box(g, 1.6, 0.12, 0.6, 0.9, FLOOR + 0.8, -3.1, TIMBER);
+  for (const x of [0.2, 1.6]) d.rod(g, [x, FLOOR, -3.1], [x, FLOOR + 0.8, -3.1], 0.05, TIMBER);
+  if (tier >= 2) d.mesh(g, 'cylinder', [0.5, 0.35, 0.3], [-1.75, FLOOR + 0.3, -3.2], WATER);
+  if (tier >= 3)
+    // Willowkin charms on posts at the bed ends, swaying in the evening air.
+    for (const x of [GROVE_BEDS[0], GROVE_BEDS[2]]) {
+      d.rod(g, [x, FLOOR, 1.8], [x, FLOOR + 1.4, 1.8], 0.05, TIMBER);
+      move(d.ball(g, x, FLOOR + 1.25, 1.8, [0.14, 0.2, 0.14], GOLD, 'rock'), 'turn', 'y', 0.8);
+    }
+  if (tier >= 4) {
+    // A glass cold frame for the youngest shoots.
+    d.box(g, 1.4, 0.5, 0.9, -1.75, FLOOR + 0.25, -3.25, CREAM);
+    d.box(g, 1.3, 0.06, 0.8, -1.75, FLOOR + 0.55, -3.25, WATER);
+  }
+  if (tier >= 5) {
+    // The crate bound for the Moon, waiting by the gate with its seedlings.
+    d.box(g, 0.9, 0.6, 0.7, 2.5, FLOOR + 0.3, 2.6, TIMBER);
+    for (const dx of [-0.25, 0.25]) sapling(d, g, 2.5 + dx, 2.6, 0.4, o.colour);
+    d.box(g, 0.92, 0.1, 0.1, 2.5, FLOOR + 0.45, 2.96, GOLD);
+  }
+}
+// Fruit trees with lanterns in their boughs, a tree more at each stage.
+const ORCHARD_TREES = [
+  [-2.3, -1.4, 2],
+  [2.1, -1.9, 2.2],
+  [-0.4, -2.9, 1.9],
+  [-2.6, 1.4, 1.7],
+  [2.6, 0.6, 1.8],
+];
+function buildLanternOrchard(d, g, o, tier, move) {
+  gladeLawn(d, g, '#86a85a');
+  const trees = ORCHARD_TREES.slice(0, 1 + tier);
+  for (const [n, [x, z, height]] of trees.entries()) {
+    move(meadowTree(d, g, x, z, height, n % 2 ? LEAF : '#5f8a4a'), 'pulse', 'y', 0.4, 0.03, n);
+    d.ball(g, x + 0.45, FLOOR + height + 0.1, z + 0.4, 0.11, PETAL, 'rock');
+    d.ball(g, x - 0.4, FLOOR + height + 0.25, z + 0.3, 0.11, GOLD, 'rock');
+    // A lantern hung below the bough.
+    const lantern = d.group(g, x + 0.55, FLOOR + height - 0.25, z + 0.55);
+    d.rod(lantern, [0, 0, 0], [0, 0.35, 0], 0.012, SLATE);
+    d.box(lantern, 0.2, 0.26, 0.2, 0, -0.08, 0, o.colour, true);
+    move(lantern, 'turn', 'y', 0.5 + n * 0.1);
+  }
+  // A string of small lanterns between the first trees.
+  if (tier >= 2)
+    for (let k = 1; k < 5; k++) {
+      const [ax, az, ah] = ORCHARD_TREES[0],
+        [bx, bz, bh] = ORCHARD_TREES[2];
+      const t = k / 5;
+      d.ball(
+        g,
+        ax + (bx - ax) * t,
+        FLOOR + ah + (bh - ah) * t - 0.2 - Math.sin(t * Math.PI) * 0.3,
+        az + (bz - az) * t,
+        0.09,
+        LANTERN,
+        'rock',
+      );
+    }
+  if (tier >= 4) {
+    // A picking ladder and a full basket under the first tree.
+    const ladder = d.group(g, -2.9, FLOOR, -0.7);
+    ladder.rotation.x = 0.25;
+    for (const x of [-0.2, 0.2]) d.rod(ladder, [x, 0, 0], [x, 1.6, 0], 0.035, TIMBER);
+    for (let k = 1; k < 4; k++) d.box(ladder, 0.4, 0.04, 0.05, 0, k * 0.4, 0, TIMBER);
+    d.mesh(g, 'cylinder', [0.3, 0.25, 0.3], [-1.4, FLOOR + 0.25, -2.6], TIMBER);
+    for (const dx of [-0.1, 0.1]) d.ball(g, -1.4 + dx, FLOOR + 0.42, -2.6, 0.1, '#e98a4a', 'rock');
+  }
+  if (tier >= 5) {
+    // A lantern arch over the gate.
+    for (const x of [-0.1, 2.1]) d.rod(g, [x, FLOOR, 3.1], [x, FLOOR + 2.6, 3.1], 0.06, TIMBER);
+    d.box(g, 2.4, 0.12, 0.12, 1, FLOOR + 2.65, 3.1, TIMBER);
+    for (const x of [0.3, 1, 1.7]) {
+      const lantern = d.box(g, 0.2, 0.26, 0.2, x, FLOOR + 2.4, 3.1, LANTERN, true);
+      move(lantern, 'turn', 'y', 0.7);
+    }
+  }
+}
+// One great old tree with a ring of benches, its crown filling out at each stage.
+function buildStoryTree(d, g, o, tier, move) {
+  gladeLawn(d, g, '#86a85a');
+  const trunk = 0.45 + tier * 0.05,
+    height = 2.4 + tier * 0.3;
+  d.mesh(g, 'cylinder', [trunk, height, trunk], [0, FLOOR + height / 2, -0.6], TIMBER);
+  // Roots spread over the lawn.
+  for (let n = 0; n < 5; n++) {
+    const a = (n * Math.PI * 2) / 5 + 0.4;
+    d.rod(
+      g,
+      [0, FLOOR + 0.35, -0.6],
+      [Math.cos(a) * 1.2, FLOOR + 0.1, -0.6 + Math.sin(a) * 1.2],
+      0.12,
+      TIMBER,
+    );
+  }
+  const crowns = [
+    [0, 0, 0, 1.9],
+    [-1.3, -0.4, -0.3, 1.3],
+    [1.3, -0.3, -0.2, 1.35],
+    [0, 0.6, -1.2, 1.2],
+    [0.2, 0.5, 0.8, 1.15],
+  ].slice(0, 1 + tier);
+  for (const [n, [x, y, z, r]] of crowns.entries())
+    move(
+      d.ball(
+        g,
+        x,
+        FLOOR + height + y + 0.5,
+        -0.6 + z,
+        [r, r * 0.75, r],
+        n % 2 ? o.colour : LEAF,
+        'rock',
+      ),
+      'pulse',
+      'y',
+      0.35,
+      0.025,
+      n,
+    );
+  if (tier >= 2)
+    // A ring of benches round the trunk, open toward the front.
+    for (let n = 0; n < 5; n++) {
+      const a = Math.PI / 2 + 0.7 + (n * (Math.PI * 2 - 1.4)) / 4;
+      const bench = d.group(g, Math.cos(a) * 2.1, 0, -0.6 + Math.sin(a) * 2.1);
+      bench.rotation.y = -a + Math.PI / 2;
+      d.box(bench, 1, 0.1, 0.36, 0, FLOOR + 0.42, 0, TIMBER);
+      for (const x of [-0.4, 0.4]) d.box(bench, 0.08, 0.4, 0.3, x, FLOOR + 0.2, 0, SLATE);
+    }
+  if (tier >= 3) {
+    // A swing from the lowest bough.
+    const swing = d.group(g, 1.2, FLOOR + height - 0.1, 0.3);
+    for (const x of [-0.25, 0.25]) d.rod(swing, [x, 0, 0], [x, -1.5, 0], 0.015, SLATE);
+    d.box(swing, 0.65, 0.06, 0.25, 0, -1.5, 0, TIMBER);
+    move(swing, 'lift', 'z', 0.9, 0.1);
+  }
+  if (tier >= 4) {
+    // The storyteller's stump and a lantern for evening tales.
+    d.mesh(g, 'cylinder', [0.4, 0.5, 0.4], [-0.9, FLOOR + 0.25, 1.1], TIMBER);
+    d.rod(g, [-1.5, FLOOR, 1.2], [-1.5, FLOOR + 1.3, 1.2], 0.04, SLATE);
+    d.box(g, 0.22, 0.28, 0.22, -1.5, FLOOR + 1.4, 1.2, LANTERN, true);
+  }
+  if (tier >= 5)
+    // Golden leaves among the crown, turning in the light.
+    for (let n = 0; n < 6; n++) {
+      const a = (n * Math.PI) / 3;
+      const leaf = d.ball(
+        g,
+        Math.cos(a) * 1.6,
+        FLOOR + height + 0.6 + (n % 2) * 0.5,
+        -0.6 + Math.sin(a) * 1.4,
+        [0.22, 0.08, 0.16],
+        GOLD,
+        'rock',
+      );
+      move(leaf, 'turn', 'y', 0.4 + n * 0.05);
+    }
+}
 // Where residents use each finished valley commission, in site coordinates with +z the
 // front (TownCommissionResidents): `door` is the threshold they step through, `audience`
 // the radius of the arc they gather on and `yard` the loop they wander, inside a `lawn`
@@ -149,11 +345,43 @@ export const VALLEY_COMMISSION_GROUNDS = Object.freeze({
       [0.4, 1.9],
     ]),
   }),
+  // Between the grove's beds, then behind them and back down the far aisle.
+  'seedling-grove': Object.freeze({
+    lawn: 3.9,
+    gate: [1, 3.3],
+    yard: Object.freeze([
+      [1.1, 2.6],
+      [1.5, 0.6],
+      [1.4, -1.4],
+      [0.4, -2.5],
+      [-1.75, -2.5],
+      [-1.75, 1.9],
+      [0.2, 2.5],
+    ]),
+  }),
+  // Round the orchard's trees, under the lanterns.
+  'lantern-orchard': Object.freeze({
+    lawn: 3.9,
+    gate: [1, 3.3],
+    yard: Object.freeze([
+      [1.2, 2.4],
+      [1, 0.4],
+      [0.1, -1.3],
+      [-1.1, -0.4],
+      [-1, 1.2],
+      [0.3, 2],
+    ]),
+  }),
+  // An audience before the story tree, outside its ring of benches.
+  'story-tree': Object.freeze({ lawn: 3.9, audience: 3.6 }),
 });
 const BUILDERS = {
   'story-hall': buildStoryHall,
   bandstand: buildBandstand,
   'wild-meadow': buildMeadow,
+  'seedling-grove': buildSeedlingGrove,
+  'lantern-orchard': buildLanternOrchard,
+  'story-tree': buildStoryTree,
 };
 export function buildValleyCommission(d, g, option, tier, move) {
   BUILDERS[option.form](d, g, option, tier, move);

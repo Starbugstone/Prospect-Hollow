@@ -1170,6 +1170,34 @@
     },
     "version": 1
   },
+  "commissioner-gold": {
+    "goal": 3,
+    "measure": {
+      "kind": "landmarks",
+      "areas": [
+        "earthlight-conservatory",
+        "homecoming-commons",
+        "willowkin-glade",
+        "schoolyard-court",
+        "crew-yard"
+      ]
+    },
+    "version": 1
+  },
+  "commissioner-diamond": {
+    "goal": 5,
+    "measure": {
+      "kind": "landmarks",
+      "areas": [
+        "earthlight-conservatory",
+        "homecoming-commons",
+        "willowkin-glade",
+        "schoolyard-court",
+        "crew-yard"
+      ]
+    },
+    "version": 1
+  },
   "keen-eye-bronze": {
     "goal": 1,
     "measure": {

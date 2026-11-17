@@ -1,4 +1,5 @@
 import {
+  AREA_BY_ID,
   PERSONAL_AREAS,
   landmarkOffer,
   areaMaximum,
@@ -757,6 +758,24 @@ export function createIntegrityFixtures() {
             for (let n = work.wins; n < work.required; n++) victory(campaign);
             expectSuccess(campaign.unveilMonument(area.id, work.level), 'monument unveiling');
           };
+          // A site that waits for a commission elsewhere opens with the first stage there.
+          const opener = area.opens?.sites && AREA_BY_ID[area.opens.sites[0]];
+          if (opener) {
+            const offer = landmarkOffer(campaign.town, opener, opener.choices[0]);
+            expectSuccess(
+              campaign.personalise([
+                {
+                  kind: 'area',
+                  id: opener.id,
+                  slot: 0,
+                  value: opener.choices[0],
+                  expectedChoice: offer.expectedChoice,
+                  expectedLevel: offer.expectedLevel,
+                },
+              ]),
+              'opening commission purchase',
+            );
+          }
           buy(area.choices[0]);
           build();
           while (areaStage(campaign.town, area) < areaMaximum(campaign.town, area)) {
@@ -832,6 +851,40 @@ export function createIntegrityFixtures() {
         );
         if (campaign.continuousRecords[1].moonstoneGems !== 300)
           throw new Error('Unbuilt gems became workshop production.');
+      },
+    );
+    // Every 1.3.0 commission sponsored, Moon first, so the server verifies Commissioner's
+    // later ranks from its own replay of the purchases.
+    fixture(
+      'every commission sponsored, the Willowkin Glade opened from the Moon',
+      (profile) => {
+        develop(profile, 'hollow-rising');
+        profile.town.coins = 10000000;
+      },
+      (campaign) => {
+        for (const id of [
+          'earthlight-conservatory',
+          'willowkin-glade',
+          'schoolyard-court',
+          'crew-yard',
+          'homecoming-commons',
+        ]) {
+          const area = AREA_BY_ID[id];
+          const offer = landmarkOffer(campaign.town, area, area.choices[0]);
+          expectSuccess(
+            campaign.personalise([
+              {
+                kind: 'area',
+                id,
+                slot: 0,
+                value: area.choices[0],
+                expectedChoice: offer.expectedChoice,
+                expectedLevel: offer.expectedLevel,
+              },
+            ]),
+            `commission purchase at ${id}`,
+          );
+        }
       },
     );
     return { version: 1, fixtures };

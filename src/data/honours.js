@@ -23,7 +23,7 @@ import { PERSONAL_AREAS } from './townLandmarks';
 // The saved block's shape and the catch-up generation: saves from an older generation
 // are re-evaluated once on load. It is not a requirement version (see `version` on a
 // rank) and a new rank or family raises it so existing saves earn what they prove.
-export const HONOURS_VERSION = 8;
+export const HONOURS_VERSION = 9;
 // Ranks in ladder order. A family may stop early; new ranks only ever append.
 export const RANK_METALS = Object.freeze(['bronze', 'silver', 'gold', 'diamond']);
 const METAL_DIFFICULTY = Object.freeze({
@@ -352,6 +352,14 @@ const HONOUR_MONUMENT_SITES = Object.freeze([
 // Commissioner's sites, fixed when it shipped. A later commission joins a new rank whose
 // own measure lists every site so far, never this list.
 const COMMISSION_HONOUR_SITES = Object.freeze(['earthlight-conservatory', 'homecoming-commons']);
+// Every commission of release 1.3.0, for the ranks added with the third, fourth and fifth
+// (generation 9). Fixed too: a later commission joins a later rank's own list.
+const COMMISSION_HONOUR_SITES_1_3 = Object.freeze([
+  ...COMMISSION_HONOUR_SITES,
+  'willowkin-glade',
+  'schoolyard-court',
+  'crew-yard',
+]);
 // Keen Eye's hidden finds (src/data/hiddenFinds.js), fixed when it shipped. A later find
 // joins a new rank or NON_FIND_HONOURS, never this list.
 const HONOUR_FINDS = Object.freeze(['helmet', 'wanderers']);
@@ -857,6 +865,18 @@ export function honourFamilies({
           since: 8,
         },
         { metal: 'silver', goal: 2, since: 8 },
+        {
+          metal: 'gold',
+          goal: 3,
+          measure: { kind: 'landmarks', areas: COMMISSION_HONOUR_SITES_1_3 },
+          since: 9,
+        },
+        {
+          metal: 'diamond',
+          goal: 5,
+          measure: { kind: 'landmarks', areas: COMMISSION_HONOUR_SITES_1_3 },
+          since: 9,
+        },
       ],
     },
     {

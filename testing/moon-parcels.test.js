@@ -35,6 +35,7 @@ import { buildMoonMonuments } from '../src/game/town/moon/MoonMonuments';
 import { MoonScene, moonRoofHeight } from '../src/game/town/moon/MoonScene';
 import { MoonConstruction } from '../src/game/town/moon/MoonConstruction';
 import { TownPrimitives } from '../src/game/town/TownPrimitives';
+import { openEverySite } from './helpers/siteOpening';
 import { GLOW_WALL, TownUpgradeGlow } from '../src/game/town/TownUpgradeGlow';
 
 // Permanent rule (AGENTS.md): every Moon parcel, built, empty, under construction or
@@ -61,14 +62,13 @@ const expectParcelPad = (root, radius, label) => {
   expect(pad.scale.z, label).toBeCloseTo(radius);
   expect([pad.position.x, pad.position.z], label).toEqual([0, 0]);
 };
-// The finished greenhouse opens the commission site, so every Moon site is open.
-const moonTown = () => ({
-  ...createTown(),
-  era: 'twin-hollows',
-  coins: 1e9,
-  moonstones: 1e6,
-  buildings: { ...createTown().buildings, earthlightGreenhouse: 3 },
-});
+// The buildings that open the commission sites are finished, so every Moon site of the
+// town's era is open.
+const moonTown = () =>
+  openEverySite(
+    { ...createTown(), era: 'twin-hollows', coins: 1e9, moonstones: 1e6 },
+    areasForSettlement('moon'),
+  );
 
 it('lists every Moon lot and monument site as a parcel of the one shape', () => {
   const parcels = moonParcels();

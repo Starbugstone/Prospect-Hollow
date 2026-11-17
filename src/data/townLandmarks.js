@@ -386,6 +386,81 @@ export const LANDMARK_OPTIONS = [
     400000,
     'A fenced meadow of flowers and old trees that the valley’s animals soon call their own.',
   ),
+  // Third valley commission: the Willowkin Glade, on the same schedule.
+  option(
+    'seedling-grove',
+    'Seedling Grove',
+    'seedling-grove',
+    '#6f9a4d',
+    400000,
+    'A Willowkin nursery of young trees in rows, each one tended until it is ready for the Moon.',
+  ),
+  option(
+    'lantern-orchard',
+    'Lantern Orchard',
+    'lantern-orchard',
+    '#d98f4e',
+    400000,
+    'Fruit trees hung with paper lanterns, lit at dusk for the Willowkin and the animals who come to pick.',
+  ),
+  option(
+    'story-tree',
+    'Story Tree',
+    'story-tree',
+    '#5f8a4a',
+    400000,
+    'One great old tree with a ring of benches, where the valley gathers to hear a story told.',
+  ),
+  // New Hollow Rising's commissions on the outer ring. The teachers' Schoolyard Court:
+  option(
+    'lamplit-library',
+    'Lamplit Library',
+    'lamplit-library',
+    '#c98f52',
+    400000,
+    'A round reading room under a lamplit dome, with a shelf for every child born under Earthlight.',
+  ),
+  option(
+    'little-planetarium',
+    'Little Planetarium',
+    'little-planetarium',
+    '#4c5f9e',
+    400000,
+    'A small dark dome where the teachers show the stars as they look from the valley, and from here.',
+  ),
+  option(
+    'earthview-studio',
+    'Earthview Studio',
+    'earthview-studio',
+    '#d9788a',
+    400000,
+    'An art studio with a wall of glass toward Earth, and easels outside for painting it.',
+  ),
+  // And the rover crews' Crew Yard:
+  option(
+    'crew-canteen',
+    'Crew Canteen',
+    'crew-canteen',
+    '#d9a441',
+    400000,
+    'A warm canteen by the garage, where crews back from the far plains get a hot flask and a seat.',
+  ),
+  option(
+    'mapmakers-hall',
+    'Mapmakers’ Hall',
+    'mapmakers-hall',
+    '#5d9aa8',
+    400000,
+    'A hall with a great floor map of the Moon, where every crew adds the road it found.',
+  ),
+  option(
+    'rover-track',
+    'Little Rover Track',
+    'rover-track',
+    '#e07f45',
+    400000,
+    'A looping track with a stand beside it, where the crews race little model rovers on rest days.',
+  ),
 ];
 export const LANDMARK_BY_ID = Object.fromEntries(LANDMARK_OPTIONS.map((o) => [o.id, o]));
 // The way a site's front faces, as a turn about its centre. Every monument is
@@ -397,6 +472,11 @@ export const SITE_FACINGS = Object.freeze({
   east: Math.PI / 2,
   north: Math.PI,
   west: -Math.PI / 2,
+  // Between the four: Moon sites on the outer ring turn to face its road.
+  'south-east': Math.PI / 4,
+  'north-east': (3 * Math.PI) / 4,
+  'north-west': (-3 * Math.PI) / 4,
+  'south-west': -Math.PI / 4,
 });
 // Resource rarity has its own fixed curve, shared by both keepsake sites and all designs.
 const moonstoneLevelPrices = Object.freeze([20, 30, 40, 50, 60]);
@@ -411,7 +491,7 @@ export const siteYaw = (area) =>
 // approach, clear of the space elevator. Founders' Meadow sits on the west bank
 // beyond the ridge and faces the river. Stargazers' Lawn and Homecoming Green sit
 // beyond the Skyward quarter.
-// [id, era, label, position, choices, facing = 'south', settlement = 'valley', currency = 'coins', levelPrices?]
+// [id, era, label, position, choices, facing = 'south', settlement = 'valley', currency = 'coins', levelPrices?, opens?]
 const plots = [
   [
     'meadow',
@@ -539,6 +619,46 @@ const plots = [
     'south',
     MOON_SETTLEMENT,
   ],
+  // The third commission waits for either of the first two, so a player who began on the
+  // Moon and one who began in the valley both reach it. Behind Riverlight Court.
+  [
+    'willowkin-glade',
+    'twin-hollows',
+    'Willowkin Glade',
+    [14, -102],
+    ['seedling-grove', 'lantern-orchard', 'story-tree'],
+    'south',
+    HOME_SETTLEMENT,
+    'coins',
+    commissionLevelPrices,
+    { sites: ['earthlight-conservatory', 'homecoming-commons'], level: 1 },
+  ],
+  // New Hollow Rising's two commissions, on outer slots 3 and 10, each turned to face the
+  // outer ring road like the lots beside them.
+  [
+    'schoolyard-court',
+    'hollow-rising',
+    'Schoolyard Court',
+    [10.7, 53.9],
+    ['lamplit-library', 'little-planetarium', 'earthview-studio'],
+    'north',
+    MOON_SETTLEMENT,
+    'coins',
+    commissionLevelPrices,
+    { building: 'craterSchool', level: 3 },
+  ],
+  [
+    'crew-yard',
+    'hollow-rising',
+    'Crew Yard',
+    [-30.6, -45.7],
+    ['crew-canteen', 'mapmakers-hall', 'rover-track'],
+    'south-east',
+    MOON_SETTLEMENT,
+    'coins',
+    commissionLevelPrices,
+    { building: 'expeditionGarage', level: 3 },
+  ],
 ];
 export const PERSONAL_AREAS = plots.map(
   ([id, era, label, position, choices, facing, settlement, currency, levelPrices, opens]) => ({
@@ -561,11 +681,33 @@ export const PERSONAL_AREAS = plots.map(
 export const areaSettlement = settlementId;
 export const areasForSettlement = (settlement = HOME_SETTLEMENT, areas = PERSONAL_AREAS) =>
   settlementPlaces(settlement, areas);
-// A site opens with its era and, when it names one, a finished building level. Building
-// levels only ever rise, so an open site stays open for every later save and replay.
+// Whether the town has reached the era that introduces a site.
+export const areaEraReached = (town, area) =>
+  ERAS.findIndex((e) => e.id === town.era) >= ERAS.findIndex((e) => e.id === area.era);
+// The stage paid for at a site: 0 until a valid design is bought. Purchases only ever add
+// a stage, so this never falls.
+function areaBoughtLevel(town, id) {
+  const area = AREA_BY_ID[id];
+  const choice = town.personalisation?.areas?.[id]?.[0];
+  if (!area || !area.choices.includes(choice)) return 0;
+  const level = town.personalisation.areaLevels?.[id];
+  return Number.isInteger(level) && level >= 1 ? level : 1;
+}
+// What a site waits for beyond its era (`opens`), mirrored by TownPersonalisation::opens:
+// `{ building, level }` a finished building level, `{ sites, level }` a stage paid for at any
+// one of those sites. Both only ever rise, so an open site stays open for every later save
+// and replay. An opening this build does not know keeps the site closed.
+function areaOpensMet(town, opens) {
+  if (!opens) return true;
+  if (typeof opens.building === 'string')
+    return (town.buildings?.[opens.building] ?? 0) >= opens.level;
+  if (Array.isArray(opens.sites))
+    return opens.sites.some((id) => areaBoughtLevel(town, id) >= opens.level);
+  return false;
+}
+// A site opens with its era and whatever its `opens` waits for.
 export const areaUnlocked = (town, area) =>
-  ERAS.findIndex((e) => e.id === town.era) >= ERAS.findIndex((e) => e.id === area.era) &&
-  (!area.opens || (town.buildings?.[area.opens.building] ?? 0) >= area.opens.level);
+  areaEraReached(town, area) && areaOpensMet(town, area.opens);
 // Five permanent milestones; era growth never adds another bill. Each paid level is
 // built over `puzzles` completed puzzles (any puzzle, replays too), then unveiled with
 // a `grand` cinematic or a short `reveal`. Timeless monuments build like a foundation.

@@ -87,6 +87,33 @@ const ITEMS = {
     d.mesh(g, 'cylinder', [0.17, 0.05, 0.17], [0, 0, 0.05], '#eacb80');
     d.mesh(g, 'cylinder', [0.19, 0.015, 0.19], [0, -0.03, 0.05], '#d9d4c6');
   },
+  // A young tree in its pot, carried home to plant.
+  sapling: (d, g) => {
+    d.mesh(g, 'cylinder', [0.08, 0.09, 0.08], [0, -0.01, 0.05], '#a4693f');
+    d.rod(g, [0, 0.03, 0.05], [0, 0.2, 0.05], 0.012, '#8a6a4a');
+    d.ball(g, 0, 0.22, 0.05, [0.08, 0.07, 0.08], '#6f9a4d', 'rock');
+  },
+  // A rolled star chart, navy with a gold band.
+  chart: (d, g) => {
+    const roll = d.mesh(g, 'cylinder', [0.035, 0.24, 0.035], [0, 0, 0.05], '#27365a');
+    roll.rotation.z = Math.PI / 2;
+    d.box(g, 0.03, 0.075, 0.075, 0, 0, 0.05, '#eacb80', true);
+  },
+  // A small canvas of Earth, held by its frame.
+  painting: (d, g) => {
+    d.box(g, 0.22, 0.17, 0.025, 0, 0.04, 0.05, '#8a6a4a', true);
+    d.ball(g, 0, 0.04, 0.066, [0.055, 0.055, 0.01], '#4f8fc7', 'rock');
+  },
+  // A crew flask of hot soup.
+  flask: (d, g) => {
+    d.mesh(g, 'cylinder', [0.05, 0.18, 0.05], [0, 0.02, 0.05], '#d9a441');
+    d.mesh(g, 'cylinder', [0.04, 0.04, 0.04], [0, 0.13, 0.05], '#657481');
+  },
+  // A folded map of the roads the crews found.
+  map: (d, g) => {
+    d.box(g, 0.2, 0.02, 0.14, 0, 0, 0.05, '#f4ead5', true);
+    d.box(g, 0.14, 0.022, 0.02, 0, 0.001, 0.05, '#5d9aa8', true);
+  },
 };
 /** The item a resident carries home in one hand, hidden until `holdCarried` shows it. */
 export function addCarriedItem(d, hand, carry) {

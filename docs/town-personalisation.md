@@ -56,11 +56,32 @@ three designs drawn from what that era brings to the town:
 | Twin Hollows (Moon) | Earthrise Plaza         | First Footprints, Earthrise Arch, Orbital Beacon              |
 | Twin Hollows (Moon) | Earthlight Conservatory | Earthlight Orchard, Crystal Nursery, Earthlight Bakehouse     |
 | Twin Hollows        | Homecoming Commons      | Story Hall, Homecoming Bandstand, Wild Meadow                 |
+| Twin Hollows        | Willowkin Glade         | Seedling Grove, Lantern Orchard, Story Tree                   |
+| New Hollow Rising   | Schoolyard Court (Moon) | Lamplit Library, Little Planetarium, Earthview Studio         |
+| New Hollow Rising   | Crew Yard (Moon)        | Crew Canteen, Mapmakers’ Hall, Little Rover Track             |
 
-The Earthlight Conservatory and the Homecoming Commons are commissions
-(`src/data/commissions.js`). Each opens with a finished building level (`opens`), a letter asks
-what to build, and the permanent outcome sets who visits and what they do there. Each costs five even stages of 400,000
-coins and never gates an era or puzzle. `commissionStatus()` drives the one signal that a commission
+The Earthlight Conservatory, the Homecoming Commons, the Willowkin Glade, Schoolyard Court and
+Crew Yard are commissions (`src/data/commissions.js`). A letter asks what to build, and the
+permanent outcome sets who visits and what they do there. Each costs five even stages of 400,000
+coins and never gates an era or puzzle.
+
+A site opens with its era and its `opens`, read by `areaOpensMet` on the client and
+`TownPersonalisation::opens` on the server from the same exported catalog:
+
+- `{ building, level }`: a finished building level. The Conservatory opens at Earthlight
+  Greenhouse 3, the Commons at Homecoming Hall 3, Schoolyard Court at Crater School 3 and Crew
+  Yard at Expedition Garage 3.
+- `{ sites, level }`: a stage paid for at any one of those sites (`areaBoughtLevel`: a valid
+  saved design and its paid level). The Willowkin Glade waits for the Conservatory or the
+  Commons, so a player who began on the Moon and one who began in the valley both reach it.
+
+Both read levels that only rise, so an open site never closes. An opening of an unknown kind keeps
+the site closed on both sides. Tests open every site through `testing/helpers/siteOpening.js`.
+The two Moon commissions stand on outer-ring slots 3 and 10, turned to face the outer ring road
+(`north`, `south-east`); their path joins the outermost ring inside the site (`moonSiteRing`).
+The Glade, behind Riverlight Court, has a footpath from the west end of the Mission Homesteads'
+street, laid with the era (`SITE_FOOTPATHS` in `TownLayout.js`), so a purchase that opens it
+changes no street. `commissionStatus()` drives the one signal that a commission
 is active: a light pill beside the town project (`TownCommissionGoal`), the same pill in the Build
 sheet and a letter action icon over a site awaiting its choice. `testing/browser/town-commission-signal.cjs`
 checks every state in the real game, on desktop and phone, in English and French.
@@ -74,7 +95,8 @@ day go to the commission's door along its public path. In the valley, `visits.vi
 (`TownCommissionResidents.js`) leave the nearest homes by their doors, walk the streets to the
 edge of the monument field, cross it on a navigation-checked walk and climb the pedestal to the
 place their form's `VALLEY_COMMISSION_GROUNDS` gives: the Story Hall's door, the Bandstand's
-audience arc, the Wild Meadow's yard. A commission without `use`, or a form without grounds for
+and the Story Tree's audience arcs, the yards of the Wild Meadow, the Seedling Grove and the
+Lantern Orchard. A commission without `use`, or a form without grounds for
 its stay, has its visitors gather before the site. `testing/commission-residents.test.js` checks
 every outcome against its art at every stage; `testing/browser/commission-residents.cjs` checks
 the walks in the real game and films each outcome at phone size.
