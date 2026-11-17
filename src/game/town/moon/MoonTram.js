@@ -89,6 +89,9 @@ export function createMoonTram(d, parent, levels) {
   body.scale.set(1, 1, MOON_TRAM.width);
   const pitch = MOON_TRAM.car + MOON_TRAM.coupling;
   for (let n = 0; n < cars; n++) tramCar(d, body, (n - (cars - 1) / 2) * pitch, 0);
+  // The stop's car is drawn for its raised platform; on the ring its underframe sits on
+  // the rails instead.
+  body.position.y = RAIL_TOP - new THREE.Box3().setFromObject(body).min.y;
   return {
     root,
     tram: true,
@@ -104,7 +107,9 @@ export function createMoonTram(d, parent, levels) {
 
 // Rails along the middle of the outer ring, under the tram's wheels, 0.6 apart.
 const GAUGE = 0.3,
-  RAIL = 0.05;
+  RAIL = 0.05,
+  // Just above the road and the ends of the paths that meet it (both lifted 0.04).
+  RAIL_TOP = 0.05;
 /** The tram's rails round the outer ring, as one flat mesh; shown once the tram runs. */
 export function moonTramRails() {
   const ring = MOON_TRAM.radius;
@@ -119,8 +124,7 @@ export function moonTramRails() {
   );
   rails.name = 'Tram rails';
   rails.rotation.x = -Math.PI / 2;
-  // Just above the road and the ends of the paths that meet it (both lifted 0.04).
-  rails.position.y = 0.05;
+  rails.position.y = RAIL_TOP;
   rails.receiveShadow = true;
   return rails;
 }

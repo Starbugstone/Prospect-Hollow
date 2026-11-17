@@ -26,6 +26,10 @@ const LOOKS = 5,
   LOOK = 0.4;
 // How near the middle of the road a walker's body reaches the rover's.
 const ROVER_REACH = 0.62;
+// How much nearer the middle someone must be heading to be stepping in. A lane walker's
+// straight steps round a ring cut in by under 0.1, so it never counts; a crosser closes
+// about 0.4 a look.
+const STEPPING_IN = 0.15;
 // Room a vehicle leaves between its body and the vehicle in front.
 const VEHICLE_ROOM = 0.5;
 // How quickly it eases off and pulls away again (share of full speed per second).
@@ -92,7 +96,12 @@ export function moonRoverAngle(rover, time, step, people = [], rovers = [], pred
     if (predict && Math.abs(offset) > ROVER_CORRIDOR && Math.abs(offset) < 3)
       for (let look = 1; look <= LOOKS; look++) {
         const soon = predict(person, time + look * LOOK, future);
-        if (!soon?.visible || Math.abs(Math.hypot(soon.x, soon.z) - rover.radius) > ROVER_REACH)
+        const soonOffset = soon?.visible ? Math.abs(Math.hypot(soon.x, soon.z) - rover.radius) : 0;
+        if (
+          !soon?.visible ||
+          soonOffset > ROVER_REACH ||
+          Math.abs(offset) - soonOffset < STEPPING_IN
+        )
           continue;
         const reach = ahead(here, Math.atan2(soon.z, soon.x), rover.dir, rover.radius, length);
         const clearBy = (reach + length + 0.2) / (rover.speed * rover.radius);

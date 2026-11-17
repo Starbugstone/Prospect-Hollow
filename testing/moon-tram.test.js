@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { Group, Scene, Vector3 } from 'three';
+import { Box3, Group, Scene, Vector3 } from 'three';
 import { MOON_ROADS, moonApproaches, moonParcels, moonSpokes } from '../src/data/moonSettlement';
 import { TownPrimitives } from '../src/game/town/TownPrimitives';
 import { renderMoonBuilding } from '../src/game/town/buildings/moon';
@@ -77,6 +77,13 @@ describe('the ring tram', () => {
     let windows = 0;
     one.root.traverse((part) => (windows += part.name === 'Tram windows'));
     expect(windows).toBe(1);
+    // Its underframe rides on the rails, not floating above them.
+    const rails = moonTramRails();
+    for (const levels of [{ ringTram: 1 }, { ringTram: 3 }]) {
+      const { root } = tram(levels);
+      root.updateMatrixWorld(true);
+      expect(new Box3().setFromObject(root).min.y).toBeCloseTo(rails.position.y, 6);
+    }
   });
 
   it('is put on the outer ring by the scene once the stop stands, with its rails', () => {
@@ -258,6 +265,28 @@ describe('the ring tram', () => {
     const blind = tram();
     moonRoverAngle(blind, start, 1 / 60, [settler], [blind], null);
     expect(blind.pace ?? 1).toBe(1);
+  });
+
+  it('keeps going past a walker on the lane, whose straight steps round the ring cut in', () => {
+    const vehicle = tram();
+    const start = departure + 20;
+    const ahead = moonRoverAngle(vehicle, start + 1.5, 0);
+    // The outer lane's walkers step in straight lines between points 0.12 rad apart round
+    // the ring (ringArc), so midway they are 0.08 nearer the road's middle than the lane.
+    const lane = OUTER + MOON_WALK_LANE;
+    const chord = (t) => {
+      const a = ahead - 0.06 + 0.12 * Math.min(1, Math.max(0, t));
+      const [a0, a1] = [ahead - 0.06, ahead + 0.06];
+      const along = (a - a0) / (a1 - a0);
+      const x = Math.cos(a0) * lane + (Math.cos(a1) - Math.cos(a0)) * lane * along;
+      const z = Math.sin(a0) * lane + (Math.sin(a1) - Math.sin(a0)) * lane * along;
+      return { x, z };
+    };
+    const walker = { root: { visible: true, position: new Vector3(chord(0).x, 0, chord(0).z) } };
+    const predict = (person, time, out) =>
+      Object.assign(out, { visible: true, ...chord(0.5 + (time - start) / 4) });
+    moonRoverAngle(vehicle, start, 1 / 60, [walker], [vehicle], predict);
+    expect(vehicle.pace ?? 1).toBe(1);
   });
 
   it('shares the outer ring with the rovers without ever closing on them', () => {
