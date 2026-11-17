@@ -462,7 +462,7 @@ They join the lot table with their buildings: the tests require the lots to matc
 | 1    | 33.75  | `[45.7, 30.6]`  | Crater Inn                      |
 | 2    | 56.25  | `[30.6, 45.7]`  | Dewfall Cistern                 |
 | 3    | 78.75  | `[10.7, 53.9]`  | Commission site A               |
-| 4    | 101.25 | `[-10.7, 53.9]` | Moonstone monument site         |
+| 4    | 101.25 | `[-10.7, 53.9]` | Hollowborn Square (moonstones)  |
 | 5    | 123.75 | `[-30.6, 45.7]` | Orchard Vaults                  |
 | 6    | 146.25 | `[-45.7, 30.6]` | Moonball Field (optional)       |
 | 7    | 168.75 | `[-53.9, 10.7]` | Crater School                   |
@@ -538,7 +538,10 @@ with the 18 new boards).
       refuses any upload older than the stored schema
 - [x] The two optional buildings (Moonball Field, Crater Pond Garden)
 - [ ] A tram that runs the outer ring, and child settlers
-- [ ] The moonstone monument site, then the two commissions
+- [x] The moonstone monument site: Hollowborn Square, three designs at five levels, its own
+      path to the outer ring, `NON_MONUMENT_HONOURS` (600 moonstones for all three sites;
+      `docs/moonstones.md`)
+- [ ] The two commissions
 - [ ] Rover expeditions: client, server replay, presentation and an economy rerun. After 1.3.0
       (owner, 11 November 2026)
 - [x] Honours (Outer Ring Builder, calibrated in `docs/honours.md`), French text, docs

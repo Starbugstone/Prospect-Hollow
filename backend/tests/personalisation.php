@@ -437,7 +437,8 @@ foreach ($schema['personalisation']['areas'] as $area) {
         continue;
     }
     $state = json_decode(json_encode($rules->defaultTown), true);
-    $state['era'] = 'twin-hollows';
+    // Each site opens with its own era (Twin Hollows, or New Hollow Rising for the square).
+    $state['era'] = $area['era'];
     $state['coins'] = 1000000;
     $state['moonstones'] = 300;
     $command = [
@@ -450,6 +451,12 @@ foreach ($schema['personalisation']['areas'] as $area) {
         'currency' => 'moonstones',
         'price' => 20,
     ];
+    $early = $state;
+    $early['era'] = $schema['eras'][array_search($area['era'], $schema['eras'], true) - 1];
+    checkPersonalisation(
+        TownPersonalisation::purchase($early, $command, $schema['eras']) === null,
+        'a moonstone site refuses purchases before its era',
+    );
     $next = TownPersonalisation::purchase($state, $command, $schema['eras']);
     checkPersonalisation(
         $next !== null && $next['moonstones'] === 280 && $next['coins'] === $state['coins'],
@@ -489,7 +496,7 @@ foreach ($schema['personalisation']['areas'] as $area) {
         continue;
     }
     $state = json_decode(json_encode($rules->defaultTown), true);
-    $state['era'] = 'twin-hollows';
+    $state['era'] = $area['era'];
     $state['moonstones'] = 5000;
     foreach ([60, 240, 600, 1200, 2100] as $index => $price) {
         $command = [

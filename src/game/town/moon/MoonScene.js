@@ -66,6 +66,8 @@ import {
   moonApproachHeight,
   moonApproaches,
   moonCommissionVenues,
+  moonSiteRoute,
+  moonSiteRoutes,
   moonDistrictAt,
   moonDistrictsShown,
   moonLotDistrict,
@@ -216,7 +218,10 @@ const CRATER_LOTS = Object.entries(MOON_LOTS)
   .filter(([id]) => !moonLotDistrict(id))
   .map(([, at]) => at);
 const CRATER_SITES = MOON_MONUMENT_AREAS.filter((area) => !moonDistrictAt(...area.positions[0]));
-const CRATER_PATHS = moonApproaches().filter(({ district }) => !district);
+const CRATER_PATHS = [
+  ...moonApproaches().filter(({ district }) => !district),
+  ...CRATER_SITES.map(moonSiteRoute).filter(Boolean),
+];
 const CRATERS = (() => {
   const list = [];
   for (let n = 0; list.length < 46 && n < 400; n++) {
@@ -736,11 +741,13 @@ export class MoonScene extends TownPrimitives {
     });
     const finishes = Object.keys(MOON_LOTS).map((id) => finishKey(town ?? {}, id));
     const venues = moonCommissionVenues(town);
+    // An opened monument site's public path, whether or not a monument stands there yet.
+    const sitePaths = moonSiteRoutes(town);
     // A later era's lots stay off the map: no pad, building or tap target.
     const shown = new Set(moonLotsShown(town));
     this.showLotTargets(shown);
     // A commission first unveiled brings its public path and its visitors.
-    const signature = `${[...shown]}|${finishes.join('|')}|${venues.map(({ id, visits, use }) => [id, visits.settler, visits.willowkin, use.stay, use.carry])}`;
+    const signature = `${[...shown]}|${finishes.join('|')}|${venues.map(({ id, visits, use }) => [id, visits.settler, visits.willowkin, use.stay, use.carry])}|${sitePaths.map(({ id }) => id)}`;
     if (signature === this.signature) return;
     // A lot finished while the Moon is open settles into place with the valley's
     // construction reveal: drawn on its own until then, outside the merged settlement.
@@ -773,7 +780,7 @@ export class MoonScene extends TownPrimitives {
     );
     this.access.geometry.dispose();
     this.access.geometry = moonAccessGeometry(
-      [...moonApproaches(town?.buildings ?? {}), ...venues.map(({ route }) => route)],
+      [...moonApproaches(town?.buildings ?? {}), ...venues.map(({ route }) => route), ...sitePaths],
       this.terrainHeight,
     );
     this.previousLevels = levels;

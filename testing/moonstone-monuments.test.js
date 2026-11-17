@@ -33,7 +33,11 @@ import { layoutMoonLabels } from '../src/game/town/moon/MoonLabelLayout';
 import TownLandmarkPreview from '../src/components/town/TownLandmarkPreview.vue';
 import TownMonumentSite from '../src/components/town/TownMonumentSite.vue';
 
-const sites = [AREA_BY_ID['moonstone-garden'], AREA_BY_ID['moonrock-court']];
+const sites = [
+  AREA_BY_ID['moonstone-garden'],
+  AREA_BY_ID['moonrock-court'],
+  AREA_BY_ID['hollowborn-square'],
+];
 beforeEach(() => {
   const storage = new Map();
   vi.stubGlobal('localStorage', {
@@ -60,7 +64,7 @@ it.each(sites)(
     const campaign = useCampaignStore();
     campaign.town = {
       ...createTown(),
-      era: 'twin-hollows',
+      era: area.era,
       coins: 1e8,
       moonstones: 19,
       moonstonesEarned: 1000,
@@ -135,7 +139,7 @@ it('keeps coin curves and fails closed on incomplete or unsupported schedules', 
 });
 it.each(sites)('$id retains an old-price outbox receipt and purchases at the new terms', (area) => {
   const campaign = useCampaignStore();
-  campaign.town = { ...createTown(), era: 'twin-hollows', moonstones: 300, moonstonesEarned: 300 };
+  campaign.town = { ...createTown(), era: area.era, moonstones: 300, moonstonesEarned: 300 };
   const old = {
     ...command(campaign.town, area),
     monumentVersion: 2,
@@ -232,7 +236,7 @@ it.each(sites)(
     const html = await renderToString(
       createSSRApp({
         render: () =>
-          h(TownMonumentSite, { id: area.id, town: { ...createTown(), era: 'twin-hollows' } }),
+          h(TownMonumentSite, { id: area.id, town: { ...createTown(), era: area.era } }),
       }),
     );
     expect(html).toContain('<image');

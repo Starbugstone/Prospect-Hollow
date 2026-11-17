@@ -1,5 +1,5 @@
 import { ERAS, eraEvolution } from './eras';
-import { areasForSettlement, siteYaw } from './townLandmarks';
+import { areaUnlocked, areasForSettlement, siteYaw } from './townLandmarks';
 import { commissionLetters, commissionUse, finishedCommissions } from './commissions';
 import { MOON_SETTLEMENT } from './settlements';
 // Read inside functions only, after town.js (which needs moonstones.js) loads.
@@ -710,6 +710,46 @@ export function moonCommissionRoute(area) {
   }
   return commissionRoutes.get(area.id);
 }
+// Monument sites with a public path of their own, from the side of the site facing a ring
+// road: `arrival` in the site's frame (local +z its front, as on a lot) and the index of the
+// ring it joins. A site added later that stands off the roads adds one entry.
+const MOON_SITE_PATHS = Object.freeze({
+  // On the outer ring's far side, facing the camera: its path leaves the back of the square.
+  'hollowborn-square': Object.freeze({
+    arrival: Object.freeze([Object.freeze([0, -4.5]), Object.freeze([0, -6])]),
+    ring: 1,
+  }),
+});
+const siteRoutes = new Map();
+/** The public path from a monument site to its ring road, or null for a site without one. */
+export function moonSiteRoute(area) {
+  const path = Object.hasOwn(MOON_SITE_PATHS, area?.id ?? '') ? MOON_SITE_PATHS[area.id] : null;
+  if (!path) return null;
+  if (!siteRoutes.has(area.id)) {
+    const [x, z] = area.positions[0];
+    siteRoutes.set(
+      area.id,
+      moonApproach(
+        area.id,
+        3,
+        { ...MOON_LOTS, [area.id]: [x, z] },
+        {
+          pose: { x, z, rotation: siteYaw(area) },
+          padRadius: MOON_SITE_PAD,
+          arrival: path.arrival,
+          ring: MOON_ROADS.rings[path.ring] ?? MOON_RING_ROAD,
+        },
+      ),
+    );
+  }
+  return siteRoutes.get(area.id);
+}
+/** The paths of every monument site the town has opened, built on or not. */
+export const moonSiteRoutes = (town) =>
+  areasForSettlement(MOON_SETTLEMENT)
+    .filter((area) => town && areaUnlocked(town, area))
+    .map(moonSiteRoute)
+    .filter(Boolean);
 /**
  * Finished commissions the settlers use: the path to each, how many of a resident's
  * three daily trips go there and what they do there (`commissionUse`). Derived from the saved choice and stage, so nothing new is

@@ -264,6 +264,266 @@
         <circle cx="118" cy="34" r="5" />
         <path d="m75 19 5-17 5 17Z" fill="#eacb80" />
       </template>
+      <template v-else-if="form === 'silverbough-grove'">
+        <!-- Saplings behind, the elder tree, then the arbour and benches in front. -->
+        <path
+          d="M24 108 44 98h72l20 10-20 10H44Z"
+          fill="#aaa79f"
+          stroke="#657481"
+          stroke-width="1"
+        />
+        <g v-if="level >= 4" fill="none" stroke="#e5e8e7" stroke-width="2.5">
+          <path d="M60 100V70m0 10-8-8m8 4 8-8M100 100V70m0 10 8-8m-8 4-8-8" />
+          <circle cx="60" cy="66" r="7" fill="#e5e8e7" stroke="none" />
+          <circle cx="100" cy="66" r="7" fill="#e5e8e7" stroke="none" />
+        </g>
+        <g v-if="level >= 2" stroke="#e5e8e7" stroke-width="3" fill="none">
+          <path d="M40 106V66m0 14-11-11m11 5 11-11M120 106V66m0 14 11-11m-11 5-11-11" />
+          <circle cx="40" cy="61" r="9" fill="#e5e8e7" stroke="none" />
+          <circle cx="120" cy="61" r="9" fill="#e5e8e7" stroke="none" />
+          <g stroke="none">
+            <circle cx="29" cy="72" r="3" :fill="option.colour" />
+            <circle cx="51" cy="72" r="3" fill="#b8a4d8" />
+            <circle cx="131" cy="72" r="3" :fill="option.colour" />
+            <circle cx="109" cy="72" r="3" fill="#b8a4d8" />
+          </g>
+        </g>
+        <path d="M70 106h20l-2-8H72Z" fill="#aaa79f" stroke="#657481" stroke-width="1" />
+        <g fill="none" stroke="#e5e8e7" stroke-linecap="round">
+          <path :d="`M80 100V${100 - grove}`" stroke-width="5" />
+          <path
+            :d="`M80 ${100 - grove * 0.62}l-24-${grove * 0.3}M80 ${100 - grove * 0.62}l24-${grove * 0.3}M80 ${100 - grove * 0.62}l-11-${grove * 0.36}M80 ${100 - grove * 0.62}l11-${grove * 0.36}`"
+            stroke-width="2.5"
+          />
+          <path
+            v-if="level >= 3"
+            :d="`M80 ${100 - grove * 0.5}l-30-${grove * 0.14}M80 ${100 - grove * 0.5}l30-${grove * 0.14}`"
+            stroke-width="2.5"
+          />
+        </g>
+        <ellipse :cx="80" :cy="96 - grove" rx="15" ry="10" fill="#e5e8e7" stroke="none" />
+        <g class="landmark-glint" stroke="#657481" stroke-width="0.8">
+          <circle cx="56" :cy="104 - grove * 0.92" r="4" :fill="option.colour" />
+          <circle cx="104" :cy="104 - grove * 0.92" r="4" fill="#b8a4d8" />
+          <circle cx="69" :cy="104 - grove * 0.98" r="3.5" fill="#b8a4d8" />
+          <circle cx="91" :cy="104 - grove * 0.98" r="3.5" :fill="option.colour" />
+          <template v-if="level >= 3">
+            <circle cx="50" :cy="104 - grove * 0.64" r="3.5" :fill="option.colour" />
+            <circle cx="110" :cy="104 - grove * 0.64" r="3.5" fill="#b8a4d8" />
+          </template>
+        </g>
+        <g v-if="level >= 3" stroke="none">
+          <path d="M46 112h16v-3H46ZM98 112h16v-3H98Z" fill="#e5e8e7" />
+          <path d="M48 115v-3h3v3Zm9 0v-3h3v3Zm43 0v-3h3v3Zm9 0v-3h3v3Z" fill="#aaa79f" />
+          <path d="M22 108V96M138 108V96" stroke="#657481" stroke-width="1.2" />
+          <circle cx="22" cy="94" r="2.2" fill="#a6cfdf" />
+          <circle cx="138" cy="94" r="2.2" fill="#a6cfdf" />
+        </g>
+        <g v-if="level >= 4" fill="none" stroke="#e5e8e7" stroke-width="2.5">
+          <path d="M66 120V96q14-12 28 0v24" />
+          <g fill="#b8a4d8" stroke="none">
+            <circle cx="70" cy="93" r="2" />
+            <circle cx="80" cy="88" r="2" />
+            <circle cx="90" cy="93" r="2" />
+          </g>
+        </g>
+        <g v-if="level >= 5">
+          <ellipse
+            class="landmark-glint"
+            cx="80"
+            :cy="88 - grove"
+            rx="20"
+            ry="5"
+            fill="none"
+            stroke="#eacb80"
+            stroke-width="2"
+          />
+          <g stroke="none">
+            <circle cx="60" :cy="88 - grove" r="2.5" fill="#eacb80" />
+            <circle cx="100" :cy="88 - grove" r="2.5" fill="#b8a4d8" />
+            <circle cx="80" :cy="93 - grove" r="2.5" fill="#b8a4d8" />
+            <path d="m28 118 4-12 4 12Zm96 0 4-12 4 12Z" :fill="option.colour" />
+          </g>
+        </g>
+      </template>
+      <template v-else-if="form === 'first-bell'">
+        <!-- The porches stand behind the tower's foot; the belfry and its bell on top. -->
+        <path
+          d="M24 108 44 98h72l20 10-20 10H44Z"
+          fill="#aaa79f"
+          stroke="#657481"
+          stroke-width="1"
+        />
+        <g v-if="level >= 4" stroke="#657481" stroke-width="1">
+          <path
+            d="M34 110V90M54 110V90M106 110V90M126 110V90"
+            stroke="#e5e8e7"
+            stroke-width="2.5"
+          />
+          <path d="m30 90 14-12 14 12Zm72 0 14-12 14 12Z" fill="#b8a4d8" />
+          <path d="M36 108h16v-3H36Zm72 0h16v-3h-16Z" fill="#e5e8e7" />
+        </g>
+        <path d="M68 108v-6h24v6Z" fill="#aaa79f" stroke="#657481" stroke-width="1" />
+        <template v-if="level >= 2">
+          <path
+            :d="`M71 102V${belfry}h18v${102 - belfry}Z`"
+            fill="#aaa79f"
+            stroke="#657481"
+            stroke-width="1"
+          />
+          <path
+            :d="`M70 ${belfry}h20M70 ${(102 + belfry) / 2}h20M70 101h20`"
+            stroke="#e5e8e7"
+            stroke-width="2.5"
+          />
+          <path d="M76 102v-8q4-5 8 0v8Z" fill="#657481" stroke="none" />
+        </template>
+        <g stroke="#e5e8e7" stroke-width="2.5">
+          <path :d="level >= 2 ? `M71 ${belfry}v-18M89 ${belfry}v-18` : 'M64 102V62M96 102V62'" />
+        </g>
+        <path
+          :d="level >= 2 ? `M67 ${belfry - 20}h26v3H67Z` : 'M60 59h40v4H60Z'"
+          fill="#e5e8e7"
+          stroke="#657481"
+          stroke-width="0.8"
+        />
+        <path
+          v-if="level >= 2"
+          :d="`M66 ${belfry - 20} 80 ${belfry - 38} 94 ${belfry - 20}Z`"
+          :fill="level >= 5 ? option.colour : '#b8a4d8'"
+          stroke="#657481"
+          stroke-width="1"
+        />
+        <g
+          :class="{ 'landmark-swing': level >= 3 }"
+          :style="{ transformOrigin: `80px ${level >= 2 ? belfry - 17 : 63}px` }"
+        >
+          <path :d="`M80 ${level >= 2 ? belfry - 17 : 63}v4`" stroke="#eacb80" stroke-width="1.5" />
+          <path
+            :d="`M73 ${level >= 2 ? belfry - 2 : 80}q0-13 7-13t7 13Z`"
+            :fill="option.colour"
+            stroke="#657481"
+            stroke-width="1"
+          />
+          <path :d="`M72 ${level >= 2 ? belfry - 2 : 80}h16`" stroke="#eacb80" stroke-width="2" />
+        </g>
+        <g v-if="level >= 3">
+          <circle
+            cx="80"
+            :cy="belfry + 14"
+            r="6"
+            fill="#e5e8e7"
+            stroke="#eacb80"
+            stroke-width="1.5"
+          />
+          <circle cx="80" :cy="belfry + 10.5" r="1.5" fill="#eacb80" stroke="none" />
+          <circle cx="83.5" :cy="belfry + 14" r="1.5" fill="#a6cfdf" stroke="none" />
+          <circle cx="80" :cy="belfry + 17.5" r="1.5" fill="#a6cfdf" stroke="none" />
+          <circle cx="76.5" :cy="belfry + 14" r="1.5" fill="#a6cfdf" stroke="none" />
+          <g stroke="none">
+            <path d="M22 108V96M138 108V96" stroke="#657481" stroke-width="1.2" />
+            <circle cx="22" cy="94" r="2.2" fill="#a6cfdf" />
+            <circle cx="138" cy="94" r="2.2" fill="#a6cfdf" />
+          </g>
+        </g>
+        <g v-if="level >= 5" stroke="none">
+          <path
+            class="landmark-glint"
+            :d="`m80 ${belfry - 52} 4 14h-8Z`"
+            :fill="option.colour"
+            stroke="#657481"
+            stroke-width="0.8"
+          />
+          <circle cx="80" :cy="belfry - 53" r="2" fill="#eacb80" />
+          <path d="m58 120 4-11 4 11Zm36 0 4-11 4 11Z" fill="#a6cfdf" />
+        </g>
+      </template>
+      <template v-else-if="form === 'moonstone-carousel'">
+        <!-- The fence and benches behind, the deck, its seats, then the canopy above. -->
+        <path
+          d="M24 108 44 98h72l20 10-20 10H44Z"
+          fill="#aaa79f"
+          stroke="#657481"
+          stroke-width="1"
+        />
+        <g v-if="level >= 4" fill="none" stroke="#e5e8e7" stroke-width="1.5">
+          <path d="M66 117q-42-1-44-11 2-10 58-12 56 2 58 12-2 10-44 11" />
+          <path
+            d="M28 110v-7M36 101v-6M52 97v-6M108 97v-6M124 101v-6M132 110v-7"
+            stroke="#657481"
+          />
+          <path d="M26 98h14v-3H26Zm94 0h14v-3h-14Z" fill="#e5e8e7" stroke="none" />
+        </g>
+        <ellipse cx="80" cy="102" rx="40" ry="8" fill="#e5e8e7" stroke="#eacb80" stroke-width="2" />
+        <path :d="`M80 100V${carousel}`" stroke="#eacb80" stroke-width="3" />
+        <g stroke="#657481" stroke-width="1">
+          <path :d="`M52 ${carousel + 2}v34M108 ${carousel + 2}v34M80 ${carousel + 2}v42`" />
+          <path v-if="level >= 4" :d="`M64 ${carousel + 2}v30M96 ${carousel + 2}v30`" />
+        </g>
+        <g :class="{ 'landmark-glint': level >= 3 }">
+          <g
+            v-for="[x, y] in [
+              [52, 92],
+              [108, 92],
+              [80, 100],
+            ]"
+            :key="x"
+          >
+            <path
+              :d="`M${x - 7} ${y}h14v-6H${x - 7}Z`"
+              fill="#e5e8e7"
+              stroke="#657481"
+              stroke-width="0.8"
+            />
+            <path :d="`M${x - 4} ${y - 6}h8v-4h-8Z`" :fill="option.colour" stroke="none" />
+            <circle :cx="x - 5" :cy="y + 1" r="2" fill="#657481" stroke="none" />
+            <circle :cx="x + 5" :cy="y + 1" r="2" fill="#657481" stroke="none" />
+          </g>
+          <g v-if="level >= 4" stroke="none">
+            <circle cx="64" cy="86" r="4" fill="#b8a4d8" />
+            <circle cx="96" cy="86" r="4" fill="#b8a4d8" />
+            <path
+              d="M60 86H50M60 84l-9-3M100 86h10m-10-2 9-3"
+              stroke="#eacb80"
+              stroke-width="1.2"
+            />
+          </g>
+        </g>
+        <template v-if="level >= 2">
+          <path
+            :d="`M42 ${carousel}h76v6H42Z`"
+            fill="#e5e8e7"
+            stroke="#657481"
+            stroke-width="0.8"
+          />
+          <path
+            :d="`M42 ${carousel + 6}q4.75 4 9.5 0t9.5 0 9.5 0 9.5 0 9.5 0 9.5 0 9.5 0 9.5 0`"
+            fill="none"
+            stroke="#eacb80"
+            stroke-width="2"
+          />
+          <path
+            :d="`M38 ${carousel} 80 ${carousel - 26} 122 ${carousel}Z`"
+            :fill="option.colour"
+            stroke="#657481"
+            stroke-width="1"
+          />
+          <circle cx="80" :cy="carousel - 27" r="2.5" fill="#eacb80" stroke="none" />
+        </template>
+        <g v-if="level >= 5" stroke="none">
+          <path :d="`m70 ${carousel - 22} 3-6 3 6-3 4Zm14 0 3-6 3 6-3 4Z`" fill="#b8a4d8" />
+          <path
+            class="landmark-glint"
+            :d="`m80 ${carousel - 48} 5 18-5 4-5-4Z`"
+            fill="#a6cfdf"
+            stroke="#657481"
+            stroke-width="0.8"
+          />
+          <path d="M22 108V90M138 108V90" stroke="#657481" stroke-width="1.2" />
+          <circle cx="22" cy="88" r="2.4" fill="#eacb80" />
+          <circle cx="138" cy="88" r="2.4" fill="#eacb80" />
+        </g>
+      </template>
       <template v-else-if="form === 'steady-lens'">
         <!-- Memory stacks behind, then the panel under its flat canopy, then the wings. -->
         <g v-if="level >= 4" fill="#ece9e1" stroke="#657481" stroke-width="1">
@@ -668,7 +928,11 @@
         <path d="m57 22 23-15 23 15Z" />
       </template>
     </g>
-    <g v-if="lunar && !mineral && !signal && level >= 2" stroke="#e5e8e7" stroke-width="2">
+    <g
+      v-if="lunar && !mineral && !signal && !hollowborn && level >= 2"
+      stroke="#e5e8e7"
+      stroke-width="2"
+    >
       <path d="M12 108V94h24v10Zm112-4V94h24v14Z" :fill="option.colour" />
       <path v-if="level >= 3" d="M20 91V78m120 13V78" stroke="#eacb80" stroke-width="4" />
       <path v-if="level >= 4" d="M18 94V48m124 46V48" />
@@ -719,6 +983,7 @@
 import { computed, useId } from 'vue';
 import { MOONSTONE_LANDMARK_FORMS } from '../../game/town/TownMoonstoneLandmarks';
 import { SIGNAL_LANDMARK_FORMS } from '../../game/town/moon/MoonSignalLandmarks';
+import { HOLLOWBORN_LANDMARK_FORMS } from '../../game/town/moon/MoonHollowbornLandmarks';
 import { LANDMARK_BY_ID, PERSONAL_AREAS, LANDMARK_PROGRESSION } from '../../data/townLandmarks';
 import { settlementOf } from '../../data/settlements';
 import TownCrest from './TownCrest.vue';
@@ -739,6 +1004,13 @@ const form = computed(() => option.value.form);
 const mineral = computed(() => MOONSTONE_LANDMARK_FORMS.includes(form.value));
 // Voyagers' Court draws every level of its own designs: none of the shared lunar extras.
 const signal = computed(() => SIGNAL_LANDMARK_FORMS.includes(form.value));
+// Hollowborn Square's designs draw every level of their own too.
+const hollowborn = computed(() => HOLLOWBORN_LANDMARK_FORMS.includes(form.value));
+// Where each Hollowborn design's tallest part reaches at this level: the grove's elder tree,
+// the bell tower's belfry floor and the carousel's canopy rim.
+const grove = computed(() => (level.value >= 5 ? 66 : 48 + level.value * 3));
+const belfry = computed(() => (level.value >= 3 ? 56 : 64));
+const carousel = computed(() => (level.value >= 2 ? 56 : 68));
 // The site's settlement (settlements.js): its own sky and stone.
 const settlement = computed(() =>
   settlementOf(PERSONAL_AREAS.find((area) => area.choices.includes(props.choice))),
@@ -766,12 +1038,23 @@ const gradient = useId();
 .landmark-active .landmark-glint {
   animation: monument-glint 3s ease-in-out infinite alternate;
 }
+.landmark-active .landmark-swing {
+  animation: monument-swing 2s ease-in-out infinite alternate;
+}
 .landmark-water {
   animation: monument-water 1.5s ease-in-out infinite alternate;
 }
 @keyframes monument-orbit {
   to {
     transform: rotate(360deg);
+  }
+}
+@keyframes monument-swing {
+  from {
+    transform: rotate(-9deg);
+  }
+  to {
+    transform: rotate(9deg);
   }
 }
 @keyframes monument-glint {

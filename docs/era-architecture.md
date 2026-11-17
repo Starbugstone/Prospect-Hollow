@@ -1138,6 +1138,13 @@ flows through `landmarkPayment` into `townCurrency.payPrice` in the atomic
 personalisation commit; the server's shared `landmark-buy` replay applies that
 same catalog currency together with ownership. `TownMoonstoneLandmarks.js` owns
 six mineral silhouettes without expanding the main renderer's form switch.
+Later sites with designs of their own register a renderer module the same way
+(`moon/MoonSignalLandmarks.js` for Voyagers' Court, `moon/MoonHollowbornLandmarks.js` for
+Hollowborn Square): the module exports its forms and a builder that draws its own octagonal
+base, and `buildLandmark` skips the shared pedestal, flanking court and fountain for them. A
+Moon site that stands off the roads gets a public path through one entry in
+`MOON_SITE_PATHS` (`moonSiteRoute`, the same route search as a lot's); the Moon scene, the SVG
+map and the crater scatter read `moonSiteRoutes(town)`.
 `TownMapLabel.vue` renders names, quiet markers and `TownLabelStatus` on every
 settlement map. Its text containment applies to translated names and statuses;
 map-specific styles choose a row or stacked layout. `TownActionIcon.vue` renders

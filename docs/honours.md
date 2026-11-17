@@ -893,3 +893,12 @@ the lanterns and cores, because those visits are extra play on the same boards. 
 Prospector arrives on its three levels in every seed. Twin Hollows now begins at runs 877–908,
 so Keen Eye's silver (the pair's debut) moves from 973 to 948; Commissioner barely moves. No
 level data, star target or reward changed, so `npm run test:levels` was not needed.
+
+## Hollowborn Square (2026-11-17)
+
+| Content                                               | Decision                                                                                 |
+| ----------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Hollowborn Square, New Hollow Rising's moonstone site | `NON_MONUMENT_HONOURS`: Landmark Patron's eleven sites shipped fixed, so it adds no rank |
+
+No rank changes and `HONOURS_VERSION` stays as it is. Lunar Keepsake Collector counts moonstones
+earned, not spent, so the new site does not change it either.
