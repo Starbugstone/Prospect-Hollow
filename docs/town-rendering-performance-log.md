@@ -532,3 +532,23 @@ Mine script time per frame after the pass, same harness as the table above (4× 
 on a busy development machine): level 13 4.7 ms, level 376 8.7 ms, level 397 5.5 ms, against the
 12 ms ceiling. `testing/browser/board-motion.cjs` reports no stutter or stacked gems on levels 13,
 373, 376, 385 and 397.
+
+## Release 1.3.0 frame check, 17 November 2026
+
+`testing/browser/frame-budget.cjs` (375 × 690, 4x CPU slowdown, script ms per frame), alternating
+builds on the same dev server setup. The WSL development machine sat at a load average of 7–9 with
+nothing busy in it, so every figure reads high; compare within a row, not with older entries.
+
+| Build                                                                            | Levels 13 / 376 / 397       | Twin Hollows town |
+| -------------------------------------------------------------------------------- | --------------------------- | ----------------- |
+| `b7d8fb82` (this log's 24.7 ms baseline)                                         | 3.3–4.4 / 7.0–7.8 / 4.8–6.5 | 41.2, 41.0        |
+| `7f9685e1` (preprod before the 1.3.0 additions)                                  | 4.8–6.1 / 7.0–8.1 / 5.8–5.9 | 46.2, 42.5, 71.1  |
+| `d6f8e137` (with the third commission, Hollowborn Square, the tram and children) | 5.0–7.4 / 7.8–8.8 / 5.5–7.6 | 49.3, 45.8, 48.1  |
+
+The baseline build that measured 24.7 ms on 2 November reads 41 ms here, so this machine reads
+about 1.65 times high. Scaled by that, the town is about 27–28 ms with the 1.3.0 additions,
+under its 35 ms ceiling, and within noise of the build before them; the boards stay under 12 ms.
+The town scene is the valley, so the Moon's tram and children are not in it: measured on their
+own (alternating, unthrottled), the Moon's per-frame work rose from about 115 to 160 µs. The
+check still needs a run on a quiet machine to replace these scaled figures. Raw output is in
+`output/next-release/frames/` (git-ignored).
