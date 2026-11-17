@@ -2,6 +2,9 @@
 // VIPs and anyone leaving a worksite. The sheriff patrols faster; Moon settlers keep
 // their own pace along the ring.
 export const VILLAGER_WALK_SPEED = 0.55;
+// Children are drawn at this scale on the villager skeleton, in every settlement, and take
+// strides as much shorter.
+export const CHILD_SCALE = 0.68;
 
 // The walk cycle every villager shares, in the valley and on the Moon: legs stride
 // with a bending knee and arms swing against them. `step` advances by a full turn per

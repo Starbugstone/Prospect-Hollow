@@ -411,10 +411,27 @@ rover depot).
 - **Rovers give way to people.** A rover drives down the middle of its ring and walkers keep
   to the road's edges (`MOON_WALK_LANE`). It brakes for anyone in its strip, for a settler
   whose planned day or a touring VIP whose route (`moonVipAhead`) is about to take them
-  across the road, and for a rover waiting ahead
+  across the road, and for a vehicle waiting ahead
   (`MoonRovers.js`); it never waits for someone it will already have passed. A rover that has
   not had to wait is exactly where its timetable puts it. `testing/moon-rovers.test.js`
   covers stopping, passing, queueing and the fallbacks.
+- **The ring tram.** Once the Ring Tram stop is built, a tram runs laps of the outer ring on
+  rails, one car at level 1 and two from level 2, and rests for eight seconds in front of the
+  stop's platform on every lap (`MoonTram.js`). Nothing is parked at the stop, so there is never
+  a second tram there. Its timetable is a pure function of the scene clock, on the outer rovers'
+  lap, so it leaves its stop with a rover a quarter lap off either side. It drives the rovers'
+  rules (`moonRoverAngle` with a `timetable` and a `length`): it gives way to people and to the
+  vehicle in front, and at the stop it makes up whatever it lost, up to half its rest a lap, so
+  it is never late for long. It keeps moving with reduced motion, as the rovers do.
+  `testing/moon-tram.test.js` covers the timetable, the rest, giving way, the rovers and the
+  clearances.
+- **Moon-born children.** Once the Crater School stands, one child for each level of Lantern
+  Row and the Earthview Terraces, up to four (`MAX_MOON_CHILDREN`), walks from home to the
+  school door, spends the lessons inside and walks home (`moonChildPlan`). They set off one
+  after another on one 200-second school day. They are settlers in the full suit, helmet and
+  pack, drawn at the valley's child scale (`CHILD_SCALE`, 0.68) with strides as much shorter.
+  A finished Moon commission whose outcome has `young: true` gets them after school, on their
+  way home; no Moon commission does yet.
 - **Strollers on the outer ring.** Once lots stand on the outer ring, up to four settlers walk
   it in both directions (`moonOuterStrollers`), so the long road is never empty. They are
   added after every other settler, whose days do not change.

@@ -436,7 +436,7 @@ const risingBuildings = [
     id: 'ringTram',
     name: 'Ring tram stop',
     shortName: 'Tram stop',
-    purpose: 'A little tram that circles the new streets to the landing',
+    purpose: 'A little tram that circles the new streets, never late',
     family: 'station',
     effects: { visitors: 4, comfort: 1 },
   },
