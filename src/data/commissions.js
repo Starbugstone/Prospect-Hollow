@@ -114,19 +114,19 @@ export const COMMISSIONS = Object.freeze([
         thanks:
           'The library opened with one shelf for every child in New Hollow. The smallest readers sit nearest the lamps, and nobody hurries them home.',
         visits: Object.freeze({ settler: 2, willowkin: 1 }),
-        use: Object.freeze({ stay: 'enter', carry: 'book' }),
+        use: Object.freeze({ stay: 'enter', carry: 'book', young: true }),
       }),
       'little-planetarium': Object.freeze({
         thanks:
           'The planetarium showed its first sky tonight: the stars as they look from the valley. The children cheered when we turned it round and they found home.',
         visits: Object.freeze({ settler: 3, willowkin: 0 }),
-        use: Object.freeze({ stay: 'enter', carry: 'chart' }),
+        use: Object.freeze({ stay: 'enter', carry: 'chart', young: true }),
       }),
       'earthview-studio': Object.freeze({
         thanks:
           'The easels outside the studio are never empty. Every painting of Earth comes out blue and white, and every one is different.',
         visits: Object.freeze({ settler: 1, willowkin: 2 }),
-        use: Object.freeze({ stay: 'gather', carry: 'painting' }),
+        use: Object.freeze({ stay: 'gather', carry: 'painting', young: true }),
       }),
     }),
   }),

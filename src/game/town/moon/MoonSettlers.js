@@ -164,10 +164,21 @@ export function moonSettlerBuildings(levels) {
     .sort((a, b) => HOMES.includes(b.id) - HOMES.includes(a.id));
 }
 
-// The commission a resident heads for on this trip, or none: the first `visits` trips of
-// their day go there, so what the player chose decides who comes and how often.
-const venueForTrip = (venues, kind, trip) =>
-  venues.find(({ visits }) => trip < (visits[kind] ?? 0)) ?? null;
+// The commission a resident heads for on this trip, or none: each finished commission
+// offers its `visits` trips of the day, so what the player chose decides who comes and how
+// often. Residents start their round at different commissions (by `n`), so one that asks
+// for every trip cannot leave the others empty. With one commission every resident goes
+// there first, as before.
+function venueForTrip(venues, kind, trip, n = 0) {
+  const offered = venues.filter(({ visits }) => (visits?.[kind] ?? 0) > 0);
+  let left = trip;
+  for (let i = 0; i < offered.length; i++) {
+    const venue = offered[(n + i) % offered.length];
+    if (left < venue.visits[kind]) return venue;
+    left -= venue.visits[kind];
+  }
+  return null;
+}
 
 /**
  * One settler's looping day: home → visit → home, three times, resting indoors
@@ -200,7 +211,7 @@ export function moonSettlerPlan(
   const others = local && nearby.length ? nearby : elsewhere;
   const steps = [];
   for (let trip = 0; trip < 3; trip++) {
-    const venue = venueForTrip(venues, kind, trip);
+    const venue = venueForTrip(venues, kind, trip, n);
     const visit =
       venue?.route ??
       (others.length ? others[Math.floor(hash(n * 13 + trip * 7 + 1) * others.length)] : home);
@@ -306,7 +317,8 @@ function createMoonChildren(d, parent, levels = {}, venues = []) {
       look: MOON_CHILD_LOOKS[n % MOON_CHILD_LOOKS.length],
     });
     figure.root.name = 'New Hollow child';
-    return { ...figure, plan: moonChildPlan(levels, n, venues), size: CHILD_SCALE };
+    const plan = moonChildPlan(levels, n, venues);
+    return { ...figure, plan, size: CHILD_SCALE, items: plan ? carriedItems(d, figure, plan) : [] };
   }).filter(({ plan }) => plan);
 }
 
@@ -472,15 +484,21 @@ export function moonOuterStrollers(levels) {
 }
 export const MOON_OUTER_STROLLERS = 4;
 
+// One item per thing a settler's day brings home: a day can visit several commissions.
+function carriedItems(d, figure, plan) {
+  const carries = new Set((plan.segments ?? []).map(({ carry }) => carry).filter(Boolean));
+  return [...carries].flatMap((carry) => {
+    const item = addCarriedItem(d, figure.arms[0].lower, carry);
+    return item ? [[carry, item]] : [];
+  });
+}
 /** Completed homes add neighbors. A construction project alone never spawns them. */
 export function createMoonSettlers(d, parent, levels = {}, venues = []) {
   const homes = HOMES.reduce((sum, id) => sum + (levels[id] ?? 0), 0);
   const settlers = Array.from({ length: Math.min(10, 2 + homes * 2) }, (_, n) => {
     const figure = moonSuitFigure(d, { parent, look: moonSettlerLook(n) });
     const plan = moonSettlerPlan(levels, n, null, venues);
-    // Only a settler whose day brings something home holds the item.
-    const carry = plan.segments?.find((segment) => segment.carry)?.carry;
-    return { ...figure, plan, item: carry ? addCarriedItem(d, figure.arms[0].lower, carry) : null };
+    return { ...figure, plan, items: carriedItems(d, figure, plan) };
   });
   const dome = levels.willowkinDome ?? 0;
   for (let n = 0; n < (dome > 0 ? Math.min(4, dome + 1) : 0); n++)
@@ -526,6 +544,8 @@ export function animateMoonSettler(settler, time) {
   const size = settler.size ?? 1;
   root.scale.setScalar(pose.scale * size);
   (settler.stride ?? strideMoonFigure)(settler, pose.distance / size, pose.walking);
-  holdCarried(settler.item, settler.arms, !!pose.carry);
+  // Each trip home shows what that commission gives, and nothing else.
+  for (const [carry, item] of settler.items ?? [])
+    holdCarried(item, settler.arms, pose.carry === carry);
   return pose;
 }

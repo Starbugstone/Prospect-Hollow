@@ -624,13 +624,85 @@ describe('Moon settlers at the finished conservatory', () => {
     const d = kit();
     const settlers = createMoonSettlers(d, d.scene, town.buildings, venues);
     const settler = settlers[0];
-    expect(settler.item?.name).toBe(`Carried ${use.carry}`);
+    const items = new Map(settler.items);
+    expect([...items.keys()]).toEqual(use.carry ? [use.carry] : []);
+    if (use.carry) expect(items.get(use.carry).name).toBe(`Carried ${use.carry}`);
     for (const segment of walks(settler.plan)) {
       animateMoonSettler(settler, segment.start + segment.duration / 2 - settler.plan.offset);
-      expect(settler.item.visible).toBe(!!segment.carry);
+      if (use.carry) expect(items.get(use.carry).visible).toBe(!!segment.carry);
     }
-    expect(settlers.filter(({ plan }) => !plan.segments).every(({ item }) => !item)).toBe(true);
+    expect(settlers.filter(({ plan }) => !plan.segments).every(({ items }) => !items?.length)).toBe(
+      true,
+    );
   });
+
+  it('shares settler trips between several finished commissions, each bringing its own item', () => {
+    // A bakehouse asks for every trip of the day; the school's and crews' commissions still
+    // get residents, and a resident who visits two carries each one's item home in turn.
+    let town = moonTown();
+    town.era = 'hollow-rising';
+    Object.assign(town.buildings, { craterSchool: 3, expeditionGarage: 3 });
+    for (const [id, choice] of [
+      ['earthlight-conservatory', 'earthlight-bakehouse'],
+      ['schoolyard-court', 'little-planetarium'],
+      ['crew-yard', 'mapmakers-hall'],
+    ])
+      town = finish(buy(town, AREA_BY_ID[id], choice), AREA_BY_ID[id]);
+    const venues = moonCommissionVenues(town);
+    expect(venues.map(({ id }) => id).sort()).toEqual(
+      ['crew-yard', 'earthlight-conservatory', 'schoolyard-court'].sort(),
+    );
+    const d = kit();
+    const settlers = createMoonSettlers(d, d.scene, town.buildings, venues).filter(
+      ({ plan }) => plan?.segments && !plan.child,
+    );
+    const carryOf = Object.fromEntries(venues.map(({ id, use }) => [id, use.carry]));
+    const visited = new Set();
+    let mixed = 0;
+    for (const settler of settlers) {
+      const carrying = walks(settler.plan).filter(({ carry }) => carry);
+      for (const walk of carrying) {
+        expect(walk.carry).toBe(carryOf[walk.route.from]);
+        visited.add(walk.route.from);
+      }
+      const items = new Map(settler.items);
+      if (items.size > 1) mixed++;
+      for (const segment of walks(settler.plan)) {
+        animateMoonSettler(settler, segment.start + segment.duration / 2 - settler.plan.offset);
+        for (const [carry, item] of items) expect(item.visible).toBe(segment.carry === carry);
+      }
+    }
+    expect([...visited].sort()).toEqual(Object.keys(carryOf).sort());
+    expect(mixed).toBeGreaterThan(0);
+  });
+
+  it.each(AREA_BY_ID['schoolyard-court'].choices)(
+    "the teachers' %s gets the children after school",
+    (choice) => {
+      let town = moonTown();
+      town.era = 'hollow-rising';
+      Object.assign(town.buildings, { craterSchool: 3, lanternRow: 1, earthviewTerraces: 1 });
+      const site = AREA_BY_ID['schoolyard-court'];
+      town = finish(buy(town, site, choice), site);
+      const venues = moonCommissionVenues(town);
+      const d = kit();
+      const children = createMoonSettlers(d, d.scene, town.buildings, venues).filter(
+        ({ plan }) => plan?.child,
+      );
+      expect(children.length).toBeGreaterThan(0);
+      const { carry } = commissionFor(site.id).outcomes[choice].use;
+      for (const child of children) {
+        const there = walks(child.plan).filter(({ route }) => route.to === site.id);
+        expect(there, child.root.name).toHaveLength(1);
+        const home = walks(child.plan).find(({ route }) => route.from === site.id);
+        expect(home.carry).toBe(carry);
+        const [[kind, item]] = child.items;
+        expect(kind).toBe(carry);
+        animateMoonSettler(child, home.start + home.duration / 2 - child.plan.offset);
+        expect(item.visible).toBe(true);
+      }
+    },
+  );
 
   it('a future commission without routine data has settlers gather at its door', () => {
     const town = finish(buy(moonTown(), moonSite, moonSite.choices[0]), moonSite);
