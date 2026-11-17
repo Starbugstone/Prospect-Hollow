@@ -365,6 +365,7 @@ export const NON_RESOURCE_HONOURS = Object.freeze({
 export const NON_MONUMENT_HONOURS = Object.freeze({
   // Commission sites count for Commissioner, not Landmark Patron. Landmark Patron's site list shipped fixed, so a later site cannot join it.
   'voyagers-court': 'Landmark Patron’s shipped sites are fixed; a later site adds no rank yet.',
+  'hollowborn-square': 'Landmark Patron’s shipped sites are fixed; a later site adds no rank yet.',
 });
 // Every hidden find is counted by Keen Eye; a later one needs a rank or a reason here.
 export const NON_FIND_HONOURS = Object.freeze({});

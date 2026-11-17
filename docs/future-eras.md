@@ -282,7 +282,8 @@ and a timeout. If other containers are busy, replace `--network host` with
 
 `testing/browser/moon-labels.cjs` uses the same Docker browser setup. Substitute
 that filename in the second command to check WebGL and SVG at 1440×900, 900×360
-and 375×740. It checks visible labels for overlap, screen bounds, attachment to
+and 375×740 (a Twin Hollows town; `-e PH_MOON_ERA=hollow-rising` checks a later era's
+map). It checks visible labels for overlap, screen bounds, attachment to
 projected buildings, touch/keyboard selection, English/French text overflow and
 finish icons that remain tappable with names hidden. Set `PH_SCREENSHOT_DIR` to
 save captures. `testing/browser/town-label-parity.cjs` compares computed styling
@@ -421,6 +422,25 @@ rover depot).
   and one piece of kit (an antenna, twin tanks, a helmet lamp, a satchel, a crest) on the
   shared skeleton; the build scales a frame inside the root, so the feet stay on the ground.
   A figure built without a look (VIP visitors, the unveiling crowd) is unchanged.
+
+### Hollowborn Square
+
+The era's optional moonstone monument site, on outer-ring slot 4 (`[-10.7, 53.9]`), between the
+Orchard Vaults and the front of the crater. It celebrates the first children born under
+Earthlight and costs 20 / 30 / 40 / 50 / 60 moonstones a level, like Moonstone Garden and
+Moonrock Court. It faces the usual camera; its public path leaves the back of the square for the
+outer ring (`MOON_SITE_PATHS` and `moonSiteRoute` in `src/data/moonSettlement.js`), drawn on
+both maps once the site opens. The first view of the Moon frames the inner town, so the player
+pans down to see it. Three designs develop over the five levels on a moon-rock octagon
+(`moon/MoonHollowbornLandmarks.js`): the **Silverbough Grove** (an elder silver tree with
+moonstone fruit, then saplings, benches and lamps, an arbour and a turning crown of fruit),
+the **First Bell Tower** (a bell in a plain frame, then the tower, a swinging bell and an
+Earth-phase dial, two porches and a moonstone spire) and the **Moonstone Carousel** (a deck of
+little rovers, then a canopy, the ride turning, comets and a fence, and a crown). The names are
+original. `testing/hollowborn-square.test.js` covers the site, its path and its art;
+`testing/browser/hollowborn-square.cjs` taps and photographs every design at levels 1, 3 and 5
+in WebGL and SVG, at 1440×900 and 375×740 (same Docker setup as the Moon input check, with
+`PH_SCREENSHOT_DIR` for pictures).
 
 ### The wandering pair
 

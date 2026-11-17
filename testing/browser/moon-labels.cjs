@@ -1,6 +1,8 @@
 // Run against Docker Vite, with the same Playwright setup as moon-input.cjs.
 const assert = require('node:assert/strict');
 const { chromium, SOFTWARE_WEBGL, moonPage, openFixture, pageErrors } = require('./helpers.cjs');
+// PH_MOON_ERA checks a later era's map, with its outer ring and sites (default Twin Hollows).
+const ERA = process.env.PH_MOON_ERA || 'twin-hollows';
 const fixture = moonPage(`
 import {createApp,h,reactive} from '/node_modules/.vite/deps/vue.js';
 import Moon from '/src/components/town/TownMoonView.vue';
@@ -11,7 +13,7 @@ import {moonMapLabel} from '/src/game/town/moon/MoonLabelLayout.js';
 window.moonMapLabel=moonMapLabel;
 import {setLocale} from '/src/i18n/index.js';
 window.setLocale=setLocale;
-const town=reactive(createTown());window.town=town;town.era='twin-hollows';
+const town=reactive(createTown());window.town=town;town.era=${JSON.stringify(ERA)};
 Object.assign(town.buildings,{spaceElevator:3,...Object.fromEntries(Object.keys(MOON_LOTS).map(id=>[id,3]))});
 window.expectedCount=Object.keys(MOON_LOTS).length+areasForSettlement('moon').filter(area=>areaUnlocked(town,area)).length;
 window.indicators=reactive({settlerDomes:'ready'});

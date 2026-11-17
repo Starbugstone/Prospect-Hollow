@@ -386,6 +386,32 @@ export const LANDMARK_OPTIONS = [
     400000,
     'A fenced meadow of flowers and old trees that the valley’s animals soon call their own.',
   ),
+  // New Hollow Rising: Hollowborn Square, on the outer ring, for the first children born under
+  // Earthlight. Keepsakes paid only in moonstones; the base price is the version-2 receipt term.
+  option(
+    'silverbough-grove',
+    'Silverbough Grove',
+    'silverbough-grove',
+    '#a6cfdf',
+    60,
+    'Silver trees grown from moon rock, hung with moonstone fruit for every child born in New Hollow.',
+  ),
+  option(
+    'first-bell',
+    'First Bell Tower',
+    'first-bell',
+    '#b8a4d8',
+    60,
+    'A slender tower whose moonstone bell rang in the crater school’s very first morning.',
+  ),
+  option(
+    'moonstone-carousel',
+    'Moonstone Carousel',
+    'moonstone-carousel',
+    '#a6cfdf',
+    60,
+    'A slow carousel of little rovers and comets under a crown of moonstones, for the youngest settlers.',
+  ),
 ];
 export const LANDMARK_BY_ID = Object.fromEntries(LANDMARK_OPTIONS.map((o) => [o.id, o]));
 // The way a site's front faces, as a turn about its centre. Every monument is
@@ -398,7 +424,7 @@ export const SITE_FACINGS = Object.freeze({
   north: Math.PI,
   west: -Math.PI / 2,
 });
-// Resource rarity has its own fixed curve, shared by both keepsake sites and all designs.
+// Resource rarity has its own fixed curve, shared by every keepsake site and all designs.
 const moonstoneLevelPrices = Object.freeze([20, 30, 40, 50, 60]);
 // A commission costs what the last stretch of Twin Hollows did per puzzle, in even stages,
 // so a visible change stays a few puzzles away instead of one long save for the last level.
@@ -538,6 +564,19 @@ const plots = [
     ['steady-lens', 'twin-wheel', 'work-pod'],
     'south',
     MOON_SETTLEMENT,
+  ],
+  // New Hollow Rising: outer-ring slot 4, between the Orchard Vaults and the front of the
+  // crater. It faces the usual camera; its public path joins the outer ring behind it.
+  [
+    'hollowborn-square',
+    'hollow-rising',
+    'Hollowborn Square',
+    [-10.7, 53.9],
+    ['silverbough-grove', 'first-bell', 'moonstone-carousel'],
+    'south',
+    MOON_SETTLEMENT,
+    'moonstones',
+    moonstoneLevelPrices,
   ],
 ];
 export const PERSONAL_AREAS = plots.map(

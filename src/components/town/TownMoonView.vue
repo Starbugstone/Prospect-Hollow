@@ -222,6 +222,7 @@ import {
   MOON_LOTS,
   MOON_ROADS,
   moonApproaches,
+  moonSiteRoutes,
   moonDistrictsShown,
   moonLotsShown,
   moonSettlement,
@@ -387,7 +388,7 @@ const mapBox = computed(() =>
 );
 const craterFloor = [MOON_FLOOR_RADIUS * MOON_MAP_SCALE[0], MOON_FLOOR_RADIUS * MOON_MAP_SCALE[1]];
 const mapApproaches = computed(() =>
-  moonApproaches(props.town.buildings ?? {}).map((route) => ({
+  [...moonApproaches(props.town.buildings ?? {}), ...moonSiteRoutes(props.town)].map((route) => ({
     ...route,
     points: route.points.map(([x, z]) => `${x * 1.3},${6 + z * 1.05}`).join(' '),
   })),
