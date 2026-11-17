@@ -4,7 +4,7 @@
 // Every board that was on trial here has joined chapters 92–101 (src/data/crystalSeamLevels.js)
 // at the level number it was measured with. Each entry now names that campaign level and plays
 // its configuration, so a trial and its level cannot drift apart. They stay listed for the phone
-// checks still open in NEXT_RELEASE.md (step 3), which a tester runs from Settings without
+// checks recorded in docs/history/beyond-new-hollow-1.3.0.md (step 3), which a tester runs from Settings without
 // reaching level 547; remove an entry once its board has been played on a phone.
 import { CRYSTAL_SEAM_FIRST_LEVEL, CRYSTAL_SEAM_PLANS } from './crystalSeamLevels.js';
 import { levelConfig } from '../game/engine/LevelGenerator.js';

@@ -1,8 +1,10 @@
-# Next release: Beyond New Hollow
+# Release 1.3.0 plan: Beyond New Hollow
 
-The working plan for the next release. Keep it current while the work is under way: tick steps,
-record decisions and correct anything that turns out wrong. **Delete this file in the change that
-merges the release into `main`.** Lasting facts belong in `docs/`.
+> Historical implementation record, archived when release 1.3.0 went to `main`. The current
+> campaign has 606 puzzles in 101 chapters and 17 playable eras. See
+> [current documentation](../README.md), [later eras](../future-eras.md) and
+> [the crystal seams](../crystal-seam-levels.md). Checkboxes below are as the plan last recorded
+> them; "Where things stand" gives the state at release.
 
 ## Goal
 
@@ -23,26 +25,23 @@ The release is finished when:
 
 ## Where things stand
 
-On `preprod` after `e8d7191f`; nothing below has reached `main`.
+At release, on `preprod` (17 November 2026):
 
-| Piece                                                            | State                                    |
-| ---------------------------------------------------------------- | ---------------------------------------- |
-| Commission contract, `src/data/commissions.js`                   | Done                                     |
-| Earthlight Conservatory (Moon), opens at Greenhouse level 3      | Done                                     |
-| Homecoming Commons (valley), opens at Homecoming Hall level 3    | Done                                     |
-| Signal: map pill, Build sheet pill, letter over the site         | Done                                     |
-| Real-game signal check, `testing/browser/town-commission-signal` | Done                                     |
-| Real phone test                                                  | Not yet                                  |
-| Residents visibly using each outcome                             | Prototype on `preprod`                   |
-| Route-choice board prototype (chapter 94)                        | Prototype on `preprod`, debug tools only |
-| Pairing prototypes (chapters 92 and 93)                          | Prototype on `preprod`, debug tools only |
-| New boards: chapters 92–101, levels 547–606                      | Done on `t3/chapters-92-101`             |
-| Third commission                                                 | Not yet                                  |
-| Honours family, economy rerun, release notes                     | Not yet                                  |
-| New Hollow Rising: Moon lot table, roads as data, wider crater   | Done on `preprod`                        |
-| New Hollow Rising: the era and its buildings                     | Done on `preprod`                        |
-| New Hollow Rising: rover expeditions, the tram, child settlers   | Not yet                                  |
-| The Quiet Signal: the era, playable to its end                   | Done on `t3/quiet-signal-finish`         |
+| Piece                                                                                                       | State                                 |
+| ----------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| Commission contract and signal                                                                              | Done                                  |
+| Five commissions: Earthlight Conservatory, Homecoming Commons, Willowkin Glade, Schoolyard Court, Crew Yard | Done                                  |
+| `opens` after another commission, client and server                                                         | Done                                  |
+| Residents using each outcome, both maps                                                                     | Done                                  |
+| New boards: chapters 92–101, levels 547–606, three crystal mechanics                                        | Done                                  |
+| Honours generations 8 and 9 (Commissioner gold and diamond)                                                 | Done                                  |
+| New Hollow Rising, with the ring tram, Moon-born children and Hollowborn Square                             | Done                                  |
+| The Quiet Signal                                                                                            | Done                                  |
+| Save schema 5                                                                                               | Done                                  |
+| Economy rerun                                                                                               | Done, see `docs/economy-balance.md`   |
+| Admin-panel income sample and commission price check (step 2)                                               | Owner, before merging the release     |
+| Real phone passes                                                                                           | Owner                                 |
+| Rover expeditions, metals beyond diamond, late hammer projects                                              | After 1.3.0 (owner, 11 November 2026) |
 
 ## What the numbers say
 
@@ -255,7 +254,7 @@ mechanic: frost blocks a crystal's row and relays hidden in the frost seal it. C
 adds Chord crystal and drops twin gravity, which already ships with pearls and played slower
 with chords. Chapter 101 replaces its lens prisms with Trace twins, whose copies break the
 gates; its moon dial stays. All three finish on 60 hint-led seeds (medians 19, 19 and 21
-moves). [The boards on trial](docs/hollow-mine-levels.md#pairing-prototypes-chapters-95101)
+moves). [The boards on trial](../hollow-mine-levels.md#pairing-prototypes-chapters-95101)
 give the numbers.
 
 The Echo gallery pairing has been checked on its prototype. A beam passes over a portal pad as it
@@ -269,7 +268,7 @@ explained first.
 - [ ] Prototype one board per chapter and play them before authoring the rest
   - [x] Chapter 94: `deep-lantern-routes`, a route-choice board, on trial behind the debug
         tools (`prospectDebug.playPrototype()`, see
-        [boards on trial](docs/hollow-mine-levels.md#boards-on-trial)). Not yet played on a phone
+        [boards on trial](../hollow-mine-levels.md#boards-on-trial)). Not yet played on a phone
   - [x] Chapter 92: `echo-gallery-crossing`, lenses and starglass across a portal route. All
         60 hint-led seeds finish (median 16 moves). Not yet played on a phone
   - [x] Chapter 93: `turning-orchard-both-ways`, two moored floatstones with opposite ways
@@ -277,7 +276,7 @@ explained first.
   - [ ] Play all three on a phone and decide which pairings go ahead. On `preprod` they are
         listed under Boards on trial in Settings (More options), from the village
   - [x] Chapters 95–101: one board on trial each, measured on 60 hint-led seeds like the first
-        three (see [the measurements](docs/hollow-mine-levels.md#pairing-prototypes-chapters-95101)).
+        three (see [the measurements](../hollow-mine-levels.md#pairing-prototypes-chapters-95101)).
         All 420 runs finish. The pairings of chapters 95, 96, 97 and 100 work as proposed
         (medians: `shifting-survey-stars` 15, `ember-sidings-gates` 19, `buried-routes-bed` 22,
         `rooted-vault-knots` 25)
@@ -306,7 +305,7 @@ explained first.
 - [x] Update hardcoded counts: `scripts/measure-economy-balance.mjs` (546), `docs/README.md`,
       `docs/town-demo.md`, `docs/settlement-eras.md`
 - [x] Add a guide for levels 547–606, its own page beside `docs/hollow-mine-levels.md`
-      See [the crystal seams guide](docs/crystal-seam-levels.md) for the chapters, the boards that changed and the evidence.
+      See [the crystal seams guide](../crystal-seam-levels.md) for the chapters, the boards that changed and the evidence.
 
 - [ ] Honours after the append: two checks in `testing/honours.test.js` fail on the new levels and
       are left to the honours work, since `src/data/honours.js` is being changed elsewhere. The level
@@ -318,7 +317,7 @@ explained first.
 Owner, 10 November 2026: **Trace twins, Crossgrain crystal, Chord crystal**;
 **Crystal stair renamed Arrowhead**, clearing only, and **Twin windows fixed**
 (two-row windows, three-wide spine). Echo twins and the other proposals are not
-being built. [Rules, tradeoffs and measurements](docs/new-mechanics.md) keep the
+being built. [Rules, tradeoffs and measurements](../new-mechanics.md) keep the
 review record.
 
 Five debug-only trials use slots 548, 554, 560, 549 and 555. All 300 hint-led
@@ -412,7 +411,7 @@ opening order blocks it.
 
 **Size: small. Built on `t3/honours-1-3` except what waits on the new levels.** The design, the
 rejected ideas and the calibration are in
-[the honours guide](docs/honours.md#release-130-honours-generation-8-2026-11-11).
+[the honours guide](../honours.md#release-130-honours-generation-8-2026-11-11).
 
 - [x] **Commissioner** on the existing `landmarks` measure over the two commission sites:
       bronze 1, silver 2 commissions sponsored. The sites left `NON_MONUMENT_HONOURS`

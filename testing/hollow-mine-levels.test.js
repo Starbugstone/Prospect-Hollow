@@ -186,7 +186,7 @@ describe('append-only floating seam chapters', () => {
   }, 300000);
 });
 
-// Chapters 92–101: the boards of NEXT_RELEASE.md step 3, after the trials that proved them.
+// Chapters 92–101: the boards of the 1.3.0 plan (docs/history/beyond-new-hollow-1.3.0.md) step 3, after the trials that proved them.
 describe('chapters 92–101, levels 547–606', () => {
   const crystal = levels.slice(CRYSTAL_SEAM_FIRST_LEVEL - 1);
   const first = (obstacle) =>
