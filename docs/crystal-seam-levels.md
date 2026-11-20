@@ -12,16 +12,16 @@ The board grammar, rules and engine modules are those of
 
 | Chapter | Levels  | Name             | Mechanics                                                          | Median moves | Three stars (held out) |
 | ------- | ------- | ---------------- | ------------------------------------------------------------------ | -----------: | ---------------------: |
-| 92      | 547–552 | Echo gallery     | Lens mirrors, starglass, portals; Trace twins and Arrowhead taught |           20 |                    55% |
-| 93      | 553–558 | Turning orchard  | Moon dials, floatstones, root knots; Crossgrain and Twin windows   |           21 |                    49% |
-| 94      | 559–564 | The deep lantern | Route and breakthrough chambers, phase seals, lanterns; Chord      |           21 |                    50% |
-| 95      | 565–570 | Shifting survey  | Survey markers, phase seals                                        |           22 |                    52% |
-| 96      | 571–576 | Ember sidings    | Charge braziers, portals, moon gems                                |           26 |                    53% |
-| 97      | 577–582 | Buried routes    | Dust and encased fossils, route chambers (act V finale)            |           24 |                    53% |
-| 98      | 583–588 | Frost relays     | Frozen gems, spore relays, Crossgrain crystals                     |           22 |                    53% |
-| 99      | 589–594 | Tidal pearls     | Pearls, ore orders, Chord crystals                                 |           23 |                    49% |
-| 100     | 595–600 | Rooted vault     | Root knots, breakthrough chambers, chains                          |           25 |                    43% |
-| 101     | 601–606 | The far seam     | Route chambers, Trace twins, moon dials (the pack's finale)        |           27 |                    51% |
+| 92      | 547–552 | Echo gallery     | Lens mirrors, starglass, portals; Trace twins and Arrowhead taught |           26 |                    52% |
+| 93      | 553–558 | Turning orchard  | Moon dials, floatstones, root knots; Crossgrain and Twin windows   |           27 |                    41% |
+| 94      | 559–564 | The deep lantern | Route and breakthrough chambers, phase seals, lanterns; Chord      |           30 |                    43% |
+| 95      | 565–570 | Shifting survey  | Survey markers, phase seals                                        |           32 |                    49% |
+| 96      | 571–576 | Ember sidings    | Charge braziers, portals, moon gems                                |           32 |                    52% |
+| 97      | 577–582 | Buried routes    | Dust and encased fossils, route chambers (act V finale)            |           31 |                    55% |
+| 98      | 583–588 | Frost relays     | Frozen gems, spore relays, Crossgrain crystals                     |           25 |                    55% |
+| 99      | 589–594 | Tidal pearls     | Pearls, ore orders, Chord crystals                                 |           31 |                    47% |
+| 100     | 595–600 | Rooted vault     | Root knots, breakthrough chambers, chains                          |           30 |                    54% |
+| 101     | 601–606 | The far seam     | Route chambers, Trace twins, moon dials (the pack's finale)        |           32 |                    48% |
 
 Median moves are over 30 hint-led seeds per level (180 runs per chapter); three stars are
 the share of 20 held-out runs per level (seeds 101–120) that earned them.
@@ -29,7 +29,7 @@ the share of 20 held-out runs per level (seeds 101–120) that earned them.
 ## Chapter rhythm
 
 Every chapter keeps the rhythm of the campaign: introduce, practice, deliver, stretch,
-rest, finale. Slot medians over the ten chapters are 20, 19, 24, 31, 12 and 41 moves, and each
+rest, finale. Slot medians over the ten chapters are 24, 27, 31, 37, 17 and 47 moves, and each
 chapter's finale is its longest board.
 
 - **Each chapter opens on the board that proved its pairing** while it was on trial
@@ -49,7 +49,7 @@ chapter's finale is its longest board.
   stamp's column, and ice. On the trial board the hint-led player fired the lower stamp with
   a column whose copy landed on plain gems (0 of 60 runs hit a gate, median 2 moves).
   Now every line through either stamp copies on to a gate, as on 601: the copy breaks a gate
-  in the median run, and the board takes 16 moves.
+  in the median run, and the board takes 17 moves.
 - **560** gained a tenth row, to match its chapter, and ice.
 
 ## Calibration
@@ -62,15 +62,13 @@ the same seeds as `testing/helpers/campaignSimulation.js`. Raw results are local
   500, as for the floating seam. `testing/levels/crystal-seam-calibration.test.js` replays
   the 30 seeds and holds every target to this.
 - **Star targets** came from `node scripts/calibrate-star-targets.mjs <file> 547 606`.
-- **Held-out seeds 101–120:** all 1,200 runs finish. Three stars came in 611 of them (51%),
-  within the late-campaign band. Four levels left fewer than a third of their runs with
-  three stars. 560 (a lesson), 593 (a rest board) and 597 (bonus-only, on the 5-of-20 test
-  floor) were lowered from 6, 5 and 5 runs to 8 (targets 23,600, 20,200 and 36,400). 570,
-  the survey finale, keeps 6 of 20 (30%) as the act's three-star challenge, which the plan
-  allows for about a quarter of levels.
-- **Moves:** median 23, 90th percentile 48, maximum 118; 3 of 1,800 calibration runs went
-  beyond 100 moves (two on 606, the pack's finale, and one on 604). Free reshuffles: 46
-  in 1,800 runs, most of them on Ember sidings (22) and Frost relays (12).
+- **Held-out seeds 101–120:** all 1,200 runs finish. Three stars came in 597 of them (50%),
+  within the late-campaign band. 593, a rest board, left 4 of 20 runs with three stars and
+  was lowered to 8 (target 32,400). 556, 564, 567, 600 and 604 keep 5 or 6 of 20 (25–30%)
+  as three-star challenges.
+- **Moves:** median 29, 90th percentile 52, maximum 114; 6 of 1,800 calibration runs went
+  beyond 100 moves (three on 606, the pack's finale, two on 576 and one on 556). Free
+  reshuffles: 45 in 1,800 runs, most of them on Ember sidings (22) and Frost relays (12).
 
 Boards that failed on the first drafts were changed rather than accepted:
 
@@ -83,6 +81,30 @@ Boards that failed on the first drafts were changed rather than accepted:
   41 moves (90th percentile 74).
 - **580** first had three encased fossils and ran longer than the act V finale; it keeps
   the two in the sealed bed.
+
+### Longer boards (20 November 2026)
+
+The first calibration left the 60 boards short: a median of 23 moves, against 27–40 for
+chapters 85–91. A board pays for what it collects (gems, bonus gems, combos) times its chapter,
+so levels 547–606 paid 3.47M coins over the economy probe's three seeds, against the plan's
+4.7M, and chapter 101, the replay chapter, paid about 56k a board where chapter 91 paid 74k
+([economy balance](economy-balance.md)). The owner chose longer boards over higher rewards.
+
+- **Only ore orders and ice changed.** Layouts, obstacles, mechanics and tips are the same; no
+  tip quotes an order size or an amount of ice. Orders and ice grew by about a third on most
+  boards, less on rest boards and the boards that open a chapter or teach a crystal.
+- **Unchanged:** the openers with neither orders nor ice (553, 559, 577, 595 and 601), the
+  Crossgrain lesson (554) and the small lamp room (563), whose length comes from their
+  mechanics. 583 keeps its ice too: with more, its hidden relays no longer shortened the
+  board, which is what its pairing test (`prototype-pairings-95-101.test.js`) proves.
+- **Ice caps.** Boards with open exit rows hold two ice layers per cell, so 584, 586, 588
+  and 600 keep the amount the cap allows (90, 90, 110 and 110) and 597 keeps 140; more would
+  change nothing.
+- **Tails kept in check.** The Arrowhead (549) runs much longer with a little more ice (its
+  lower wing refills on its own), so it gained only four layers; 580 kept 60 emeralds after
+  70 sent a run to 120 moves.
+- **Result:** median 29 moves; each chapter's finale is still its longest board. Chest and
+  star targets were recalibrated from the new seeds 1–30.
 
 ## What else changed with the append
 

@@ -24654,9 +24654,9 @@
                 "production": 2,
                 "runId": 1,
                 "levelId": 547,
-                "score": 25500,
-                "target": 25500,
-                "starTarget": 31600,
+                "score": 33500,
+                "target": 33500,
+                "starTarget": 42000,
                 "combo": 4,
                 "elapsedMs": 3722000,
                 "speedTargetMs": 122000,
@@ -25235,7 +25235,7 @@
           "544": { "score": 1000, "stars": 1 },
           "545": { "score": 1000, "stars": 1 },
           "546": { "score": 1000, "stars": 1 },
-          "547": { "score": 25500, "stars": 2, "bestTimeMs": 3722000 }
+          "547": { "score": 33500, "stars": 2, "bestTimeMs": 3722000 }
         },
         "continuousRecords": {},
         "powers": [
@@ -26667,9 +26667,9 @@
                 "production": 2,
                 "runId": 1,
                 "levelId": 606,
-                "score": 36000,
-                "target": 36000,
-                "starTarget": 46800,
+                "score": 36500,
+                "target": 36500,
+                "starTarget": 45600,
                 "combo": 4,
                 "elapsedMs": 3743000,
                 "speedTargetMs": 143000,
@@ -27307,7 +27307,7 @@
           "603": { "score": 1000, "stars": 1 },
           "604": { "score": 1000, "stars": 1 },
           "605": { "score": 1000, "stars": 1 },
-          "606": { "score": 36000, "stars": 2, "bestTimeMs": 3743000 }
+          "606": { "score": 36500, "stars": 2, "bestTimeMs": 3743000 }
         },
         "continuousRecords": {},
         "powers": [

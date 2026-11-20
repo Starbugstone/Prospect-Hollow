@@ -1,71 +1,70 @@
 # Economy balance
 
-## Release 1.3.0 rerun: 606 levels and 17 eras (2026-11-17)
+## Release 1.3.0 rerun: 606 levels and 17 eras (2026-11-20)
 
-**Verdict: the new content plays and completes in every measured pattern, but the 60 new boards
-pay less than planned, so every player reaches the end of the required town later than the plan
-assumed.** No reward or price was changed: commission prices wait for the owner's admin-panel
-sample, and board rewards are shipped from the calibrated scores.
+**Verdict: the new content plays and completes in every measured pattern, and after the 60
+new boards were lengthened (20 November) they pay close to the plan.** The first rerun on
+17 November found the boards short: levels 547–606 paid 3.47M against the plan's 4.7M, and a
+mining-only player needed about 150 replays after level 606 to finish the required town. The
+owner chose longer boards over higher rewards: their ore orders and ice grew by about a third
+([crystal seam guide](crystal-seam-levels.md#longer-boards-20-november-2026)). No reward or
+price was changed: commission prices wait for the owner's admin-panel sample.
 
-Same method and patterns as below, rerun on `preprod` at `562f3c7b`: `measure-campaign.mjs` played
-all **606 levels × seeds 1–3** once to completion and once for a 20-move continuous visit (3,636
-board samples, all complete), then `measure-economy-balance.mjs` ran the integrated probe to a
-horizon of 2,424 normal puzzles. Replays now cycle chapter 101's six boards. The probe used to
-record "required town complete" only in Twin Hollows; it now waits for the last playable era (The
-Quiet Signal), and its `moonEras` window covers New Hollow Rising and The Quiet Signal. Outputs are
-in `output/next-release/balance/` (git-ignored).
+Same method and patterns as below, on `preprod` at `6b9913ad` plus the longer boards:
+`measure-campaign.mjs` played all **606 levels × seeds 1–3** once to completion and once for a
+20-move continuous visit (3,636 board samples, all complete), then `measure-economy-balance.mjs`
+ran the integrated probe to a horizon of 2,424 normal puzzles. Replays cycle chapter 101's six
+boards. "Required town complete" waits for the last playable era (The Quiet Signal), and the
+`moonEras` window covers New Hollow Rising and The Quiet Signal. Outputs are in
+`output/next-release/balance-1120/` (git-ignored).
 
-**Mine coins.** Levels 1–546 pay **16.3M** as before (15.9 / 16.5 / 16.5M by seed). Levels
-547–606 add **3.47M**, for **19.8M** in all, against the plan's estimate of about 21.0M. Their
-boards are short (hint-led medians of 15–25 moves), so they score less despite the deeper
-multipliers:
+**Mine coins.** Levels 1–546 pay **16.3M** as before. Levels 547–606 add **4.26M** (3.47M on
+17 November), for **20.6M** in all, against the plan's estimate of about 21.0M:
 
-| Levels                | Mean coins per board (3 seeds) |
-| --------------------- | -----------------------------: |
-| 403–546               |                         61,488 |
-| 541–546 (chapter 91)  |                         74,135 |
-| 547–606               |                         57,803 |
-| 547–552 (chapter 92)  |                         45,310 |
-| 595–600 (chapter 100) |                         70,556 |
-| 601–606 (chapter 101) |                         56,308 |
+| Levels                | Mean coins per board (3 seeds) | 17 November |
+| --------------------- | -----------------------------: | ----------: |
+| 403–546               |                         61,488 |      61,488 |
+| 541–546 (chapter 91)  |                         74,135 |      74,135 |
+| 547–606               |                         70,993 |      57,803 |
+| 547–552 (chapter 92)  |                         50,636 |      45,310 |
+| 595–600 (chapter 100) |                         87,311 |      70,556 |
+| 601–606 (chapter 101) |                         77,158 |      56,308 |
+
+Over the 30 calibration seeds, chapter 101 pays 72.7k a board (59.4k before).
 
 **Milestones**, normal puzzle counts, median [minimum–maximum]. Everything after 606 is replays.
 
-| Milestone                              | A                   | B                   | C                   |
-| -------------------------------------- | ------------------- | ------------------- | ------------------- |
-| Twin Hollows opens                     | 676 [665–679]       | 675 [665–678]       | 666 [658–667]       |
-| New Hollow Rising opens                | 705 [695–714]       | 705 [695–714]       | 695 [686–702]       |
-| The Quiet Signal opens                 | 735 [725–749]       | 734 [725–749]       | 723 [715–737]       |
-| Required town complete (17 eras)       | 754 [744–771]       | 752 [742–770]       | 741 [733–757]       |
-| All three moonstone monuments complete | 1,198 [1,187–1,205] | 1,201 [1,191–1,211] | 1,791 [1,781–1,791] |
+| Milestone                              | A                   | B                   | C                   | A on 17 November |
+| -------------------------------------- | ------------------- | ------------------- | ------------------- | ---------------: |
+| Twin Hollows opens                     | 644 [639–656]       | 644 [639–655]       | 637 [634–647]       |              676 |
+| New Hollow Rising opens                | 665 [659–685]       | 664 [659–684]       | 657 [654–676]       |              705 |
+| The Quiet Signal opens                 | 685 [679–714]       | 685 [679–714]       | 678 [674–704]       |              735 |
+| Required town complete (17 eras)       | 697 [692–733]       | 698 [692–733]       | 689 [685–722]       |              754 |
+| All three moonstone monuments complete | 1,163 [1,158–1,178] | 1,171 [1,161–1,181] | 1,761 [1,751–1,771] |            1,198 |
 
-Twin Hollows opens about 30 puzzles later than on 4 November (645 in pattern A). The town costs
-the same up to it; the difference is the replays: a mining-only player now replays chapter 101 at
-about 56k a board, where chapter 91 paid about 74k. Coins per normal puzzle in the late windows:
+Twin Hollows opens at about the 645 measured on 4 November (pattern A). Seed 2 is the slow
+one in every pattern: its chapter 101 samples pay least. Coins per normal puzzle in the late
+windows:
 
 | Window, pattern              |  Total | Mining | Saloon | VIP | Sales |
 | ---------------------------- | -----: | -----: | -----: | --: | ----: |
-| Levels 403–606, A            | 60,404 | 60,404 |      0 |   0 |     0 |
-| Levels 403–606, C            | 61,530 | 60,404 |    871 | 229 |     0 |
-| Twin Hollows construction, A | 56,709 | 56,709 |      0 |   0 |     0 |
-| Twin Hollows construction, C | 56,726 | 54,996 |  1,310 | 238 |   182 |
-| The two Moon eras, A         | 56,244 | 56,244 |      0 |   0 |     0 |
-| The two Moon eras, C         | 58,747 | 56,668 |  1,573 | 231 |   276 |
+| Levels 403–606, A            | 64,284 | 64,284 |      0 |   0 |     0 |
+| Levels 403–606, C            | 65,387 | 64,284 |    874 | 229 |     0 |
+| Twin Hollows construction, A | 76,039 | 76,039 |      0 |   0 |     0 |
+| Twin Hollows construction, C | 80,045 | 78,388 |  1,228 | 228 |   202 |
+| The two Moon eras, A         | 76,359 | 76,359 |      0 |   0 |     0 |
+| The two Moon eras, C         | 77,210 | 75,163 |  1,517 | 223 |   307 |
 
-The two Moon eras take 47–57 normal puzzles together, 1.5 to 1.8 times the 32 the plan estimated,
-because of the lower replay pay. Commission foundations cost the mining-only pattern about four
-puzzles (`A-no-coin-landmarks` completes the town at 750 against 754 for seed 1, 768 against 771
-for seed 2). The three moonstone monuments ask for 600 stones; a collector (A) completes them about
-440 puzzles after the town, and pattern C, which sells half its stones, about 1,050 after.
+The two Moon eras take 31–48 normal puzzles together (47–57 on 17 November), against the 32
+the plan estimated. Commission foundations cost the mining-only pattern up to three puzzles
+(`A-no-coin-landmarks` completes the town at 730 against 733 for seed 2). The three moonstone
+monuments ask for 600 stones; a collector (A) completes them about 470 puzzles after the town,
+and pattern C, which sells half its stones, about 1,070 after.
 
 **For the owner, before release:**
 
-- A mining-only player needs about **150 replays** after level 606 to finish the required town;
-  the plan's "typical" players at 1.2–1.4× income need fewer, but every income level is later than
-  the plan's table, which assumed 21.0M of mine coins.
-- Chapter 101 is now the replay chapter and pays a quarter less per board than chapter 91 did.
-  Raising its rewards, or replaying a richer chapter, would bring the dates forward; neither is
-  done here.
+- A mining-only player needs **86–127 replays** after level 606 to finish the required town
+  (about 150 on 17 November); the plan's "typical" players at 1.2–1.4× income need fewer.
 - Commission prices are unchanged at 400k a stage, pending the admin-panel income sample.
 
 ## Combined balance check: VIP economy v2 (2026-10-24)
