@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Era character sheet</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: #f2ebda;
+        color: #416156;
+        font:
+          18px Georgia,
+          serif;
+      }
+      main {
+        display: grid;
+        gap: 14px;
+        padding: 14px;
+      }
+      article {
+        position: relative;
+        height: 380px;
+        border: 1px solid #d5ccb8;
+        border-radius: 14px;
+        overflow: hidden;
+      }
+      canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+      h2 {
+        position: absolute;
+        left: 14px;
+        top: 8px;
+        margin: 0;
+        font-size: 18px;
+      }
+    </style>
+  </head>
+  <body>
+    <main></main>
+    <script type="module" src="./era-character-sheet.js"></script>
+  </body>
+</html>

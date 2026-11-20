@@ -1263,5 +1263,230 @@
   "546": {
     "relics": 6,
     "gates": 3
+  },
+  "547": {
+    "relics": 2,
+    "oreOrders": 1,
+    "cores": 1
+  },
+  "548": {
+    "gates": 4,
+    "traceTwins": 1
+  },
+  "550": {
+    "relics": 2,
+    "oreOrders": 1,
+    "cores": 1
+  },
+  "551": {
+    "gates": 4,
+    "traceTwins": 2
+  },
+  "552": {
+    "relics": 4,
+    "oreOrders": 2,
+    "cores": 1
+  },
+  "553": {
+    "relics": 2
+  },
+  "554": {
+    "crossgrain": 3
+  },
+  "556": {
+    "relics": 3,
+    "oreOrders": 1,
+    "crossgrain": 2
+  },
+  "557": {
+    "relics": 1,
+    "oreOrders": 1
+  },
+  "558": {
+    "relics": 3,
+    "oreOrders": 2,
+    "crossgrain": 4
+  },
+  "559": {
+    "lanterns": 2
+  },
+  "560": {
+    "chords": 2
+  },
+  "561": {
+    "lanterns": 4,
+    "oreOrders": 1,
+    "chords": 2
+  },
+  "562": {
+    "lanterns": 2,
+    "oreOrders": 1,
+    "chords": 2
+  },
+  "563": {
+    "lanterns": 3
+  },
+  "564": {
+    "lanterns": 4,
+    "oreOrders": 2,
+    "chords": 2
+  },
+  "565": {
+    "surveys": 1,
+    "oreOrders": 1
+  },
+  "566": {
+    "surveys": 1,
+    "oreOrders": 1
+  },
+  "567": {
+    "surveys": 1,
+    "oreOrders": 2
+  },
+  "568": {
+    "surveys": 1,
+    "oreOrders": 2
+  },
+  "569": {
+    "surveys": 1,
+    "oreOrders": 1
+  },
+  "570": {
+    "surveys": 1,
+    "oreOrders": 2
+  },
+  "571": {
+    "relics": 2,
+    "oreOrders": 1,
+    "cores": 2,
+    "gates": 2
+  },
+  "572": {
+    "relics": 2,
+    "oreOrders": 1,
+    "cores": 2,
+    "gates": 2
+  },
+  "573": {
+    "relics": 2,
+    "oreOrders": 1,
+    "cores": 3,
+    "gates": 2
+  },
+  "574": {
+    "relics": 4,
+    "oreOrders": 2,
+    "cores": 3,
+    "gates": 4
+  },
+  "575": {
+    "relics": 1,
+    "oreOrders": 1,
+    "cores": 1,
+    "gates": 1
+  },
+  "576": {
+    "relics": 4,
+    "oreOrders": 3,
+    "cores": 3,
+    "gates": 4
+  },
+  "578": {
+    "oreOrders": 1
+  },
+  "579": {
+    "oreOrders": 1
+  },
+  "580": {
+    "oreOrders": 1
+  },
+  "581": {
+    "oreOrders": 1
+  },
+  "582": {
+    "oreOrders": 2
+  },
+  "583": {
+    "crossgrain": 4
+  },
+  "584": {
+    "crossgrain": 4
+  },
+  "585": {
+    "crossgrain": 4
+  },
+  "586": {
+    "crossgrain": 6
+  },
+  "587": {
+    "crossgrain": 2
+  },
+  "588": {
+    "oreOrders": 1,
+    "gates": 2,
+    "crossgrain": 6
+  },
+  "589": {
+    "relics": 2,
+    "oreOrders": 1,
+    "chords": 3
+  },
+  "590": {
+    "relics": 1,
+    "oreOrders": 1,
+    "chords": 3
+  },
+  "591": {
+    "relics": 3,
+    "oreOrders": 2,
+    "chords": 3
+  },
+  "592": {
+    "relics": 3,
+    "oreOrders": 2,
+    "chords": 4
+  },
+  "593": {
+    "relics": 1,
+    "oreOrders": 1,
+    "chords": 1
+  },
+  "594": {
+    "relics": 4,
+    "oreOrders": 2,
+    "gates": 2,
+    "chords": 8
+  },
+  "601": {
+    "relics": 1,
+    "gates": 2,
+    "traceTwins": 1
+  },
+  "602": {
+    "relics": 1,
+    "oreOrders": 1,
+    "traceTwins": 1
+  },
+  "603": {
+    "relics": 2,
+    "oreOrders": 1,
+    "gates": 2,
+    "traceTwins": 1
+  },
+  "604": {
+    "relics": 2,
+    "oreOrders": 1,
+    "traceTwins": 1
+  },
+  "605": {
+    "relics": 1,
+    "oreOrders": 1,
+    "traceTwins": 1
+  },
+  "606": {
+    "relics": 3,
+    "oreOrders": 2,
+    "gates": 4,
+    "traceTwins": 2
   }
 }

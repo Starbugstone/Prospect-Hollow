@@ -6,6 +6,10 @@ import { villagerRandom } from './villagers';
 // never matches an ordinary VIP palette, so returning visitors stand out.
 const WARDROBES = {
   frontier: {
+    looks: {
+      male: [['beard', 'vest'], ['bandana'], ['moustache', 'vest', 'bandana']],
+      female: [['bonnet', 'apron'], ['shawl'], ['apron', 'shawl']],
+    },
     skirtLength: 0.49,
     crown: 'cowboy',
     hat: 'brim',
@@ -23,6 +27,18 @@ const WARDROBES = {
     ],
   },
   rail: {
+    looks: {
+      male: [
+        ['topHat', 'waistcoat'],
+        ['moustache', 'waistcoat'],
+        ['beard', 'longCoat'],
+      ],
+      female: [
+        ['bustle', 'bareHead'],
+        ['bonnet', 'bustle'],
+        ['shawl', 'bustle', 'bareHead'],
+      ],
+    },
     skirtLength: 0.49,
     crown: 'round',
     hat: 'brim',
@@ -40,6 +56,10 @@ const WARDROBES = {
     ],
   },
   workwear: {
+    looks: {
+      male: [['overalls'], ['moustache', 'waistcoat'], ['overalls', 'bandana']],
+      female: [['apron', 'bareHead'], ['shawl', 'apron', 'bareHead'], ['bonnet']],
+    },
     skirtLength: 0.46,
     crown: 'cap',
     hat: 'cap',
@@ -56,6 +76,10 @@ const WARDROBES = {
     ],
   },
   tailored: {
+    looks: {
+      male: [['longCoat'], ['waistcoat'], ['moustache', 'longCoat']],
+      female: [['cloche'], ['cloche', 'longCoat'], ['shawl', 'bareHead']],
+    },
     skirtLength: 0.4,
     crown: 'flat',
     hat: 'brim',
@@ -73,6 +97,10 @@ const WARDROBES = {
     ],
   },
   motor: {
+    looks: {
+      male: [['waistcoat'], ['longCoat'], ['overalls']],
+      female: [['cloche'], ['apron', 'bareHead'], ['popCollar', 'bareHead']],
+    },
     skirtLength: 0.4,
     crown: 'flat',
     hat: 'brim',
@@ -90,6 +118,14 @@ const WARDROBES = {
     ],
   },
   aviation: {
+    looks: {
+      male: [['popCollar'], ['sunglasses'], ['waistcoat']],
+      female: [
+        ['ponytail', 'fullSkirt', 'bareHead'],
+        ['popCollar', 'fullSkirt', 'bareHead'],
+        ['ponytail', 'sunglasses', 'bareHead'],
+      ],
+    },
     skirtLength: 0.38,
     crown: 'flat',
     hat: 'brim',
@@ -107,6 +143,10 @@ const WARDROBES = {
     ],
   },
   broadcast: {
+    looks: {
+      male: [['headphones'], ['sunglasses', 'shoulderPads'], ['popCollar']],
+      female: [['bigHair', 'shoulderPads'], ['headphones'], ['sunglasses', 'bigHair']],
+    },
     skirtLength: 0.29,
     crown: 'cap',
     hat: 'cap',
@@ -122,6 +162,10 @@ const WARDROBES = {
     ],
   },
   contemporary: {
+    looks: {
+      male: [['backpack'], ['hood'], ['sunglasses']],
+      female: [['backpack'], ['hood'], ['ponytail']],
+    },
     skirtLength: 0.29,
     crown: 'none',
     hat: 'none',
@@ -137,6 +181,10 @@ const WARDROBES = {
     ],
   },
   tomorrow: {
+    looks: {
+      male: [['pack'], ['pendant'], []],
+      female: [['pendant'], ['pack'], ['ponytail']],
+    },
     skirtLength: 0.3,
     crown: 'none',
     hat: 'visor',
@@ -154,6 +202,10 @@ const WARDROBES = {
     ],
   },
   canopy: {
+    looks: {
+      male: [['leafMantle'], [], ['leafMantle']],
+      female: [['leafMantle'], ['ponytail'], []],
+    },
     skirtLength: 0.36,
     crown: 'none',
     hat: 'none',
@@ -170,6 +222,10 @@ const WARDROBES = {
     ],
   },
   riverlight: {
+    looks: {
+      male: [['pendant'], ['shawl'], []],
+      female: [['pendant'], ['shawl'], ['pendant', 'ponytail']],
+    },
     skirtLength: 0.36,
     crown: 'none',
     hat: 'none',
@@ -187,6 +243,10 @@ const WARDROBES = {
   },
   // Sailcloth jackets and aviator scarves: a nod to the 1958 airport crowd.
   skysail: {
+    looks: {
+      male: [['sailCape'], ['bandana'], ['sailCape', 'bandana']],
+      female: [['sailCape'], ['bandana', 'ponytail'], ['sailCape']],
+    },
     skirtLength: 0.34,
     crown: 'cap',
     hat: 'cap',
@@ -204,6 +264,10 @@ const WARDROBES = {
   },
   // Midnight coats with copper buttons and starry violet trims.
   stargazer: {
+    looks: {
+      male: [['longCoat'], ['hood', 'longCoat'], ['pendant', 'longCoat']],
+      female: [['longCoat'], ['hood'], ['pendant', 'longCoat']],
+    },
     skirtLength: 0.4,
     crown: 'none',
     hat: 'none',
@@ -221,6 +285,10 @@ const WARDROBES = {
   },
   // Homecoming: soft knit jackets in valley teal and moon silver, gold pins.
   twin: {
+    looks: {
+      male: [['shawl'], ['pendant'], ['hood']],
+      female: [['shawl'], ['pendant'], ['hood']],
+    },
     skirtLength: 0.38,
     crown: 'none',
     hat: 'none',
@@ -236,8 +304,58 @@ const WARDROBES = {
       ['#f0c45a', '#5b6f73', '#d9dbe4', '#f1eee6', '#8db383'],
     ],
   },
+  // New Hollow Rising: travel wear for the Moon's new tram line. Moon-white coats,
+  // Earthlight blue caps and lantern-gold collars.
+  tramline: {
+    looks: {
+      male: [['ticketBag'], ['popCollar'], ['ticketBag']],
+      female: [['ticketBag'], ['popCollar'], ['ponytail', 'ticketBag']],
+    },
+    skirtLength: 0.4,
+    crown: 'cap',
+    hat: 'cap',
+    trim: '#f0c45a',
+    trousers: '#46587c',
+    boots: '#f1eee6',
+    coat: 0.43,
+    patrol: true,
+    resident: 'garden',
+    guest: ['#8f3f7a', '#3a3350', '#e9c4dc', '#f6f1ea', '#f0c45a'],
+    palettes: [
+      ['#f1eee6', '#46587c', '#5b8fc9', '#e9e2d2', '#f0c45a'],
+      ['#5b8fc9', '#55607a', '#f1eee6', '#f1eee6', '#bcdde4'],
+      ['#e7b94f', '#4d6283', '#5b8fc9', '#e9e2d2', '#f1eee6'],
+    ],
+  },
+  // The Quiet Signal: plain, quiet clothes for people who listen. Night-navy coats,
+  // moon-white scarves and a single gold collar pin.
+  listening: {
+    looks: {
+      male: [['longScarf'], ['hood'], ['longScarf', 'longCoat']],
+      female: [['longScarf'], ['hood'], ['longScarf', 'longCoat']],
+    },
+    skirtLength: 0.42,
+    crown: 'cap',
+    hat: 'cap',
+    trim: '#f3ecd9',
+    trousers: '#3b4763',
+    boots: '#e9e2d2',
+    coat: 0.46,
+    patrol: true,
+    resident: 'garden',
+    guest: ['#5d4a7a', '#2f3552', '#d8cfe6', '#f6f1ea', '#f0c45a'],
+    palettes: [
+      ['#27365a', '#3b4763', '#f3ecd9', '#e9e2d2', '#f0c45a'],
+      ['#f1eee6', '#56648a', '#27365a', '#f1eee6', '#c9d3e6'],
+      ['#56648a', '#2f3552', '#f3ecd9', '#e9e2d2', '#f0c45a'],
+    ],
+  },
   // Homestead flight suits: patched work jackets, gold visors and barn-red scarves.
   moonward: {
+    looks: {
+      male: [['pack'], ['pack', 'bandana'], ['popCollar']],
+      female: [['pack'], ['bandana', 'ponytail'], ['popCollar']],
+    },
     skirtLength: 0.32,
     crown: 'none',
     hat: 'visor',
@@ -266,10 +384,35 @@ export function residentOutfit(profile, seed = 0) {
   if (!wardrobe.resident) return null;
   const variant = Math.floor(villagerRandom(seed + 5039) * wardrobe.palettes.length);
   const [shirt, trousers, hat, boots, accent] = wardrobe.palettes[variant];
-  const hair = ['#63493b', '#977b57', '#423b36', '#ddd9ca'][
-    Math.floor(villagerRandom(seed + 811) * 4)
-  ];
+  const hair = HAIR[Math.floor(villagerRandom(seed + 811) * HAIR.length)];
   return { shirt, trousers, hat, boots, accent, hair, variant, apron: variant === 0 };
+}
+const HAIR = ['#63493b', '#977b57', '#423b36', '#ddd9ca'];
+/**
+ * An ordinary villager's clothes for the period: one of the era's palettes and one of
+ * its silhouettes (`looks`, parts drawn by TownOutfitParts), both fixed by the seed. A
+ * wardrobe without looks, or with an unknown gender, dresses plainly.
+ */
+export function periodOutfit(profile, seed = 0, gender = 'male') {
+  const wardrobe = townWardrobe(profile);
+  const variant = Math.floor(villagerRandom(seed + 5039) * wardrobe.palettes.length);
+  const [shirt, trousers, hat, boots, accent] = wardrobe.palettes[variant];
+  const looks = wardrobe.looks?.[gender];
+  const parts =
+    Array.isArray(looks) && looks.length
+      ? looks[Math.floor(villagerRandom(seed + 2671) * looks.length)]
+      : [];
+  return {
+    shirt,
+    trousers,
+    hat,
+    boots,
+    accent,
+    hair: HAIR[Math.floor(villagerRandom(seed + 811) * HAIR.length)],
+    variant,
+    parts,
+    skirtLength: wardrobe.skirtLength,
+  };
 }
 // Every VIP wears the gold badge and gold trim, in the valley's clothes or a Moon suit;
 // the outfit's accent colours their sash, scarf or satchel.

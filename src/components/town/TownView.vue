@@ -113,12 +113,21 @@
             </button>
           </div>
         </div>
-        <TownSettlementNotice
-          v-if="active && waitingEvent"
-          :key="waitingEvent.key"
-          :destination="waitingEvent.settlement"
-          @watch="watchWaitingEvent"
-        />
+        <!-- The foot of the map on a phone: the waiting-event notice above the commission pill,
+             stacked so neither covers the other. Elsewhere each keeps its own place. -->
+        <div class="town-map-foot">
+          <TownSettlementNotice
+            v-if="active && waitingEvent"
+            :key="waitingEvent.key"
+            :destination="waitingEvent.settlement"
+            @watch="watchWaitingEvent"
+          />
+          <TownCommissionGoal
+            v-if="commissionGoal && !playingRaid"
+            :status="commissionGoal"
+            @open="selectBuilding(commissionGoal.site)"
+          />
+        </div>
         <TownVisitorNotice
           :notice="visitorNotice"
           @dismiss="dismissVisitorNotice"
@@ -154,6 +163,7 @@
             tourOpen
           "
           :next-level="campaign.nextLevel"
+          :replays="!campaign.newLevelsLeft"
           :raid="playingRaid"
           :raid-defense-ids="readyRaidDefenses"
           :construction="construction"
@@ -169,8 +179,8 @@
           @camera-distance="cameraDistance = $event"
           @vip-spend="collectVipSpending"
           @guest-vip="campaign.markGuestSeen"
-          @helmet="findHelmet"
-          @helmet-zoom="zoomForHelmet"
+          @find="findHidden"
+          @find-zoom="zoomForFind"
         />
         <TownResourceCollection
           v-if="collection"
@@ -345,6 +355,19 @@
           </section>
         </div>
         <section
+          v-if="valleyLetters.length"
+          class="town-story-letters"
+          aria-labelledby="town-valley-letters-heading"
+        >
+          <h2 id="town-valley-letters-heading">{{ t('Letters from the valley') }}</h2>
+          <ul>
+            <li v-for="letter in valleyLetters" :key="letter.id" :data-moon-letter="letter.id">
+              <small>{{ t(letter.from) }}</small>
+              <p>{{ t(letter.text) }}</p>
+            </li>
+          </ul>
+        </section>
+        <section
           v-if="newHollowLetters.length"
           class="town-story-letters"
           aria-labelledby="town-letters-heading"
@@ -352,7 +375,7 @@
           <h2 id="town-letters-heading">{{ t('Letters from New Hollow') }}</h2>
           <ul>
             <li v-for="letter in newHollowLetters" :key="letter.id" :data-moon-letter="letter.id">
-              <small>{{ t(BUILDING_BY_ID[letter.id].shortName) }}</small>
+              <small>{{ t(letter.from ?? BUILDING_BY_ID[letter.id].shortName) }}</small>
               <p>{{ t(letter.text) }}</p>
             </li>
           </ul>
@@ -372,9 +395,13 @@
           @mine="goMining"
           @advance-era="beginEra"
         />
-        <p v-if="!directoryPlots.length" role="status">
+        <p v-if="!directoryPlots.length" class="town-build-empty" role="status">
           {{
-            t('No purchases available. Earn coins in the mine or finish your current construction.')
+            t(
+              townBuilt
+                ? 'Every building is built. Monuments and commissions are optional.'
+                : 'No purchases available. Earn coins in the mine or finish your current construction.',
+            )
           }}
         </p>
         <section class="town-building-list" :aria-label="t('Available buildings')">
@@ -428,10 +455,14 @@
           </div>
           <p v-if="nextMonumentSite" class="town-directory-hint">
             {{
-              t('Next monument site: {site}, opening in {era}.', {
-                site: t(nextMonumentSite.label),
-                era: t(ERA_BY_ID[nextMonumentSite.era].label),
-              })
+              t(
+                {
+                  sites: 'Next monument site: {site}, opening once you commission {sites}.',
+                  building: 'Next monument site: {site}, opening at {building} level {level}.',
+                  era: 'Next monument site: {site}, opening in {era}.',
+                }[monumentOpening(nextMonumentSite).kind],
+                { site: t(nextMonumentSite.label), ...monumentOpening(nextMonumentSite) },
+              )
             }}
           </p>
         </section>
@@ -652,7 +683,11 @@
 </template>
 <script setup>
 import TownSettlementNotice from './TownSettlementNotice.vue';
-import { placeSettlement, townEventStage } from '../../game/town/TownEventSettlement';
+import {
+  eraSettlement,
+  placeSettlement,
+  townEventStage,
+} from '../../game/town/TownEventSettlement';
 import { HOME_SETTLEMENT, settlementId } from '../../data/settlements';
 import { TOWN_PRESENTATIONS } from '../../data/townPresentations';
 import TownPersonalise from './TownPersonalise.vue';
@@ -706,7 +741,11 @@ import {
 } from '../../data/townEvents';
 import { ERA_BY_ID } from '../../data/eras';
 import { eraGate, plotInEra } from '../../game/town/TownEras';
-import { buildingStatus, monumentStatus } from '../../game/town/TownBuildingFeedback';
+import {
+  buildingStatus,
+  monumentOpening,
+  monumentStatus,
+} from '../../game/town/TownBuildingFeedback';
 import {
   availableParcels,
   parcelAction,
@@ -723,7 +762,6 @@ import { useGameStore } from '../../stores/gameStore';
 import { useCampaignStore } from '../../stores/campaignStore';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { HAMMER_CAPACITY } from '../../data/rewards';
-import { LEVEL_COUNT } from '../../data/campaign';
 import TownMuseum from './TownMuseum.vue';
 import TownTour from './TownTour.vue';
 import TownCoach from './TownCoach.vue';
@@ -740,7 +778,10 @@ import TownIcon from './TownIcon.vue';
 import TownRaidNotice from './TownRaidNotice.vue';
 import TownResourceCollection from './TownResourceCollection.vue';
 import TownMoonstoneBalance from './TownMoonstoneBalance.vue';
+import { commissionFor, commissionLetters, commissionStatus } from '../../data/commissions';
 import { moonLetters } from '../../data/moonSettlement';
+import { signalLetters } from '../../data/quietSignal';
+import TownCommissionGoal from './TownCommissionGoal.vue';
 import TownNextStep from './TownNextStep.vue';
 import TownBuildRow from './TownBuildRow.vue';
 import TownTabBar from './TownTabBar.vue';
@@ -773,7 +814,7 @@ const {
   enqueue: enqueueVisitorNotice,
 } = useTownVisitors(() => props.active, {
   collectSaloon: (at) => (campaign.readOnly ? null : campaign.collectSaloonForVisitor(at)),
-  redeemHelmet: (find) => (campaign.readOnly ? null : campaign.redeemHelmetVisit(find)),
+  redeemFind: (id, find) => (campaign.readOnly ? null : campaign.redeemHiddenFind(id, find)),
   recordSocial: (counts) => !campaign.readOnly && campaign.recordTownSocial(counts),
 });
 async function findVisitor(id) {
@@ -806,9 +847,7 @@ const currentTab = computed(
     })[dialogMode.value] ?? 'village',
 );
 const mineLabel = computed(() =>
-  campaign.completedCount < LEVEL_COUNT
-    ? t('Mine · {level}', { level: campaign.nextLevel })
-    : t('Museum'),
+  campaign.newLevelsLeft ? t('Mine · {level}', { level: campaign.nextLevel }) : t('Museum'),
 );
 // A new town follows the tutorial; outside it, an empty town and finished constructions
 // are pointed to Build.
@@ -889,6 +928,11 @@ const gate = computed(() => eraGate(town.value));
 const directoryPlots = computed(() =>
   availableParcels(town.value, campaign.builderHammers, campaign.openOffers),
 );
+// Nothing left to buy because everything stands, rather than for want of coins: the same
+// test as the next step's "Your village is complete".
+const townBuilt = computed(
+  () => !goal.value && !gate.value.available && !activeProjects.value.length,
+);
 // During the tutorial Build lists only the next building and finished constructions, so a
 // new player meets one clear choice instead of a column of free plots.
 const showAllPlots = ref(false);
@@ -899,6 +943,19 @@ const projectGoal = computed(() => {
   const open = townProjects(town.value).filter((project) => project.hammers && !project.complete);
   return open.find((project) => project.id === campaign.townProjectFocus) ?? open[0] ?? null;
 });
+// The commission the player should see first: the map's pill and its announcement.
+const commissionGoal = computed(() =>
+  tutorial.value ? null : (commissionStatus(town.value)[0] ?? null),
+);
+watch(
+  () => (commissionGoal.value?.state === 'request' ? commissionGoal.value.site : null),
+  (site) => {
+    if (site)
+      announcement.value = t('A new commission has arrived: {site}.', {
+        site: t(AREA_BY_ID[site].label),
+      });
+  },
+);
 // Build lists the settlement on screen first (the valley or New Hollow), in the same
 // order and with the same tap that buys, finishes or opens a place in both. Each row
 // carries its place's settlement (settlements.js).
@@ -982,37 +1039,44 @@ function replayUnveiling(id) {
     showMonument(id, Math.min(areaStage(town.value, area), areaMaximum(town.value, area)));
 }
 const monumentSites = computed(() =>
-  PERSONAL_AREAS.filter((area) => areaUnlocked(town.value, area)).map((area) => {
-    const choice = areaChoice(town.value, area);
-    if (!choice) {
-      const prices = area.choices.map((id) => landmarkPrice(area, id, 1));
+  [
+    ...PERSONAL_AREAS.filter((area) => commissionFor(area.id)),
+    ...PERSONAL_AREAS.filter((area) => !commissionFor(area.id)),
+  ]
+    .filter((area) => areaUnlocked(town.value, area))
+    .map((area) => {
+      const choice = areaChoice(town.value, area);
+      if (!choice) {
+        const prices = area.choices.map((id) => landmarkPrice(area, id, 1));
+        return {
+          id: area.id,
+          settlement: area.settlement,
+          name: area.label,
+          icon: landmarkPayment(town.value, area, 0).icon,
+          colour: '#c9a35a',
+          status: monumentStatus(town.value, area.id, { context: 'list' }).text,
+          price: Math.min(...prices),
+          from: new Set(prices).size > 1,
+        };
+      }
+      const upgrade = landmarkOffer(town.value, area, choice);
       return {
         id: area.id,
         settlement: area.settlement,
-        name: area.label,
+        name: LANDMARK_BY_ID[choice].label,
         icon: landmarkPayment(town.value, area, 0).icon,
-        colour: '#c9a35a',
+        colour: LANDMARK_BY_ID[choice].colour,
+        // The site's shared status, as its card and the Moon's labels read it.
         status: monumentStatus(town.value, area.id, { context: 'list' }).text,
-        price: Math.min(...prices),
-        from: new Set(prices).size > 1,
+        price: upgrade?.price ?? 0,
+        from: false,
       };
-    }
-    const upgrade = landmarkOffer(town.value, area, choice);
-    return {
-      id: area.id,
-      settlement: area.settlement,
-      name: LANDMARK_BY_ID[choice].label,
-      icon: landmarkPayment(town.value, area, 0).icon,
-      colour: LANDMARK_BY_ID[choice].colour,
-      // The site's shared status, as its card and the Moon's labels read it.
-      status: monumentStatus(town.value, area.id, { context: 'list' }).text,
-      price: upgrade?.price ?? 0,
-      from: false,
-    };
-  }),
+    }),
 );
 // Each Moon building sends one letter home; the Story tab keeps them.
-const newHollowLetters = computed(() => moonLetters(town.value));
+// New Hollow's letters, then the Far Rim's story in the order it unfolds.
+const newHollowLetters = computed(() => [...moonLetters(town.value), ...signalLetters(town.value)]);
+const valleyLetters = computed(() => commissionLetters(town.value, HOME_SETTLEMENT));
 const nextMonumentSite = computed(() =>
   PERSONAL_AREAS.find((area) => !areaUnlocked(town.value, area)),
 );
@@ -1076,8 +1140,11 @@ function playEraSound(cue) {
 }
 function completeEraCinematic() {
   eraRevealed.value = true;
-  if (campaign.acknowledgeEra())
-    nextTick(() => mapFrame.value?.querySelector('canvas')?.focus({ preventScroll: true }));
+  if (!campaign.acknowledgeEra()) return;
+  // An era built entirely on another settlement opens its map once the cinematic ends.
+  const away = eraSettlement(town.value.era);
+  if (away) townScene.value?.showSettlement(away);
+  nextTick(() => mapFrame.value?.querySelector('canvas')?.focus({ preventScroll: true }));
 }
 // The one-second collection clock. Only its readers (cooldown checks in the scene and
 // building card) re-render each second; this view sees derived values that rarely change.
@@ -1115,7 +1182,11 @@ const dialogTitle = computed(() =>
         built: built.value,
         total: currentEraPlots.value.length,
       })
-    : t(DIALOG_TITLES[dialogMode.value] ?? 'Your town'),
+    : t(
+        dialogMode.value === 'monument' && commissionFor(monumentSite.value)
+          ? 'Commission'
+          : (DIALOG_TITLES[dialogMode.value] ?? 'Your town'),
+      ),
 );
 const villageStats = computed(() => {
   const { water, food, happiness: happy } = needs.value;
@@ -1434,25 +1505,26 @@ function collectVipSpending(receipt) {
     origin: townScene.value?.collectionOrigin(receipt.building),
   });
 }
-// The space-helmet wearer pays an hour of saloon takings once per completed puzzle.
-function findHelmet(origin) {
+// A hidden find (the space-helmet wearer, ...) pays an hour of saloon takings once per
+// completed puzzle. `tap` is `{ find, x, y }` from either settlement's map.
+function findHidden({ find, x, y }) {
   if (campaign.readOnly) return;
-  const coins = campaign.findSpaceHelmet();
+  const coins = campaign.findHidden(find);
   if (!coins) {
-    enqueueVisitorNotice([{ kind: coins === null ? 'helmet-found' : 'helmet-empty' }]);
+    enqueueVisitorNotice([{ kind: `${find}-${coins === null ? 'found' : 'empty'}` }]);
     return;
   }
   closeDialog();
   collection.value = {
-    resource: 'helmet-coins',
+    resource: `${find}-coins`,
     amount: coins,
     serial: ++collectionSerial,
-    origin,
+    origin: { x, y },
   };
 }
-// An animal tapped from far away: the wearer is only found close enough to see it.
-function zoomForHelmet() {
-  if (!campaign.readOnly) enqueueVisitorNotice([{ kind: 'helmet-zoom' }]);
+// A possible find tapped from far away: it is only found close enough to see it.
+function zoomForFind(find) {
+  if (!campaign.readOnly) enqueueVisitorNotice([{ kind: `${find}-zoom` }]);
 }
 function collectMoonstones() {
   const amount = campaign.collectMoonstones();
@@ -1558,7 +1630,7 @@ defineExpose({ showConstructionSites });
 function goMining() {
   collection.value = null;
   closeDialog();
-  if (campaign.completedCount < LEVEL_COUNT) emit('mine');
+  if (campaign.newLevelsLeft) emit('mine');
   else if (campaign.canReplay) museumOpen.value = true;
   else selectBuilding('museum');
 }

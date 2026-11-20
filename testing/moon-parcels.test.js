@@ -11,9 +11,11 @@ import {
   SpriteMaterial,
   Vector3,
 } from 'three';
+import { ERAS } from '../src/data/eras';
 import { createTown } from '../src/data/town';
 import {
   MOON_LOTS,
+  moonLotsShown,
   MOON_PARCEL_SIDES,
   MOON_SITE_PAD,
   moonPadApothem,
@@ -33,6 +35,7 @@ import { buildMoonMonuments } from '../src/game/town/moon/MoonMonuments';
 import { MoonScene, moonRoofHeight } from '../src/game/town/moon/MoonScene';
 import { MoonConstruction } from '../src/game/town/moon/MoonConstruction';
 import { TownPrimitives } from '../src/game/town/TownPrimitives';
+import { openEverySite } from './helpers/siteOpening';
 import { GLOW_WALL, TownUpgradeGlow } from '../src/game/town/TownUpgradeGlow';
 
 // Permanent rule (AGENTS.md): every Moon parcel, built, empty, under construction or
@@ -59,7 +62,13 @@ const expectParcelPad = (root, radius, label) => {
   expect(pad.scale.z, label).toBeCloseTo(radius);
   expect([pad.position.x, pad.position.z], label).toEqual([0, 0]);
 };
-const moonTown = () => ({ ...createTown(), era: 'twin-hollows', coins: 1e9, moonstones: 1e6 });
+// The buildings that open the commission sites are finished, so every Moon site of the
+// town's era is open.
+const moonTown = () =>
+  openEverySite(
+    { ...createTown(), era: 'twin-hollows', coins: 1e9, moonstones: 1e6 },
+    areasForSettlement('moon'),
+  );
 
 it('lists every Moon lot and monument site as a parcel of the one shape', () => {
   const parcels = moonParcels();
@@ -112,7 +121,8 @@ it.each(areasForSettlement('moon').map((area) => [area.id, area]))(
     // buildMoonMonuments merges meshes; the pad is checked before batching.
     const batch = d.batch;
     d.batch = () => {};
-    let town = moonTown();
+    // A site opens with its own era.
+    let town = { ...moonTown(), era: area.era };
     expectParcelPad(siteIn(town), MOON_SITE_PAD, 'open');
     const choice = area.choices[0];
     const offer = landmarkOffer(town, area, choice);
@@ -199,7 +209,8 @@ it('gives every parcel a glow, tap target and selection outline of its pad shape
 });
 
 it('opens every parcel from a tap on it without moving the camera', () => {
-  const scene = parcelScene();
+  // A town in the latest era, so every monument site is open.
+  const scene = parcelScene({ ...moonTown(), era: ERAS.at(-1).id });
   for (const parcel of moonParcels()) {
     scene.camera.position.set(parcel.x + 0.5, 30, parcel.z + 12);
     scene.camera.lookAt(parcel.x, 0, parcel.z);
@@ -214,7 +225,10 @@ it('opens every parcel from a tap on it without moving the camera', () => {
   }
   expect(scene.picked).toEqual(moonParcels().map(({ id }) => id));
   // Sky and bare regolith answer nothing.
-  expect(scene.tap({ clientX: 50, clientY: 1 })).toBeNull();
+  scene.camera.position.set(0, 30, 0);
+  scene.camera.lookAt(0, 60, 40);
+  scene.camera.updateMatrixWorld(true);
+  expect(scene.tap({ clientX: 50, clientY: 50 })).toBeNull();
   scene.upgradeGlow.dispose();
 });
 
@@ -257,11 +271,17 @@ it('fits every tap target to its roof and leaves the ribbon above the landing to
     ...Object.fromEntries(Object.keys(MOON_LOTS).map((id) => [id, 3])),
   };
   const scene = builtScene(town);
-  for (const id of Object.keys(MOON_LOTS)) {
+  const shown = moonLotsShown(town);
+  for (const id of shown) {
     const roof = moonRoofHeight(renderMoonBuilding(kit(), new Group(), id, 3));
     const target = scene.pickTargets.children.find((mesh) => mesh.userData.lot === id);
     expect(target.scale.y, id).toBeCloseTo(Math.max(1.2, roof + 0.2));
     expect(target.scale.y, id).toBeLessThan(8);
+  }
+  // A later era's lots are not on the map yet: nothing there answers a tap.
+  for (const id of Object.keys(MOON_LOTS).filter((lot) => !shown.includes(lot))) {
+    const [x, z] = MOON_LOTS[id];
+    expect(tapAt(scene, [x, 30, z + 30], [x, 0.5, z]), id).toBeNull();
   }
   // Sky over the landing is not the landing; the Commons behind it stays reachable.
   expect(tapAt(scene, [0, 12, 40], [0, 20, -8])).toBeNull();
@@ -426,4 +446,28 @@ it('reveals a finished upgrade and a later era finish, but not on load or in red
     view.construction.dispose();
     view.upgradeGlow.dispose();
   }
+});
+
+// A modernized Moon building wears its era's finish on the map, and an unmodernized one
+// looks exactly as before.
+it('draws a modernized Moon building with its era finish', () => {
+  const vertices = (town) => {
+    const scene = builtScene(town);
+    let count = 0;
+    scene.buildings.traverse((part) => {
+      if (part.isMesh) count += part.geometry.attributes.position.count;
+    });
+    scene.upgradeGlow.dispose();
+    return count;
+  };
+  const town = moonTown();
+  town.buildings.roverBarn = 3;
+  town.buildingEras = { ...town.buildingEras, roverBarn: 'twin-hollows' };
+  town.buildingEraLevels = { ...town.buildingEraLevels, roverBarn: 1 };
+  const plain = vertices(town);
+  expect(vertices(structuredClone(town))).toBe(plain);
+  const depot = structuredClone(town);
+  depot.buildingEras.roverBarn = 'hollow-rising';
+  depot.buildingEraLevels.roverBarn = 3;
+  expect(vertices(depot)).toBeGreaterThan(plain);
 });

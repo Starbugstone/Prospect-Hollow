@@ -64,7 +64,7 @@ const formatDate = (at) => new Date(at).toLocaleDateString(locale.value, { dateS
 export const earnedText = (entry) =>
   entry.at
     ? t('Earned {date}', { date: formatDate(entry.at) })
-    : t('Earned before honours were introduced');
+    : t('Earned before this honour was added');
 // Score evidence only: other ranks record no public evidence.
 export const evidenceText = (evidence) =>
   evidence?.levelId && Number.isFinite(evidence.score) && Number.isFinite(evidence.target)

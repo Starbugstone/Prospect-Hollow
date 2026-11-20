@@ -4,6 +4,10 @@ import { overlapsEventInset } from './TownInset';
 import { forEachWalker } from './TownWalkers';
 import { TOWN_LABEL_DETAIL_DISTANCE, townLabelRank, townLabelDetail } from './TownLabels';
 import { layoutTownLabels } from './TownLabelLayout';
+import { markerPlace, projectMarker } from './TownMarkers';
+
+// A place that gives no width of its own is sized as an ordinary lot.
+const DEFAULT_SPAN = 8;
 
 // Screen placement of building labels, collection icons and the named-villager tag.
 // Runs on every camera frame, so it reuses scratch vectors instead of cloning.
@@ -32,17 +36,17 @@ export function projectLabelPositions(d) {
   const width = d.canvas.clientWidth,
     height = d.canvas.clientHeight,
     town = d.town;
-  const projected = d.anchors.map(({ id, site, position, width: labelWidth, collection }) => {
-    const reward = screen.copy(collection).project(d.camera);
-    const icon = {
-      x: (reward.x + 1) * 50,
-      y: (1 - reward.y) * 50,
-      visible:
-        inFront(reward) &&
-        Math.abs(reward.x) < 0.95 &&
-        Math.abs(reward.y) < 0.9 &&
-        !overlapsEventInset(d, ((reward.x + 1) * width) / 2, ((1 - reward.y) * height) / 2, 48),
-    };
+  // The header's pills, and on a phone the needs row under them. The canvas already ends
+  // above the tab bar.
+  const top = width < 600 ? 104 : 60;
+  const projected = d.anchors.map(({ id, site, position, width: labelWidth, collection, span }) => {
+    // The shared marker contract (TownMarkers.js): the icon stays at its projected place,
+    // sized by how wide the place is drawn, or is left out under the header.
+    const marker = projectMarker(d.camera, collection, span ?? DEFAULT_SPAN, height, screen);
+    const icon = markerPlace(marker, width, height, {
+      top,
+      shown: !overlapsEventInset(d, (marker.x * width) / 100, (marker.y * height) / 100, 48),
+    });
     const p = screen.copy(position).project(d.camera);
     // A narrow phone screen would hide the suggested plot's wide label near an edge;
     // while its building is on screen the label slides inward instead.

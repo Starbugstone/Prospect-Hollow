@@ -509,6 +509,28 @@ final class Honours
                     is_array($measure['areas'] ?? null) ? $measure['areas'] : [],
                 ),
             ),
+            // The highest level with a completion record, as `level` in honours.js.
+            'level' => max([
+                0,
+                ...array_map(
+                    'intval',
+                    array_filter(
+                        array_keys($state['records']),
+                        fn($id) => preg_match('/^[1-9]\d{0,5}$/D', (string) $id) === 1 &&
+                            is_array($state['records'][$id]),
+                    ),
+                ),
+            ]),
+            // The listed hidden finds the owner found at least once: a find saves the
+            // completed puzzle count it was found at (`XRun`), a field the replay protects.
+            'found' => count(
+                array_filter(
+                    is_array($measure['finds'] ?? null) ? $measure['finds'] : [],
+                    fn($id) => is_string($id) &&
+                        isset($this->rules()->hiddenFinds()[$id]) &&
+                        self::count($state['town'][$id . 'Run'] ?? null) > 0,
+                ),
+            ),
             // One counter, or the total of a counter map when no key is named.
             'count' => is_array($counts)
                 ? (is_string($key)

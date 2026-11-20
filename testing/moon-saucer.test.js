@@ -136,6 +136,18 @@ describe('Moon saucer visits', () => {
         if (box.max.y <= pad.y + 0.02) return; // The supporting pad itself.
         solids.push({ object, box });
       });
+      // Only solids under the flight corridor can ever meet the hull: with the outer ring
+      // built, checking every part of every lot at every step is too slow to be reliable.
+      const corridor = new Box3();
+      for (let time = 6; time < 92; time += 0.25) {
+        const { x, z } = moonSaucerPose(time);
+        corridor.expandByPoint(new Vector3(x, 0, z));
+      }
+      corridor.expandByScalar(2.56 * pad.scale + 1);
+      corridor.min.y = -Infinity;
+      corridor.max.y = Infinity;
+      const near = solids.filter(({ box }) => corridor.intersectsBox(box));
+      expect(near.length).toBeGreaterThan(0);
       const root = f.saucer.craft.root;
       for (let time = 6; time < 92; time += 0.25) {
         f.saucer.step(time);
@@ -144,7 +156,7 @@ describe('Moon saucer visits', () => {
         root.remove(trail);
         const craftBox = new Box3().setFromObject(root);
         root.add(trail);
-        for (const { object, box } of solids) {
+        for (const { object, box } of near) {
           if (object.geometry === f.d.geometries['future-hoop']) {
             // A hoop's box includes its empty centre; use its actual radial envelope.
             if (craftBox.max.y < box.min.y || craftBox.min.y > box.max.y) continue;

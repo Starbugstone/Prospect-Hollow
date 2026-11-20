@@ -73,7 +73,8 @@ try {
   const industrialComplete = { ...finishEra(industrialOpen), firstLightsSeen: true };
   const later = {};
   let previous = industrialComplete;
-  for (const era of ERAS.slice(3)) {
+  // A save can't enter an era that is still being built (`enabled: false`): stop before it.
+  for (const era of ERAS.slice(3).filter(({ enabled }) => enabled)) {
     previous.coins = 10000000;
     const opening = advanceEra(previous, previous.era);
     const open = {
@@ -132,7 +133,7 @@ try {
     );
   }
   console.log(
-    `Created disposable profiles for all ${ERAS.length} eras in ${directory}/. See docs/settlement-eras.md for testing steps.`,
+    `Created disposable profiles for all ${ERAS.filter(({ enabled }) => enabled).length} playable eras in ${directory}/. See docs/settlement-eras.md for testing steps.`,
   );
 } finally {
   await server.close();

@@ -1,10 +1,12 @@
 import { Box3, Matrix4, MeshStandardMaterial, Vector3 } from 'three';
 import { RING_TUBE } from './TownGeometries';
-import { SPACE_HELMET, TOWN_ANIMALS } from '../../data/townAnimals';
+import { SPACE_HELMET, TOWN_ANIMALS, animalLook } from '../../data/townAnimals';
+import { ERAS } from '../../data/eras';
 import { horizonMaterial } from './TownAtmosphere';
 import { catGeometries, pigeonGeometries } from './TownAnimalGeometries';
 import { gardenAnimalModel } from './GardenAnimalModels';
 import { flyingAnimal } from '../../data/townAnimals';
+import { strideRaccoon, uprightRaccoon } from './TownWanderers';
 
 function finishModel(d, model, costume = null) {
   const { root, head, species } = model;
@@ -22,12 +24,20 @@ function finishModel(d, model, costume = null) {
   };
 }
 
-function catModel(d, root, costume) {
+// A new generation of the town's animals is born every second era.
+const generationOf = (era) =>
+  Math.floor(
+    Math.max(
+      0,
+      ERAS.findIndex(({ id }) => id === era),
+    ) / 2,
+  );
+
+function catModel(d, root, costume, look) {
   catGeometries(d);
-  const coat = '#b77e4e',
-    light = '#f0e3cc',
-    stripe = '#76543e';
+  const { coat, light, dark: stripe } = look;
   const body = d.group(root);
+  body.scale.setScalar(look.size);
   d.mesh(body, 'catBody', [1, 1, 1], [0, 0, 0], coat);
   d.ball(body, 0, 0.41, 0.25, [0.095, 0.125, 0.045], light);
   const head = d.group(body, 0, 0.565, 0.22);
@@ -68,21 +78,22 @@ export function animalModel(d, species, variant = 0, costume = null, parent = d.
   root.name = TOWN_ANIMALS[species].name;
   root.userData.animated = true;
   root.userData.species = species;
-  if (species === 'cat') return catModel(d, root, costume);
+  const era = d.town?.era;
+  const look = animalLook(species, variant, generationOf(era));
+  root.userData.look = look;
+  if (species === 'cat') return catModel(d, root, costume, look);
+  if (TOWN_ANIMALS[species].model === 'wanderers') return wanderersModel(d, root, costume);
   if (TOWN_ANIMALS[species].model === 'garden')
-    return finishModel(d, { ...gardenAnimalModel(d, species, root), species }, costume);
+    return finishModel(
+      d,
+      { ...gardenAnimalModel(d, species, root, { look, variant, era }), species },
+      costume,
+    );
   if (flyingAnimal(species)) pigeonGeometries(d);
   const bird = species === 'hen' || flyingAnimal(species);
-  const colors = {
-    dog: ['#c69b6b', '#e4c99e'],
-    fox: ['#bd6f3c', '#f0dfbb'],
-    raccoon: ['#908b7d', '#d8d2bc'],
-    hen: [variant % 2 ? '#c89560' : '#efe2c3', '#efe2c3'],
-    pigeon: ['#8497a7', '#b2bec4'],
-    bluebird: ['#7296ad', '#e8dfc8'],
-  };
-  const [coat, light] = colors[species];
+  const { coat, light, form } = look;
   const body = d.group(root);
+  body.scale.setScalar(look.size);
   d.ball(body, 0, bird ? 0.22 : 0.3, 0, bird ? [0.16, 0.2, 0.25] : [0.18, 0.21, 0.36], coat);
   const head = d.group(body, 0, bird ? 0.4 : 0.47, bird ? 0.16 : 0.28);
   d.ball(head, 0, 0, 0, bird ? 0.105 : [0.14, 0.15, 0.16], coat);
@@ -97,14 +108,21 @@ export function animalModel(d, species, variant = 0, costume = null, parent = d.
       const wing = d.group(body, side * 0.13, 0.29, 0);
       if (flyingAnimal(species)) {
         d.mesh(wing, `pigeonWing${side}`, [1, 1, 1], [0, 0, 0], light);
-        if (species === 'pigeon')
-          d.mesh(wing, `pigeonWing${side}Bars`, [1, 1, 1], [0, 0, 0], '#526471');
+        if (look.bars) d.mesh(wing, `pigeonWing${side}Bars`, [1, 1, 1], [0, 0, 0], look.bars);
+        if (form === 'owl') {
+          // A wide face and ear tufts over the shared bird body.
+          d.ball(head, side * 0.045, 0.01, 0.07, [0.05, 0.055, 0.03], look.neck);
+          d.mesh(head, 'cone', [0.028, 0.06, 0.024], [side * 0.07, 0.1, -0.01], coat);
+        }
       } else d.ball(wing, side * 0.055, -0.035, -0.03, [0.075, 0.13, 0.22], light);
       wings.push(wing);
     } else {
-      if (species === 'dog')
-        d.ball(head, side * 0.14, -0.015, -0.035, [0.055, 0.15, 0.08], '#96724f');
-      else {
+      if (species === 'dog' && form !== 'terrier')
+        d.ball(head, side * 0.14, -0.015, -0.035, [0.055, 0.15, 0.08], look.dark);
+      else if (species === 'dog') {
+        // A terrier's ears stand up and fold at the tip.
+        d.mesh(head, 'cone', [0.06, 0.12, 0.05], [side * 0.1, 0.13, -0.03], look.dark);
+      } else {
         d.mesh(head, 'cone', [0.075, 0.18, 0.07], [side * 0.095, 0.14, -0.035], coat);
         d.mesh(head, 'cone', [0.038, 0.11, 0.035], [side * 0.095, 0.145, 0.008], light);
       }
@@ -122,11 +140,20 @@ export function animalModel(d, species, variant = 0, costume = null, parent = d.
       beak.name = 'Pigeon beak';
       d.ball(head, 0, 0.002, 0.1, [0.026, 0.018, 0.023], '#d4d4c9');
     } else d.ball(head, 0, -0.025, 0.12, [0.04, 0.03, 0.09], '#d5a15b');
-    if (species === 'hen') d.ball(head, 0, 0.1, 0, [0.04, 0.065, 0.07], '#b86c50');
-    else d.ball(head, 0, -0.1, -0.015, [0.1, 0.1, 0.1], species === 'bluebird' ? light : '#649b91');
+    if (species === 'hen') {
+      const rooster = form === 'rooster';
+      d.ball(head, 0, rooster ? 0.12 : 0.1, 0, [0.04, rooster ? 0.1 : 0.065, 0.085], '#b86c50');
+      if (rooster) d.ball(head, 0, -0.09, 0.07, [0.03, 0.06, 0.035], '#b86c50');
+    } else d.ball(head, 0, -0.1, -0.015, [0.1, 0.1, 0.1], look.neck ?? light);
   } else {
-    d.ball(head, 0, -0.045, 0.13, [0.1, 0.075, species === 'fox' ? 0.19 : 0.12], light);
-    d.ball(head, 0, -0.025, species === 'fox' ? 0.3 : 0.24, 0.032, '#383b31');
+    const muzzle = species === 'fox' ? 0.19 : form === 'collie' ? 0.16 : 0.12;
+    d.ball(head, 0, -0.045, 0.13, [0.1, 0.075, muzzle], light);
+    d.ball(head, 0, -0.025, species === 'fox' ? 0.3 : 0.12 + muzzle, 0.032, '#383b31');
+    if (form === 'collie') {
+      // A white blaze and ruff over the dark coat.
+      d.ball(head, 0, 0.06, 0.1, [0.035, 0.1, 0.07], light);
+      d.ball(body, 0, 0.33, 0.24, [0.15, 0.17, 0.13], light);
+    } else if (form === 'terrier') d.ball(body, 0.03, 0.41, -0.08, [0.13, 0.1, 0.17], look.dark);
     if (species === 'raccoon')
       for (const side of [-1, 1]) {
         d.ball(head, side * 0.097, 0.028, 0.088, [0.064, 0.056, 0.075], '#464b46');
@@ -134,8 +161,15 @@ export function animalModel(d, species, variant = 0, costume = null, parent = d.
       }
   }
   const tail = d.group(body, 0, bird ? 0.25 : 0.35, bird ? -0.2 : -0.3);
-  if (bird) d.ball(tail, 0, 0.02, -0.13, [0.12, 0.04, 0.2], light);
-  else if (species === 'dog') d.rod(tail, [0, 0, 0], [0, 0.2, -0.24], 0.045, coat);
+  if (bird && form === 'rooster') {
+    d.ball(tail, 0, 0.13, -0.1, [0.05, 0.2, 0.13], light);
+    d.ball(tail, 0, 0.06, -0.17, [0.045, 0.14, 0.12], coat);
+  } else if (bird) d.ball(tail, 0, 0.02, -0.13, [0.12, 0.04, 0.2], light);
+  else if (form === 'terrier') d.rod(tail, [0, 0, 0], [0, 0.15, -0.07], 0.04, coat);
+  else if (form === 'collie') {
+    d.ball(tail, 0, 0.02, -0.12, [0.07, 0.08, 0.16], coat);
+    d.ball(tail, 0, 0.03, -0.22, [0.055, 0.06, 0.07], light);
+  } else if (species === 'dog') d.rod(tail, [0, 0, 0], [0, 0.2, -0.24], 0.045, coat);
   else {
     d.ball(tail, 0, -0.02, -0.23, [0.14, 0.14, 0.32], coat);
     d.ball(tail, 0, -0.04, -0.48, [0.1, 0.1, 0.14], light);
@@ -144,6 +178,33 @@ export function animalModel(d, species, variant = 0, costume = null, parent = d.
         d.ball(tail, 0, -0.02, z, [0.143, 0.143, 0.045], '#535b54');
   }
   return finishModel(d, { root, body, head, legs, wings, tail, species }, costume);
+}
+
+// The wandering pair as one walker: the raccoon on the right of its Willowkin, a step
+// apart. `body` holds both, so a hop (the Moon's stride) lifts them together.
+function wanderersModel(d, root, costume) {
+  const body = d.group(root);
+  const raccoon = uprightRaccoon(d, body, costume === 'space-helmet' ? helmetGlass(d) : null);
+  raccoon.root.position.set(-0.3, 0, 0.06);
+  const willowkin = animalModel(d, 'willowkinResident', 0, costume, body);
+  willowkin.root.position.x = 0.3;
+  root.userData.costume = costume;
+  root.traverse((object) => {
+    if (object.isMesh) object.castShadow = false;
+  });
+  return {
+    root,
+    body,
+    head: raccoon.head,
+    headRest: raccoon.head.position.clone(),
+    legs: [],
+    wings: [],
+    tail: raccoon.tail,
+    shadow: null,
+    raccoon,
+    willowkin,
+    species: 'wanderers',
+  };
 }
 
 const SUIT = '#ece5d3',
@@ -340,7 +401,38 @@ function addSpaceSuit(d, { root, body, head, legs, species }) {
     .map((mesh) => [mesh, boundsOf(body, [mesh])])
     .reduce((a, b) => (volume(b[1]) > volume(a[1]) ? b : a));
   fitHelmet(d, root, head, coat, torso);
-  torso.material = d.material(SPACE_HELMET.suits[species] ?? SUIT);
+  const suit = d.material(SPACE_HELMET.suits[species] ?? SUIT);
+  torso.material = suit;
+  // A model may mark more of its coat as suited: a bird's wings, a long neck's lower half.
+  for (const mesh of coat) if (mesh.userData.suited) mesh.material = suit;
+  // Every wearer carries a life-support pack: on the back of an animal on all fours, behind
+  // the shoulders of one that sits or stands upright.
+  const size = trunk.getSize(new Vector3()),
+    upright = size.y > size.z * 1.15;
+  const pack = upright
+    ? d.box(
+        body,
+        size.x * 0.5,
+        size.y * 0.36,
+        size.z * 0.3,
+        (trunk.min.x + trunk.max.x) / 2,
+        trunk.min.y + size.y * 0.62,
+        trunk.min.z - size.z * 0.04,
+        '#c9ced0',
+        true,
+      )
+    : d.box(
+        body,
+        size.x * 0.5,
+        size.y * 0.3,
+        size.z * 0.42,
+        (trunk.min.x + trunk.max.x) / 2,
+        trunk.max.y + size.y * 0.06,
+        (trunk.min.z + trunk.max.z) / 2 - size.z * 0.08,
+        '#c9ced0',
+        true,
+      );
+  pack.name = 'Space suit pack';
   const middle = trunk.getCenter(new Vector3()),
     half = trunk.getSize(new Vector3()).multiplyScalar(0.5);
   for (const side of [-1, 1])
@@ -367,6 +459,11 @@ function addSpaceSuit(d, { root, body, head, legs, species }) {
 }
 
 export function animateAnimal(model, time, state, moving) {
+  if (model.raccoon) {
+    // The pair keep step: one stride clock for the raccoon's gait and the Willowkin's.
+    strideRaccoon(model.raccoon, time * 7, moving, time);
+    return animateAnimal(model.willowkin, time, state, moving);
+  }
   const { species, body, head, legs, wings, tail } = model;
   const bird = species === 'hen' || flyingAnimal(species);
   const feeding = state === 'feeding' || state === 'pecking' || state === 'foraging';

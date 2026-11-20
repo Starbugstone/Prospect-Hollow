@@ -20,19 +20,44 @@ import {
   MOON_LOTS,
   moonPadRadius,
   MOON_RING_ROAD,
+  MOON_FLOOR_RADIUS,
+  MOON_RIM_RADIUS,
+  MOON_ROADS,
+  MOON_SITE_PAD,
+  moonApproaches,
+  moonSegmentDistance,
+  moonSpokes,
   moonLetters,
   moonSettlement,
   moonstoneKeepsakes,
+  moonDistrictAt,
+  moonLotDistrict,
 } from '../src/data/moonSettlement';
 import { VISITOR_TRANSPORTS } from '../src/data/visitorArrivals';
-import { moonHeight } from '../src/game/town/moon/MoonScene';
+import { moonHeight, roads as moonRoads } from '../src/game/town/moon/MoonScene';
+import { Raycaster, Vector3 } from 'three';
 import {
+  AREA_BY_ID,
+  advanceMonumentWorks,
+  areaUnlocked,
+  areasForSettlement,
+  landmarkOffer,
+  monumentWork,
+  purchaseLandmark,
+  unveilLandmark,
+} from '../src/data/townLandmarks';
+import { MOON_SETTLEMENT } from '../src/data/settlements';
+import {
+  advanceEra,
   eraBuildingLevel,
+  eraGate,
   finishEra,
   isEraComplete,
+  modernization,
   modernizesInEra,
   plotInEra,
 } from '../src/game/town/TownEras';
+import { moonModernization } from '../src/data/moonModernizations';
 import { normalizeTown, purchase, upgradeOffer } from '../src/game/town/TownRules';
 import { PLOTS, visiblePlots } from '../src/game/town/TownLayout';
 import TownBuilding from '../src/components/town/TownBuilding.vue';
@@ -104,16 +129,51 @@ function twinTown() {
 
 describe('Twin Hollows: the Moon is the new frontier', () => {
   it('follows Moonward and modernizes only a few homecoming landmarks', () => {
-    expect(ERAS.at(-1).id).toBe('twin-hollows');
-    expect(ERAS.at(-2).id).toBe('moonward');
+    const at = ERAS.findIndex(({ id }) => id === 'twin-hollows');
+    expect(ERAS[at - 1].id).toBe('moonward');
+    // New Hollow Rising follows it, and changes only the Moon.
+    expect(ERAS[at + 1].id).toBe('hollow-rising');
     const list = eraEvolution('twin-hollows').modernizes;
     expect(list).toContain('spaceElevator');
     for (const id of list) expect(BUILDING_BY_ID[id], id).toBeTruthy();
-    // Every other era still modernizes every building.
-    for (const era of ERAS.slice(0, -1)) expect(eraEvolution(era.id).modernizes).toBeNull();
+    // Every era before it still modernizes every building.
+    for (const era of ERAS.slice(0, at)) expect(eraEvolution(era.id).modernizes).toBeNull();
+    // New Hollow Rising modernizes Moon buildings, and in the valley only the town square.
+    for (const id of eraEvolution('hollow-rising').modernizes)
+      if (id !== 'square') expect(BUILDING_BY_ID[id].settlement, id).toBe('moon');
+    expect(modernizesInEra('hollow-rising', 'square')).toBe(true);
+    expect(modernizesInEra('hollow-rising', 'home')).toBe(false);
     expect(modernizesInEra('twin-hollows', 'home')).toBe(false);
     expect(modernizesInEra('twin-hollows', 'square')).toBe(true);
     expect(modernizesInEra('moonward', 'home')).toBe(true);
+  });
+
+  it('describes each modernized Moon building, and adds New Hollow’s own water and food', () => {
+    const town = twinTown();
+    town.era = 'hollow-rising';
+    for (const id of eraEvolution('hollow-rising').modernizes) {
+      if (id === 'square') continue;
+      const entry = moonModernization('hollow-rising', id);
+      expect(entry, id).toBeTruthy();
+      for (const level of [0, 1, 2]) {
+        const copy = structuredClone(town);
+        copy.buildingEras[id] = level ? 'hollow-rising' : 'twin-hollows';
+        copy.buildingEraLevels[id] = level || 1;
+        const offer = modernization(copy, id);
+        expect(offer, `${id} ${level}`).toMatchObject({
+          name: entry.name,
+          description: entry.steps[level],
+          eraLevel: level + 1,
+          cost: expect.any(Number),
+        });
+      }
+    }
+    // The ice well and greenhouse modernize into supply; the others are for looks.
+    const well = modernization(town, 'craterIceWell');
+    expect(well.benefit).toMatch(/^Adds water/);
+    expect(well.benefitValues.count).toBe(16);
+    expect(modernization(town, 'earthlightGreenhouse').benefit).toMatch(/^Adds food/);
+    expect(modernization(town, 'newHollowCommons').benefit).toMatch(/^Visual/);
   });
 
   it('rejects an invalid modernizes list when the catalog loads', () => {
@@ -139,10 +199,34 @@ describe('Twin Hollows: the Moon is the new frontier', () => {
     expect(isEraComplete(town)).toBe(false);
   });
 
+  // Commissions are optional: a commission chosen and half paid for never holds the town
+  // back from the next era (owner, 10 November 2026).
+  it('opens the next era with a commission open, chosen or part funded', () => {
+    const town = twinTown();
+    const site = AREA_BY_ID['earthlight-conservatory'];
+    expect(areaUnlocked(town, site)).toBe(true);
+    expect(eraGate(town).available).toBe(true);
+    let funded = purchaseLandmark(town, {
+      id: site.id,
+      slot: 0,
+      value: site.choices[0],
+      ...landmarkOffer(town, site, site.choices[0]),
+    });
+    expect(funded).toBeTruthy();
+    while (monumentWork(funded, site) && !monumentWork(funded, site).ready)
+      funded = advanceMonumentWorks(funded);
+    funded = unveilLandmark(funded, site.id, 1);
+    expect(isEraComplete(funded)).toBe(true);
+    expect(eraGate(funded).available).toBe(true);
+    expect(advanceEra(funded, 'twin-hollows').era).toBe('hollow-rising');
+  });
+
   it('needs New Hollow finished as well as the valley before the era is complete', () => {
     const town = twinTown();
     expect(isEraComplete(town)).toBe(true);
-    for (const b of MOON_BUILDINGS.filter((building) => building.requiredForEraCompletion)) {
+    for (const b of MOON_BUILDINGS.filter(
+      (building) => building.requiredForEraCompletion && building.introducedEra === 'twin-hollows',
+    )) {
       const copy = structuredClone(town);
       copy.buildings[b.id] = 2;
       expect(isEraComplete(copy), b.id).toBe(false);
@@ -173,6 +257,10 @@ it('preserves completed Twin Hollows saves while the optional Saucer Pad is abse
   expect(upgradeOffer(earlier, 'saucerPad').available).toBe(false);
 });
 
+// The crater's own lots. A district beyond the rim keeps its own contracts
+// (testing/quiet-signal.test.js).
+const CRATER_LOTS = Object.entries(MOON_LOTS).filter(([id]) => !moonLotDistrict(id));
+
 describe('New Hollow buildings', () => {
   it('stand on the Moon map and never on a valley lot', () => {
     expect(MOON_BUILDINGS.length).toBe(Object.keys(MOON_LOTS).length);
@@ -182,6 +270,9 @@ describe('New Hollow buildings', () => {
       expect(b.settlement).toBe('moon');
       expect(PLOTS[b.id], b.id).toBeUndefined();
       expect(MOON_LOTS[b.id], b.id).toBeTruthy();
+      // New Hollow Rising's outer ring and The Quiet Signal's Far Rim have their own
+      // unlock orders (testing/quiet-signal.test.js covers the Far Rim).
+      if (['hollow-rising', 'quiet-signal'].includes(b.introducedEra)) continue;
       expect(b.introducedEra).toBe('twin-hollows');
       expect(b.unlock).toEqual(
         b.id === 'saucerPad'
@@ -200,7 +291,7 @@ describe('New Hollow buildings', () => {
   });
 
   it('keeps every lot inside the crater, off the ring road and apart from its neighbors', () => {
-    const lots = Object.entries(MOON_LOTS);
+    const lots = CRATER_LOTS;
     for (const [id, [x, z]] of lots) {
       const r = Math.hypot(x, z);
       expect(r + moonPadRadius(id), id).toBeLessThan(MOON_CRATER_RADIUS);
@@ -251,6 +342,13 @@ describe('New Hollow buildings', () => {
     town.buildings.willowkinDome = 1;
     expect(moonLetters(town).map(({ id }) => id)).toEqual(['settlerDomes', 'willowkinDome']);
     expect(moonstoneKeepsakes(town)).toBe(3);
+    // Every Moon lot writes home once it is built.
+    for (const id of Object.keys(MOON_LOTS)) town.buildings[id] = 1;
+    expect(
+      moonLetters(town)
+        .map(({ id }) => id)
+        .sort(),
+    ).toEqual(Object.keys(MOON_LOTS).sort());
     // The homestead lights keep growing with the supply era's Moon buildings.
     const before = moonSettlement({ ...town, buildings: { ...town.buildings, settlerDomes: 0 } });
     expect(moonSettlement(town).homesteads).toBeGreaterThanOrEqual(before.homesteads);
@@ -258,7 +356,7 @@ describe('New Hollow buildings', () => {
 
   it('keeps the settlement level on smooth regolith with a soft rim and hills beyond', () => {
     // Every lot and the ring road sit on level ground.
-    for (const [id, [x, z]] of Object.entries(MOON_LOTS))
+    for (const [id, [x, z]] of CRATER_LOTS)
       for (const [dx, dz] of [
         [0, 0],
         [4, 0],
@@ -267,19 +365,75 @@ describe('New Hollow buildings', () => {
         [0, -4],
       ])
         expect(Math.abs(moonHeight(x + dx, z + dz)), id).toBeLessThan(0.01);
-    for (let a = 0; a < Math.PI * 2; a += 0.2)
-      expect(
-        Math.abs(moonHeight(Math.cos(a) * MOON_RING_ROAD, Math.sin(a) * MOON_RING_ROAD)),
-      ).toBeLessThan(0.01);
+    // So does every road: each ring and each spoke, out to the edge of the floor.
+    for (const ring of MOON_ROADS.rings)
+      for (let a = 0; a < Math.PI * 2; a += 0.2)
+        for (const across of [-0.8, 0, 0.8])
+          expect(
+            Math.abs(moonHeight(Math.cos(a) * (ring + across), Math.sin(a) * (ring + across))),
+            `ring ${ring}`,
+          ).toBeLessThan(0.01);
+    for (const [[ax, az], [bx, bz]] of moonSpokes())
+      for (let t = 0; t <= 1; t += 0.05)
+        expect(Math.abs(moonHeight(ax + (bx - ax) * t, az + (bz - az) * t))).toBeLessThan(0.01);
     // A soft rim rings the crater, and the land swells gently toward the horizon.
     const rim = Array.from({ length: 24 }, (_, n) =>
-      moonHeight(Math.cos(n / 4) * 53, Math.sin(n / 4) * 53),
+      moonHeight(Math.cos(n / 4) * MOON_RIM_RADIUS, Math.sin(n / 4) * MOON_RIM_RADIUS),
     );
     expect(Math.max(...rim)).toBeGreaterThan(2);
     let steepest = 0;
     for (let x = -200; x < 200; x += 1)
       steepest = Math.max(steepest, Math.abs(moonHeight(x + 1, -150) - moonHeight(x, -150)));
     expect(steepest, 'no boulder cliffs on the horizon').toBeLessThan(1.5);
+  });
+
+  it('runs the outer ring and its spokes clear of every lot, site and pad', () => {
+    expect(MOON_ROADS.rings.length).toBeGreaterThan(1);
+    const outer = MOON_ROADS.rings.at(-1);
+    expect(outer + 0.8).toBeLessThan(MOON_FLOOR_RADIUS);
+    const pads = [
+      ...CRATER_LOTS.map(([id, at]) => [id, at, moonPadRadius(id)]),
+      ...areasForSettlement(MOON_SETTLEMENT)
+        .filter((area) => !moonDistrictAt(...area.positions[0]))
+        .map((area) => [area.id, area.positions[0], Math.max(area.radius, MOON_SITE_PAD)]),
+    ];
+    // The road's half width plus a clear margin.
+    for (const [id, [x, z], radius] of pads) {
+      for (const [a, b] of moonSpokes())
+        expect(moonSegmentDistance(x, z, a, b) - radius, id).toBeGreaterThan(2.5);
+      expect(Math.abs(Math.hypot(x, z) - outer) - radius, id).toBeGreaterThan(2.5);
+    }
+    // The first lots' paths still join the inner ring; lots beyond the outer road join it.
+    for (const route of moonApproaches().filter(({ district }) => !district))
+      expect(route.ring, route.id).toBe(
+        Math.hypot(...MOON_LOTS[route.id]) > outer ? outer : MOON_RING_ROAD,
+      );
+  });
+
+  it('draws every ring and spoke where the roads are, and nowhere between them', () => {
+    const road = moonRoads();
+    road.updateMatrixWorld(true);
+    const ray = new Raycaster();
+    const hits = (x, z) => {
+      ray.set(new Vector3(x, 10, z), new Vector3(0, -1, 0));
+      return ray.intersectObject(road).length > 0;
+    };
+    for (const [[ax, az], [bx, bz]] of moonSpokes())
+      for (const t of [0.1, 0.5, 0.9]) {
+        const x = ax + (bx - ax) * t,
+          z = az + (bz - az) * t;
+        expect(hits(x, z), `spoke at ${x.toFixed(1)}, ${z.toFixed(1)}`).toBe(true);
+        // Beside a spoke, off the road, is bare regolith.
+        const side = [-(bz - az), bx - ax].map((v) => (v / Math.hypot(bx - ax, bz - az)) * 2);
+        expect(hits(x + side[0], z + side[1])).toBe(false);
+      }
+    for (const ring of MOON_ROADS.rings)
+      for (let a = 0.2; a < Math.PI * 2; a += 0.7) {
+        expect(hits(Math.cos(a) * ring, Math.sin(a) * ring), `ring ${ring}`).toBe(true);
+        expect(hits(Math.cos(a) * (ring + 2), Math.sin(a) * (ring + 2))).toBe(false);
+      }
+    road.geometry.dispose();
+    road.material.dispose();
   });
 
   it('brings Moon guests down the elevator once per climber trip', () => {

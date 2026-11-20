@@ -25,18 +25,94 @@
       <svg
         v-else
         class="town-moon-map"
-        viewBox="-60 -50 120 100"
+        :viewBox="`${mapBox.x} ${mapBox.y} ${mapBox.width} ${mapBox.height}`"
         preserveAspectRatio="xMidYMid meet"
         aria-hidden="true"
       >
-        <rect x="-60" y="-50" width="120" height="100" fill="#10162b" />
-        <circle cx="-38" cy="-38" r="7" fill="#4f8fc7" />
-        <ellipse cy="6" rx="52" ry="40" fill="#b9b6ad" />
+        <rect
+          :x="mapBox.x"
+          :y="mapBox.y"
+          :width="mapBox.width"
+          :height="mapBox.height"
+          fill="#10162b"
+        />
+        <circle :cx="mapBox.x + 22" :cy="mapBox.y + 12" r="7" fill="#4f8fc7" />
+        <ellipse cy="6" :rx="craterFloor[0]" :ry="craterFloor[1]" fill="#b9b6ad" />
+        <!-- A district beyond the rim: its level ground, its roads and its landmark. -->
+        <g
+          v-for="district in mapDistrictShapes"
+          :key="district.id"
+          :data-moon-district="district.id"
+        >
+          <ellipse
+            :cx="district.x"
+            :cy="district.y"
+            :rx="district.floor[0]"
+            :ry="district.floor[1]"
+            fill="#b9b6ad"
+          />
+          <ellipse
+            :cx="district.x"
+            :cy="district.y"
+            :rx="district.ring[0]"
+            :ry="district.ring[1]"
+            fill="none"
+            stroke="#cfccc3"
+            stroke-width="1.6"
+          />
+          <line
+            :x1="district.road[0][0]"
+            :y1="district.road[0][1]"
+            :x2="district.road[1][0]"
+            :y2="district.road[1][1]"
+            stroke="#cfccc3"
+            stroke-width="1.6"
+          />
+          <g v-if="district.answered" data-moon-ribbon="lit">
+            <line
+              :x1="district.x"
+              :y1="district.y"
+              :x2="district.ribbon[0]"
+              :y2="district.ribbon[1]"
+              stroke="#fff3d2"
+              stroke-width="0.5"
+            />
+            <circle
+              v-for="(star, n) in district.stars"
+              :key="n"
+              :cx="star[0]"
+              :cy="star[1]"
+              :r="star[2]"
+              fill="#fff3d2"
+            />
+          </g>
+          <rect
+            v-if="district.stone"
+            :x="district.x - district.stone[0] / 2"
+            :y="district.y - district.stone[1]"
+            :width="district.stone[0]"
+            :height="district.stone[1]"
+            fill="#000000"
+            data-moon-landmark="quietStone"
+          />
+        </g>
         <ellipse
+          v-for="ring in MOON_ROADS.rings"
+          :key="ring"
           cy="6"
-          :rx="MOON_RING_ROAD * 1.3"
-          :ry="MOON_RING_ROAD * 1.05"
+          :rx="ring * 1.3"
+          :ry="ring * 1.05"
           fill="none"
+          stroke="#cfccc3"
+          stroke-width="1.6"
+        />
+        <line
+          v-for="([[ax, az], [bx, bz]], n) in moonSpokes()"
+          :key="`spoke-${n}`"
+          :x1="ax * 1.3"
+          :y1="6 + az * 1.05"
+          :x2="bx * 1.3"
+          :y2="6 + bz * 1.05"
           stroke="#cfccc3"
           stroke-width="1.6"
         />
@@ -55,7 +131,14 @@
           :key="lot.id"
           :transform="`translate(${lot.x} ${lot.y}) scale(.07)`"
         >
-          <TownMoonBuilding :kind="lot.id" :level="town.buildings[lot.id] ?? 0" />
+          <TownMoonBuilding
+            :kind="lot.id"
+            :level="town.buildings[lot.id] ?? 0"
+            :finish="{
+              era: town.buildingEras?.[lot.id],
+              level: town.buildingEraLevels?.[lot.id] ?? 0,
+            }"
+          />
           <TownMoonConstruction v-if="town.projects?.[lot.id]" :project="town.projects[lot.id]" />
         </g>
         <g
@@ -103,6 +186,7 @@
           :ref="(icon) => trackElement(actionElements, lot.id, icon?.$el)"
           :indicator="indicators[lot.id]"
           :label="buildingActionLabel(town, lot.id, indicators[lot.id])"
+          :size="lot.collection.size ?? 1"
           :data-moon-action="lot.id"
           :style="{ translate: box.translate(lot.collection) }"
           @click="activateLabel(lot.id, $event)"
@@ -134,10 +218,15 @@ import {
   watch,
 } from 'vue';
 import {
+  MOON_FLOOR_RADIUS,
   MOON_LOTS,
-  MOON_RING_ROAD,
+  MOON_ROADS,
   moonApproaches,
+  moonSiteRoutes,
+  moonDistrictsShown,
+  moonLotsShown,
   moonSettlement,
+  moonSpokes,
 } from '../../data/moonSettlement';
 import { TOWN_ACTIONS, buildingActionLabel } from '../../data/townIndicators';
 import {
@@ -149,7 +238,14 @@ import {
 } from '../../data/townLandmarks';
 import TownMoonMonument from './TownMoonMonument.vue';
 import { MOON_SETTLEMENT } from '../../data/settlements';
-import { layoutMoonLabels, moonMapLabel } from '../../game/town/moon/MoonLabelLayout';
+import {
+  MOON_MAP_SCALE,
+  layoutMoonLabels,
+  moonMapBox,
+  moonMapLabel,
+  moonMapPercent,
+  moonMapPoint,
+} from '../../game/town/moon/MoonLabelLayout';
 import { townLabelWidth } from '../../game/town/TownLabelLayout';
 import {
   canCollectMoonstones as collectable,
@@ -177,6 +273,7 @@ import TownMoonConstruction from './TownMoonConstruction.vue';
 import { cameraKeyAction } from '../../game/town/TownCameraKeys';
 import { keyboardActivation } from '../../game/town/TownTapGesture';
 import { useGraphicsRecovery } from '../../composables/useGraphicsRecovery';
+import { QUIET_STONE, quietStoneLabel, signalAnswered, starMap } from '../../data/quietSignal';
 import { t } from '../../i18n';
 
 // New Hollow, the town's settlement on the Moon. Its own small 3D scene sits over
@@ -204,6 +301,9 @@ const emit = defineEmits([
   // The valley's VIP flow: a purchase receipt, and the named VIP's tag for the shared label.
   'vip-spend',
   'villager-label',
+  // Hidden finds, as on the valley map (TownScene).
+  'find',
+  'find-zoom',
 ]);
 const canvas = ref(null);
 const viewElement = ref(null);
@@ -212,6 +312,8 @@ let labelObserver;
 const unavailable = ref(false);
 // Replaced whole on camera frames that move a label, so it needs no deep reactivity.
 const labels = shallowRef([]);
+// What the scene asks names to keep clear of (the Quiet Stone), in percent of the view.
+const obstacles = shallowRef([]);
 const cameraDistance = ref(Infinity);
 const selectedLot = ref(props.selected ?? null);
 watch(
@@ -232,8 +334,38 @@ const canCollectMoonstones = computed(() =>
 );
 const moon = computed(() => moonSettlement(props.town));
 // The SVG map uses the same lot layout, flattened onto a crater ellipse.
+// A later era's lots stay off the map until the town reaches it.
 const mapLots = computed(() =>
-  Object.entries(MOON_LOTS).map(([id, [x, z]]) => ({ id, x: x * 1.3, y: 6 + z * 1.05 })),
+  moonLotsShown(props.town).map((id) => {
+    const [x, z] = MOON_LOTS[id];
+    return { id, x: x * 1.3, y: 6 + z * 1.05 };
+  }),
+);
+const mapDistricts = computed(() => moonDistrictsShown(props.town));
+const mapDistrictShapes = computed(() =>
+  mapDistricts.value.map(({ id, centre, floor, ring, road, stone }) => {
+    const [x, y] = moonMapPoint(...centre),
+      [sx, sy] = MOON_MAP_SCALE;
+    // The ribbon and its stars run from the stone toward New Hollow, as in the 3D scene.
+    const along = [Math.sin(stone?.turn ?? 0), Math.cos(stone?.turn ?? 0)];
+    const place = (a, c) =>
+      moonMapPoint(
+        centre[0] + along[0] * a + along[1] * c,
+        centre[1] + along[1] * a - along[0] * c,
+      );
+    return {
+      id,
+      x,
+      y,
+      floor: [floor * sx, floor * sy],
+      ring: [ring * sx, ring * sy],
+      road: road.map((point) => moonMapPoint(...point)),
+      stone: stone ? [stone.size[0] * sx, stone.size[1]] : null,
+      answered: !!stone && signalAnswered(props.town),
+      ribbon: place(ring - 1, 0),
+      stars: starMap(ring).stars.map(([a, c, size]) => [...place(a, c), 0.15 + size]),
+    };
+  }),
 );
 const monumentSites = computed(() =>
   areasForSettlement(MOON_SETTLEMENT).filter((area) => areaUnlocked(props.town, area)),
@@ -249,13 +381,29 @@ const mapMonuments = computed(() =>
     work: monumentWork(props.town, area),
   })),
 );
+// The SVG map grows to hold every lot and site the town sees and each opened district,
+// drawn with the crater's own flattening.
+const mapBox = computed(() =>
+  moonMapBox(mapDistricts.value, [...mapLots.value, ...mapMonuments.value]),
+);
+const craterFloor = [MOON_FLOOR_RADIUS * MOON_MAP_SCALE[0], MOON_FLOOR_RADIUS * MOON_MAP_SCALE[1]];
 const mapApproaches = computed(() =>
-  moonApproaches(props.town.buildings ?? {}).map((route) => ({
+  [...moonApproaches(props.town.buildings ?? {}), ...moonSiteRoutes(props.town)].map((route) => ({
     ...route,
     points: route.points.map(([x, z]) => `${x * 1.3},${6 + z * 1.05}`).join(' '),
   })),
 );
-const allLots = computed(() => [...mapLots.value, ...mapMonuments.value]);
+// A district's fixed landmark (the Quiet Stone): no lot, no status, only a quiet label.
+const stone = computed(() => quietStoneLabel(props.town));
+const mapLandmarks = computed(() =>
+  mapDistricts.value
+    .filter((district) => district.stone && stone.value)
+    .map(({ centre, stone: slab }) => {
+      const [x, y] = moonMapPoint(...centre);
+      return { id: stone.value.id, x, y: y - slab.size[1] };
+    }),
+);
+const allLots = computed(() => [...mapLots.value, ...mapMonuments.value, ...mapLandmarks.value]);
 // Content changes with the town or its markers, not with camera frames.
 // TownMapLabel owns all state styling on both maps.
 const lotInfo = computed(() => {
@@ -267,11 +415,18 @@ const lotInfo = computed(() => {
   };
   return Object.fromEntries(
     allLots.value.map(({ id }) => {
+      if (id === stone.value?.id) {
+        const [name, text] = [t(stone.value.name), t(stone.value.line)];
+        return [
+          id,
+          { name, status: { kind: 'note', text }, label: `${name} · ${text}`, landmark: true },
+        ];
+      }
       const status = moonLotInfo(props.town, id, options);
       return [
         id,
         {
-          name: moonLotName(id),
+          name: moonLotName(id, props.town),
           status,
           label: moonLotLabel(props.town, id, options),
           state: moonLotStatus(props.town, id),
@@ -285,9 +440,25 @@ const collecting = (id) =>
 const placedLots = computed(() => {
   const { width, height } = viewport.value;
   const projected = unavailable.value
-    ? allLots.value.map((lot) => moonMapLabel(lot, viewport.value))
+    ? allLots.value.map((lot) => moonMapLabel(lot, viewport.value, mapBox.value))
     : labels.value;
-  return layoutMoonLabels(
+  // No name covers the Quiet Stone: the scene projects its box, the SVG map knows its own.
+  const avoid = unavailable.value
+    ? mapDistrictShapes.value
+        .filter((district) => district.stone)
+        .map(({ x, y, stone: [w, h] }) => {
+          const [left, top] = moonMapPercent([x - w / 2, y - h], viewport.value, mapBox.value),
+            [right, bottom] = moonMapPercent([x + w / 2, y], viewport.value, mapBox.value);
+          return {
+            id: QUIET_STONE.id,
+            x: (left + right) / 2,
+            y: (top + bottom) / 2,
+            width: right - left,
+            height: bottom - top,
+          };
+        })
+    : obstacles.value;
+  const placed = layoutMoonLabels(
     projected.map((lot) => {
       const info = lotInfo.value[lot.id];
       const selected = lot.id === selectedLot.value;
@@ -298,26 +469,31 @@ const placedLots = computed(() => {
           ['open', 'work', 'ready'].includes(info.state));
       return {
         ...lot,
-        width: townLabelWidth(info.name),
+        width: townLabelWidth(info.name, info.status?.text),
         rank: townLabelRank({
           selected,
           ready: info.status?.kind === 'ready',
           available: attention,
         }),
         inView: lot.visible,
+        // The stone stands unlabelled until it is tapped.
         visible:
           lot.visible &&
-          townLabelDetail({
-            distant: !unavailable.value && cameraDistance.value > TOWN_LABEL_DETAIL_DISTANCE,
-            selected,
-            attention,
-          }),
+          (info.landmark
+            ? selected
+            : townLabelDetail({
+                distant: !unavailable.value && cameraDistance.value > TOWN_LABEL_DETAIL_DISTANCE,
+                selected,
+                attention,
+              })),
         action: !!TOWN_ACTIONS[props.indicators[lot.id]],
       };
     }),
     width,
     height,
+    { avoid },
   );
+  return placed;
 });
 // The same composited movement as the valley: camera frames update DOM transforms,
 // and Vue only redraws when visibility or label dimensions change.
@@ -343,6 +519,7 @@ const choose = (id) => {
 // gesture; their click opens a lot only from the keyboard, or on the SVG map. Opening
 // the workshop collects its moonstones, as the valley's saloon pays out (TownView).
 function activateLabel(id, event) {
+  if (lotInfo.value[id]?.landmark) return;
   if (!scene || keyboardActivation(event)) choose(id);
 }
 function cameraKey(event) {
@@ -406,15 +583,20 @@ async function start() {
     if (disposed || !canvas.value || scene) return;
     scene = new MoonScene(canvas.value, {
       reducedMotion: props.reducedMotion,
-      onLabels: (next, distance) => {
+      onLabels: (next, distance, keepClear = []) => {
         labels.value = next;
+        obstacles.value = keepClear;
         cameraDistance.value = distance;
       },
       // Tapping Earth over the rim returns to the valley.
       onEarth: () => emit('close'),
       // A tapped lot or monument site opens like its label.
       onSelect: (id) => choose(id),
+      // A tapped landmark shows its label; there is nothing to open.
+      onLandmark: (id) => (selectedLot.value = selectedLot.value === id ? null : id),
       onVipSpend: (receipt) => emit('vip-spend', receipt),
+      onFind: (tap) => emit('find', tap),
+      onFindZoom: (find) => emit('find-zoom', find),
       onVillagerLabel: (label) => emit('villager-label', label),
       onUnavailable: (error, contextLost) => !disposed && recovery.recover(error, contextLost),
       // A shared town is only a view: VIP guests visit the owner's own game.
@@ -445,6 +627,15 @@ const visual = computed(() =>
   ]),
 );
 watch(visual, () => scene?.update(props.town));
+// A completed puzzle changes no lot, yet it may bring the wandering pair here or send
+// them back to the valley.
+watch(
+  () => props.town.completedRuns,
+  () => {
+    scene?.placeWanderers(props.town);
+    scene?.requestFrame();
+  },
+);
 watch(() => [props.indicators, props.upgradeIds], updateGlow);
 watch(selectedLot, (id) => scene?.setSelected(id ?? null));
 watch(() => [props.active, props.paused], updateMotion);

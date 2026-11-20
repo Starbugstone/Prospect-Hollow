@@ -1,6 +1,8 @@
 // Run against Docker Vite, with the same Playwright setup as moon-input.cjs.
 const assert = require('node:assert/strict');
 const { chromium, SOFTWARE_WEBGL, moonPage, openFixture, pageErrors } = require('./helpers.cjs');
+// PH_MOON_ERA checks a later era's map, with its outer ring and sites (default Twin Hollows).
+const ERA = process.env.PH_MOON_ERA || 'twin-hollows';
 const fixture = moonPage(`
 import {createApp,h,reactive} from '/node_modules/.vite/deps/vue.js';
 import Moon from '/src/components/town/TownMoonView.vue';
@@ -11,7 +13,7 @@ import {moonMapLabel} from '/src/game/town/moon/MoonLabelLayout.js';
 window.moonMapLabel=moonMapLabel;
 import {setLocale} from '/src/i18n/index.js';
 window.setLocale=setLocale;
-const town=reactive(createTown());window.town=town;town.era='twin-hollows';
+const town=reactive(createTown());window.town=town;town.era=${JSON.stringify(ERA)};
 Object.assign(town.buildings,{spaceElevator:3,...Object.fromEntries(Object.keys(MOON_LOTS).map(id=>[id,3]))});
 window.expectedCount=Object.keys(MOON_LOTS).length+areasForSettlement('moon').filter(area=>areaUnlocked(town,area)).length;
 window.indicators=reactive({settlerDomes:'ready'});
@@ -155,12 +157,17 @@ window.getMoon=()=>app._instance.subTree.component.setupState;
         const detached = await page.evaluate(() => {
           const moon = window.getMoon();
           const source = moon.unavailable
-            ? moon.allLots.map((lot) => window.moonMapLabel(lot, moon.viewport))
+            ? moon.allLots.map((lot) => window.moonMapLabel(lot, moon.viewport, moon.mapBox))
             : moon.labels;
+          // A name that would cover the Quiet Stone steps sideways by its `nudge`, as the
+          // shared layout promises; it keeps its row and moves by exactly that step.
+          const width = moon.viewport.width || 1;
           return moon.shownLots
             .filter((lot) => {
               const anchor = source.find((point) => point.id === lot.id);
-              return !anchor || lot.x !== anchor.x || lot.y !== anchor.y;
+              if (!anchor || lot.y !== anchor.y) return true;
+              const step = lot.nudge ? (lot.nudge / width) * 100 : 0;
+              return Math.abs(lot.x - anchor.x - step) > 1e-6;
             })
             .map((lot) => lot.id);
         });

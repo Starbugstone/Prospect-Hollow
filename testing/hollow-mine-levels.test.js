@@ -5,37 +5,36 @@ import { markRaw } from 'vue';
 import { CHAPTERS, LEVEL_COUNT } from '../src/data/campaign';
 import { LEVEL_NAMES } from '../src/data/levelNames';
 import { STAR_SCORE_TARGETS } from '../src/data/starScoreTargets';
-import { HOLLOW_MINE_CHAPTERS, HOLLOW_MINE_LEVELS } from '../src/data/hollowMineLevels';
+import {
+  chapterPalettes,
+  HOLLOW_MINE_CHAPTERS,
+  HOLLOW_MINE_LEVELS,
+} from '../src/data/hollowMineLevels';
+import { CRYSTAL_SEAM_FIRST_LEVEL, CRYSTAL_SEAM_PLANS } from '../src/data/crystalSeamLevels';
 import { obstaclesInLevel } from '../src/data/obstacles';
+import { isPortalPad } from '../src/game/engine/BoardTopology';
 import { generateLevelConfigs } from '../src/game/engine/LevelGenerator';
 import { cargoPath, cargoReachesExit } from '../src/game/engine/GravityFrames';
-import { bentBeams } from '../src/game/engine/LensBeams';
 import { HintEngine } from '../src/game/engine/HintEngine';
 import { PlayClock } from '../src/game/engine/PlayClock';
 import { layerCount } from '../src/game/engine/TileRules';
 import { useGameStore } from '../src/stores/gameStore';
 import { useCampaignStore } from '../src/stores/campaignStore';
+import {
+  flipped,
+  iceLayers as ice,
+  isExtraction as extraction,
+  opened,
+  strandedCargo,
+  turnedBeams,
+  unreachableStarglass,
+} from './helpers/boardRules';
 import { simulateCampaignLevel } from './helpers/campaignSimulation';
 
 const FIRST = 403;
 const levels = generateLevelConfigs();
 const hollow = levels.slice(FIRST - 1);
 const hints = new HintEngine();
-const ice = (tile) =>
-  tile.type !== 'blocker' && !tile.sealColor && !tile.phaseSeal && tile.fossilGroup == null
-    ? tile.health
-    : 0;
-// The board as it is once every sealed chamber has been broken into.
-const opened = (tiles) => tiles.map((tile) => ({ ...tile, sealed: false }));
-// The board after a gravity switch turns it over.
-const flipped = (tiles) =>
-  tiles.map((tile) =>
-    tile.type === 'void' ? tile : { ...tile, fall: tile.fall === 'up' ? undefined : 'up' },
-  );
-const extraction = (level) =>
-  level.board.some((gem) => gem?.type === 'relic') ||
-  level.tiles.some((tile) => tile.signal === 'lantern' || tile.signal === 'survey');
-
 beforeEach(() => setActivePinia(createPinia()));
 afterEach(() => {
   useGameStore().cancelHint();
@@ -58,6 +57,24 @@ describe('append-only floating seam chapters', () => {
     });
     expect(createHash('sha256').update(payload).digest('hex')).toBe(
       '69be7b22838fdfd47583c55c1e177be8af928c7e0ad6be556356ae5825ca8614',
+    );
+  });
+
+  it('keeps all 546 shipped levels identical after chapters 92–101 are appended', () => {
+    // Captured before the first prototype board (src/data/prototypeBoards.js) and route
+    // chambers. Levels 1–546 keep their layouts, targets, names and chapters.
+    const shipped = generateLevelConfigs(546).map(({ board, ...level }) => ({
+      ...level,
+      board: board.map((gem) => (gem ? gem.type : null)),
+    }));
+    const payload = JSON.stringify({
+      levels: shipped,
+      stars: STAR_SCORE_TARGETS.slice(0, 546),
+      names: LEVEL_NAMES.slice(0, 546),
+      chapters: CHAPTERS.slice(0, 91),
+    });
+    expect(createHash('sha256').update(payload).digest('hex')).toBe(
+      'c428d193a1bb1550c354dd6645ec62822243f2e71af5712245fe4de619bf047c',
     );
   });
 
@@ -125,20 +142,7 @@ describe('append-only floating seam chapters', () => {
   });
 
   it('gives every cargo piece a route to an exit once every chamber is open', () => {
-    for (const level of hollow) {
-      const { board, boardCols: cols, boardRows: rows } = level;
-      const tiles = opened(level.tiles);
-      // With a moon dial either gravity will do; a moon lock leaves gravity flipped.
-      const dial = tiles.some((tile) => tile.gravitySwitch === 'dial');
-      const lock = tiles.some((tile) => tile.gravitySwitch === 'lock');
-      const states = dial ? [tiles, flipped(tiles)] : lock ? [flipped(tiles)] : [tiles];
-      for (const [index, gem] of board.entries())
-        if (gem?.type === 'relic')
-          expect(
-            states.some((state) => cargoReachesExit(board, state, index, cols, rows)),
-            `level ${level.id} cell ${index}`,
-          ).toBe(true);
-    }
+    for (const level of hollow) expect(strandedCargo(level), `level ${level.id}`).toEqual([]);
   });
 
   it('keeps five colors per board except the chosen six-color levels', () => {
@@ -163,22 +167,152 @@ describe('append-only floating seam chapters', () => {
   it('lets some row or column beam reach every starglass through the lenses', () => {
     const lensLevels = hollow.filter((level) => level.tiles.some((tile) => tile.lensOnly));
     expect(lensLevels.length).toBeGreaterThan(0);
-    for (const level of lensLevels) {
-      const { boardCols: cols, boardRows: rows } = level;
-      const tiles = opened(level.tiles);
-      const lines = [
-        ...Array.from({ length: rows }, (_, index) => ({ axis: 'row', index })),
-        ...Array.from({ length: cols }, (_, index) => ({ axis: 'column', index })),
-      ];
-      const reach = new Set(lines.flatMap((line) => bentBeams(tiles, cols, rows, [line]).cells));
-      for (const [index, tile] of tiles.entries())
-        if (tile.lensOnly) expect(reach.has(index), `level ${level.id} cell ${index}`).toBe(true);
-    }
+    for (const level of lensLevels)
+      expect(unreachableStarglass(level), `level ${level.id}`).toEqual([]);
   });
 
   // Three full games per level need headroom on slower Docker workers.
-  it('completes every new level in hint-led play without inventory powers', () => {
-    for (const level of hollow)
+  it('completes every level of 403–546 in hint-led play without inventory powers', () => {
+    for (const level of hollow.filter(({ id }) => id < CRYSTAL_SEAM_FIRST_LEVEL))
+      for (const seed of [101, 102, 103]) {
+        const run = simulateCampaignLevel(level, seed);
+        expect(run, `level ${level.id} seed ${seed}`).toMatchObject({
+          remaining: false,
+          layers: 0,
+          relics: 0,
+          ore: 0,
+        });
+      }
+  }, 300000);
+});
+
+// Chapters 92–101: the boards of the 1.3.0 plan (docs/history/beyond-new-hollow-1.3.0.md) step 3, after the trials that proved them.
+describe('chapters 92–101, levels 547–606', () => {
+  const crystal = levels.slice(CRYSTAL_SEAM_FIRST_LEVEL - 1);
+  const first = (obstacle) =>
+    levels.find((level) =>
+      obstaclesInLevel(level.tiles, level.theme).some(({ id }) => id === obstacle),
+    )?.id;
+
+  it('appends ten six-level chapters after level 546 with their own names', () => {
+    expect(CRYSTAL_SEAM_FIRST_LEVEL).toBe(547);
+    expect(LEVEL_COUNT).toBe(606);
+    expect(CHAPTERS.slice(91).map(({ id }) => id)).toEqual(CRYSTAL_SEAM_PLANS.map(({ id }) => id));
+    expect(CHAPTERS.slice(91).map(({ name }) => name)).toEqual([
+      'Echo gallery',
+      'Turning orchard',
+      'The deep lantern',
+      'Shifting survey',
+      'Ember sidings',
+      'Buried routes',
+      'Frost relays',
+      'Tidal pearls',
+      'Rooted vault',
+      'The far seam',
+    ]);
+    expect(crystal.map(({ id }) => id)).toEqual(Array.from({ length: 60 }, (_, i) => 547 + i));
+    const names = LEVEL_NAMES.slice(546);
+    expect(new Set(names).size).toBe(60);
+    expect(new Set(LEVEL_NAMES).size).toBe(LEVEL_COUNT);
+    for (const [index, plan] of CRYSTAL_SEAM_PLANS.entries()) {
+      expect(plan.stops).toHaveLength(6);
+      expect(plan.levels).toHaveLength(6);
+      expect(names.slice(index * 6, index * 6 + 6)).toEqual(
+        plan.stops.map((stop) => `${plan.name}: ${stop}`),
+      );
+    }
+  });
+
+  it('opens act VI at chapter 98 with the next rotation of color sets', () => {
+    const palettes = (chapter) => CHAPTERS[chapter - 1].palettes;
+    for (const chapter of [92, 93, 94, 95, 96, 97])
+      expect(palettes(chapter)).toEqual(chapterPalettes(24));
+    for (const chapter of [98, 99, 100, 101])
+      expect(palettes(chapter)).toEqual(chapterPalettes(30));
+    expect(palettes(98)).not.toEqual(palettes(97));
+  });
+
+  it('teaches each crystal mechanic on its own board, with its guide, before pairing it', () => {
+    // The first board that shows an obstacle opens its guide ("New in this mine").
+    expect(first('trace-twins')).toBe(548);
+    expect(first('crossgrain')).toBe(554);
+    expect(first('chord')).toBe(560);
+    for (const [id, obstacle] of [
+      [548, 'trace-twins'],
+      [554, 'crossgrain'],
+      [560, 'chord'],
+    ]) {
+      const shown = obstaclesInLevel(levels[id - 1].tiles, levels[id - 1].theme).map(
+        ({ id }) => id,
+      );
+      expect(shown, `level ${id}`).toContain(obstacle);
+    }
+  });
+
+  it('names no town building, since the mine is not gated by the town era', () => {
+    for (const level of crystal) {
+      const text = `${LEVEL_NAMES[level.id - 1]} ${level.tip}`;
+      expect(text, `level ${level.id}`).not.toMatch(/New Hollow|commission|town|village|valley/i);
+      expect(level.tip, `level ${level.id}`).not.toMatch(/TIP \d/);
+    }
+  });
+
+  it('keeps every turned beam clear of the portal pads', () => {
+    // A beam passes over a pad as over a void and does not come out of its pair. A player
+    // could expect either, so no board makes the question arise (docs/hollow-mine-levels.md).
+    const shared = hollow.filter(
+      (level) => level.tiles.some((tile) => tile.lens) && level.tiles.some(isPortalPad),
+    );
+    expect(shared.map(({ id }) => id)).toEqual([547, 550, 552]);
+    for (const level of shared) {
+      const cells = new Set();
+      for (const { lens, cells: hit } of turnedBeams(level)) {
+        cells.add(lens);
+        const last = hit.at(-1);
+        if (last == null) continue;
+        const step = (last - lens) / hit.length;
+        if (Number.isInteger(step))
+          for (let cell = lens; cell !== last; cell += step) cells.add(cell);
+        for (const cell of hit) cells.add(cell);
+      }
+      expect(
+        [...cells].filter((cell) => isPortalPad(level.tiles[cell])),
+        `level ${level.id}`,
+      ).toEqual([]);
+    }
+  });
+
+  it('only gives route chambers to levels whose chambers hold nothing the goal counts', () => {
+    // The generator throws otherwise; these are the levels where the player chooses a way in.
+    const routes = crystal
+      .filter((level) => level.tiles.some((tile) => tile.routeWall))
+      .map(({ id }) => id);
+    expect(routes).toEqual([559, 564, 577, 578, 579, 580, 582, 601, 606]);
+  });
+
+  it('offers level 547, not the museum, to a player who finished all 546 levels', () => {
+    const campaign = useCampaignStore();
+    campaign.records = Object.fromEntries(
+      Array.from({ length: 546 }, (_, i) => [i + 1, { score: 1, stars: 3 }]),
+    );
+    expect(campaign.newLevelsLeft).toBe(true);
+    expect(campaign.nextLevel).toBe(547);
+    expect(campaign.nextMiningLevel).toBe(547);
+    expect(campaign.canPlay(547)).toBe(true);
+    expect(campaign.canPlay(548)).toBe(false);
+    // A perfect 546-level campaign is no longer complete; it has 60 levels left to play.
+    expect(campaign.completion).toMatchObject({ perfect: 546, total: 606, complete: false });
+    expect(campaign.completion.unplayed).toBe(60);
+    const game = useGameStore();
+    game.bootstrap();
+    expect(game.startLevel(547)).toBe(true);
+    expect(game.currentLevelId).toBe(547);
+    game.exitLevel();
+  });
+
+  // Three full games per level need headroom on slower Docker workers.
+  it('completes every level of 547–606 in hint-led play on held-out seeds', () => {
+    for (const level of crystal)
       for (const seed of [101, 102, 103]) {
         const run = simulateCampaignLevel(level, seed);
         expect(run, `level ${level.id} seed ${seed}`).toMatchObject({
@@ -192,7 +326,8 @@ describe('append-only floating seam chapters', () => {
 });
 
 describe('floating seam play', () => {
-  it.each([408, 412, 414])(
+  // 548, 554 and 560 teach the three crystal mechanics; 577 and 601 have route chambers.
+  it.each([408, 412, 414, 548, 554, 560, 577, 601])(
     'completes level %i through normal play beyond 100 moves after its speed target elapsed',
     async (id) => {
       let random = id * 7919;

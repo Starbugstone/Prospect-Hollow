@@ -3,7 +3,7 @@
     class="honour-card"
     :class="[
       model.metal ? `honour-card-${model.metal}` : 'is-locked',
-      { 'is-earned': model.earned, 'has-new': isNew || newRank },
+      { 'is-earned': model.earned, 'has-new': isNew || newRank, 'has-new-rank': newRank },
     ]"
     :data-honour="model.id"
   >
@@ -103,6 +103,17 @@ defineEmits(['open', 'link']);
 }
 .honour-card.has-new .honour-card-title {
   padding-right: 64px;
+}
+/* "New rank" is too wide to sit beside a long title (French names wrap under it): the
+   markers take one row above the title instead. */
+.honour-card.has-new-rank .honour-card-top {
+  padding-top: 22px;
+}
+.honour-card.has-new-rank .honour-card-title {
+  padding-right: 0;
+}
+.honour-card.has-new-rank .honour-markers {
+  grid-auto-flow: column;
 }
 .honour-card h3 {
   margin: 2px 0 0;

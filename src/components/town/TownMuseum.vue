@@ -251,6 +251,9 @@ const ELEMENT_COUNTS = {
   oreOrders: ['1 ore order', '{count} ore orders'],
   cores: ['1 charge core', '{count} charge cores'],
   gates: ['1 blast gate', '{count} blast gates'],
+  traceTwins: ['1 trace twin pair', '{count} trace twin pairs'],
+  crossgrain: ['1 crossgrain crystal', '{count} crossgrain crystals'],
+  chords: ['1 chord crystal', '{count} chord crystals'],
 };
 function elementCount(elementId, count) {
   const forms = ELEMENT_COUNTS[elementId];

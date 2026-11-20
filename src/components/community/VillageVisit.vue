@@ -20,7 +20,7 @@
       @town="homeTown = $event"
     />
     <p v-if="saloonMessage" class="village-saloon" role="status">{{ saloonMessage }}</p>
-    <p v-if="helmetMessage" class="village-saloon" role="status">{{ helmetMessage }}</p>
+    <p v-if="findMessage" class="village-saloon" role="status">{{ findMessage }}</p>
     <div
       class="community-world town-map-frame"
       :class="{ 'town-fullscreen': fullscreen }"
@@ -47,7 +47,7 @@
           :received="honours.received"
           :size="28"
         /><template v-if="saloonMessage"> · {{ saloonMessage }}</template
-        ><template v-if="helmetMessage"> · {{ helmetMessage }}</template>
+        ><template v-if="findMessage"> · {{ findMessage }}</template>
       </p>
       <TownVisitorNotice
         class="village-map-notice"
@@ -65,17 +65,17 @@
         :reduced-motion="settings.reducedMotion"
         @visit="collectSaloon"
         @inspect="inspect"
-        @helmet="findHelmet"
-        @helmet-zoom="zoomForHelmet"
+        @find="findHidden"
+        @find-zoom="zoomForFind"
       />
       <TownResourceCollection
-        v-if="helmetBurst"
-        :key="helmetBurst.serial"
-        resource="helmet-coins"
-        :amount="helmetBurst.amount"
-        :origin="helmetBurst.origin"
+        v-if="findBurst"
+        :key="findBurst.serial"
+        :resource="`${findBurst.find}-coins`"
+        :amount="findBurst.amount"
+        :origin="findBurst.origin"
         :reduced-motion="settings.reducedMotion"
-        @close="helmetBurst = null"
+        @close="findBurst = null"
       />
     </div>
     <p class="village-hint">{{ t('Tap a building or the mine to see its details.') }}</p>
@@ -161,13 +161,23 @@
   </template>
 </template>
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue';
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  reactive,
+  ref,
+  shallowRef,
+  watch,
+} from 'vue';
 import { useVillageVisitors } from '../../composables/useVillageVisitors';
 import TownGuestbook from '../town/TownGuestbook.vue';
 import VisitPresence from './VisitPresence.vue';
 import { villageAppearance, villageHonours, villageLevels } from '../../services/publicVillage';
-import { cloud, latestVillage, tapHelmet, tapSaloon } from '../../services/cloudProfile';
-import { normalizeTown, spaceHelmetOut, spaceHelmetReward } from '../../game/town/TownRules';
+import { cloud, latestVillage, tapHiddenFind, tapSaloon } from '../../services/cloudProfile';
+import { HIDDEN_FIND_IDS, HIDDEN_FIND_WORDS } from '../../data/hiddenFinds';
+import { hiddenFindOut, hiddenFindReward, normalizeTown } from '../../game/town/TownRules';
 import { townStorage } from '../../services/townStorage';
 import { createVillagePoller } from '../../services/villagePolling';
 import { useSettingsStore } from '../../stores/settingsStore';
@@ -188,7 +198,7 @@ import { BUILDING_BY_ID } from '../../data/town';
 import '../../styles/town.css';
 // One read-only renderer for shared towns, whether opened from the list or a share link.
 // Mine and museum cards share the owner's public collection, without replay actions.
-// A visitor may collect the saloon's takings for the owner and find the space helmet.
+// A visitor may collect the saloon's takings for the owner and make the hidden finds.
 const props = defineProps({ village: { type: Object, required: true } });
 const settings = useSettingsStore();
 // The owner may still be playing: `current` follows their latest synced appearance.
@@ -251,10 +261,11 @@ const poller = createVillagePoller({
     if (visual(village) !== visual(current.value)) current.value = village;
     // Another visitor may have collected meanwhile; the saloon's rest only ever moves later.
     readyAt.value = Math.max(readyAt.value, (village.saloonReadyAt ?? 0) * 1000);
-    townHelmetReadyAt.value = Math.max(
-      townHelmetReadyAt.value,
-      (village.helmetReadyAt ?? 0) * 1000,
-    );
+    for (const id of HIDDEN_FIND_IDS)
+      finds[id].townReadyAt = Math.max(
+        finds[id].townReadyAt,
+        (village[`${id}ReadyAt`] ?? 0) * 1000,
+      );
   },
   gone: () => (unshared.value = true),
 });
@@ -316,102 +327,123 @@ const saloonMessage = computed(() => {
     });
   return t('Tap the coins over the saloon to collect its takings for the mayor.');
 });
-// Finding the space helmet rewards the visitor's own town (the one they visit as) with half
-// an hour of its saloon takings, once per 12 hours per player, and each town's helmet is
-// found by one visitor per 12 hours; the server keeps both rests.
+// A hidden find (the space-helmet wearer, ...) rewards the visitor's own town (the one
+// they visit as) with half an hour of its saloon takings, once per 12 hours per player,
+// and each town's find is made by one visitor per 12 hours; the server keeps both rests.
+// Every find keeps its own rests and note here, as it does on the server.
 const homeTown = ref(null),
-  helmetReadyAt = ref(0),
-  townHelmetReadyAt = ref((props.village.helmetReadyAt ?? 0) * 1000),
-  helmetBusy = ref(false),
-  helmetNote = ref(null),
-  helmetBurst = ref(null),
-  // An animal tapped from too far away asks to zoom in for a moment.
-  helmetZoom = ref(false);
+  finds = reactive(
+    Object.fromEntries(
+      HIDDEN_FIND_IDS.map((id) => [
+        id,
+        {
+          readyAt: 0,
+          townReadyAt: (props.village[`${id}ReadyAt`] ?? 0) * 1000,
+          busy: false,
+          note: null,
+          // A possible find tapped from too far away asks to zoom in for a moment.
+          zoom: false,
+        },
+      ]),
+    ),
+  ),
+  findBurst = ref(null),
+  // The find this visitor last tapped: the status line speaks about it.
+  lastFind = ref(null);
 let burstSerial = 0,
   zoomTimer = 0;
 // The coins a find brings the town visited as, counted from its copy in this browser; that
 // town redeems it later from its own takings. Null when this browser holds no copy.
-function helmetCoins(townId) {
+function findCoins(id, townId) {
   try {
     const account = cloud.account ?? townStorage.auth().account;
     const saved = account && townStorage.get(townId, account.id)?.profile?.town;
-    return saved ? spaceHelmetReward(normalizeTown(saved), 'visitor') : null;
+    return saved ? hiddenFindReward(normalizeTown(saved), id, 'visitor') : null;
   } catch {
     // An optional local estimate must never hide a find the server already accepted.
     return null;
   }
 }
-const hasHelmet = computed(() => spaceHelmetOut(town.value));
-const helmetMessage = computed(() => {
-  if (!hasHelmet.value) return '';
-  if (helmetZoom.value) return t('Zoom in closer to the animals to find the astronaut.');
-  const note = helmetNote.value;
-  if (note?.kind === 'found')
-    return t('You found the astronaut! {town} receives half an hour of its saloon takings.', {
-      town: note.town,
-    });
+const outFinds = computed(() => HIDDEN_FIND_IDS.filter((id) => hiddenFindOut(town.value, id)));
+function messageFor(id) {
+  const words = HIDDEN_FIND_WORDS[id],
+    state = finds[id];
+  if (state.zoom) return t(words.zoom);
+  const note = state.note;
+  if (note?.kind === 'found') return t(words.visitFound, { town: note.town });
   if (note?.kind === 'error') return t(note.message);
-  if (note?.kind === 'own')
-    return t('This is your own town: find its astronaut from your game for your reward.');
-  if (townHelmetReadyAt.value > now.value)
-    return t("A visitor found this town's astronaut recently. Come back in {hours} h.", {
-      hours: Math.ceil((townHelmetReadyAt.value - now.value) / 3_600_000),
+  if (note?.kind === 'own') return t(words.visitOwn);
+  if (state.townReadyAt > now.value)
+    return t(words.visitTaken, {
+      hours: Math.ceil((state.townReadyAt - now.value) / 3_600_000),
     });
-  if (note?.kind === 'signed-out')
-    return t('You found the astronaut! Sign in with a town of your own to earn its reward.');
-  if (helmetReadyAt.value > now.value)
-    return t('You found an astronaut recently. Your next reward is ready in {hours} h.', {
-      hours: Math.ceil((helmetReadyAt.value - now.value) / 3_600_000),
+  if (note?.kind === 'signed-out') return t(words.visitSignedOut);
+  if (state.readyAt > now.value)
+    return t(words.visitResting, {
+      hours: Math.ceil((state.readyAt - now.value) / 3_600_000),
     });
-  return t(
-    'Find the animal in a space helmet: your own town earns half an hour of saloon takings.',
-  );
+  return t(words.visitInvite);
+}
+// One status line: the find last tapped, or else the newest find this town has out.
+const findMessage = computed(() => {
+  const id = outFinds.value.includes(lastFind.value) ? lastFind.value : outFinds.value.at(-1);
+  return id ? messageFor(id) : '';
 });
-function zoomForHelmet() {
-  helmetZoom.value = true;
+function zoomForFind(id) {
+  if (!finds[id]) return;
+  lastFind.value = id;
+  finds[id].zoom = true;
   clearTimeout(zoomTimer);
-  zoomTimer = setTimeout(() => (helmetZoom.value = false), 6000);
-  notifyHelmet();
+  zoomTimer = setTimeout(() => (finds[id].zoom = false), 6000);
+  notifyFind(id);
 }
-function notifyHelmet() {
-  showNotice({ kind: 'helmet-visit', message: helmetMessage.value });
+function notifyFind(id) {
+  showNotice({ kind: `${id}-visit`, message: messageFor(id) });
 }
-async function findHelmet(origin) {
-  helmetZoom.value = false;
+async function findHidden({ find: id, x, y }) {
+  const state = finds[id];
+  if (!state) return;
+  lastFind.value = id;
+  state.zoom = false;
   clearTimeout(zoomTimer);
   now.value = Date.now();
-  if (helmetBusy.value) return;
+  if (state.busy) return;
   if (homeTown.value?.own) {
-    helmetNote.value = { kind: 'own' };
-    return notifyHelmet();
+    state.note = { kind: 'own' };
+    return notifyFind(id);
   }
-  // Another visitor found this town's helmet; a find of this visitor's own stays thanked.
-  if (townHelmetReadyAt.value > now.value) {
-    if (helmetNote.value?.kind !== 'found') helmetNote.value = null;
-    return notifyHelmet();
+  // Another visitor made this town's find; a find of this visitor's own stays thanked.
+  if (state.townReadyAt > now.value) {
+    if (state.note?.kind !== 'found') state.note = null;
+    return notifyFind(id);
   }
   // VisitPresence gets the signed-in town from the server, including on share links
   // where the game's cloud account and sync service have never initialized.
   if (!homeTown.value) {
-    helmetNote.value = { kind: 'signed-out' };
-    return notifyHelmet();
+    state.note = { kind: 'signed-out' };
+    return notifyFind(id);
   }
-  helmetNote.value = null;
-  if (helmetReadyAt.value > now.value) return notifyHelmet();
-  helmetBusy.value = true;
+  state.note = null;
+  if (state.readyAt > now.value) return notifyFind(id);
+  state.busy = true;
   try {
     const town = homeTown.value;
-    const { readyAt } = await tapHelmet(props.village.villageId, town.townId);
-    helmetReadyAt.value = townHelmetReadyAt.value = readyAt * 1000;
-    helmetNote.value = { kind: 'found', town: town.name };
-    helmetBurst.value = { amount: helmetCoins(town.townId), origin, serial: ++burstSerial };
+    const { readyAt } = await tapHiddenFind(props.village.villageId, id, town.townId);
+    state.readyAt = state.townReadyAt = readyAt * 1000;
+    state.note = { kind: 'found', town: town.name };
+    findBurst.value = {
+      find: id,
+      amount: findCoins(id, town.townId),
+      origin: { x, y },
+      serial: ++burstSerial,
+    };
   } catch (e) {
-    if (e.data?.code === 'helmet_taken') townHelmetReadyAt.value = e.data.readyAt * 1000;
-    else if (e.data?.readyAt) helmetReadyAt.value = e.data.readyAt * 1000;
-    else helmetNote.value = { kind: 'error', message: e.message };
+    if (e.data?.code === `${id}_taken`) state.townReadyAt = e.data.readyAt * 1000;
+    else if (e.data?.readyAt) state.readyAt = e.data.readyAt * 1000;
+    else state.note = { kind: 'error', message: e.message };
   } finally {
-    helmetBusy.value = false;
-    notifyHelmet();
+    state.busy = false;
+    notifyFind(id);
   }
 }
 async function collectSaloon() {

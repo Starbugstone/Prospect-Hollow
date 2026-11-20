@@ -113,6 +113,27 @@
                 >✓</b
               >
             </template>
+            <template v-else-if="obstacle.id === 'trace-twins'">
+              <span class="demo-matches"
+                ><img src="/art/ruby.svg" alt="" /><img :src="obstacle.art" alt="" /><img
+                  src="/art/ruby.svg"
+                  alt=""
+              /></span>
+              <b>◇ → ◇</b><img src="/art/obstacles/blast-gate.svg" alt="" />
+            </template>
+            <template v-else-if="obstacle.id === 'crossgrain'">
+              <img :src="obstacle.art" alt="" /><b>→</b
+              ><img src="/art/obstacles/crossgrain-vertical.svg" alt="" /><b>→</b
+              ><img src="/art/ruby.svg" alt="" />
+            </template>
+            <template v-else-if="obstacle.id === 'chord'">
+              <img :src="obstacle.art" alt="" /><b>+</b
+              ><span class="demo-matches"
+                ><img src="/art/ruby.svg" alt="" /><img src="/art/sapphire.svg" alt="" /><img
+                  src="/art/emerald.svg"
+                  alt="" /></span
+              ><b>→</b><img src="/art/moonstone.svg" alt="" />
+            </template>
             <template v-else>
               <span class="demo-matches"
                 ><span

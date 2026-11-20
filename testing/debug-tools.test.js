@@ -15,10 +15,16 @@ beforeEach(() => {
 });
 afterEach(() => vi.unstubAllGlobals());
 
-it('offers only the read-only profiling and navigation helpers', () => {
+it('offers only the save-free profiling, navigation, puzzle log and prototype helpers', () => {
   const tools = createDebugTools();
   expect(Object.isFrozen(tools)).toBe(true);
-  expect(Object.keys(tools).sort()).toEqual(['showNavigation', 'townFrameStats', 'townTimings']);
+  expect(Object.keys(tools).sort()).toEqual([
+    'playPrototype',
+    'runLog',
+    'showNavigation',
+    'townFrameStats',
+    'townTimings',
+  ]);
   for (const removed of ['grant', 'prepareEra', 'mineStage', 'completeMine'])
     expect(tools).not.toHaveProperty(removed);
 });

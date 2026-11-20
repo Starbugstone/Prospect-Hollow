@@ -4,10 +4,13 @@ import { TownBuildSequence } from './TownBuildSequence';
 import { ERA_CONSTRUCTION } from '../../data/mineEvolution';
 import { TownNavigation } from './TownNavigation';
 import { mineExcavationHeight } from './TownMineShaft';
+import { eraShot } from './TownEraShots';
 
 export class TownMineEraConstruction {
   constructor(d, definition) {
     this.d = d;
+    this.to = definition.to;
+    this.from = definition.from;
     this.root = d.group(d.scene);
     this.root.name = 'Mine era construction';
     this.previous = addMineSite(d, this.root, definition.from);
@@ -79,17 +82,14 @@ export class TownMineEraConstruction {
     this.scaffold.visible =
       time > 3 && this.sequence.crew.some(({ worker }) => worker.root.visible);
     this.next.userData.mineUpdate?.(still ? 0 : time);
-    const reveal = Math.max(
-      0,
-      Math.min(
-        1,
-        (time - ERA_CONSTRUCTION.buildEnd) /
-          (ERA_CONSTRUCTION.duration - ERA_CONSTRUCTION.buildEnd),
-      ),
-    );
-    const focus = new Vector3(-2.8, 2.8, -17.8);
-    const eye = new Vector3(8 - reveal * 2, 13 + reveal, -4 - reveal);
-    if (this.d.camera.aspect < 0.8) eye.sub(focus).multiplyScalar(1.3).add(focus);
+    // One continuous move: the old town, the works, then the new era seen wide.
+    const shot = eraShot(time, {
+      from: this.from,
+      to: this.to,
+      aspect: this.d.camera.aspect,
+    });
+    const focus = new Vector3(...shot.focus);
+    const eye = new Vector3(...shot.eye);
     return {
       eye,
       focus,

@@ -77,6 +77,8 @@ it('orders rebuilding after Electric and before cars, with two saved, idempotent
     'stargazer',
     'moonward',
     'twin-hollows',
+    'hollow-rising',
+    'quiet-signal',
   ]);
   for (const from of ['industrial', 'motor-age']) {
     let c = useCampaignStore();
@@ -94,7 +96,8 @@ it('orders rebuilding after Electric and before cars, with two saved, idempotent
     expect(c.town.transition.pending).toBe(false);
   }
 });
-it.each(CITY_ERAS)(
+// Playable eras: an era still being built joins once it is enabled.
+it.each(CITY_ERAS.filter((era) => ERAS[eraIndex(era)].enabled))(
   'preserves every established service during all three %s modernization stages',
   (era) => {
     const prev = ERAS[eraIndex(era) - 1].id;
@@ -125,7 +128,7 @@ it.each(CITY_ERAS)(
         town = finishConstruction(town, b.id, town.projects[b.id].stage);
         expect(town.buildings[b.id]).toBe(functional);
         // A finished tier of the waterworks or the farm adds supply; nothing else changes.
-        const supply = { well: 0, farm: 1 }[b.id];
+        const supply = { well: 0, farm: 1, craterIceWell: 0, earthlightGreenhouse: 1 }[b.id];
         const after = reads.map((f) => f(town));
         if (supply !== undefined) {
           expect(after[supply], b.id).toBeGreaterThan(services[supply]);

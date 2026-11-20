@@ -56,7 +56,7 @@ const settledTown = (era) => ({
 
 describe('save formats', () => {
   it('writes the newest supported format and exports the same list to the server', () => {
-    expect(SUPPORTED_SAVE_SCHEMAS).toEqual([2, 3, 4]);
+    expect(SUPPORTED_SAVE_SCHEMAS).toEqual([2, 3, 4, 5]);
     expect(SUPPORTED_SAVE_SCHEMAS.at(-1)).toBe(SAVE_SCHEMA_VERSION);
     expect(freshProfile().schemaVersion).toBe(SAVE_SCHEMA_VERSION);
     const rules = buildSaveRules();
@@ -93,6 +93,8 @@ describe('new building prices', () => {
     stargazer: [26250, 30000, 33750],
     moonward: [29250, 33000, 36750],
     'twin-hollows': [31500, 35250, 39000],
+    'hollow-rising': [33750, 37500, 41250],
+    'quiet-signal': [36000, 39750, 43500],
   };
 
   it('prices every plot an era introduces from that era alone, landmarks with their premium', () => {

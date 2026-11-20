@@ -2,7 +2,8 @@
 
 Moonstones are an optional town resource, separate from the `moonstone` puzzle
 gem. They never gate the campaign, era completion, normal puzzle rewards or
-continued play. There are no move or time limits. The resource can be sold or used for two optional monuments.
+continued play. There are no move or time limits. The resource can be sold or used for three optional monument sites:
+Moonstone Garden, Moonrock Court and Hollowborn Square.
 
 ## Save and migration
 
@@ -366,3 +367,47 @@ upgrades. Backend integrity checks reject a retained moonstone, forged receipt
 terms or old prices under a new version. SVG previews use six separate silhouettes, and Moon fallback labels
 share the same screen-space layout as the 3D Moon. Lunar labels reserve separation
 for all lots, Earthrise Plaza and Moonrock Court at desktop and phone sizes.
+
+## Phase 3: Hollowborn Square (2026-11-17)
+
+New Hollow Rising adds a third moonstone site, Hollowborn Square, on the Moon's outer ring. It
+opens with the era and uses the same five-level schedule, **20 / 30 / 40 / 50 / 60**, for all
+three of its designs. Version-2 receipts keep the historical 60-stone base price, as at the
+other two sites. All moonstone monuments together now ask for **600 stones** (200 per site);
+before this site they asked for 400. The resource, its production, the sale rate and the
+other two sites are unchanged.
+
+Supply check, measured on 2026-11-17 in Node 24 Docker:
+
+```sh
+node scripts/measure-campaign.mjs . 1 > output/monument-site/campaign.json
+node scripts/measure-moonstones.mjs output/monument-site/campaign.json
+```
+
+The first command played all **606 levels**, seed 1. The estimator reads every moonstone site
+from `PERSONAL_AREAS` (`allSitesTotal`, formerly `bothTotal`) and now records when each era
+opens. With today's campaign Twin Hollows opens at puzzle **669**, New Hollow Rising at
+**696** and The Quiet Signal at **723**; the workshop finishes its levels at 674, 680 and 686.
+The repeated late payout is 64,741 coins. Cumulative spending capacity, puzzles since Twin
+Hollows opened, stored workshop with collection every 1 / 10 / 30 puzzles:
+
+| Cumulative moonstones               | Prompt | Every 10 | Every 30 |
+| ----------------------------------- | -----: | -------: | -------: |
+| 60: all three foundations           |     32 |       32 |       32 |
+| 200: one site complete              |    122 |      130 |      150 |
+| 420: four levels at all three sites |    341 |      350 |      360 |
+| 600: all three sites complete       |    521 |      530 |      540 |
+
+So the square's foundation is affordable as soon as New Hollow Rising opens (27 puzzles after
+Twin Hollows, the three foundations need 32), and every level of all three sites is
+affordable about 494 normal puzzles after the era opens, at completed puzzle 1,190. After
+the workshop is finished the town earns about one stone per completed puzzle, and nothing
+expires, so a player who spends on one site or sells stones only waits longer for the others.
+Continuous play can cover the same 600 stones with 200 fully used continuous levels (180,000
+accepted gems); the lifetime continuous allowance over 606 levels is 1,818 stones. Sites are
+optional and never gate an era, move count or reward.
+
+The square's honours decision is `NON_MONUMENT_HONOURS`: Landmark Patron's site list shipped
+fixed (see [Town Honours](honours.md)). `testing/moonstone-monuments.test.js` runs its
+purchase, receipt, price, art and geometry checks on all three sites;
+`testing/hollowborn-square.test.js` covers its place, path and era independence.

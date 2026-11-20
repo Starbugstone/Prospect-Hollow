@@ -1,0 +1,178 @@
+{
+  "saucerPad:0": {
+    "parts": 10,
+    "hash": "76dba1949d2e6005fd585ce0e53c01619d6403eb"
+  },
+  "saucerPad:1": {
+    "parts": 16,
+    "hash": "f67c5bd2f13dc499875b757ecd643f26e1b96bde"
+  },
+  "saucerPad:2": {
+    "parts": 20,
+    "hash": "281e9e99ff311beff4c0839edc1cf994bf8168ea"
+  },
+  "saucerPad:3": {
+    "parts": 26,
+    "hash": "f6a9cbe8602b4b66ef8dd1603d8fceb12d9f203d"
+  },
+  "ribbonLanding:0": {
+    "parts": 10,
+    "hash": "64ea3d6ebfe50f0cfb257573dbdb1e7c914d3cc7"
+  },
+  "ribbonLanding:1": {
+    "parts": 14,
+    "hash": "753fb9e34b1a7b94906167323cb00f45a87e3427"
+  },
+  "ribbonLanding:2": {
+    "parts": 21,
+    "hash": "9d6d74da87da6d2e8f1444d4fa1e775f3dd65848"
+  },
+  "ribbonLanding:3": {
+    "parts": 30,
+    "hash": "9b317beddb23d09e68eeb614611b7fc2992ce526"
+  },
+  "settlerDomes:0": {
+    "parts": 10,
+    "hash": "439131166459dfda7ef91940645085547663a50a"
+  },
+  "settlerDomes:1": {
+    "parts": 36,
+    "hash": "1683271bb387321ac4d1ae9ea1a38afff6f1ff00"
+  },
+  "settlerDomes:2": {
+    "parts": 53,
+    "hash": "f7b9eb3a6f60b0e1b743a2406c4949f8df7cb000"
+  },
+  "settlerDomes:3": {
+    "parts": 63,
+    "hash": "2335d4f8a30acf5224da475e02ff02fb57295b6b"
+  },
+  "craterIceWell:0": {
+    "parts": 10,
+    "hash": "74a99ccbc120750aa1e40f628be0ba925d247915"
+  },
+  "craterIceWell:1": {
+    "parts": 8,
+    "hash": "3aee4c14e145a098ab2dc3f46d873aed1964133f"
+  },
+  "craterIceWell:2": {
+    "parts": 9,
+    "hash": "65790992074d27eee99c7b1c499dbf5335073b3d"
+  },
+  "craterIceWell:3": {
+    "parts": 12,
+    "hash": "8864a62ec8179593d689186430d4cf975816cc15"
+  },
+  "earthlightGreenhouse:0": {
+    "parts": 10,
+    "hash": "439131166459dfda7ef91940645085547663a50a"
+  },
+  "earthlightGreenhouse:1": {
+    "parts": 18,
+    "hash": "2b7da5a49218c6aed8097972a07afc951a8e8edf"
+  },
+  "earthlightGreenhouse:2": {
+    "parts": 27,
+    "hash": "127e6171123b751a7fd7af9cb880018aef224696"
+  },
+  "earthlightGreenhouse:3": {
+    "parts": 36,
+    "hash": "55a326137c06608edeb0f9f7775bb13db007bf84"
+  },
+  "willowkinDome:0": {
+    "parts": 10,
+    "hash": "84bb21f5d75d7d0196725e5ab6ed9783ce0b036e"
+  },
+  "willowkinDome:1": {
+    "parts": 27,
+    "hash": "da963ba392ac08b09d309a1b5a4178ff4de4a393"
+  },
+  "willowkinDome:2": {
+    "parts": 36,
+    "hash": "e160cdd0b6a8b0e6e2003268b852fa7e98e79027"
+  },
+  "willowkinDome:3": {
+    "parts": 59,
+    "hash": "0d08cfac3beee29f5c8c37a1681d540539af8f55"
+  },
+  "newHollowCommons:0": {
+    "parts": 10,
+    "hash": "84bb21f5d75d7d0196725e5ab6ed9783ce0b036e"
+  },
+  "newHollowCommons:1": {
+    "parts": 26,
+    "hash": "af26318007164f64baa6de212decee9892b395b3"
+  },
+  "newHollowCommons:2": {
+    "parts": 31,
+    "hash": "d0b1d385fa660923baedea81cbc3940ec0f5be0c"
+  },
+  "newHollowCommons:3": {
+    "parts": 34,
+    "hash": "fd1980263be18f4cf24c6dd29bdaf33a1da9ad63"
+  },
+  "craterHomesteads:0": {
+    "parts": 10,
+    "hash": "84bb21f5d75d7d0196725e5ab6ed9783ce0b036e"
+  },
+  "craterHomesteads:1": {
+    "parts": 12,
+    "hash": "24135765a4760c59378ebdc041e4730fe27f9564"
+  },
+  "craterHomesteads:2": {
+    "parts": 17,
+    "hash": "920febef47adf64bc64db4441d427d79e683759e"
+  },
+  "craterHomesteads:3": {
+    "parts": 33,
+    "hash": "aece018c7cac1acfc7b50132075339d1687e9957"
+  },
+  "moonstoneWorkshop:0": {
+    "parts": 10,
+    "hash": "74a99ccbc120750aa1e40f628be0ba925d247915"
+  },
+  "moonstoneWorkshop:1": {
+    "parts": 12,
+    "hash": "bd325a4b1bf1e6c43c52ebd2d3fc4a5785d5b032"
+  },
+  "moonstoneWorkshop:2": {
+    "parts": 29,
+    "hash": "51edb130fe994c356ee9bca2928bdb402f3b504a"
+  },
+  "moonstoneWorkshop:3": {
+    "parts": 33,
+    "hash": "7c04484ba2291683344114599ef259e8502858f7"
+  },
+  "roverBarn:0": {
+    "parts": 10,
+    "hash": "439131166459dfda7ef91940645085547663a50a"
+  },
+  "roverBarn:1": {
+    "parts": 15,
+    "hash": "b999f6ff2d12e68e4be232a236f31b819b12c79f"
+  },
+  "roverBarn:2": {
+    "parts": 29,
+    "hash": "9b171dc3a0d3134ea317ce192b199ddf566e13a3"
+  },
+  "roverBarn:3": {
+    "parts": 32,
+    "hash": "05d1d77d46c1c9fa1ecec55960b67919179827a0"
+  },
+  "earthriseLookout:0": {
+    "parts": 10,
+    "hash": "74a99ccbc120750aa1e40f628be0ba925d247915"
+  },
+  "earthriseLookout:1": {
+    "parts": 20,
+    "hash": "2e08528062b82c4ccfbcf55a05c7eada0cfb5eb6"
+  },
+  "earthriseLookout:2": {
+    "parts": 29,
+    "hash": "4820c27632cbe535ab70fb100e5b9e3bf679f570"
+  },
+  "earthriseLookout:3": {
+    "parts": 47,
+    "hash": "1d0e44959f57a8116d4ad05cf85817dfba4d51eb"
+  }
+}

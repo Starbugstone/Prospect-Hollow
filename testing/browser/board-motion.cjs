@@ -13,8 +13,12 @@ const {
 // Local only, not CI: see docs/deep-mine-levels.md.
 const origin = testOrigin();
 const MOVES = Number(process.env.PH_MOTION_MOVES || 5);
-// The reported level 376, every shaped-board family, and a rectangular control.
-const LEVELS = (process.env.PH_MOTION_LEVELS || '13,373,376,385,397').split(',').map(Number);
+// The reported level 376, every shaped-board family, and a rectangular control. A name
+// instead of a number is a board on trial (src/data/prototypeBoards.js), e.g.
+// PH_MOTION_LEVELS=deep-lantern-routes; the dev server's debug tools open it.
+const LEVELS = (process.env.PH_MOTION_LEVELS || '13,373,376,385,397')
+  .split(',')
+  .map((entry) => (/^\d+$/.test(entry) ? Number(entry) : entry));
 const FRAME = 1000 / 60;
 // Gems closer than this, in cells, are drawn on top of each other. Neighbouring lanes
 // of a diagonal funnel pass corner to corner at about 0.71; stacked refills are at 0.
@@ -214,10 +218,11 @@ function stutters({ frames }) {
         locale: 'en-US',
       });
       context.setDefaultTimeout(60000);
-      await context.addInitScript(installClock, level);
+      const trial = typeof level === 'string';
+      await context.addInitScript(installClock, trial ? level.length : level);
       // A disposable profile with every earlier level played, so this level is the next
       // one the mine opens. It lives only in this throwaway browser context.
-      await context.addInitScript(preparePage, { profile: playedProfile(level) });
+      await context.addInitScript(preparePage, { profile: playedProfile(trial ? 1 : level) });
       const page = await context.newPage();
       const errors = [];
       page.on('pageerror', (error) => errors.push(error.message));
@@ -225,11 +230,13 @@ function stutters({ frames }) {
       const store = `window.stores?.()?.get('game')`;
       // A cold Vite dev server optimises dependencies on the first visit.
       await page.waitForFunction(`!!${store}`, null, { timeout: 180000 });
-      if (!(await page.evaluate(`${store}.startLevel(${level}, 'normal')`)))
+      const start = trial ? `'${level}', 'prototype'` : `${level}, 'normal'`;
+      const current = trial ? `g.prototypeKey === '${level}'` : `g.currentLevelId === ${level}`;
+      if (!(await page.evaluate(`${store}.startLevel(${start})`)))
         throw new Error(`${level}: the seeded profile cannot open this level`);
       await page.waitForFunction(`!!${store}.renderer?.animator`);
       await page.waitForFunction(
-        `(() => { const g = ${store}; return g.renderer?.animator && !g.animationInProgress && g.currentLevelId === ${level}; })()`,
+        `(() => { const g = ${store}; return g.renderer?.animator && !g.animationInProgress && ${current}; })()`,
       );
       // Close the mine guide and start screen.
       for (let i = 0; i < 10 && (await page.evaluate(`${store}.inputPaused`)); i++) {

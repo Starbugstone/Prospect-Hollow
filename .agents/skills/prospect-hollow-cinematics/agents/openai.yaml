@@ -1,0 +1,4 @@
+interface:
+  display_name: 'Prospect Hollow Cinematics'
+  short_description: 'Build and verify valley and Moon cinematic scenes'
+  default_prompt: 'Use $prospect-hollow-cinematics to fix or verify a Prospect Hollow cinematic, including terrain clearance and playback cleanup.'

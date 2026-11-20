@@ -1,6 +1,6 @@
 ---
 name: verify-prospect-hollow
-description: Run Prospect Hollow's isolated Docker verification journeys for valley construction persistence, mine feedback, Moon controls, and Moonstone transactions. Use for gameplay or settlement verification and maintaining these recipes.
+description: Run Prospect Hollow's isolated Docker verification journeys for valley construction persistence, mine feedback, Moon input, Moonstone transactions, and cinematic terrain clearance. Use for gameplay or settlement verification and maintaining these recipes.
 ---
 
 # Verify Prospect Hollow gameplay
@@ -20,7 +20,8 @@ saving, email delivery, full campaign completion, or every settlement interactio
 `all` starts a fresh stack, migrates it, runs the read-only doctor, runs each journey,
 and removes this run's containers, network and volumes even on failure. Docker image
 caches and evidence under `output/verification/run-*` remain. A failed journey does
-not stop the remaining journeys. A failed doctor blocks them all.
+not stop the remaining journeys if a fresh doctor passes. A failed doctor blocks
+further driving; its log is retained as `doctor-after-<journey>.log`.
 
 For inspection or a single journey:
 

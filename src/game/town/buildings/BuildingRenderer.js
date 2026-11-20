@@ -137,7 +137,7 @@ function renderRiverModernization(d, parent, kind, level) {
   parent = modern;
   modern.userData.eraLevel = level;
   if (level >= 2 && !['well', 'square', 'fisherman'].includes(kind)) {
-    d.box(parent, 1.15, 2.15, 2.1, -1.95, 1.22, -0.2, '#ad725c');
+    d.box(parent, 1.13, 2.15, 2.1, -1.95, 1.22, -0.2, '#ad725c');
     d.box(parent, 1.45, 0.18, 2.35, -1.95, 2.4, -0.2, '#526e79');
     addWindow(d, parent, -1.95, 1.4, 0.9);
   }
@@ -215,7 +215,7 @@ function renderRiverModernization(d, parent, kind, level) {
     roof.rotation.z = -side * 0.54;
   }
   // A taller masonry street front, cornice and porch change the building silhouette.
-  d.box(parent, 2.95, 1.12, 0.24, 0, 2.71, 1.45, brick);
+  d.box(parent, 3.02, 1.12, 0.24, 0, 2.71, 1.45, brick);
   for (const y of [2.21, 3.22, 3.36]) d.box(parent, 3.32, 0.12, 0.4, 0, y, 1.49, '#e0cfac');
   for (const x of [-1.05, 0, 1.05]) d.box(parent, 0.25, 0.3, 0.35, x, 3.47, 1.49, '#c9ba99');
   d.box(parent, 3.25, 0.18, 0.95, 0, 0.23, 1.8, '#b7ad94');
@@ -230,7 +230,7 @@ function renderRiverModernization(d, parent, kind, level) {
     for (let n = 0; n < 6; n++) d.box(parent, 0.27, 0.045, 0.32, x, 0.2 + n * 0.3, 1.4, '#d2c3a3');
   }
   d.box(parent, 3.25, 0.17, 0.95, 0, 2.05, 1.65, '#738f87');
-  d.box(parent, 3.2, 0.22, 2.7, 0, 0.13, 0, colors[kind]);
+  d.box(parent, 3.2, 0.22, 2.76, 0, 0.13, 0, colors[kind]);
   d.sign(
     parent,
     t(

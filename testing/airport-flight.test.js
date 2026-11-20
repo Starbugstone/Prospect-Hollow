@@ -272,17 +272,20 @@ describe('Sky saucer flight', () => {
       }
     expect(low.size).toBeGreaterThan(20);
     // The hull is 2.5 wide: keep all of it off every road and path, and the station.
+    for (const p of low.values()) {
+      expect(p.z).toBeGreaterThan(RAIL_EDGE.from[1] + 4);
+      expect(Math.hypot(p.x - PLOTS.railDepot[0], p.z - PLOTS.railDepot[1])).toBeGreaterThan(12);
+    }
+    // One assertion per era on its closest approach: an expect per point and edge outgrew
+    // the test's time limit as eras were added.
     for (const era of ROUNDED_ERAS) {
-      const tracks = townTracks(completeTown(era));
-      for (const [at, p] of low) {
-        expect(p.z).toBeGreaterThan(RAIL_EDGE.from[1] + 4);
-        expect(Math.hypot(p.x - PLOTS.railDepot[0], p.z - PLOTS.railDepot[1])).toBeGreaterThan(12);
-        for (const edge of tracks)
-          expect(
-            segmentDistance(p.x, p.z, edge.from, edge.to) - edge.width / 2,
-            `${era} ${at} ${edge.from}`,
-          ).toBeGreaterThan(2.6);
-      }
+      let closest = { gap: Infinity };
+      for (const edge of townTracks(completeTown(era)))
+        for (const [at, p] of low) {
+          const gap = segmentDistance(p.x, p.z, edge.from, edge.to) - edge.width / 2;
+          if (gap < closest.gap) closest = { gap, at, from: edge.from };
+        }
+      expect(closest.gap, `${era} ${closest.at} ${closest.from}`).toBeGreaterThan(2.6);
     }
   });
 

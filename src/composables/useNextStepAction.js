@@ -29,12 +29,15 @@ export function useNextStepAction(town, hammers, emit, goal = () => nextGoal(toV
               icon: 'home',
               label: nextStep.value.cost === 0 ? 'Build for free' : 'Build',
             }
-          : {
-              kind: 'mine',
-              icon: 'mine',
-              label: 'Play level {level}',
-              params: { level: campaign.nextLevel },
-            },
+          : campaign.newLevelsLeft
+            ? {
+                kind: 'mine',
+                icon: 'mine',
+                label: 'Play level {level}',
+                params: { level: campaign.nextLevel },
+              }
+            : // Every level is done: replays still pay coins and build.
+              { kind: 'mine', icon: 'mine', label: 'Replay levels' },
   );
   function act() {
     if (ready.value) emit('select', ready.value.id);

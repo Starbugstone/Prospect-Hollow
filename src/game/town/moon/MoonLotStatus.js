@@ -1,5 +1,5 @@
 import { BUILDING_BY_ID } from '../../../data/town';
-import { AREA_BY_ID, areaChoice, monumentWork } from '../../../data/townLandmarks';
+import { AREA_BY_ID, areaChoice, areaName, monumentWork } from '../../../data/townLandmarks';
 import { collectionCooldownRemaining, plotUnlocked } from '../TownRules';
 import { buildingStatus, monumentStatus } from '../TownBuildingFeedback';
 import { t } from '../../../i18n';
@@ -29,7 +29,9 @@ export function moonLotStatus(town, id) {
   return plotUnlocked(town, id) ? 'open' : 'later';
 }
 
-export const moonLotName = (id) => t(AREA_BY_ID[id]?.label ?? BUILDING_BY_ID[id].shortName);
+// A site reads as the building chosen for it, like the Build tab and the site card.
+export const moonLotName = (id, town) =>
+  t(AREA_BY_ID[id] ? areaName(town, AREA_BY_ID[id]) : BUILDING_BY_ID[id].shortName);
 
 /**
  * A lot's or site's status, `{ kind, text, title }` as the valley's labels read it, or
@@ -60,4 +62,4 @@ export function moonLotInfo(
 export const moonLotDetail = (town, id, options) => moonLotInfo(town, id, options)?.text ?? null;
 
 export const moonLotLabel = (town, id, options) =>
-  [moonLotName(id), moonLotDetail(town, id, options)].filter(Boolean).join(' · ');
+  [moonLotName(id, town), moonLotDetail(town, id, options)].filter(Boolean).join(' · ');

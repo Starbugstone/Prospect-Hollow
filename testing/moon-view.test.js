@@ -14,6 +14,7 @@ import {
   purchaseLandmark,
 } from '../src/data/townLandmarks';
 import { bound, find, renderFragment, sfc } from './helpers/componentFragments';
+import { openEverySite } from './helpers/siteOpening';
 
 // The Moon map keeps the valley's contracts (AGENTS.md, settlement maps): the same
 // action labels, read-only view, upgrade glow rule, input ownership and navigation.
@@ -34,10 +35,16 @@ beforeEach(() => {
 });
 afterEach(() => vi.unstubAllGlobals());
 
-const moonTown = () => ({ ...createTown(), era: 'twin-hollows', coins: 1e8, moonstones: 1e6 });
+// The buildings that open the commission sites are finished, so every Moon site is open.
+const moonTown = () =>
+  openEverySite(
+    { ...createTown(), era: 'twin-hollows', coins: 1e8, moonstones: 1e6 },
+    areasForSettlement('moon'),
+  );
 // A Moon monument whose first level waits to be unveiled.
 function readySite(area) {
-  let town = moonTown();
+  // A site opens with its own era.
+  let town = { ...moonTown(), era: area.era };
   const choice = area.choices[0];
   town = purchaseLandmark(town, {
     id: area.id,

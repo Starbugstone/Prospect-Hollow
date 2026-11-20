@@ -1,8 +1,14 @@
-import { eraEvolution } from './eras';
-import { areasForSettlement, siteYaw } from './townLandmarks';
+import { ERAS, eraEvolution } from './eras';
+import { areaUnlocked, areasForSettlement, siteYaw } from './townLandmarks';
+import {
+  commissionFor,
+  commissionLetters,
+  commissionUse,
+  finishedCommissions,
+} from './commissions';
 import { MOON_SETTLEMENT } from './settlements';
-// Read inside moonstoneKeepsakes only, after town.js (which needs moonstones.js) loads.
-import { MOONSTONE_BUILDINGS } from './town';
+// Read inside functions only, after town.js (which needs moonstones.js) loads.
+import { BUILDING_BY_ID, MOONSTONE_BUILDINGS } from './town';
 
 // New Hollow, the homesteads on the Moon, grows with the supplies the town sends up
 // the space elevator. It is presentation only: no coins, timers or failure.
@@ -36,46 +42,452 @@ const MOON_LIGHTS = Array.from({ length: MOON_SETTLEMENT_LIMIT }, (_, n) => {
   });
 });
 
-// Lots on the Moon map, in the Moon scene's own coordinates. The ribbon lands in
-// the middle of the crater; the camera looks across it toward the risen Earth.
-// Inner lots surround the landing inside the ring road (radius MOON_RING_ROAD);
-// outer homesteads and service pads stand beyond it.
-export const MOON_LOTS = Object.freeze({
-  ribbonLanding: Object.freeze([0, -8]),
-  newHollowCommons: Object.freeze([0, 11]),
-  settlerDomes: Object.freeze([-12, 2]),
-  craterIceWell: Object.freeze([12, 2]),
-  craterHomesteads: Object.freeze([-27, -12]),
-  earthlightGreenhouse: Object.freeze([27, -12]),
-  willowkinDome: Object.freeze([-15, 27]),
-  moonstoneWorkshop: Object.freeze([15, 27]),
-  earthriseLookout: Object.freeze([-30, 12]),
-  roverBarn: Object.freeze([30, 12]),
-  saucerPad: Object.freeze([15, -30]),
+// Ground beyond the crater, opened by a later era. A district is a level hollow round its
+// `centre`, with its own ring road (`ring`, a radius about the centre) and one straight
+// `road` joining the last crater ring to it. `floor` is the radius of its level ground and
+// `blend` how far the ground takes to rise back to the hills. Its lots name it (`district`);
+// before its era a town sees today's rim and hills there and nothing else.
+//
+// The Far Rim lies on the line from the default camera to the risen Earth, so the road, the
+// Quiet Stone at its centre and Earth stand one above the other in the first view of the Moon.
+const FAR_RIM_AXIS = Object.freeze([-0.2109, 0.9775]);
+const FAR_RIM_CENTRE = Object.freeze([34.5, -93.8]);
+// A place in the Far Rim: `turn` degrees round the stone from the side facing New Hollow
+// (positive toward +x), `radius` from the stone.
+const farRim = (turn, radius = 26.5) => {
+  const a = (turn * Math.PI) / 180,
+    [ax, az] = FAR_RIM_AXIS;
+  return [
+    Math.round((FAR_RIM_CENTRE[0] + radius * (Math.cos(a) * ax + Math.sin(a) * az)) * 10) / 10,
+    Math.round((FAR_RIM_CENTRE[1] + radius * (Math.cos(a) * az - Math.sin(a) * ax)) * 10) / 10,
+  ];
+};
+export const MOON_DISTRICTS = Object.freeze({
+  farRim: Object.freeze({
+    id: 'farRim',
+    era: 'quiet-signal',
+    centre: FAR_RIM_CENTRE,
+    ring: 16,
+    floor: 36,
+    blend: 13,
+    // From the end of the outer ring's 315° spoke, past the empty lot under the saucer's
+    // flight line, to the district's ring. It runs beside the sight line, which the Signal
+    // Terrace stands on.
+    road: Object.freeze([Object.freeze([31.8, -31.8]), Object.freeze(farRim(32, 16))]),
+    // The Quiet Stone: a fixed landmark at the centre. `size` is width, height and depth
+    // (1 : 4 : 9 on its side); `turn` faces its broad side to New Hollow.
+    stone: Object.freeze({
+      id: 'quietStone',
+      size: Object.freeze([5.2, 11.7, 1.3]),
+      turn: Math.atan2(FAR_RIM_AXIS[0], FAR_RIM_AXIS[1]),
+    }),
+  }),
 });
-export const MOON_RING_ROAD = 20.5;
+const eraAt = (era) => ERAS.findIndex(({ id }) => id === era);
+const eraReached = (town, era) => {
+  const at = eraAt(era);
+  return at >= 0 && !!ERAS[at].enabled && (town ? eraAt(town.era) : ERAS.length - 1) >= at;
+};
+/** The districts a town sees: those whose era it has reached. Without a town, every enabled era's. */
+export const moonDistrictsShown = (town) =>
+  Object.values(MOON_DISTRICTS).filter(({ era }) => eraReached(town, era));
+/** The district whose level ground holds (x, z), or null on the crater's own ground. */
+export const moonDistrictAt = (x, z) =>
+  Object.values(MOON_DISTRICTS).find(
+    ({ centre, floor }) => Math.hypot(x - centre[0], z - centre[1]) <= floor,
+  ) ?? null;
+
+// Every Moon lot, in one place: where it stands (`at`, the Moon scene's own coordinates), its
+// pad's radius, the public path from its hatch (`arrival`, in the lot's own frame, local +z
+// its front apron) and which way it faces. `face` is 'out' by default: the front looks away
+// from the landing. 'in' turns it toward the landing; a number fixes the turn. `ring` is the
+// ring road its path joins (an index into MOON_ROADS.rings, the inner ring by default). Lots
+// are listed in the order every map draws and labels them. A new Moon building adds one entry.
+// A lot in a district names it (`district`): 'in' then faces the district's centre and its
+// path joins the district's ring. `gather` marks an open place nobody steps inside: visitors
+// stand where its path begins and look to the middle of its ring.
+const MOON_LOT_TABLE = Object.freeze({
+  ribbonLanding: {
+    at: [0, -8],
+    pad: 5.2,
+    arrival: [
+      [0, 1.34],
+      [0, 6],
+    ],
+    face: 0,
+  },
+  newHollowCommons: {
+    at: [0, 11],
+    pad: 4.8,
+    arrival: [
+      [0, 0.43],
+      [0, 1.2],
+      [-1.1, 1.4],
+      [-1.1, 5.9],
+    ],
+  },
+  settlerDomes: {
+    at: [-12, 2],
+    pad: 4.6,
+    arrival: [
+      [-1.5, 0.67],
+      [-1.5, 5.81],
+    ],
+  },
+  craterIceWell: {
+    at: [12, 2],
+    pad: 4.4,
+    arrival: [
+      [0, 1.8],
+      [0, 6],
+    ],
+  },
+  craterHomesteads: {
+    at: [-27, -12],
+    pad: 4.8,
+    arrival: [
+      [-1.6, -0.08],
+      [-1.6, 1.4],
+      [0, 1.4],
+      [0, 6],
+    ],
+  },
+  earthlightGreenhouse: {
+    at: [27, -12],
+    pad: 4.6,
+    arrival: [
+      [-2.83, -1.4],
+      [-5.84, -1.4],
+    ],
+  },
+  willowkinDome: {
+    at: [-15, 27],
+    pad: 4.8,
+    arrival: [
+      [0, 1.92],
+      [0, 6],
+    ],
+  },
+  moonstoneWorkshop: {
+    at: [15, 27],
+    pad: 4.4,
+    arrival: [
+      [-0.6, 0.18],
+      [-0.6, 5.97],
+    ],
+  },
+  earthriseLookout: {
+    at: [-30, 12],
+    pad: 4.4,
+    arrival: [
+      [-0.7, 2.62],
+      [-0.7, 5.96],
+    ],
+  },
+  roverBarn: {
+    at: [30, 12],
+    pad: 4.6,
+    arrival: [
+      [-0.8, -0.08],
+      [-0.8, 0.6],
+      [0, 0.9],
+      [0, 6],
+    ],
+  },
+  saucerPad: {
+    at: [15, -30],
+    pad: 6.4,
+    arrival: [
+      [0, 5.32],
+      [0, 7.2],
+    ],
+    face: 'in',
+  },
+  // New Hollow Rising: the outer ring's lots stand on a circle of radius 55, beyond the outer
+  // road, and face inward so each hatch looks onto it. The Earthview Terraces keep their backs
+  // to the road instead: their glass fronts look at Earth (toward -z).
+  ringTram: {
+    at: [53.9, -10.7],
+    pad: 6.2,
+    arrival: [
+      [0, -0.95],
+      [0, 0.9],
+      [-4.3, 0.9],
+      [-4.9, 4.9],
+    ],
+    face: 'in',
+    ring: 1,
+  },
+  dewfallCistern: {
+    at: [30.6, 45.7],
+    pad: 5,
+    arrival: [
+      [0, 0.95],
+      [0, 6],
+    ],
+    face: 'in',
+    ring: 1,
+  },
+  orchardVaults: {
+    at: [-30.6, 45.7],
+    pad: 6,
+    arrival: [
+      [0, 3.36],
+      [0, 6],
+    ],
+    face: 'in',
+    ring: 1,
+  },
+  lanternRow: {
+    at: [-53.9, -10.7],
+    pad: 6,
+    arrival: [
+      [0, 2.26],
+      [0, 6],
+    ],
+    face: 'in',
+    ring: 1,
+  },
+  ringMarket: {
+    at: [53.9, 10.7],
+    pad: 5.6,
+    arrival: [
+      [0, 1.75],
+      [0, 6],
+    ],
+    face: 'in',
+    ring: 1,
+  },
+  craterSchool: {
+    at: [-53.9, 10.7],
+    pad: 5.4,
+    arrival: [
+      [0, 0.45],
+      [0, 6],
+    ],
+    face: 'in',
+    ring: 1,
+  },
+  earthviewTerraces: {
+    at: [-45.7, -30.6],
+    pad: 5.6,
+    arrival: [
+      [0, 1.4],
+      [0, 6],
+    ],
+    face: 0,
+    ring: 1,
+  },
+  expeditionGarage: {
+    at: [45.7, -30.6],
+    pad: 5.6,
+    arrival: [
+      [0.75, -0.44],
+      [0.75, 6],
+    ],
+    face: 'in',
+    ring: 1,
+  },
+  craterInn: {
+    at: [45.7, 30.6],
+    pad: 5.4,
+    arrival: [
+      [0, 1.15],
+      [0, 6],
+    ],
+    face: 'in',
+    ring: 1,
+  },
+  starwatchDish: {
+    at: [-10.7, -53.9],
+    pad: 5,
+    arrival: [
+      [0, 0.15],
+      [0, 6],
+    ],
+    face: 'in',
+    ring: 1,
+  },
+  moonballField: {
+    at: [-45.7, 30.6],
+    pad: 6,
+    arrival: [
+      [0, 3.16],
+      [0, 6],
+    ],
+    face: 'in',
+    ring: 1,
+  },
+  craterPondGarden: {
+    at: [10.7, -53.9],
+    pad: 5,
+    arrival: [
+      [0, 3.46],
+      [0, 6],
+    ],
+    face: 'in',
+    ring: 1,
+  },
+  // The Quiet Signal: the Far Rim's lots stand round the Quiet Stone, beyond its ring road,
+  // and face it. The side toward Earth stays empty, and so does all the ground inside the
+  // ring. The Signal Terrace stands on the sight line from New Hollow to the stone.
+  signalTerrace: {
+    at: farRim(0),
+    pad: 6.2,
+    arrival: [
+      [0, 3.2],
+      [0, 6],
+    ],
+    face: 'in',
+    district: 'farRim',
+    // An open place: visitors stand at its front and look at the stone.
+    gather: true,
+  },
+  stillwaterBasin: {
+    at: farRim(-76),
+    pad: 5.4,
+    arrival: [
+      [0, 3.49],
+      [0, 6],
+    ],
+    face: 'in',
+    district: 'farRim',
+  },
+  listeningHouse: {
+    at: farRim(-114),
+    pad: 5.6,
+    arrival: [
+      [0, 0.05],
+      [0, 6],
+    ],
+    face: 'in',
+    district: 'farRim',
+  },
+  tonewoodConservatory: {
+    at: farRim(-152),
+    pad: 5.8,
+    arrival: [
+      [0, 2.3],
+      [0, 6],
+    ],
+    face: 'in',
+    district: 'farRim',
+  },
+  farRimHomes: {
+    at: farRim(142),
+    pad: 5.8,
+    arrival: [
+      [0, -0.1],
+      [0, 6],
+    ],
+    face: 'in',
+    district: 'farRim',
+  },
+  resonanceWorkshop: {
+    at: farRim(104),
+    pad: 5.4,
+    arrival: [
+      [0, 0.1],
+      [0, 6],
+    ],
+    face: 'in',
+    district: 'farRim',
+  },
+  patternGarden: {
+    at: farRim(66),
+    pad: 5.2,
+    arrival: [
+      [0, 3.39],
+      [0, 6],
+    ],
+    face: 'in',
+    district: 'farRim',
+  },
+});
+const lotEntry = (id) => (Object.hasOwn(MOON_LOT_TABLE, id) ? MOON_LOT_TABLE[id] : null);
+
+// The ribbon lands in the middle of the crater; the camera looks across it toward the risen
+// Earth. Inner lots surround the landing inside the ring road (radius MOON_RING_ROAD); outer
+// homesteads and service pads stand beyond it.
+export const MOON_LOTS = Object.freeze(
+  Object.fromEntries(
+    Object.entries(MOON_LOT_TABLE).map(([id, { at }]) => [id, Object.freeze([...at])]),
+  ),
+);
+/**
+ * The Moon lots a town sees: those of its era and every earlier enabled one, in drawing
+ * order. A later era's lots stay hidden, as the valley's future plots do: no pad, label or
+ * tap target. Without a town, every enabled era's lots.
+ */
+export function moonLotsShown(town) {
+  const reached = town ? eraAt(town.era) : ERAS.length - 1;
+  return Object.keys(MOON_LOTS).filter((id) => {
+    const era = ERAS[eraAt(BUILDING_BY_ID[id]?.introducedEra)];
+    return !!era?.enabled && eraAt(era.id) <= reached;
+  });
+}
+// New Hollow's roads: ring roads round the landing (radii, inner first) and straight spokes
+// joining neighbouring rings (angles in radians, measured as Math.atan2(z, x)). Every path,
+// walker and drawing reads this one definition.
+// The outer ring and its six spokes leave room for New Hollow to grow beyond its first
+// lots. The spokes avoid the front and the back (toward the camera and toward Earth), where
+// the commission site, Earthrise Plaza and their paths stand.
+export const MOON_ROADS = Object.freeze({
+  rings: Object.freeze([20.5, 45]),
+  spokes: Object.freeze([0, 45, 135, 180, 225, 315].map((degrees) => (degrees * Math.PI) / 180)),
+});
+// The inner ring road, which the first lots' paths join.
+export const MOON_RING_ROAD = MOON_ROADS.rings[0];
+// Every road's width, rings and spokes alike.
+export const MOON_ROAD_WIDTH = 1.6;
+/** Each spoke as a segment from the innermost ring to the outermost, as [[x, z], [x, z]]. */
+export const moonSpokes = (roads = MOON_ROADS) =>
+  roads.rings.length < 2
+    ? []
+    : roads.spokes.map((angle) =>
+        [roads.rings[0], roads.rings.at(-1)].map((ring) => [
+          Math.cos(angle) * ring,
+          Math.sin(angle) * ring,
+        ]),
+      );
+/** How far (x, z) is from the middle of the nearest road, ring or spoke. */
+export function moonRoadDistance(x, z, roads = MOON_ROADS) {
+  const r = Math.hypot(x, z);
+  let distance = Math.min(...roads.rings.map((ring) => Math.abs(r - ring)));
+  for (const [a, b] of moonSpokes(roads))
+    distance = Math.min(distance, moonSegmentDistance(x, z, a, b));
+  return distance;
+}
+/** The district a lot stands in, or null for a lot in the crater. */
+export const moonLotDistrict = (id) => MOON_DISTRICTS[lotEntry(id)?.district] ?? null;
+// The radius of the ring road a lot's path joins: its district's, or one of the crater's.
+const moonLotRing = (id) =>
+  moonLotDistrict(id)?.ring ?? MOON_ROADS.rings[lotEntry(id)?.ring ?? 0] ?? MOON_RING_ROAD;
+// The middle of that ring road.
+const ORIGIN = Object.freeze([0, 0]);
+const moonLotRingCentre = (id) => moonLotDistrict(id)?.centre ?? ORIGIN;
+/**
+ * Whether a parcel of `radius` at (x, z) stands on level ground: inside the crater, or on
+ * a district's floor.
+ */
+export const moonOnLevelGround = (x, z, radius = 0) =>
+  Math.hypot(x, z) + radius < MOON_CRATER_RADIUS ||
+  Object.values(MOON_DISTRICTS).some(
+    ({ centre, floor }) => Math.hypot(x - centre[0], z - centre[1]) + radius < floor,
+  );
 // Lots sit inside a crater bowl; footprints stay within this radius of a lot.
 export const MOON_LOT_RADIUS = 5;
-export const MOON_CRATER_RADIUS = 46;
+// The crater floor is level out to MOON_FLOOR_RADIUS, rises to a soft rim whose crest is at
+// MOON_RIM_RADIUS, and everything built stands within MOON_CRATER_RADIUS.
+export const MOON_FLOOR_RADIUS = 63;
+export const MOON_RIM_RADIUS = 75;
+export const MOON_CRATER_RADIUS = 68;
 
 // Public arrivals use the actual hatch, service forecourt or stair foot. The
 // bends avoid authored benches, cargo and rovers on each pad. All geometry and
 // the fallback map consume these same routes; no separate navigation is saved.
 const MOON_ACCESS_WIDTH = 0.8;
-const MOON_PAD_RADII = Object.freeze({
-  ribbonLanding: 5.2,
-  newHollowCommons: 4.8,
-  settlerDomes: 4.6,
-  craterIceWell: 4.4,
-  craterHomesteads: 4.8,
-  earthlightGreenhouse: 4.6,
-  willowkinDome: 4.8,
-  moonstoneWorkshop: 4.4,
-  earthriseLookout: 4.4,
-  roverBarn: 4.6,
-  saucerPad: 6.4,
-});
-export const moonPadRadius = (kind) => MOON_PAD_RADII[kind] ?? MOON_LOT_RADIUS;
+export const moonPadRadius = (kind) => lotEntry(kind)?.pad ?? MOON_LOT_RADIUS;
 // Every Moon parcel stands on one octagonal pad: building lots (built or empty) and
 // monument sites, including any added later. The drawn pad, the upgrade glow, tap
 // targets, the selection outline and the path ramps all read this one shape.
@@ -120,68 +532,26 @@ export function moonParcels(lots = MOON_LOTS, sites = areasForSettlement(MOON_SE
     })),
   ];
 }
-const MOON_ARRIVALS = Object.freeze({
-  saucerPad: [
-    [0, 5.32],
-    [0, 7.2],
-  ],
-  ribbonLanding: [
-    [0, 1.34],
-    [0, 6],
-  ],
-  settlerDomes: [
-    [-1.5, 0.67],
-    [-1.5, 5.81],
-  ],
-  craterIceWell: [
-    [0, 1.8],
-    [0, 6],
-  ],
-  earthlightGreenhouse: [
-    [-2.83, -1.4],
-    [-5.84, -1.4],
-  ],
-  willowkinDome: [
-    [0, 1.92],
-    [0, 6],
-  ],
-  newHollowCommons: [
-    [0, 0.43],
-    [0, 1.2],
-    [-1.1, 1.4],
-    [-1.1, 5.9],
-  ],
-  craterHomesteads: [
-    [-1.6, -0.08],
-    [-1.6, 1.4],
-    [0, 1.4],
-    [0, 6],
-  ],
-  moonstoneWorkshop: [
-    [-0.6, 0.18],
-    [-0.6, 5.97],
-  ],
-  roverBarn: [
-    [-0.8, -0.08],
-    [-0.8, 0.6],
-    [0, 0.9],
-    [0, 6],
-  ],
-  earthriseLookout: [
-    [-0.7, 2.62],
-    [-0.7, 5.96],
-  ],
-});
+// Public arrivals use the actual hatch, service forecourt or stair foot. The bends avoid
+// authored benches, cargo and rovers on each pad.
+const DEFAULT_ARRIVAL = Object.freeze([
+  [0, 1],
+  [0, 6],
+]);
+const lotArrival = (id) => lotEntry(id)?.arrival ?? DEFAULT_ARRIVAL;
 
 export function moonLotPose(id, lots = MOON_LOTS) {
   const [x, z] = lots[id] ?? [0, 0];
   const landingZ = lots.ribbonLanding?.[1] ?? -8;
-  // Preserve established lot poses. Local +z is the authored front apron; the
-  // outer Saucer Pad faces inward so pedestrians stay opposite its sky corridor.
+  // Local +z is the authored front apron. A lot faces away from the landing unless its
+  // entry says otherwise: the Saucer Pad faces inward, opposite its sky corridor.
+  const face = lotEntry(id)?.face ?? 'out';
+  // A district's lots turn about its centre, the crater's about the landing.
+  const [cx, cz] = moonLotDistrict(id)?.centre ?? [0, landingZ];
   const rotation =
-    id === 'ribbonLanding'
-      ? 0
-      : Math.atan2(-x, -(z - landingZ)) + (id === 'saucerPad' ? 0 : Math.PI);
+    typeof face === 'number'
+      ? face
+      : Math.atan2(-(x - cx), -(z - cz)) + (face === 'in' ? 0 : Math.PI);
   return { x, z, rotation };
 }
 
@@ -191,8 +561,7 @@ const moonWorldPoint = ([x, z], pose) => [
 ];
 
 export function moonEntrance(id, level = 3, lots = MOON_LOTS) {
-  const local =
-    id === 'willowkinDome' && level >= 2 ? [0, 2.48] : (MOON_ARRIVALS[id]?.[0] ?? [0, 1]);
+  const local = id === 'willowkinDome' && level >= 2 ? [0, 2.48] : lotArrival(id)[0];
   return moonWorldPoint(local, moonLotPose(id, lots));
 }
 
@@ -209,16 +578,14 @@ export function moonSegmentDistance(x, z, a, b) {
 // A short exterior arc can turn around a pad whose front faces away from the
 // ring. Select the shortest clear arc+ring connection once, rather than drawing
 // a radial spoke through a building or changing its established orientation.
-export function moonApproach(id, level = 3, lots = MOON_LOTS) {
-  const pose = moonLotPose(id, lots);
-  const local = (
-    MOON_ARRIVALS[id] ?? [
-      [0, 1],
-      [0, 6],
-    ]
-  ).map((point) => [...point]);
+export function moonApproach(id, level = 3, lots = MOON_LOTS, site = null) {
+  const pose = site?.pose ?? moonLotPose(id, lots);
+  const local = (site?.arrival ?? lotArrival(id)).map((point) => [...point]);
   if (id === 'willowkinDome' && level >= 2) local[0] = [0, 2.48];
-  const padRadius = moonPadRadius(id),
+  const ring = site?.ring ?? moonLotRing(id),
+    [cx, cz] = site?.ringCentre ?? moonLotRingCentre(id),
+    district = site ? null : (moonLotDistrict(id)?.id ?? null);
+  const padRadius = site?.padRadius ?? moonPadRadius(id),
     rampStart = moonPadApothem(padRadius - 0.25) - 0.05,
     rampEnd = padRadius + 0.35;
   // Turn close around the actual pad, rather than extending a uniform six-unit
@@ -265,7 +632,7 @@ export function moonApproach(id, level = 3, lots = MOON_LOTS) {
       }
       for (let j = 0; j < 96; j++) {
         const a = (j * Math.PI) / 48;
-        const end = [Math.cos(a) * MOON_RING_ROAD, Math.sin(a) * MOON_RING_ROAD];
+        const end = [cx + Math.cos(a) * ring, cz + Math.sin(a) * ring];
         const cost = length + Math.hypot(end[0] - arc.at(-1)[0], end[1] - arc.at(-1)[1]);
         if ((!best || cost < best.cost) && clear(arc.at(-1), end))
           best = { cost, points: [...arc, end] };
@@ -274,7 +641,7 @@ export function moonApproach(id, level = 3, lots = MOON_LOTS) {
   }
   // Incomplete future layouts still get finite, visible access data. Shipped
   // layouts are regression checked to always find a clear exterior connection.
-  const fallback = [Math.cos(startAngle) * MOON_RING_ROAD, Math.sin(startAngle) * MOON_RING_ROAD];
+  const fallback = [cx + Math.cos(startAngle) * ring, cz + Math.sin(startAngle) * ring];
   return {
     id,
     width: MOON_ACCESS_WIDTH,
@@ -284,6 +651,12 @@ export function moonApproach(id, level = 3, lots = MOON_LOTS) {
     padRadius,
     rampStart,
     rampEnd,
+    ring,
+    // The middle of that ring road, and the district it belongs to (null in the crater).
+    centre: [cx, cz],
+    district,
+    // An open gathering place: visitors stand at the path's head and face `outlook`.
+    ...(lotEntry(id)?.gather && !site ? { outlook: [cx, cz] } : {}),
     clear: !!best,
     points: [...apron, ...(best?.points.slice(1) ?? [fallback])],
     apronSegments: apron.length - 1,
@@ -300,7 +673,7 @@ export function moonApproaches(levels = null, lots = MOON_LOTS) {
       .filter(({ id }) => levels[id] > 0)
       .map((route) => {
         if (route.id !== 'willowkinDome' || levels[route.id] >= 2) return route;
-        const entry = moonWorldPoint(MOON_ARRIVALS.willowkinDome[0], route.pose);
+        const entry = moonWorldPoint(lotArrival('willowkinDome')[0], route.pose);
         return { ...route, entry, points: [entry, ...route.points.slice(1)] };
       });
   return Object.keys(lots)
@@ -315,6 +688,70 @@ export function moonPathDistance(x, z, approaches = defaultMoonApproaches()) {
       distance = Math.min(distance, moonSegmentDistance(x, z, points[n - 1], points[n]));
   return distance;
 }
+
+// A commission's door, on its raised pad. Every finished commission keeps its door here.
+export const MOON_COMMISSION_DOOR = 3.1;
+/** The ring road a site's path joins: the outermost one inside the site, as a lot's. */
+export const moonSiteRing = ([x, z]) =>
+  MOON_ROADS.rings.filter((ring) => ring < Math.hypot(x, z)).at(-1) ?? MOON_RING_ROAD;
+// Monument sites with a public path, as `arrival` in the site's frame (local +z its front,
+// as on a lot), leading out to the ring road inside the site. A commission's path reaches
+// its door; another site standing off the roads adds one entry here.
+const COMMISSION_ARRIVAL = Object.freeze([
+  Object.freeze([0, MOON_COMMISSION_DOOR]),
+  Object.freeze([0, 6]),
+]);
+const MOON_SITE_PATHS = Object.freeze({
+  // On the outer ring's far side, facing the camera: its path leaves the back of the square.
+  'hollowborn-square': Object.freeze([Object.freeze([0, -4.5]), Object.freeze([0, -6])]),
+});
+const siteArrival = (area) =>
+  commissionFor(area?.id) ? COMMISSION_ARRIVAL : (MOON_SITE_PATHS[area?.id] ?? null);
+const siteRoutes = new Map();
+/**
+ * The public path from a monument site to its ring road, from the same route search as a
+ * lot's, or null for a site without one. Commissions and other sites share it.
+ */
+export function moonSiteRoute(area) {
+  const arrival = siteArrival(area);
+  if (!arrival) return null;
+  if (!siteRoutes.has(area.id)) {
+    const [x, z] = area.positions[0];
+    siteRoutes.set(
+      area.id,
+      moonApproach(
+        area.id,
+        3,
+        { ...MOON_LOTS, [area.id]: [x, z] },
+        {
+          pose: { x, z, rotation: siteYaw(area) },
+          padRadius: MOON_SITE_PAD,
+          arrival,
+          ring: moonSiteRing([x, z]),
+        },
+      ),
+    );
+  }
+  return siteRoutes.get(area.id);
+}
+/** The paths of every monument site the town has opened, built on or not. */
+export const moonSiteRoutes = (town) =>
+  areasForSettlement(MOON_SETTLEMENT)
+    .filter((area) => town && areaUnlocked(town, area))
+    .map(moonSiteRoute)
+    .filter(Boolean);
+/**
+ * Finished commissions the settlers use: the path to each, how many of a resident's
+ * three daily trips go there and what they do there (`commissionUse`). Derived from the saved choice and stage, so nothing new is
+ * saved. Scaffolding around the first stage keeps residents away until it is unveiled.
+ */
+export const moonCommissionVenues = (town) =>
+  finishedCommissions(town, MOON_SETTLEMENT).map(({ site, area, outcome }) => ({
+    id: site,
+    route: moonSiteRoute(area),
+    visits: outcome.visits,
+    use: commissionUse(outcome),
+  }));
 
 // Letters home from New Hollow, one for each finished Moon building. They are
 // derived from building levels, so nothing new is saved.
@@ -331,11 +768,41 @@ const LETTERS = {
   saucerPad: 'The saucer settled in a puff of moon dust. We saved the pilots a slice of pie.',
   roverBarn: 'The rovers are ready for picnics. Bring a blanket when you visit.',
   earthriseLookout: 'From the lookout we can see the valley lights. Goodnight, Prospect Hollow.',
+  ringTram: 'The tram made its first lap of the outer ring. Nobody wanted to get off.',
+  dewfallCistern: 'The cistern filled overnight with frost-melt. It tastes of morning.',
+  orchardVaults: 'The Willowkin picked the first apples grown on the Moon. They saved you one.',
+  lanternRow: 'Every door on Lantern Row has its own light now. Ours is the blue one.',
+  ringMarket: 'Market day! We traded crater beans for valley honey, and everyone haggled politely.',
+  craterSchool: 'The first class of Moon-born children rang the school bell. Twice.',
+  earthviewTerraces:
+    'From our terrace we watch the valley turn. You look very small and very dear.',
+  expeditionGarage:
+    'The long-range rovers are fuelled. The crews want to see what lies past the rim.',
+  craterInn: 'The inn is open. Pilots, climbers and one very tired Willowkin stayed the night.',
+  starwatchDish: 'The dish heard a star humming. The elders say it is an old friend.',
+  moonballField: 'Moonball final: the children won by a bounce and a half.',
+  craterPondGarden: 'A pond on the Moon! The reeds lean toward Earth, just like the tomatoes.',
+  listeningHouse:
+    'The first instruments stand on bedrock. The engineers say the pulse comes every ninety-one seconds. The children say it is a tune, and they hum it on the way to school.',
+  stillwaterBasin:
+    'We keep the basin perfectly still. With each pulse a single ring crosses the water, from the side nearest the stone.',
+  tonewoodConservatory:
+    'The seedlings came up leaning. Not toward Earth, as they do in the old greenhouse, but toward the stone. We turned one pot round. By morning it had turned back.',
+  farRimHomes:
+    'We have moved to the Far Rim. Every home has one window that faces the stone, and in the evening every one of them is lit.',
+  resonanceWorkshop:
+    'Maren ground the first lens today, and Osier brought tonewood from the conservatory for its frame. The wood hums when the pulse passes through it.',
+  signalTerrace:
+    'The terrace is open. People come after work and stand a while. Nobody asks them to be quiet. They simply are.',
+  patternGarden:
+    'The Willowkin lifted a paving stone to show us the roots beneath it. They grow in a shape, and then in the same shape again, smaller.',
 };
-export const moonLetters = (town) =>
-  Object.entries(LETTERS)
+export const moonLetters = (town) => [
+  ...Object.entries(LETTERS)
     .filter(([id]) => (town?.buildings?.[id] ?? 0) > 0)
-    .map(([id, text]) => ({ id, text }));
+    .map(([id, text]) => ({ id, text })),
+  ...commissionLetters(town, MOON_SETTLEMENT),
+];
 // Historical keepsake entitlement: one per finished Moon building level.
 // Retained for deterministic migration into the saved moonstone resource.
 export const moonstoneKeepsakes = (town) =>

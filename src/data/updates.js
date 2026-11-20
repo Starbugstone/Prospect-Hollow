@@ -2,6 +2,26 @@
 // text are English keys for t(); add the French text to src/i18n/fr.json.
 const UPDATES = [
   {
+    date: '2026-11-17',
+    title: 'Beyond New Hollow: two new eras on the Moon',
+    text: 'New Hollow outgrows its first ring in New Hollow Rising: the crater widens, twelve new buildings rise on an outer ring, a little tram circles the new streets and the first Moon-born children walk to the Crater School. Five Moon buildings modernize, and Hollowborn Square adds a moonstone monument. Then, in The Quiet Signal, a black stone beyond the far rim starts to pulse, and a new neighbourhood grows round it to listen, understand and answer.',
+  },
+  {
+    date: '2026-11-17',
+    title: 'Commissions: your town asks, you choose',
+    text: 'Five commissions open as your settlements grow: two in the valley and three on the Moon. Each arrives as a letter with three permanent choices. Fund it in five stages, build it with any completed puzzles, and watch residents use what you chose, from a story tree to a model rover track. Commissions are optional and never block progress, and the Commissioner honour counts them.',
+  },
+  {
+    date: '2026-11-17',
+    title: 'The crystal seams: 60 new mine puzzles',
+    text: 'The campaign now reaches level 606. Trace twins copy your matches onto a second spot, Crossgrain crystals crack along one direction, and Chord crystals want several colours. New caverns shaped like an arrowhead and twin windows join them. Moves stay unlimited, and new honours celebrate the deepest seams.',
+  },
+  {
+    date: '2026-11-17',
+    title: 'A livelier valley in every era',
+    text: 'Every era now brings its own villagers, animals and Willowkin, and homes, halls, shops and workshops each get a look of their own. Roofs take the tones of the 3D town on the 2D map, each era’s cinematic tours the works, and ordinary moves on the board feel snappier. Look out for a wandering raccoon and its Willowkin friend: find them for a reward.',
+  },
+  {
     date: '2026-11-04',
     title: 'The workshop and forge never stop',
     text: 'The Moonstone workshop and the forge now keep producing however long you wait to collect: moonstones and TNT simply pile up. Collecting TNT takes as much as your inventory holds and leaves the rest at the forge. In continuous play, the banner now shows the level’s workshop gems next to its coins. The museum offers the next unfinished level and an Unfinished filter, and the banner’s Next level button takes you straight there.',

@@ -1,4 +1,7 @@
+import { toneRoof } from './buildings/RoofTones';
+import { plotVariant } from '../../data/roofTones';
 import { townLabelWidth } from './TownLabelLayout';
+import { syncCommissionResidents } from './TownCommissionResidents';
 import { TownItineraries } from './TownItineraries';
 
 import {
@@ -58,6 +61,7 @@ import { TownScenery, sceneryAffectsNavigation } from './TownScenery';
 
 import { PLOTS, visiblePlots } from './TownLayout';
 import { parcelBounds, valleyParcel } from './TownParcels';
+import { markerHeight } from './TownMarkers';
 import { updateTownShadowCoverage } from './TownShadows';
 import { GARDEN_PARCELS } from '../../data/townGardenDistrict';
 import { areasForSettlement, areaUnlocked } from '../../data/townLandmarks';
@@ -172,13 +176,17 @@ export function buildPlot(d, id, group, town, labels) {
   if (transform) group.userData.signCameraScale = [transform.x.scale, 1, transform.z.scale];
   const previous = d.pendingPlotSigns;
   const previousRoot = d.plotSignRoot;
+  const previousVariant = d.plotVariant;
   d.pendingPlotSigns = [];
   d.plotSignRoot = group;
+  // Renderers read which of its kind this plot is, to tell Home II from Home.
+  d.plotVariant = plotVariant(id, BUILDING_BY_ID[id]?.kind);
   try {
     return drawPlot(d, id, group, town, labels, envelope);
   } finally {
     d.pendingPlotSigns = previous;
     d.plotSignRoot = previousRoot;
+    d.plotVariant = previousVariant;
   }
 }
 
@@ -244,6 +252,8 @@ function drawPlot(d, id, group, town, labels, envelope) {
       const climbers = group.getObjectByName(ELEVATOR_CLIMBERS);
       if (climbers)
         movingPart = { rotor: climbers, update: elevatorMotion(d, climbers), solid: false };
+      // The roof takes the tone of the building's purpose before any scaffolding goes up.
+      toneRoof(d, group, id, kind, town.buildingEras[id]);
       if (project) addScaffolding(d, group, kind, stage, constructionVisual(project));
     }
   }
@@ -360,6 +370,7 @@ export function changeTown(
       d.buildingRenderer.sync(d.world.children.filter((child) => child.userData.static));
       if (sceneryChanges.some(sceneryAffectsNavigation)) d.repairAnimalLife();
     }
+    syncSiteLife(d);
     if (expanded && d.overview && !d.keepCamera) d.frameTown();
     d.keepCamera = false;
     // No plot will activate to retire a construction cue shown for this change.
@@ -376,6 +387,7 @@ export function changeTown(
     d.plotCache.get('mine').signature = signatures.get('mine');
     d.buildingRenderer.sync(d.world.children.filter((child) => child.userData.static));
     d.repairAnimalLife();
+    syncSiteLife(d);
     d.render();
     d.keepCamera = false;
     record('mine');
@@ -696,6 +708,9 @@ export function tryActivatePlot(d) {
   const parcel = valleyParcel(id, group);
   d.parcels?.set(id, parcel);
   if (id !== 'mine') d.upgradeGlow?.add(id, parcelBounds(parcel));
+  // Its action icon follows the new model's roof and width.
+  const anchor = d.anchors?.find((entry) => entry.id === id && !entry.site);
+  if (anchor) Object.assign(anchor, plotMarker(id, parcel));
   d.refreshSelection?.(id);
   timeTown('activate-navigation', () =>
     d.navigation.replaceOwner(
@@ -707,6 +722,7 @@ export function tryActivatePlot(d) {
   // A first opening can extend frontage paving or overhead service wires. Refresh
   // only those scenery roots here instead of leaving them stale until a full rebuild.
   const scenery = timeTown('activate-scenery', () => refreshScenery(d));
+  syncSiteLife(d);
   const actors = walkers(d);
   const view = d,
     generation = d.generation;
@@ -794,6 +810,51 @@ export function* repairRoute(d, actor) {
 export function plotsPending(d) {
   const work = plotWork(d);
   return !!work.active || work.queue.length > 0;
+}
+
+// A monument site's action icon hangs over its court and lower works, whatever rises
+// behind; the site's parcel is this share of its radius (valleySites).
+const SITE_MARKER_TOP = 3;
+const SITE_PARCEL_SHARE = 0.75;
+/**
+ * A plot's action icon, by the shared marker contract (TownMarkers.js): anchored just above
+ * what stands on the plot, and sized by the width of the plot's own parcel (its lot, the
+ * airport field or a garden parcel).
+ */
+function plotMarker(id, parcel) {
+  const [x, z] = PLOTS[id];
+  const { minX, maxX } = parcel.base ?? parcel;
+  return {
+    collection: point(x, markerHeight(parcel.top ?? 0, parcel.bottom ?? 0), z),
+    span: maxX - minX,
+  };
+}
+// Monument and commission sites have no label, only an action icon over the middle of the
+// site. A site can open without a rebuild (a building level opens a commission), so every
+// town change brings the list up to date.
+function syncSiteAnchors(d, town) {
+  d.anchors ??= [];
+  for (let n = d.anchors.length - 1; n >= 0; n--) if (d.anchors[n].site) d.anchors.splice(n, 1);
+  for (const area of areasForSettlement()) {
+    if (!areaUnlocked(town, area)) continue;
+    const [x, z] = area.positions[0];
+    const ground = groundHeight(x, z);
+    d.anchors.push({
+      id: area.id,
+      site: true,
+      width: 0,
+      position: point(x, ground + 2, z),
+      // The shared marker contract: just above what stands on the site, sized by the site.
+      collection: point(x, markerHeight(SITE_MARKER_TOP, ground), z),
+      span: area.radius * SITE_PARCEL_SHARE * 2,
+    });
+  }
+}
+// What follows the saved monument sites rather than a plot. A change that swaps plots in
+// place, or changes none, never rebuilds the village, so it brings these up to date itself.
+function syncSiteLife(d) {
+  syncSiteAnchors(d, d.town);
+  syncCommissionResidents(d, d.town);
 }
 
 function refreshScenery(d) {
@@ -966,6 +1027,10 @@ export function rebuildTown(
   for (const a of d.retainedAnimals.values()) d.world.add(a.root);
   d.trafficActors = [];
   d.motions = [];
+  // Village life adds the commissions' townsfolk again for the rebuilt world.
+  d.commissionResidents = [];
+  d.commissionResidentsFor = undefined;
+  d.commissionResidentsRun = null;
   d.visitorTransports = new Map();
   d.targets = [];
   d.anchors = [];
@@ -1023,8 +1088,7 @@ export function rebuildTown(
       });
     }
     if (id !== 'mine') d.upgradeGlow.add(id, parcelBounds(parcel));
-    // Keep action icons at the front porch, below the roofline.
-    d.anchors.at(-1).collection = point(x, 1, z + 2.2);
+    Object.assign(d.anchors.at(-1), plotMarker(id, parcel));
     // Keep the windmill rotor articulated while batching the rest of its building.
     if (movingPart) attachMovingPart(d, group, movingPart);
     const partKeys = new Map();
@@ -1033,13 +1097,7 @@ export function rebuildTown(
       d.construction = new TownConstruction(d, group, movingPart?.rotor, previousParts, partKeys);
     d.plotCache.set(id, { signature: signatures.get(id), group, movingPart, parts });
   }
-  // Monument sites have no label, only an action icon over the middle of the site.
-  for (const area of areasForSettlement()) {
-    if (!areaUnlocked(town, area)) continue;
-    const [x, z] = area.positions[0];
-    const centre = point(x, groundHeight(x, z) + 2, z);
-    d.anchors.push({ id: area.id, site: true, width: 0, position: centre, collection: centre });
-  }
+  syncSiteAnchors(d, town);
   recordTownTiming('update-plots', plotsStarted);
   if (prepared && prepared !== adopted) d.clearGroup(prepared.group);
   // Model preparation can be expensive. Start the reveal clock on its first visible frame.

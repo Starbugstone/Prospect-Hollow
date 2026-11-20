@@ -527,11 +527,31 @@ try {
         'only the visitor\'s own town can receive the reward',
     );
     $found = status(200, $findHelmet($guest, $originId), 'visitor finds helmet');
-    $foundAt = ($found['readyAt'] - PublicTown::HELMET_REST) * 1000;
+    $foundAt = ($found['readyAt'] - PublicTown::FIND_REST) * 1000;
     check(
-        $found['readyAt'] - time() > PublicTown::HELMET_REST - 60,
+        $found['readyAt'] - time() > PublicTown::FIND_REST - 60,
         'the next helmet reward rests 12 hours',
     );
+    // Rows from before migration 25, and rows an earlier release still writes after a
+    // rollback, carry no kind: they are space helmets and rest the helmet as before.
+    check(
+        $db->get()->fetchOne('SELECT kind FROM helmet_finds WHERE player_id=?', [$guest['id']]) ===
+            'helmet',
+        'a helmet find is stored as a helmet',
+    );
+    $db->get()->executeStatement(
+        'INSERT INTO helmet_finds(player_id,found_at,town_id,host_town_id) VALUES (?,?,?,?)',
+        [$guest['id'], 1, $originId, $hostId],
+    );
+    check(
+        $db
+            ->get()
+            ->fetchOne('SELECT kind FROM helmet_finds WHERE player_id=? AND found_at=1', [
+                $guest['id'],
+            ]) === 'helmet',
+        'a find stored without a kind is a space helmet',
+    );
+    $db->get()->delete('helmet_finds', ['player_id' => $guest['id'], 'found_at' => 1]);
     $taken = status(409, $findHelmet($guest, $originId), 'helmet taken');
     check(
         $taken['code'] === 'helmet_taken' && $taken['readyAt'] === $found['readyAt'],
@@ -587,13 +607,13 @@ try {
     );
     $db->get()->update(
         'helmet_finds',
-        ['found_at' => time() - PublicTown::HELMET_REST, 'host_town_id' => $hostId],
+        ['found_at' => time() - PublicTown::FIND_REST, 'host_town_id' => $hostId],
         ['player_id' => $guest['id']],
     );
     status(200, $findHelmet($guest, $originId), 'a find after the rest');
     $db->get()->executeStatement(
         'UPDATE helmet_finds SET found_at=? WHERE player_id=? AND found_at<?',
-        [time() - PublicTown::HELMET_KEEP - 1, $guest['id'], time() - 3600],
+        [time() - PublicTown::FIND_KEEP - 1, $guest['id'], time() - 3600],
     );
     check(
         count(
@@ -604,6 +624,85 @@ try {
             )['helmetFinds'],
         ) === 1,
         'finds older than 30 days are no longer offered',
+    );
+    // The wandering pair is a second hidden find under the same rules, counted on its own:
+    // the helmet this visitor just found neither rests it nor is rested by it.
+    $pair = fn(array $session, string $townId) => visitorApi(
+        'POST',
+        'villages/' . $publicId . '/wanderers',
+        ['townId' => $townId],
+        $session,
+    );
+    check(
+        status(409, $pair($guest, $originId), 'pair before its era')['code'] === 'no_wanderers',
+        'a town before New Hollow Rising has no wandering pair to find',
+    );
+    status(
+        404,
+        visitorApi(
+            'POST',
+            'villages/' . $publicId . '/nosuchfind',
+            ['townId' => $originId],
+            $guest,
+        ),
+        'unknown find',
+    );
+    $rising = json_decode($appearance);
+    $rising->appearance->era = 'hollow-rising';
+    $db->get()->update('towns', ['appearance' => json_encode($rising)], ['id' => $hostId]);
+    $helmetRows = (int) $db
+        ->get()
+        ->fetchOne("SELECT COUNT(*) FROM helmet_finds WHERE kind='helmet'");
+    $pairFound = status(200, $pair($guest, $originId), 'visitor finds the pair');
+    $pairAt = (int) $db
+        ->get()
+        ->fetchOne("SELECT found_at FROM helmet_finds WHERE player_id=? AND kind='wanderers'", [
+            $guest['id'],
+        ]);
+    check(
+        $pairFound['readyAt'] >= time() + PublicTown::FIND_REST - 2 &&
+            $pairAt > 0 &&
+            (int) $db->get()->fetchOne("SELECT COUNT(*) FROM helmet_finds WHERE kind='helmet'") ===
+                $helmetRows,
+        'the pair is found while the helmet rests, as a row of its own kind',
+    );
+    foreach ([[$guest, $originId], [$other, $otherHome]] as [$session, $townId]) {
+        $again = status(409, $pair($session, $townId), 'pair taken');
+        check(
+            $again['code'] === 'wanderers_taken' && $again['readyAt'] === $pairFound['readyAt'],
+            'each town\'s pair is found by one visitor per 12 hours',
+        );
+    }
+    $db->get()->update('helmet_finds', ['host_town_id' => null], ['kind' => 'wanderers']);
+    check(
+        status(409, $pair($guest, $originId), 'pair resting')['code'] === 'wanderers_resting',
+        'a player finds one wandering pair per 12 hours',
+    );
+    $latest = status(200, visitorApi('GET', 'villages/' . $publicId . '/latest'), 'pair rest');
+    check(
+        $latest['wanderersReadyAt'] === 0 && $latest['helmetReadyAt'] > time(),
+        'the shared town tells each find\'s rest apart',
+    );
+    $pairBook = status(
+        200,
+        visitorApi('GET', 'towns/' . $originId . '/visitors', null, $guest),
+        'visitor home poll with both finds',
+    );
+    check(
+        $pairBook['wanderersFinds'] === [
+            [
+                'at' => $pairAt * 1000,
+                'receipt' => SaveIntegrity::hiddenFindReceipt(
+                    'wanderers',
+                    $originId,
+                    $pairAt * 1000,
+                ),
+            ],
+        ] &&
+            count($pairBook['helmetFinds']) === 1 &&
+            $pairBook['wanderersFinds'][0]['receipt'] !==
+                SaveIntegrity::helmetReceipt($originId, $pairAt * 1000),
+        'each find arrives in its own list with a receipt signed for its kind',
     );
     $db->get()->update('towns', ['appearance' => $appearance], ['id' => $hostId]);
     $retryExpiry = time() + 10;

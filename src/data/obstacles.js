@@ -4,6 +4,33 @@ import { mineSignalAppearance, mineRelicAppearance } from './mineThemes.js';
 // DEEP_MINE_SPRITES instead.
 export const OBSTACLES = [
   {
+    id: 'chord',
+    name: 'Chord crystal',
+    art: '/art/obstacles/chord.svg',
+    texture: 'tile-chord',
+    instruction:
+      'Match on the crystal with three different colours to fill its three sockets. Repeated colours and neighbouring matches do nothing. A direct blast fills one empty socket with white light, at most once per move. White light is a wildcard; any new colour can fill another socket. The full crystal vanishes.',
+    present: (tile) => tile.signal === 'chord',
+  },
+  {
+    id: 'crossgrain',
+    name: 'Crossgrain crystal',
+    art: '/art/obstacles/crossgrain.svg',
+    texture: 'tile-crossgrain',
+    instruction:
+      'Match on the crystal horizontally and vertically, in either order. Each match seals its crack; repeating that direction does nothing. A direct blast seals one remaining crack, at most once per move. Seal both and the crystal vanishes. Neighbouring matches do not count.',
+    present: (tile) => tile.signal === 'crossgrain',
+  },
+  {
+    id: 'trace-twins',
+    name: 'Trace twins',
+    art: '/art/obstacles/trace.svg',
+    texture: 'tile-trace',
+    instruction:
+      'The matching facets link two stamps. Make a swap that matches on either stamp: every matching line through it is copied onto its twin as a blast, then both stamps vanish. Cascades and direct blasts do not fire stamps. Copied cells do not form a beam, so lenses do not turn them.',
+    present: (tile) => tile.signal === 'trace',
+  },
+  {
     id: 'encased-fossil',
     name: 'Encased fossils',
     art: '/art/obstacles/fossil.svg',

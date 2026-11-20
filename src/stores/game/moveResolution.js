@@ -1,6 +1,7 @@
 import { toRaw } from 'vue';
 import { advanceOreOrders } from '../../game/engine/ChapterMechanics';
 import { recoverBoard } from '../../game/engine/BoardRecovery';
+import { gameRandom } from '../../game/engine/gameRandom';
 import { isPlayableCell } from '../../game/engine/BoardTopology';
 import { BASE_GEM_TYPES } from '../../game/engine/GemFactory';
 import { MatchEngine } from '../../game/engine/MatchEngine';
@@ -20,6 +21,7 @@ import {
 import { tallyContinuousMine, tallySteps } from '../../data/honours';
 import { useInventoryStore } from '../inventoryStore';
 import { plain, workingTiles } from './boardData';
+import { logRunAction, muteRunLog } from './runLog';
 import { storeTimers } from './storeTimers';
 
 const matchEngine = new MatchEngine();
@@ -36,12 +38,13 @@ const boardCenterIndex = (cols, rows) => {
   return Math.min(Math.floor(cells / 2), cells - 1);
 };
 
-function resolveMatches(store, { board, tiles, matches, bonuses, pendingBonus }) {
+function resolveMatches(store, { board, tiles, matches, bonuses, pendingBonus, swap }) {
   return tileManager.getResolution({
     gemTypes: store.currentBoardLayout?.gemTypes ?? BASE_GEM_TYPES,
     board,
     tiles,
     matches,
+    swap,
     cols: store.boardCols,
     rows: store.boardRows,
     ...(bonuses ? { bonuses } : {}),
@@ -138,6 +141,8 @@ export async function activatePower(store, bonusName, index, consume = false) {
   const rescue = bonusName === 'recovery_sweep';
   if (!rescue && !isPlayableCell(tilesOf(store)[index])) return false;
   const inventory = useInventoryStore();
+  // A prototype board spends nothing from the player's stock.
+  if (consume && store.playMode === 'prototype') return false;
   if (consume && inventory.availableQuantity(bonusName) <= 0) {
     store.clearBonusPreview(true);
     return false;
@@ -163,6 +168,10 @@ export async function activatePower(store, bonusName, index, consume = false) {
             blasts,
           );
       if (!clearedIndices.length) return false;
+      // Logged once the power is accepted, and before this move first waits: a refused power
+      // would make the log unreplayable. The free rescue sweep is automatic: it follows from
+      // the moves, so it isn't an input.
+      if (!rescue) logRunAction(store, { type: 'power', name: bonusName, index });
       const tiles = workingTiles(store.tiles);
       const resolution = resolveMatches(store, {
         board,
@@ -262,7 +271,11 @@ export function activateOneTimeBonus(store, bonusName, { consume = false } = {})
     return false;
   store.clearBonusPreview(true);
   const { boardCols: cols, boardRows: rows } = store;
-  return store._activatePower(bonusName, oneTimeOrigin(store, bonusName, cols, rows), consume);
+  // Choosing the origin rolls the dice, so the replay has to choose it the same way.
+  logRunAction(store, { type: 'one-time', name: bonusName });
+  return muteRunLog(store, () =>
+    store._activatePower(bonusName, oneTimeOrigin(store, bonusName, cols, rows), consume),
+  );
 }
 
 // Shaped boards have void cells, which cannot start a power. Clear Row picks a row
@@ -278,7 +291,7 @@ function oneTimeOrigin(store, bonusName, cols, rows) {
     const rowStarts = [];
     for (const i of playable) rowStarts[Math.floor(i / cols)] ??= i;
     const starts = rowStarts.filter((i) => i !== undefined);
-    return starts[Math.floor(Math.random() * starts.length)];
+    return starts[Math.floor(gameRandom() * starts.length)];
   }
   if (isPlayableCell(tiles[center])) return center;
   const distance = (i) =>
@@ -306,6 +319,7 @@ export async function resolveSwap(store, aIndex, bIndex, { activateInPlace = fal
     ? matchEngine.evaluateActivation(board, cols, rows, aIndex, tiles)
     : matchEngine.evaluateSwap(board, cols, rows, aIndex, bIndex, tiles);
   if (!evaluation.matches.length) return store.rejectSwap(aIndex, bIndex, session);
+  logRunAction(store, { type: 'swap', a: aIndex, b: bIndex, inPlace: activateInPlace });
   const animator = store.renderer?.animator;
   animator?.clearQueuedSwapHighlight();
   return runMove(store, 'Error in resolveSwap:', async () => {
@@ -321,6 +335,7 @@ export async function resolveSwap(store, aIndex, bIndex, { activateInPlace = fal
       matches: evaluation.matches,
       bonuses: evaluation.bonuses,
       pendingBonus: evaluation.pendingBonus,
+      swap: evaluation.swap,
     });
     if (resolution.steps.length && evaluation.bonusSwap) {
       const activation = resolution.steps.find((step) =>
@@ -339,7 +354,7 @@ export async function resolveSwap(store, aIndex, bIndex, { activateInPlace = fal
 
 // After a move or power resolves: accept input again and keep the board playable. The free
 // reshuffle comes before queued input: a queued swap finds no match on a dead board, and its
-// bounce would hold the board busy past the check.
+// bounce would hold the board busy past the check. A replay settles in the same order.
 export async function settleMove(store, boardUpdated) {
   store.pendingBoardState = null;
   store.animationInProgress = false;
@@ -529,17 +544,20 @@ export function applyScoring(store, steps) {
 // commits, so a shuffle that finishes the puzzle is spent before the victory is recorded.
 export function shuffleBoard(store, { recoveryBoard = null, consume = null } = {}) {
   if (!store.sessionActive || store.animationInProgress || store.levelCleared) return false;
+  if (consume && store.playMode === 'prototype') return false;
   store.cancelHint(true);
   const session = store.sessionVersion;
   const animator = store.renderer?.animator;
   const board = boardOf(store);
   const tiles = tilesOf(store);
   const nextBoard = [...(recoveryBoard ?? board)];
+  // Automatic reshuffles of a dead board follow from the moves; only the player's own is an input.
+  if (consume) logRunAction(store, { type: 'shuffle' });
   const movable = nextBoard
     .map((gem, index) => (canSwapGem(gem, tiles[index]) ? index : -1))
     .filter((index) => index >= 0);
   for (let i = recoveryBoard ? 0 : movable.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(gameRandom() * (i + 1));
     const a = movable[i],
       b = movable[j];
     [nextBoard[a], nextBoard[b]] = [nextBoard[b], nextBoard[a]];

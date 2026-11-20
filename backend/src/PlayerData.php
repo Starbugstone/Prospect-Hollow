@@ -312,13 +312,14 @@ final class PlayerData
                 foreach (
                     self::exportRows(
                         $db,
-                        'SELECT h.name AS host,t.name AS home,f.found_at FROM helmet_finds f JOIN towns t ON t.id=f.town_id LEFT JOIN towns h ON h.id=f.host_town_id WHERE f.player_id=?',
+                        'SELECT h.name AS host,t.name AS home,f.found_at,f.kind FROM helmet_finds f JOIN towns t ON t.id=f.town_id LEFT JOIN towns h ON h.id=f.host_town_id WHERE f.player_id=?',
                         [$id],
                         ['f.found_at' => 'ASC'],
                     )
                     as $find
                 ) {
                     yield [
+                        'find' => $find['kind'],
                         'foundIn' => $find['host'],
                         'rewardedTown' => $find['home'],
                         'foundAt' => $time($find['found_at']),

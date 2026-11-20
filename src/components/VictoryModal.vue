@@ -112,7 +112,9 @@
             project.monument
               ? project.ready
                 ? 'Ready · Unveil it at its monument site'
-                : 'Your monument is taking shape'
+                : project.commission
+                  ? 'Your commission is taking shape'
+                  : 'Your monument is taking shape'
               : 'Your building is taking shape',
           )
         }}</strong>

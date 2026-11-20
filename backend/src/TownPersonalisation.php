@@ -100,6 +100,52 @@ final class TownPersonalisation
         $town->personalisation = $p;
         return $profile;
     }
+    /**
+     * Whether a site's `opens` is met, as areaOpensMet in townLandmarks.js: a finished
+     * building level, or a stage paid for at any one of several sites. Both only ever rise,
+     * so an open site never closes. An opening this server does not know stays closed.
+     *
+     * @param array<string, mixed> $town
+     * @param array<string, mixed> $catalog
+     */
+    public static function opens(array $town, mixed $opens, array $catalog): bool
+    {
+        if ($opens === null) {
+            return true;
+        }
+        if (!is_array($opens) || !is_int($opens['level'] ?? null)) {
+            return false;
+        }
+        if (is_string($opens['building'] ?? null)) {
+            return ($town['buildings'][$opens['building']] ?? 0) >= $opens['level'];
+        }
+        if (!is_array($opens['sites'] ?? null)) {
+            return false;
+        }
+        foreach ($opens['sites'] as $site) {
+            if (is_string($site) && self::boughtLevel($town, $site, $catalog) >= $opens['level']) {
+                return true;
+            }
+        }
+        return false;
+    }
+    /**
+     * The stage paid for at a site, 0 until a valid design is bought, as areaBoughtLevel.
+     *
+     * @param array<string, mixed> $town
+     * @param array<string, mixed> $catalog
+     */
+    private static function boughtLevel(array $town, string $id, array $catalog): int
+    {
+        $choice = $town['personalisation']['areas'][$id][0] ?? null;
+        foreach ($catalog['areas'] as $area) {
+            if ($area['id'] === $id && in_array($choice, $area['choices'], true)) {
+                $level = $town['personalisation']['areaLevels'][$id] ?? 1;
+                return is_int($level) && $level >= 1 ? $level : 1;
+            }
+        }
+        return 0;
+    }
     /** Replay a purchase against server-owned prices; return null for stale/invalid commands. */
     public static function purchase(array $town, array $command, array $eraOrder): ?array
     {
@@ -125,6 +171,9 @@ final class TownPersonalisation
         $now = array_search($town['era'], $eraOrder, true);
         $intro = array_search($area['era'], $eraOrder, true);
         if ($now === false || $intro === false || $now < $intro) {
+            return null;
+        }
+        if (!self::opens($town, $area['opens'] ?? null, $catalog)) {
             return null;
         }
         $current = $town['personalisation']['areas'][$id][0] ?? null;

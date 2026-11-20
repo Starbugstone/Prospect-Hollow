@@ -45,6 +45,8 @@ const SERVER_MEASURES = [
   'buildingLevels',
   'resource',
   'landmarks',
+  'found',
+  'level',
 ];
 for (const definition of HONOURS.definitions) {
   if (!SERVER_MEASURES.includes(definition.measure.kind))

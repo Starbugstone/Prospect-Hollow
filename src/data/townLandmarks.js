@@ -309,6 +309,184 @@ export const LANDMARK_OPTIONS = [
     33000,
     'A homecoming arch with banners and a bench for waiting families.',
   ),
+  // The Quiet Signal: Voyagers' Court, beside the way to the Quiet Stone. Three keepsakes of
+  // the old dream of travelling further, in New Hollow's moon-white, navy and gold.
+  option(
+    'steady-lens',
+    'Steady Lens Pavilion',
+    'steady-lens',
+    '#27365a',
+    37000,
+    'A low pavilion for the Far Rim’s reckoning engine: one steady red lens in a dark panel, keeping every measurement.',
+  ),
+  option(
+    'twin-wheel',
+    'Twin Wheel Station',
+    'twin-wheel',
+    '#e8b84a',
+    38000,
+    'A model of a double-wheel station, turning slowly above a sculpted support.',
+  ),
+  option(
+    'work-pod',
+    'Ivory Work Pod',
+    'work-pod',
+    '#9b91c4',
+    39000,
+    'A small round work pod above a display terrace, its two arms reaching out to a crystal sample.',
+  ),
+  // First commission: the Earthlight Conservatory, in New Hollow on the Moon. These base
+  // prices are never read; the site's explicit schedule below sets every level.
+  option(
+    'earthlight-orchard',
+    'Earthlight Orchard',
+    'orchard-dome',
+    '#7fb069',
+    400000,
+    'Fruit trees under glass, tended by the Willowkin. It feeds New Hollow and gives them a home from home.',
+  ),
+  option(
+    'crystal-nursery',
+    'Crystal Nursery',
+    'crystal-nursery',
+    '#9b91c4',
+    400000,
+    'Moonstone crystals grown under a lattice roof, with prospectors studying every new facet.',
+  ),
+  option(
+    'earthlight-bakehouse',
+    'Earthlight Bakehouse',
+    'bakehouse',
+    '#d99a5b',
+    400000,
+    'A round bakehouse and its warm dining dome, where the whole crater gathers for pie.',
+  ),
+  // Valley commission: the Homecoming Commons, on the same schedule.
+  option(
+    'story-hall',
+    'Story Hall',
+    'story-hall',
+    '#a4693f',
+    400000,
+    'A timber hall where old-timers and Moon folk trade tales of how it all began.',
+  ),
+  option(
+    'bandstand',
+    'Homecoming Bandstand',
+    'bandstand',
+    '#3f8f8a',
+    400000,
+    'An open bandstand for evening concerts, with lanterns and room to dance.',
+  ),
+  option(
+    'wild-meadow',
+    'Wild Meadow',
+    'wild-meadow',
+    '#7fa650',
+    400000,
+    'A fenced meadow of flowers and old trees that the valley’s animals soon call their own.',
+  ),
+  // New Hollow Rising: Hollowborn Square, on the outer ring, for the first children born under
+  // Earthlight. Keepsakes paid only in moonstones; the base price is the version-2 receipt term.
+  option(
+    'silverbough-grove',
+    'Silverbough Grove',
+    'silverbough-grove',
+    '#a6cfdf',
+    60,
+    'Silver trees grown from moon rock, hung with moonstone fruit for every child born in New Hollow.',
+  ),
+  option(
+    'first-bell',
+    'First Bell Tower',
+    'first-bell',
+    '#b8a4d8',
+    60,
+    'A slender tower whose moonstone bell rang in the crater school’s very first morning.',
+  ),
+  option(
+    'moonstone-carousel',
+    'Moonstone Carousel',
+    'moonstone-carousel',
+    '#a6cfdf',
+    60,
+    'A slow carousel of little rovers and comets under a crown of moonstones, for the youngest settlers.',
+  ),
+  // Third valley commission: the Willowkin Glade, on the same schedule.
+  option(
+    'seedling-grove',
+    'Seedling Grove',
+    'seedling-grove',
+    '#6f9a4d',
+    400000,
+    'A Willowkin nursery of young trees in rows, each one tended until it is ready for the Moon.',
+  ),
+  option(
+    'lantern-orchard',
+    'Lantern Orchard',
+    'lantern-orchard',
+    '#d98f4e',
+    400000,
+    'Fruit trees hung with paper lanterns, lit at dusk for the Willowkin and the animals who come to pick.',
+  ),
+  option(
+    'story-tree',
+    'Story Tree',
+    'story-tree',
+    '#5f8a4a',
+    400000,
+    'One great old tree with a ring of benches, where the valley gathers to hear a story told.',
+  ),
+  // New Hollow Rising's commissions on the outer ring. The teachers' Schoolyard Court:
+  option(
+    'lamplit-library',
+    'Lamplit Library',
+    'lamplit-library',
+    '#c98f52',
+    400000,
+    'A round reading room under a lamplit dome, with a shelf for every child born under Earthlight.',
+  ),
+  option(
+    'little-planetarium',
+    'Little Planetarium',
+    'little-planetarium',
+    '#4c5f9e',
+    400000,
+    'A small dark dome where the teachers show the stars as they look from the valley, and from here.',
+  ),
+  option(
+    'earthview-studio',
+    'Earthview Studio',
+    'earthview-studio',
+    '#d9788a',
+    400000,
+    'An art studio with a wall of glass toward Earth, and easels outside for painting it.',
+  ),
+  // And the rover crews' Crew Yard:
+  option(
+    'crew-canteen',
+    'Crew Canteen',
+    'crew-canteen',
+    '#d9a441',
+    400000,
+    'A warm canteen by the garage, where crews back from the far plains get a hot flask and a seat.',
+  ),
+  option(
+    'mapmakers-hall',
+    'Mapmakers’ Hall',
+    'mapmakers-hall',
+    '#5d9aa8',
+    400000,
+    'A hall with a great floor map of the Moon, where every crew adds the road it found.',
+  ),
+  option(
+    'rover-track',
+    'Little Rover Track',
+    'rover-track',
+    '#e07f45',
+    400000,
+    'A looping track with a stand beside it, where the crews race little model rovers on rest days.',
+  ),
 ];
 export const LANDMARK_BY_ID = Object.fromEntries(LANDMARK_OPTIONS.map((o) => [o.id, o]));
 // The way a site's front faces, as a turn about its centre. Every monument is
@@ -320,9 +498,17 @@ export const SITE_FACINGS = Object.freeze({
   east: Math.PI / 2,
   north: Math.PI,
   west: -Math.PI / 2,
+  // Between the four: Moon sites on the outer ring turn to face its road.
+  'south-east': Math.PI / 4,
+  'north-east': (3 * Math.PI) / 4,
+  'north-west': (-3 * Math.PI) / 4,
+  'south-west': -Math.PI / 4,
 });
-// Resource rarity has its own fixed curve, shared by both keepsake sites and all designs.
+// Resource rarity has its own fixed curve, shared by every keepsake site and all designs.
 const moonstoneLevelPrices = Object.freeze([20, 30, 40, 50, 60]);
+// A commission costs what the last stretch of Twin Hollows did per puzzle, in even stages,
+// so a visible change stays a few puzzles away instead of one long save for the last level.
+const commissionLevelPrices = Object.freeze([400000, 400000, 400000, 400000, 400000]);
 // Sites without a facing, or with one this build does not know, face south.
 export const siteYaw = (area) =>
   Object.hasOwn(SITE_FACINGS, area?.facing ?? '') ? SITE_FACINGS[area.facing] : SITE_FACINGS.south;
@@ -331,7 +517,7 @@ export const siteYaw = (area) =>
 // approach, clear of the space elevator. Founders' Meadow sits on the west bank
 // beyond the ridge and faces the river. Stargazers' Lawn and Homecoming Green sit
 // beyond the Skyward quarter.
-// [id, era, label, position, choices, facing = 'south', settlement = 'valley', currency = 'coins', levelPrices?]
+// [id, era, label, position, choices, facing = 'south', settlement = 'valley', currency = 'coins', levelPrices?, opens?]
 const plots = [
   [
     'meadow',
@@ -422,9 +608,99 @@ const plots = [
     'moonstones',
     moonstoneLevelPrices,
   ],
+  // At the front of the crater, facing the view, its path curving round to the ring road.
+  [
+    'earthlight-conservatory',
+    'twin-hollows',
+    'Earthlight Conservatory',
+    [0, 33],
+    ['earthlight-orchard', 'crystal-nursery', 'earthlight-bakehouse'],
+    'south',
+    MOON_SETTLEMENT,
+    'coins',
+    commissionLevelPrices,
+    { building: 'earthlightGreenhouse', level: 3 },
+  ],
+  // Beside Moonstone Garden, once the homecoming hall needs somewhere for families to gather.
+  [
+    'homecoming-commons',
+    'twin-hollows',
+    'Homecoming Commons',
+    [66, -102],
+    ['story-hall', 'bandstand', 'wild-meadow'],
+    'south',
+    HOME_SETTLEMENT,
+    'coins',
+    commissionLevelPrices,
+    { building: 'homecomingHall', level: 3 },
+  ],
+  // In the Far Rim, beside the way to the Quiet Stone and apart from it: the mirror of the
+  // road's arrival, on the other side of the Signal Terrace. It faces the usual camera.
+  [
+    'voyagers-court',
+    'quiet-signal',
+    'Voyagers’ Court',
+    [14.1, -76.8],
+    ['steady-lens', 'twin-wheel', 'work-pod'],
+    'south',
+    MOON_SETTLEMENT,
+  ],
+  // New Hollow Rising: outer-ring slot 4, between the Orchard Vaults and the front of the
+  // crater. It faces the usual camera; its public path joins the outer ring behind it.
+  [
+    'hollowborn-square',
+    'hollow-rising',
+    'Hollowborn Square',
+    [-10.7, 53.9],
+    ['silverbough-grove', 'first-bell', 'moonstone-carousel'],
+    'south',
+    MOON_SETTLEMENT,
+    'moonstones',
+    moonstoneLevelPrices,
+  ],
+  // The third commission waits for either of the first two, so a player who began on the
+  // Moon and one who began in the valley both reach it. Behind Riverlight Court.
+  [
+    'willowkin-glade',
+    'twin-hollows',
+    'Willowkin Glade',
+    [14, -102],
+    ['seedling-grove', 'lantern-orchard', 'story-tree'],
+    'south',
+    HOME_SETTLEMENT,
+    'coins',
+    commissionLevelPrices,
+    { sites: ['earthlight-conservatory', 'homecoming-commons'], level: 1 },
+  ],
+  // New Hollow Rising's two commissions, on outer slots 3 and 10, each turned to face the
+  // outer ring road like the lots beside them.
+  [
+    'schoolyard-court',
+    'hollow-rising',
+    'Schoolyard Court',
+    [10.7, 53.9],
+    ['lamplit-library', 'little-planetarium', 'earthview-studio'],
+    'north',
+    MOON_SETTLEMENT,
+    'coins',
+    commissionLevelPrices,
+    { building: 'craterSchool', level: 3 },
+  ],
+  [
+    'crew-yard',
+    'hollow-rising',
+    'Crew Yard',
+    [-30.6, -45.7],
+    ['crew-canteen', 'mapmakers-hall', 'rover-track'],
+    'south-east',
+    MOON_SETTLEMENT,
+    'coins',
+    commissionLevelPrices,
+    { building: 'expeditionGarage', level: 3 },
+  ],
 ];
 export const PERSONAL_AREAS = plots.map(
-  ([id, era, label, position, choices, facing, settlement, currency, levelPrices]) => ({
+  ([id, era, label, position, choices, facing, settlement, currency, levelPrices, opens]) => ({
     id,
     label,
     era,
@@ -433,6 +709,7 @@ export const PERSONAL_AREAS = plots.map(
     settlement: settlement ?? HOME_SETTLEMENT,
     currency: currency ?? 'coins',
     ...(levelPrices === undefined ? {} : { levelPrices }),
+    ...(opens === undefined ? {} : { opens }),
     choices,
     radius: id === 'monument' ? 9 : 7,
     timeless: id === 'monument',
@@ -443,8 +720,33 @@ export const PERSONAL_AREAS = plots.map(
 export const areaSettlement = settlementId;
 export const areasForSettlement = (settlement = HOME_SETTLEMENT, areas = PERSONAL_AREAS) =>
   settlementPlaces(settlement, areas);
-export const areaUnlocked = (town, area) =>
+// Whether the town has reached the era that introduces a site.
+export const areaEraReached = (town, area) =>
   ERAS.findIndex((e) => e.id === town.era) >= ERAS.findIndex((e) => e.id === area.era);
+// The stage paid for at a site: 0 until a valid design is bought. Purchases only ever add
+// a stage, so this never falls.
+function areaBoughtLevel(town, id) {
+  const area = AREA_BY_ID[id];
+  const choice = town.personalisation?.areas?.[id]?.[0];
+  if (!area || !area.choices.includes(choice)) return 0;
+  const level = town.personalisation.areaLevels?.[id];
+  return Number.isInteger(level) && level >= 1 ? level : 1;
+}
+// What a site waits for beyond its era (`opens`), mirrored by TownPersonalisation::opens:
+// `{ building, level }` a finished building level, `{ sites, level }` a stage paid for at any
+// one of those sites. Both only ever rise, so an open site stays open for every later save
+// and replay. An opening this build does not know keeps the site closed.
+function areaOpensMet(town, opens) {
+  if (!opens) return true;
+  if (typeof opens.building === 'string')
+    return (town.buildings?.[opens.building] ?? 0) >= opens.level;
+  if (Array.isArray(opens.sites))
+    return opens.sites.some((id) => areaBoughtLevel(town, id) >= opens.level);
+  return false;
+}
+// A site opens with its era and whatever its `opens` waits for.
+export const areaUnlocked = (town, area) =>
+  areaEraReached(town, area) && areaOpensMet(town, area.opens);
 // Five permanent milestones; era growth never adds another bill. Each paid level is
 // built over `puzzles` completed puzzles (any puzzle, replays too), then unveiled with
 // a `grand` cinematic or a short `reveal`. Timeless monuments build like a foundation.
@@ -535,6 +837,10 @@ export const areaChoice = (town, area) => {
   const choice = town.personalisation?.areas?.[area.id]?.[0];
   return area.choices.includes(choice) ? choice : null;
 };
+// A site's name wherever it is shown: the building on it once one is chosen (under
+// construction or standing), otherwise the site itself. A translation key.
+export const areaName = (town, area) =>
+  LANDMARK_BY_ID[areaChoice(town ?? {}, area)]?.label ?? area.label;
 // A paid level under construction: `{ level, wins, required, ready }`, or null once
 // the standing monument is complete. Construction is cosmetic; the paid stage, its
 // price and honours never wait for it.

@@ -87,6 +87,7 @@
         :indicator="indicators[anchor.id]"
         :label="actionLabel(anchor.id)"
         :class="{ 'raid-defense-ready': raidDefenseIds.includes(anchor.id) }"
+        :size="anchor.collection.size ?? 1"
         :data-town-plot="anchor.id"
         :style="{ translate: labelTranslate(anchor.collection) }"
         @focus="anchor.id === 'mine' && prefetchBoard()"
@@ -195,6 +196,8 @@
       @close="closeSettlement"
       @vip-spend="emit('vip-spend', $event)"
       @villager-label="showSettlementVillagerLabel"
+      @find="emit('find', $event)"
+      @find-zoom="emit('find-zoom', $event)"
     />
   </div>
 </template>
@@ -273,6 +276,8 @@ const props = defineProps({
   reducedMotion: Boolean,
   paused: Boolean,
   nextLevel: Number,
+  // Every level is done: the mine's label offers replays instead of naming the last level.
+  replays: Boolean,
   raid: Object,
   raidDefenseIds: { type: Array, default: () => [] },
   construction: Object,
@@ -401,10 +406,10 @@ const emit = defineEmits([
   'camera-distance',
   'vip-spend',
   'guest-vip',
-  // The space-helmet wearer was tapped, with its position on the map in percent.
-  'helmet',
-  // An animal was tapped from too far away to tell whether it wears the helmet.
-  'helmet-zoom',
+  // A hidden find was tapped: `{ find, x, y }`, its ID and position on the map in percent.
+  'find',
+  // A possible hidden find was tapped from too far away to tell; carries the find's ID.
+  'find-zoom',
   'presentation-ready',
   'presentation-unavailable',
   'cinematic-ready',
@@ -457,7 +462,7 @@ const labelStatus = computed(() =>
       id,
       buildingStatus(props.town, id, {
         readOnly: props.readOnly,
-        nextLevel: props.nextLevel,
+        nextLevel: props.replays ? null : props.nextLevel,
         indicator: indicators.value[id],
         available: availableIds.value.includes(id),
         need: needHints.value[id],
@@ -479,9 +484,10 @@ const actionLabel = (id) =>
 const placeName = (id) => (id === 'mine' ? t('Mine') : buildingName(id));
 const plotLabel = (id) => {
   if (props.readOnly) return t(id === 'mine' ? 'Mine' : BUILDING_BY_ID[id].name);
-  return id === 'mine'
-    ? t('Enter the mine: play level {level}', { level: props.nextLevel })
-    : t('Choose {building}', { building: t(BUILDING_BY_ID[id].name) });
+  if (id !== 'mine') return t('Choose {building}', { building: t(BUILDING_BY_ID[id].name) });
+  return props.replays
+    ? t('Enter the mine: replay levels')
+    : t('Enter the mine: play level {level}', { level: props.nextLevel });
 };
 // Labels sit at the scene's top-left corner and move with `translate`, which the
 // browser composites without laying out the page on every camera frame.
@@ -776,8 +782,8 @@ async function initialize() {
       onUnavailable: recoverGraphics,
       onVipSpend: (receipt) => emit('vip-spend', receipt),
       onGuestVip: (at) => emit('guest-vip', at),
-      onHelmet: (origin) => emit('helmet', origin),
-      onHelmetZoom: () => emit('helmet-zoom'),
+      onFind: (tap) => emit('find', tap),
+      onFindZoom: (find) => emit('find-zoom', find),
       onVillagerLabel: showValleyVillagerLabel,
       onPlaqueLabel: showPlaqueLabel,
       onEventInset: (view) => {

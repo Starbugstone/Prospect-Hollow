@@ -19,7 +19,7 @@ const region = (a) =>
     ? `exterior:${a.exteriorHabitat}`
     : a.monumentSite
       ? `monument:${a.monumentSite}`
-      : a.species === 'otter'
+      : Number.isFinite(a.riverbank)
         ? 'riverbank'
         : a.wild
           ? 'outskirts'

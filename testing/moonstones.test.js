@@ -47,7 +47,7 @@ it('credits old keepsakes exactly once, including after selling and export/impor
   campaign.importSave(createSaveFile(campaign.profile()));
   campaign.reloadLocal();
   expect(campaign.town).toMatchObject({ moonstones: 1, moonstonesEarned: 5 });
-  expect(parseSaveFile(campaign.exportSave()).schemaVersion).toBe(4);
+  expect(parseSaveFile(campaign.exportSave()).schemaVersion).toBe(5);
 });
 it('fallback for empty saves and malformed modern balances is bounded', () => {
   expect(normalizeTown()).toMatchObject({ moonstones: 0, moonstonesEarned: 0 });

@@ -17,12 +17,22 @@
 <script setup>
 import { computed } from 'vue';
 import { t } from '../i18n';
+import { OBSTACLES } from '../data/obstacles';
 import { useGameStore } from '../stores/gameStore';
 import { deepMineProgress } from '../game/engine/DeepMineMechanics';
 import { mineSignalAppearance, mineRelicAppearance } from '../data/mineThemes';
 const game = useGameStore();
 const props = defineProps({ initialTiles: Array });
 const groups = [
+  ...['trace-twins', 'crossgrain', 'chord']
+    .map((id) => OBSTACLES.find((obstacle) => obstacle.id === id))
+    .filter(Boolean)
+    .map((obstacle) => ({
+      id: `crystal-${obstacle.id}`,
+      label: obstacle.name,
+      art: obstacle.art,
+      value: (tile) => (obstacle.present(tile) ? tile.signalHealth : 0),
+    })),
   {
     id: 'spore',
     label: 'Spore relays',
@@ -42,7 +52,8 @@ const groups = [
     id: 'cracked-wall',
     label: 'Cracked walls',
     art: '/art/obstacles/cracked-wall.svg',
-    value: (tile) => (tile.waist != null ? tile.health : 0),
+    // A route wall is one way in among several, not a goal.
+    value: (tile) => (tile.waist != null && !tile.routeWall ? tile.health : 0),
   },
   {
     id: 'starglass',

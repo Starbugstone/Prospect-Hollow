@@ -25,6 +25,35 @@ function checkPersonalisation(bool $ok, string $label): void
         throw new RuntimeException($label);
     }
 }
+/**
+ * The town with what a site waits for met: its building level, or a paid first stage at the
+ * first site it waits for (opened the same way), as testing/helpers/siteOpening.js.
+ *
+ * @param array<string, mixed> $state
+ * @param array<string, mixed> $area
+ * @param array<string, mixed> $schema
+ * @return array<string, mixed>
+ */
+function openSite(array $state, array $area, array $schema): array
+{
+    $opens = $area['opens'] ?? null;
+    if (isset($opens['building'])) {
+        $state['buildings'][$opens['building']] = max(
+            $state['buildings'][$opens['building']] ?? 0,
+            $opens['level'],
+        );
+    } elseif (isset($opens['sites'])) {
+        $site = $opens['sites'][0];
+        foreach ($schema['personalisation']['areas'] as $opener) {
+            if ($opener['id'] === $site) {
+                $state = openSite($state, $opener, $schema);
+                $state['personalisation']['areas'][$site] = [$opener['choices'][0]];
+                $state['personalisation']['areaLevels'][$site] = $opens['level'];
+            }
+        }
+    }
+    return $state;
+}
 function copyPersonalisation(object $value): object
 {
     return json_decode(json_encode($value, JSON_THROW_ON_ERROR), false, 64, JSON_THROW_ON_ERROR);
@@ -124,6 +153,7 @@ foreach ($schema['personalisation']['areas'] as $area) {
     $state['moonstones'] = 1000000;
     $currency = $area['currency'];
     $state['era'] = $area['era'];
+    $state = openSite($state, $area, $schema);
     $command = [
         'monumentVersion' => $schema['personalisation']['monumentProgression']['version'],
         'id' => $area['id'],
@@ -167,13 +197,119 @@ foreach ($schema['personalisation']['areas'] as $area) {
         );
     }
 }
+// A site can also wait for a finished building level.
+foreach ($schema['personalisation']['areas'] as $area) {
+    if (!isset($area['opens']['building'])) {
+        continue;
+    }
+    $state = json_decode(json_encode($town, JSON_THROW_ON_ERROR), true, 64, JSON_THROW_ON_ERROR);
+    $state['era'] = $area['era'];
+    $state[$area['currency']] = 1000000000;
+    $command = [
+        'monumentVersion' => $schema['personalisation']['monumentProgression']['version'],
+        'id' => $area['id'],
+        'slot' => 0,
+        'value' => $area['choices'][0],
+        'expectedChoice' => null,
+        'expectedLevel' => 0,
+    ];
+    $state['buildings'][$area['opens']['building']] = $area['opens']['level'] - 1;
+    checkPersonalisation(
+        TownPersonalisation::purchase($state, $command, $schema['eras']) === null,
+        'site waits for its building level',
+    );
+    $state['buildings'][$area['opens']['building']] = $area['opens']['level'];
+    checkPersonalisation(
+        TownPersonalisation::purchase($state, $command, $schema['eras']) !== null,
+        'site opens at its building level',
+    );
+}
+// Or for a stage paid at any one of several sites, in any order, read from the bought level
+// (which only rises) and the exported catalog, as areaOpensMet on the client.
+$byId = array_column($schema['personalisation']['areas'], null, 'id');
+foreach ($schema['personalisation']['areas'] as $area) {
+    if (!isset($area['opens']['sites'])) {
+        continue;
+    }
+    $state = json_decode(json_encode($rules->defaultTown), true);
+    $state['era'] = $area['era'];
+    $state['coins'] = 1000000000;
+    $command = [
+        'monumentVersion' => $schema['personalisation']['monumentProgression']['version'],
+        'id' => $area['id'],
+        'slot' => 0,
+        'value' => $area['choices'][0],
+        'expectedChoice' => null,
+        'expectedLevel' => 0,
+    ];
+    checkPersonalisation(
+        TownPersonalisation::purchase($state, $command, $schema['eras']) === null,
+        $area['id'] . ' waits for another commission',
+    );
+    $orders = [];
+    foreach ($area['opens']['sites'] as $site) {
+        $orders[] = [$site];
+        foreach ($area['opens']['sites'] as $other) {
+            if ($other !== $site) {
+                $orders[] = [$site, $other];
+            }
+        }
+    }
+    foreach ($orders as $order) {
+        $opened = $state;
+        foreach ($order as $site) {
+            $opener = openSite($opened, $byId[$site], $schema);
+            $next = TownPersonalisation::purchase(
+                $opener,
+                [
+                    'monumentVersion' => $command['monumentVersion'],
+                    'id' => $site,
+                    'slot' => 0,
+                    'value' => $byId[$site]['choices'][0],
+                    'expectedChoice' => null,
+                    'expectedLevel' => 0,
+                ],
+                $schema['eras'],
+            );
+            checkPersonalisation($next !== null, 'opening purchase at ' . $site);
+            $opened = $next;
+            checkPersonalisation(
+                TownPersonalisation::purchase($opened, $command, $schema['eras']) !== null,
+                $area['id'] . ' opens after ' . implode(' then ', $order),
+            );
+        }
+    }
+    $retired = openSite($state, $area, $schema);
+    $first = $area['opens']['sites'][0];
+    $retired['personalisation']['areas'][$first] = ['retired-design'];
+    checkPersonalisation(
+        TownPersonalisation::purchase($retired, $command, $schema['eras']) === null,
+        'a design this server does not know opens nothing',
+    );
+    $unknown = $area;
+    $unknown['opens'] = ['level' => 1];
+    checkPersonalisation(
+        !TownPersonalisation::opens(
+            openSite($state, $area, $schema),
+            $unknown['opens'],
+            $schema['personalisation'],
+        ) &&
+            !TownPersonalisation::opens($state, $area['opens'], $schema['personalisation']) &&
+            TownPersonalisation::opens(
+                openSite($state, $area, $schema),
+                $area['opens'],
+                $schema['personalisation'],
+            ),
+        'an unknown opening stays closed',
+    );
+}
 // New purchases have a fixed ceiling in the opening era; historical receipts
 // retain their old price/ceiling, so pending offline journals still verify.
 foreach ($schema['personalisation']['areas'] as $area) {
     if ($area['timeless']) {
         continue;
     }
-    $state = json_decode(json_encode($rules->defaultTown), true);
+    $state = openSite(json_decode(json_encode($rules->defaultTown), true), $area, $schema);
     $state['era'] = $area['era'];
     $state['coins'] = 10000000;
     $state['moonstones'] = 10000000;
@@ -404,7 +540,8 @@ foreach ($schema['personalisation']['areas'] as $area) {
         continue;
     }
     $state = json_decode(json_encode($rules->defaultTown), true);
-    $state['era'] = 'twin-hollows';
+    // Each site opens with its own era (Twin Hollows, or New Hollow Rising for the square).
+    $state['era'] = $area['era'];
     $state['coins'] = 1000000;
     $state['moonstones'] = 300;
     $command = [
@@ -417,6 +554,12 @@ foreach ($schema['personalisation']['areas'] as $area) {
         'currency' => 'moonstones',
         'price' => 20,
     ];
+    $early = $state;
+    $early['era'] = $schema['eras'][array_search($area['era'], $schema['eras'], true) - 1];
+    checkPersonalisation(
+        TownPersonalisation::purchase($early, $command, $schema['eras']) === null,
+        'a moonstone site refuses purchases before its era',
+    );
     $next = TownPersonalisation::purchase($state, $command, $schema['eras']);
     checkPersonalisation(
         $next !== null && $next['moonstones'] === 280 && $next['coins'] === $state['coins'],
@@ -456,7 +599,7 @@ foreach ($schema['personalisation']['areas'] as $area) {
         continue;
     }
     $state = json_decode(json_encode($rules->defaultTown), true);
-    $state['era'] = 'twin-hollows';
+    $state['era'] = $area['era'];
     $state['moonstones'] = 5000;
     foreach ([60, 240, 600, 1200, 2100] as $index => $price) {
         $command = [

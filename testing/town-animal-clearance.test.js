@@ -23,6 +23,7 @@ import { ERAS } from '../src/data/eras';
 import { flyingAnimal, townFauna } from '../src/data/townAnimals';
 import { eraEvolution } from '../src/data/eras';
 import { PLOTS, townTracks, segmentDistance } from '../src/game/town/TownLayout';
+import { hiddenFindOut } from '../src/game/town/TownRules';
 
 const views = [];
 function fixture() {
@@ -207,6 +208,11 @@ it.each(ERAS.flatMap((era, index) => [1, 3].map((tier) => [era.id, index, tier])
               'companion stays off roads',
             ).toBeGreaterThan(track.width + companion.radius);
     }
+    // The wandering pair walk a long sidewalk loop from their debut era on; the loop
+    // below checks it against the real scenery at their height, like every other walk.
+    const pairs = d.animals.filter((a) => a.species === 'wanderers');
+    expect(pairs).toHaveLength(hiddenFindOut(d.town, 'wanderers') ? 1 : 0);
+    for (const pair of pairs) expect(pair.path.total).toBeGreaterThan(20);
     for (const a of d.animals.filter((a) => a.path)) {
       expect(a.path.total, a.species).toBeGreaterThan(1);
       for (let i = 1; i < a.path.points.length; i++) {

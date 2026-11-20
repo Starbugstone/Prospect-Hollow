@@ -15,7 +15,8 @@ import { eraEvolution } from '../../data/eras';
 import { atPlot, PLOTS, plotStreet, routeGraph, routeOnGraph } from './TownLayout';
 import { TownNavigation, walkPose, standingPose } from './TownNavigation';
 import { groundHeight } from './TownLandscape';
-import { population } from './TownRules';
+import { hiddenFindOut, population } from './TownRules';
+import { WANDERERS } from './TownWanderers';
 import { dressSpaceHelmet, helmetStay, updateDressing } from './TownSpaceHelmet';
 import { animalModel, animateAnimal } from './TownAnimalModels';
 import { animalNavigation, animalSpace } from './TownAnimalSpace';
@@ -433,6 +434,7 @@ function updateGround(d, animal, time, dt, profile) {
   const feeding =
     !wild &&
     !animal.companion &&
+    !animal.townsfolk &&
     food?.active &&
     Math.hypot(root.position.x - food.habitat.point[0], root.position.z - food.habitat.point[2]) <
       1.65;
@@ -737,33 +739,45 @@ function* populateAnimals(d, town, preparedSpace) {
   const graph = routeGraph(town);
   const habitats = yield* prepareHabitats(d, town);
   d.animalHabitats = habitats;
-  for (const species of ['dog', 'cat']) {
+  const strollers = { dog: 4, cat: 17 };
+  const tours = {
+    dog: ['home', 'saloon', 'farm', 'shop'],
+    cat: ['home', 'park', 'shop', 'farm'],
+  };
+  for (const species of Object.keys(strollers)) {
     if (!population(town)) continue;
-    const ids = (
-      species === 'dog' ? ['home', 'saloon', 'farm', 'shop'] : ['home', 'park', 'shop', 'farm']
-    ).filter((id) => town.buildings[id]);
-    const { radius } = TOWN_ANIMALS[species];
+    const ids = tours[species].filter((id) => town.buildings[id]);
+    const { radius, height = 1 } = TOWN_ANIMALS[species];
     let path =
       ids.length > 1
-        ? yield* route(`street:${species}:${ids}`, radius, () =>
-            streetRoute(nav, graph, ids, radius),
+        ? yield* route(
+            `street:${species}:${ids}`,
+            radius,
+            () => streetRoute(nav, graph, ids, radius, height),
+            height,
           )
         : null;
     if (!path?.total) {
       const [x, z] = plotStreet(ids[0] ?? 'home');
-      path = yield* route(`yard:${species}:${ids[0] ?? 'home'}`, radius, function* () {
-        return groundRoute(
-          nav,
-          [
-            [x - 2, z + 0.6],
-            [x + 2, z + 0.6],
-            [x - 2, z + 0.6],
-          ],
-          radius,
-        );
-      });
+      path = yield* route(
+        `yard:${species}:${ids[0] ?? 'home'}`,
+        radius,
+        function* () {
+          return groundRoute(
+            nav,
+            [
+              [x - 2, z + 0.6],
+              [x + 2, z + 0.6],
+              [x - 2, z + 0.6],
+            ],
+            radius,
+            height,
+          );
+        },
+        height,
+      );
     }
-    addGroundAnimal(d, species, path, species === 'dog' ? 4 : 17);
+    addGroundAnimal(d, species, path, strollers[species]);
     yield;
   }
   if (town.buildings.farm)
@@ -885,17 +899,19 @@ function* populateAnimals(d, town, preparedSpace) {
       continue;
     }
     let points;
-    if (species === 'otter') {
+    const { riverbank, home } = TOWN_ANIMALS[species];
+    if (Number.isFinite(riverbank)) {
       points = [0, 2, 5, 7, 5, 2, 0].map((offset, i) => {
-        const z = edge + offset;
-        return [riverCenterX(z) - RIVER.bankWidth - 2.5 - (i % 2) * 0.4, z];
+        const z = edge + riverbank + offset;
+        // Each stretch keeps its own lane, a little further from the water.
+        const lane = 2.5 + (riverbank % 3) * 0.9;
+        return [riverCenterX(z) - RIVER.bankWidth - lane - (i % 2) * 0.4, z];
       });
     } else {
       // The southern hills rise above the planner's flat walking plane. Use
       // the open verge of the old-town clearing so these small visits have a
       // complete route through the actual rendered landscape.
-      const x = species === 'deer' ? -15 : -22;
-      const z = species === 'deer' ? 27 : 25;
+      const [x, z] = home ?? [-22, 25];
       points = [
         [x, z],
         [x + 2, z + 0.8],
@@ -951,6 +967,22 @@ function* populateAnimals(d, town, preparedSpace) {
       addGroundAnimal(d, species, path, neighborhood.seed, { neighborhood: neighborhood.id });
       yield;
     }
+  }
+  // The wandering pair stroll the Old Town sidewalks that Willowkin neighbors walk, at a
+  // Willowkin's height under awnings and signs. They are cast whenever their find is out;
+  // `placeWanderers` hides them while they are on the Moon.
+  if (hiddenFindOut(town, WANDERERS) && population(town)) {
+    const { radius, height } = TOWN_ANIMALS[WANDERERS];
+    let ids = COMPANION_NEIGHBORHOODS[0].streets.filter((id) => town.buildings[id]);
+    if (ids.length < 2) ids = COMPANION_STREET_FALLBACK.filter((id) => town.buildings[id]);
+    const path = yield* route(
+      `street:${WANDERERS}:${ids}`,
+      radius,
+      () => streetRoute(nav, graph, ids, radius, height),
+      height,
+    );
+    addGroundAnimal(d, WANDERERS, path, 61);
+    yield;
   }
   for (const { area, species, seed, wild = false } of monumentCast(town, fauna)) {
     const { radius, height } = TOWN_ANIMALS[species];

@@ -9,6 +9,7 @@ import { chapterIndexOf } from '../../data/chapters';
 import { mineSignalAppearance, mineRelicAppearance } from '../../data/mineThemes';
 import { BonusEffects } from './BonusEffects';
 import { FloatstoneTrail } from './FloatstoneTrail';
+import { BoardJuice, burstCount, clearRipple } from './BoardJuice';
 import {
   isCellFixture,
   isGravitySwitch,
@@ -33,9 +34,10 @@ import {
   multiMatchLabel,
   tierCoins,
   MULTI_MATCH_COIN_STEP,
+  clearScore,
 } from '../engine/MatchRewards';
 
-const MOTION = Object.freeze({ swap: 115, reject: 75, clear: 90, intro: 160 });
+const MOTION = Object.freeze({ swap: 115, reject: 75, clear: 90, intro: 260 });
 const CRACKS = [
   [
     [88, 10],
@@ -112,6 +114,7 @@ export class BoardAnimator {
     });
     this.bonuses = new BonusEffects(this);
     this.floatTrail = new FloatstoneTrail(this);
+    this.juice = new BoardJuice(this);
     this.iceSprites = new Map();
     this.fossilSprites = new Map();
     this.fixtureSprites = new Map();
@@ -136,7 +139,10 @@ export class BoardAnimator {
   get reducedMotion() {
     return this.settings?.reducedMotion ?? false;
   }
+  // The level's own theme when the store names one. A board on trial is numbered past the
+  // campaign, so its chapter cannot be looked up from its id.
   get theme() {
+    if (this.levelTheme) return this.levelTheme;
     const level = this.levelId ?? 1;
     if (this.themeLevel !== level) {
       this.themeLevel = level;
@@ -344,17 +350,16 @@ export class BoardAnimator {
         const sprite = this.gemSprites.get(id);
         if (!sprite) return;
         const p = this.position(index);
-        sprite.y -= this.cellSize * 0.5;
-        sprite.alpha = 0.6;
+        const { lift, delay } = this.juice.introStart(index);
+        sprite.y -= lift;
+        sprite.alpha = 0;
+        this.juice.land(sprite, MOTION.intro + delay * 2.75, 2);
         return this.tween(sprite, {
           y: p.y,
-          alpha: 1,
-          delay: Math.min(
-            90,
-            (index % this.boardCols) * 7 + Math.floor(index / this.boardCols) * 4,
-          ),
+          alpha: { from: 0, to: 1 },
+          delay,
           duration: MOTION.intro,
-          ease: 'Back.easeOut',
+          ease: 'Bounce.easeOut',
         });
       }),
     );
@@ -365,9 +370,10 @@ export class BoardAnimator {
     const a = this.gemSprites.get(this.indexToGemId[aIndex]);
     const b = this.gemSprites.get(this.indexToGemId[bIndex]);
     if (!a || !b) return;
+    this.juice.swap(a, b, MOTION.swap);
     await Promise.all([
-      this.tween(a, { ...this.position(bIndex), duration: MOTION.swap, ease: 'Cubic.easeOut' }),
-      this.tween(b, { ...this.position(aIndex), duration: MOTION.swap, ease: 'Cubic.easeOut' }),
+      this.tween(a, { ...this.position(bIndex), duration: MOTION.swap, ease: 'Back.easeOut' }),
+      this.tween(b, { ...this.position(aIndex), duration: MOTION.swap, ease: 'Back.easeOut' }),
     ]);
     if (generation !== this.generation) return;
     [this.indexToGemId[aIndex], this.indexToGemId[bIndex]] = [
@@ -380,6 +386,7 @@ export class BoardAnimator {
     const a = this.gemSprites.get(this.indexToGemId[aIndex]);
     const b = this.gemSprites.get(this.indexToGemId[bIndex]);
     if (!a || !b) return;
+    this.juice.refuse([a, b], MOTION.reject * 2);
     await Promise.all([
       this.tween(a, {
         ...this.position(bIndex),
@@ -417,6 +424,8 @@ export class BoardAnimator {
         const combo = cascadeTier(step, i);
         this.audio?.playMatch?.({ comboCount: combo });
         if (combo > 1) this.celebrate(combo);
+        this.juice.rumble(combo);
+        this.juice.score(clearScore(step, i), step.cleared, combo);
         const matchCount = simultaneousMatchCount(step);
         if (matchCount >= 2) {
           this.onBanner?.({
@@ -432,6 +441,7 @@ export class BoardAnimator {
       await this.bonuses.play(step);
       if (step.phaseShifts?.length) await this.playPhaseShifts(step.phaseShifts);
       await this.playSporeBursts(step.sporeBursts ?? []);
+      if (step.traceCopies?.length) await this.playTraceCopies(step.traceCopies);
       if (step.lensBeams?.length) await this.playLensBeams(step.lensBeams);
       if (generation !== this.generation) return;
       // A floatstone this step sets moving lights up its route as the match clears.
@@ -441,7 +451,7 @@ export class BoardAnimator {
             this.gemSprites.get(gem.id),
             fallRoute(withPortalPads(this.tiles, path), this.boardCols),
           );
-      await this.clearGems(step.cleared, step.bonusFusion);
+      await this.clearGems(step.cleared, step.bonusFusion, cascadeTier(step, i));
       if (generation !== this.generation) return;
       if (step.collectedRelics?.length) {
         await this.clearGems(step.collectedRelics.map(({ index }) => index));
@@ -579,11 +589,9 @@ export class BoardAnimator {
   }
 
   fall(sprite, index, distance) {
-    return this.tween(sprite, {
-      ...this.position(index),
-      duration: this.fallDuration(distance),
-      ease: 'Bounce.easeOut',
-    });
+    const duration = this.fallDuration(distance);
+    this.juice.land(sprite, duration, distance);
+    return this.tween(sprite, { ...this.position(index), duration, ease: 'Bounce.easeOut' });
   }
 
   // A refill queues above its entry cell. Below a wall or a hole shallower than the
@@ -642,6 +650,7 @@ export class BoardAnimator {
       });
     }
     const duration = motion.duration;
+    const generation = this.generation;
     // The wait is part of the tween: a Phaser delay only ends on a frame boundary, and
     // gems waiting behind one another must keep to the planned time exactly.
     const total = delay + duration;
@@ -664,6 +673,9 @@ export class BoardAnimator {
       duration: total,
       ease: 'Linear',
       onUpdate: place,
+    }).then(() => {
+      // A routed gem settles into its cell as a straight fall does.
+      if (!float && generation === this.generation) this.juice.land(sprite, 0, route.length - 1);
     });
   }
 
@@ -894,6 +906,34 @@ export class BoardAnimator {
     );
   }
 
+  async playTraceCopies(copies) {
+    await Promise.all(
+      copies.flatMap(({ from, to, targets }) => {
+        const origin = this.position(from),
+          destination = this.position(to);
+        const stamp = this.scene.add
+          .rectangle(origin.x, origin.y, this.cellSize * 0.55, this.cellSize * 0.55, 0xa9eaff, 0.65)
+          .setAngle(45);
+        const flight = this.effect(stamp, {
+          x: destination.x,
+          y: destination.y,
+          alpha: 0,
+          duration: this.reducedMotion ? 90 : 340,
+          ease: 'Cubic.easeInOut',
+        });
+        const marks = targets.map((index) => {
+          const p = this.position(index);
+          const mark = this.scene.add
+            .rectangle(p.x, p.y, this.cellSize * 0.7, this.cellSize * 0.7, 0xa9eaff, 0.18)
+            .setStrokeStyle(2, 0xd5f6ff, 1)
+            .setAngle(45);
+          return this.effect(mark, { alpha: 0, duration: this.reducedMotion ? 90 : 400 });
+        });
+        return [flight, ...marks];
+      }),
+    );
+  }
+
   async playSporeBursts(bursts) {
     await Promise.all(
       bursts.map(({ index, axis, targets }) => {
@@ -919,7 +959,7 @@ export class BoardAnimator {
     );
   }
 
-  async clearGems(indices, fusion) {
+  async clearGems(indices, fusion, combo = 1) {
     const generation = this.generation;
     const detonate = fusion && !this.reducedMotion;
     const origins = detonate ? fusion.pair.map(({ index }) => this.position(index)) : [];
@@ -931,15 +971,22 @@ export class BoardAnimator {
       id: this.indexToGemId[index],
       sprite: this.gemSprites.get(this.indexToGemId[index]),
     }));
+    // An ordinary match pops gem by gem; a detonation keeps its own outward timing.
+    const ripple = detonate || this.reducedMotion ? [] : clearRipple(entries.length);
     await Promise.all(
-      entries.map(({ sprite, index }) => {
+      entries.map(({ sprite, index }, order) => {
         if (!sprite) return;
         const p = this.position(index);
         const dx = detonate ? p.x - center.x : 0,
           dy = detonate ? p.y - center.y : 0;
         const distance = Math.max(1, Math.hypot(dx, dy));
-        if (!detonate) this.particles?.emitBurst(p, GEM_COLORS[sprite.__gemType], 9);
+        const pop = () => {
+          this.particles?.emitBurst(p, GEM_COLORS[sprite.__gemType], burstCount(combo));
+          if (ripple.length && entries.length <= 12) this.juice.flash(p);
+        };
+        if (!detonate && !ripple[order]) pop();
         return this.tween(sprite, {
+          ...(!detonate && ripple[order] ? { delay: ripple[order], onStart: pop } : {}),
           ...(detonate
             ? {
                 x: p.x + (dx / distance) * this.cellSize * 1.8,
@@ -1252,7 +1299,7 @@ export class BoardAnimator {
     const signal = tile?.signalHealth === 0 ? null : tile?.signal;
     // A phase seal shows the colour its gem becomes after the next move.
     const phase = tile?.phaseSeal && tile.health > 0 ? tile.phaseNext : null;
-    const key = `${layers}-${frozen}-${sealColor ?? ''}-${chained}-${!!exit}-${!!tile?.hatch}-${tile?.signal ?? ''}-${tile?.signalHealth}-${tile?.surveyOrder}-${tile?.rootGroup ?? ''}-${tile?.bonusOnly}-${tile?.sporeAxis}-${tile?.health}-${tile?.maxHealth}-${phase ?? ''}-${this.theme}-${this.cellSize}`;
+    const key = `${layers}-${frozen}-${sealColor ?? ''}-${chained}-${!!exit}-${!!tile?.hatch}-${tile?.signal ?? ''}-${tile?.signalHealth}-${tile?.grainRemaining}-${tile?.chordColors}-${tile?.chordWilds}-${tile?.surveyOrder}-${tile?.rootGroup ?? ''}-${tile?.bonusOnly}-${tile?.sporeAxis}-${tile?.health}-${tile?.maxHealth}-${phase ?? ''}-${this.theme}-${this.cellSize}`;
     let overlay = this.tileOverlays.get(index);
     if (overlay?.__tileKey === key) return;
     overlay?.destroy();
@@ -1320,11 +1367,25 @@ export class BoardAnimator {
       overlay.add(this.drawCracks(size));
     if (signal) {
       const skin = mineSignalAppearance(this.theme, signal);
-      const ref = spriteRef(skin?.texture ?? `tile-${signal}`, this.scene.textures);
+      const texture =
+        signal === 'crossgrain' && tile.grainRemaining !== 3
+          ? `tile-crossgrain-${tile.grainRemaining === 1 ? 'horizontal' : 'vertical'}`
+          : (skin?.texture ?? `tile-${signal}`);
+      const ref = spriteRef(texture, this.scene.textures);
       const marker = this.scene.add
         .image(-size * 0.3, size * 0.29, ref.key, ref.frame)
-        .setDisplaySize(size * 0.43, size * 0.43);
+        .setDisplaySize(
+          size * (signal === 'crossgrain' ? 0.6 : 0.43),
+          size * (signal === 'crossgrain' ? 0.6 : 0.43),
+        );
       overlay.add(marker);
+      if (signal === 'trace')
+        addLabel(size * 0.28, size * 0.31, tile.traceFacet === 'hexagon' ? '⬡' : '◇', {
+          fontSize: `${Math.max(16, size * 0.32)}px`,
+          color: '#e4f8ff',
+          backgroundColor: '#17384b',
+          padding: { x: 2, y: 0 },
+        });
       if (signal === 'spore')
         addLabel(size * 0.16, size * 0.32, tile.sporeAxis === 'column' ? '↕' : '↔', {
           fontSize: `${Math.max(17, size * 0.34)}px`,
@@ -1334,15 +1395,24 @@ export class BoardAnimator {
           backgroundColor: '#153a38',
         });
       // Charge pips: one small static dot per charge, rebuilt only when the charge changes.
-      if (signal === 'core')
-        for (let pip = 0, pips = tile.coreCharges ?? CORE_CHARGES; pip < pips; pip++)
+      if (signal === 'core' || signal === 'chord')
+        for (
+          let pip = 0, pips = signal === 'chord' ? 3 : (tile.coreCharges ?? CORE_CHARGES);
+          pip < pips;
+          pip++
+        )
           overlay.add(
             this.scene.add
               .circle(
                 -size * 0.06 + pip * size * 0.11,
                 size * 0.41,
                 Math.max(2.5, size * 0.04),
-                pip < pips - tile.signalHealth ? 0xffd36e : 0x1d3f55,
+                signal === 'chord'
+                  ? (GEM_COLORS[(tile.chordColors ?? '').split(',').filter(Boolean)[pip]] ??
+                      (pip < 3 - tile.signalHealth ? 0xffffff : 0x182e42))
+                  : pip < pips - tile.signalHealth
+                    ? 0xffd36e
+                    : 0x1d3f55,
                 1,
               )
               .setStrokeStyle(1.5, 0xbff6ff, 0.95),

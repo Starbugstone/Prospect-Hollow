@@ -154,8 +154,9 @@ export const tapSaloon = (id) =>
   request(`villages/${encodeURIComponent(id)}/saloon`, {}, 'POST', true);
 // Direct share links do not initialize account sync. The visit profile supplies CSRF;
 // the server checks the session and that `townId` belongs to the finder.
-export const tapHelmet = (id, townId) =>
-  request(`villages/${encodeURIComponent(id)}/helmet`, { townId }, 'POST', true);
+// A hidden find (`helmet`, ...) made in a shared town, for one of the visitor's own towns.
+export const tapHiddenFind = (id, find, townId) =>
+  request(`villages/${encodeURIComponent(id)}/${find}`, { townId }, 'POST', true);
 export function refreshAccount() {
   const generation = townStorage.auth().generation;
   if (accountRefresh?.generation === generation) return accountRefresh.promise;

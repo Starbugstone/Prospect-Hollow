@@ -60,7 +60,7 @@ export const ERAS = continueSupplyTiers(
         waterworks: [50, 55, 60],
         farmCapacity: [20, 25, 30],
         style: 'industrial',
-        wildlife: 'riverside',
+        wildlife: 'rooftops',
         prices: INDUSTRIAL_PRICES,
         newBuildingPrices: INDUSTRIAL_PRICES,
         // Incidents wait for the power house or the light mill.
@@ -80,7 +80,7 @@ export const ERAS = continueSupplyTiers(
         waterworks: [63, 66, 69],
         farmCapacity: [33, 36, 39],
         style: 'city',
-        wildlife: 'riverside',
+        wildlife: 'millpond',
         prices: [2400, 2900, 3400],
         cityAssets: 'post-war',
         roadBridge: false,
@@ -146,7 +146,7 @@ export const ERAS = continueSupplyTiers(
         waterworks: [117, 123, 129],
         farmCapacity: [87, 93, 99],
         style: 'city',
-        wildlife: 'songbirds',
+        wildlife: 'backyards',
         prices: [6200, 7000, 7800],
         cityAssets: 'broadcast',
         wardrobe: 'broadcast',
@@ -175,7 +175,7 @@ export const ERAS = continueSupplyTiers(
         waterworks: [137, 145, 153],
         farmCapacity: [107, 115, 123],
         style: 'city',
-        wildlife: 'songbirds',
+        wildlife: 'wetland',
         prices: [7600, 9000, 10400],
         cityAssets: 'contemporary',
         wardrobe: 'contemporary',
@@ -205,7 +205,7 @@ export const ERAS = continueSupplyTiers(
         waterworks: [161, 169, 177],
         farmCapacity: [126, 129, 132],
         style: 'city',
-        wildlife: 'songbirds',
+        wildlife: 'parkland',
         // Rounded forms are procedural; the Connected City family still supplies
         // shared vehicles, bridge approaches, garden finishes and fallbacks.
         architecture: 'rounded',
@@ -303,6 +303,7 @@ export const ERAS = continueSupplyTiers(
       id: 'skysail',
       evolution: {
         ...FUTURE_CITY_EVOLUTION,
+        wildlife: 'sail-town',
         architecture: 'sail',
         waterworks: [195, 201, 207],
         farmCapacity: [162, 168, 174],
@@ -331,6 +332,7 @@ export const ERAS = continueSupplyTiers(
       id: 'stargazer',
       evolution: {
         ...FUTURE_CITY_EVOLUTION,
+        wildlife: 'star-town',
         architecture: 'observatory',
         waterworks: [213, 219, 225],
         farmCapacity: [180, 186, 192],
@@ -359,6 +361,7 @@ export const ERAS = continueSupplyTiers(
       id: 'moonward',
       evolution: {
         ...FUTURE_CITY_EVOLUTION,
+        wildlife: 'moon-town',
         architecture: 'homestead',
         waterworks: [233, 241, 249],
         farmCapacity: [198, 204, 210],
@@ -388,6 +391,7 @@ export const ERAS = continueSupplyTiers(
       id: 'twin-hollows',
       evolution: {
         ...FUTURE_CITY_EVOLUTION,
+        wildlife: 'twin-town',
         architecture: 'twin',
         waterworks: [265, 281, 297],
         farmCapacity: [226, 242, 258],
@@ -415,6 +419,84 @@ export const ERAS = continueSupplyTiers(
         'The ribbon carries us all the way now. On the Moon, New Hollow is our new frontier: settler domes, crater ice and a Willowkin garden under glass. Down in the valley, every family keeps a lantern lit for the ones who went up.',
       horizon: 'Two towns are about to share one sky.',
       finale: 'Two towns, one sky. Wherever we go, Prospect Hollow is home.',
+    },
+    {
+      id: 'hollow-rising',
+      evolution: {
+        ...FUTURE_CITY_EVOLUTION,
+        wildlife: 'tram-town',
+        // The valley keeps its Twin Hollows buildings: only New Hollow changes. Its small
+        // touches (clothes, fountain, road inlay) wear the Moon tram's livery.
+        architecture: 'twin',
+        wardrobe: 'tramline',
+        fountain: 'ring-roads',
+        roadStyle: 'ring-lane',
+        moonSettlement: true,
+        prices: [20000, 22600, 25200],
+        newBuildingPrices: [33750, 37500, 41250],
+        // In the valley only the town square changes, for its ring-roads fountain.
+        modernizes: [
+          'square',
+          'ribbonLanding',
+          'craterIceWell',
+          'earthlightGreenhouse',
+          'newHollowCommons',
+          'roverBarn',
+        ],
+        // New Hollow draws more of its own water and food as its ice well and greenhouse
+        // modernize; an era without these fields adds none.
+        moonWaterworks: [16, 32, 48],
+        moonFarm: [16, 32, 48],
+        upgradeTitle: 'Rising level {level}: {name}',
+        upgradeDescriptions: [
+          'Add moon-white paving and tram-blue lanterns, one for each of New Hollow’s rings.',
+          'Finish it with gold ring-road inlays and a little tram on the crest.',
+        ],
+        cityDescription:
+          'New Hollow grows up: a tram on the outer ring, orchards under glass and a school bell.',
+      },
+      label: 'New Hollow Rising',
+      yearLabel: '2335',
+      enabled: true,
+      story:
+        'New Hollow has outgrown its first ring. The crater floor is cleared to the rim, a little tram circles the new streets, and the first children born under Earthlight are walking to school.',
+      horizon: 'New Hollow is ready to grow up.',
+      finale: 'A school bell, an orchard and a tram that is never late. New Hollow is a town now.',
+    },
+    {
+      id: 'quiet-signal',
+      evolution: {
+        ...FUTURE_CITY_EVOLUTION,
+        wildlife: 'signal-town',
+        // The valley keeps its Twin Hollows buildings, as in New Hollow Rising. Its small
+        // touches (clothes, fountain, road inlay) turn quiet: night navy, moon-white and one
+        // thin line of light.
+        architecture: 'twin',
+        wardrobe: 'listening',
+        fountain: 'still-pool',
+        roadStyle: 'signal-lane',
+        moonSettlement: true,
+        prices: [21600, 24200, 26800],
+        newBuildingPrices: [36000, 39750, 43500],
+        // In the valley only the town square changes, for its still pool. On the Moon the
+        // Starwatch Dish turns to the stone.
+        modernizes: ['square', 'starwatchDish'],
+        upgradeTitle: 'Signal level {level}: {name}',
+        upgradeDescriptions: [
+          'Lay night-blue paving round a still, dark pool that mirrors the sky.',
+          'Set one thin line of light across the pool, pointing at the Moon.',
+        ],
+        cityDescription:
+          'Beyond the crater rim a quiet neighbourhood gathers round a black stone and listens.',
+      },
+      label: 'The Quiet Signal',
+      yearLabel: '2370',
+      enabled: true,
+      story:
+        'A black stone stands beyond the far rim of the crater, where there was only dust. It is taller than the school and perfectly smooth. When sunlight touches it, the crystal instruments in the greenhouse pulse together. New Hollow has cut a road through the rim to listen.',
+      horizon: 'Something beyond the rim is waiting to be heard.',
+      finale:
+        'We sent our answer, and a thin ribbon of light crossed the dust with a map of stars in it. We do not know who made the stone. We know they listened.',
     },
   ].map(defineEra),
 );

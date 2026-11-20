@@ -12,6 +12,7 @@ import { chapterSlotOf } from '../src/data/chapters';
 import { createGem } from '../src/game/engine/GemFactory';
 import { TileManager } from '../src/game/engine/TileManager';
 import { isAdjacent } from '../src/game/engine/TileRules';
+import { BOARD_PRESENTERS } from '../src/game/phaser/boardPresenters';
 
 const engine = new MatchEngine();
 beforeEach(() => setActivePinia(createPinia()));
@@ -130,7 +131,7 @@ describe('responsive pointer input', () => {
 
 it('keeps renderer instances outside Vue reactivity', () => {
   const store = useGameStore();
-  store.attachRenderer({ scene: {}, boardContainer: {} });
+  store.attachRenderer({ scene: {}, boardContainer: {}, presenters: BOARD_PRESENTERS });
   expect(isReactive(store.renderer)).toBe(false);
   expect(isReactive(store.renderer.animator)).toBe(false);
 });
