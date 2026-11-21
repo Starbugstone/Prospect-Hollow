@@ -267,6 +267,28 @@ final class PublicTown
     {
         return $find === 'helmet' ? 'helmet_finds' : 'hidden_finds';
     }
+    /**
+     * Moves other finds out of `helmet_finds`, as migration 26 did. While a deploy migrates
+     * before its code switches, the earlier preprod release can still store a wandering
+     * pair there. Only rows already copied are deleted, so a find written meanwhile stays
+     * for the next run. Returns the rows moved.
+     */
+    public static function moveStrayFinds(\Doctrine\DBAL\Connection $db): int
+    {
+        $match = 'f.player_id=h.player_id AND f.kind=h.kind AND f.found_at=h.found_at';
+        $moved = $db->executeStatement(
+            'INSERT INTO hidden_finds(player_id,kind,found_at,town_id,host_town_id) ' .
+                'SELECT h.player_id,h.kind,h.found_at,h.town_id,h.host_town_id FROM helmet_finds h ' .
+                "WHERE h.kind<>'helmet' AND NOT EXISTS (SELECT 1 FROM hidden_finds f WHERE $match)",
+        );
+        $mysql =
+            $db->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\AbstractMySQLPlatform;
+        $db->executeStatement(
+            ($mysql ? 'DELETE h FROM helmet_finds h' : 'DELETE FROM helmet_finds h') .
+                " WHERE h.kind<>'helmet' AND EXISTS (SELECT 1 FROM hidden_finds f WHERE $match)",
+        );
+        return (int) $moved;
+    }
     /** The latest find of a kind by a player (`player_id`) or in a host town (`host_town_id`). */
     private static function lastFind(
         \Doctrine\DBAL\Connection $db,

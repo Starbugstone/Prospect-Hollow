@@ -2,5 +2,5 @@ CREATE TABLE IF NOT EXISTS hidden_finds (player_id VARCHAR(64) NOT NULL, kind VA
 CREATE INDEX hidden_finds_town ON hidden_finds(town_id,kind,found_at);
 CREATE INDEX hidden_finds_host ON hidden_finds(host_town_id,kind,found_at);
 INSERT INTO hidden_finds(player_id,kind,found_at,town_id,host_town_id) SELECT h.player_id,h.kind,h.found_at,h.town_id,h.host_town_id FROM helmet_finds h WHERE h.kind<>'helmet' AND NOT EXISTS (SELECT 1 FROM hidden_finds f WHERE f.player_id=h.player_id AND f.kind=h.kind AND f.found_at=h.found_at);
-DELETE FROM helmet_finds WHERE kind<>'helmet';
+DELETE h FROM helmet_finds h WHERE h.kind<>'helmet' AND EXISTS (SELECT 1 FROM hidden_finds f WHERE f.player_id=h.player_id AND f.kind=h.kind AND f.found_at=h.found_at);
 INSERT INTO schema_versions(version) VALUES (26);

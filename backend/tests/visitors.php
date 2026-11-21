@@ -686,6 +686,45 @@ try {
                     ),
         'helmet_finds holds no wandering pair, so a 1.2 rollback signs no pair as an astronaut',
     );
+    // While a deploy migrates before its code switches, the earlier preprod release can still
+    // store a pair among astronaut finds. The cleanup job moves it across, once, keeping the
+    // find; a row already copied is only removed.
+    foreach ([7, 8] as $at) {
+        $db->get()->insert('helmet_finds', [
+            'player_id' => $other['id'],
+            'found_at' => $at,
+            'town_id' => $otherHome,
+            'host_town_id' => $hostId,
+            'kind' => 'wanderers',
+        ]);
+    }
+    $db->get()->insert('hidden_finds', [
+        'player_id' => $other['id'],
+        'kind' => 'wanderers',
+        'found_at' => 8,
+        'town_id' => $otherHome,
+        'host_town_id' => $hostId,
+    ]);
+    $strays = fn(string $table) => array_map(
+        'intval',
+        $db
+            ->get()
+            ->fetchFirstColumn(
+                "SELECT found_at FROM $table WHERE player_id=? AND kind='wanderers' AND found_at<10 ORDER BY found_at",
+                [$other['id']],
+            ),
+    );
+    check(
+        PublicTown::moveStrayFinds($db->get()) === 1 &&
+            PublicTown::moveStrayFinds($db->get()) === 0 &&
+            $strays('helmet_finds') === [] &&
+            $strays('hidden_finds') === [7, 8],
+        'cleanup moves a pair left among astronaut finds to its own table, once',
+    );
+    $db->get()->executeStatement(
+        "DELETE FROM hidden_finds WHERE player_id=? AND kind='wanderers' AND found_at<10",
+        [$other['id']],
+    );
     foreach ([[$guest, $originId], [$other, $otherHome]] as [$session, $townId]) {
         $again = status(409, $pair($session, $townId), 'pair taken');
         check(
