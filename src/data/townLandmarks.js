@@ -747,6 +747,20 @@ function areaOpensMet(town, opens) {
 // A site opens with its era and whatever its `opens` waits for.
 export const areaUnlocked = (town, area) =>
   areaEraReached(town, area) && areaOpensMet(town, area.opens);
+/**
+ * The locked site that opens soonest: the earliest era first and, within an era, a site that
+ * opens with the era itself before one that waits for a building or a commission. Ties keep
+ * the catalogue's order. Null once every site is open.
+ */
+export function nextAreaToOpen(town, areas = PERSONAL_AREAS) {
+  const era = (area) => ERAS.findIndex((e) => e.id === area.era);
+  const waits = (area) => (area.opens ? 1 : 0);
+  return (
+    areas
+      .filter((area) => !areaUnlocked(town, area))
+      .sort((a, b) => era(a) - era(b) || waits(a) - waits(b))[0] ?? null
+  );
+}
 // Five permanent milestones; era growth never adds another bill. Each paid level is
 // built over `puzzles` completed puzzles (any puzzle, replays too), then unveiled with
 // a `grand` cinematic or a short `reveal`. Timeless monuments build like a foundation.

@@ -705,6 +705,7 @@ import {
   landmarkPrice,
   landmarkPayment,
   monumentWork,
+  nextAreaToOpen,
 } from '../../data/townLandmarks';
 import { personaliseTown } from '../../data/townPersonalisation';
 import { CREST_EMBLEM_IDS } from '../../data/townCrests';
@@ -1078,9 +1079,8 @@ const monumentSites = computed(() =>
 // New Hollow's letters, then the Far Rim's story in the order it unfolds.
 const newHollowLetters = computed(() => [...moonLetters(town.value), ...signalLetters(town.value)]);
 const valleyLetters = computed(() => commissionLetters(town.value, HOME_SETTLEMENT));
-const nextMonumentSite = computed(() =>
-  PERSONAL_AREAS.find((area) => !areaUnlocked(town.value, area)),
-);
+// The Build tab names the locked site that opens soonest.
+const nextMonumentSite = computed(() => nextAreaToOpen(town.value));
 const sceneTown = computed(() => {
   const earned = [
     ...Object.keys(campaign.honours.earned),
