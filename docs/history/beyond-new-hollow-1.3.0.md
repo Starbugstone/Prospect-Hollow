@@ -307,10 +307,11 @@ explained first.
 - [x] Add a guide for levels 547–606, its own page beside `docs/hollow-mine-levels.md`
       See [the crystal seams guide](../crystal-seam-levels.md) for the chapters, the boards that changed and the evidence.
 
-- [ ] Honours after the append: two checks in `testing/honours.test.js` fail on the new levels and
+- [x] Honours after the append: two checks in `testing/honours.test.js` failed on the new levels and
       are left to the honours work, since `src/data/honours.js` is being changed elsewhere. The level
       element index check pins lanterns at 183 pieces up to chapter 90 (now 198 up to chapter 94),
       and survey markers now reach their top rank at 1.2 campaigns, below the 1.3 the test requires
+      Resolved by the crystal masteries and the survey diamond; the file passes at `ea03cc38`.
 
 ### Approved new mechanics and shapes
 
@@ -341,7 +342,7 @@ an ordinary cell. The three trial-only elements are deliberately non-mastery.
 - [x] `campaignCompletion` counts more levels, so a "perfect" campaign is no longer complete. Check
       that nothing earned or displayed goes backwards
       The mine cart would have lost gems; it now fills over a fixed 546 levels. A pending 100% celebration waits for level 606.
-- [ ] Seam Explorer lists levels 1–546 by name. Leave it: shipped ranks don't change, and new levels
+- [x] Seam Explorer lists levels 1–546 by name. Leave it: shipped ranks don't change, and new levels
       earn it nothing
 - [x] Chest coins and VIP spending at chapters 92–101 still pass the server's checks
 - [x] Each new level adds three workshop credits, so moonstone supply rises slightly
@@ -762,10 +763,10 @@ All as built (owner, 11 November 2026), after the pictures and videos in `output
 
 **Size: small to medium.**
 
-- [ ] Rerun `scripts/measure-economy-balance.mjs` with the new levels and optional sites. Its pattern
+- [x] Rerun `scripts/measure-economy-balance.mjs` with the new levels and optional sites. Its pattern
       buys optional foundations, so two or three new 400k foundations will shift its dates slightly
-- [ ] Record the result in `docs/economy-balance.md`, including whether the crossover has moved
-- [ ] Add commissions to `docs/future-eras.md` and `docs/era-architecture.md`, including how to add one
+- [x] Record the result in `docs/economy-balance.md`, including whether the crossover has moved
+- [x] Add commissions to `docs/future-eras.md` and `docs/era-architecture.md`, including how to add one
 - [ ] Add a commissions rule to `AGENTS.md`: the shared contract, the need for an honours decision and
       that they never gate anything. Ask first, since it's a lasting rule
 
@@ -773,8 +774,8 @@ All as built (owner, 11 November 2026), after the pictures and videos in `output
 
 ## Step 7: release
 
-- [ ] Add a player-facing entry to `src/data/updates.js`, with French text
-- [ ] Bump the version to 1.3.0 in `package.json`
+- [x] Add a player-facing entry to `src/data/updates.js`, with French text
+- [x] Bump the version to 1.3.0 in `package.json`
 - [ ] Full Docker checks: `npm run verify`, level simulations, all backend suites and PHPStan
 - [ ] Browser checks: Moon input, Moon labels, phone layout and the commission signal
 - [ ] Final phone pass on `preprod`

@@ -116,9 +116,11 @@ so levels 547–606 paid 3.47M coins over the economy probe's three seeds, again
 - The mine cart outside the town filled over `LEVEL_COUNT`, so every player's cart would
   have lost gems. It now fills over a fixed 546 levels (`CART_FULL_LEVELS` in
   `src/data/mineGrowth.js`), and a test keeps a filled cart full as the campaign grows.
-- Honours are unchanged. The three crystal elements stay in `NON_MASTERY_ELEMENTS`; only
-  the level element index (`src/data/honourLevels.json`) was regenerated. Seam Explorer
-  still lists levels 1–546 by name, and new levels earn it nothing.
+- Honours gained the three crystal masteries (Twin Tracer, Crossgrain Mender, Crystal
+  Harmonist) and Far Seam Prospector, all `since: 8`; the crystal elements left
+  `NON_MASTERY_ELEMENTS` and the level element index (`src/data/honourLevels.json`) was
+  regenerated. Seam Explorer still lists levels 1–546 by name, and new levels earn it
+  nothing. See [the honours guide](honours.md#levels-547606-2026-11-11).
 - The server catalogs (`backend/content/save-rules.json`, its history and the public
   schema) were regenerated. Three new integrity fixtures replay in `save-integrity.php`: a
   first victory and coin chest on 547 after a finished campaign, a victory and coin chest
