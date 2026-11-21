@@ -1156,6 +1156,8 @@ function completeEraCinematic() {
 }
 async function handOffEra() {
   const away = eraHandoff.value;
+  // Away from the village (Back, an account dialog), no presentation is staged: it waits.
+  if (!props.active) return;
   if (away && !eraPlaying.value) townScene.value?.showSettlement(away);
   // The scene reports the map it shows after its own update.
   await nextTick();
@@ -1386,9 +1388,13 @@ const playingRaid = computed(() => eventStage.value.raid);
 const openingPresentation = computed(() => eventStage.value.presentation);
 const waitingEvent = computed(() => eventStage.value.waiting);
 // An era handoff held for a presentation follows once it ends (completeEraCinematic).
-watch([eraPlaying, openingPresentation], () => eraHandoff.value && handOffEra(), {
-  flush: 'post',
-});
+watch(
+  [eraPlaying, openingPresentation, () => props.active],
+  () => eraHandoff.value && handOffEra(),
+  {
+    flush: 'post',
+  },
+);
 function watchWaitingEvent() {
   townScene.value?.showSettlement(waitingEvent.value?.settlement);
 }

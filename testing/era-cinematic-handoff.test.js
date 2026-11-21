@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
+import { reactive } from 'vue';
 import TownView from '../src/components/town/TownView.vue';
 import TownScene from '../src/components/town/TownScene.vue';
 import TownEraCinematic from '../src/components/town/TownEraCinematic.vue';
@@ -86,7 +87,7 @@ function playFrames(step = 100) {
 
 // The valley's 3D scene, as a recorder: no animals, and every method answers nothing.
 function recorder() {
-  const scene = { animals: [] };
+  const scene = { animals: [], vipArrivals: { reset: vi.fn() } };
   return new Proxy(scene, { get: (_, key) => (scene[key] ??= vi.fn()) });
 }
 // The village view with its real scene wiring and era cinematic. The valley's 3D scene is
@@ -123,10 +124,15 @@ async function village(era, extra = {}) {
       view = state;
     },
   );
-  const { root, unmount } = mountComponent(View, { active: true }, { pinia });
+  const props = reactive({ active: true });
+  const { root, unmount } = mountComponent(View, props, { pinia });
   mounted.push(unmount);
   await settle();
-  return { root, view, scene };
+  const setActive = async (active) => {
+    props.active = active;
+    await settle();
+  };
+  return { root, view, scene, setActive };
 }
 const visibleMap = (root) =>
   findNode(root, (entry) => entry.props['data-visible-map'] === 'moon') ? 'moon' : 'valley';
@@ -179,6 +185,24 @@ describe('An era cinematic hands over to the settlement its era builds on', () =
     await settle();
     expect(view.openingPresentation.value).toBeFalsy();
     expect(scene.shown.value).toBe('moon');
+    expect(visibleMap(root)).toBe('moon');
+  });
+
+  // Leaving the village stages no presentation; the held hand-over waits for the player.
+  it('keeps a held hand-over while the village is away, then plays the presentation first', async () => {
+    const { root, view, scene, setActive } = await village('quiet-signal', {
+      presentations: { 'three-star-celebration': 'pending' },
+    });
+    button(root, 'era-skip').props.onClick();
+    await settle();
+    expect(view.openingPresentation.value?.id).toBe('three-star-celebration');
+    await setActive(false);
+    expect(scene.shown.value).toBe('valley');
+    await setActive(true);
+    expect(view.openingPresentation.value?.id).toBe('three-star-celebration');
+    expect(visibleMap(root)).toBe('valley');
+    view.completePresentation();
+    await settle();
     expect(visibleMap(root)).toBe('moon');
   });
 
