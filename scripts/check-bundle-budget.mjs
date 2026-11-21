@@ -53,7 +53,24 @@ for (const file of firstFiles)
   }).length;
 if (firstDownload > FIRST_DOWNLOAD_BUDGET)
   failures.push(`First download is ${firstDownload} bytes gzipped, over ${FIRST_DOWNLOAD_BUDGET}`);
+// A French browser also waits for the French text before the first screen
+// (`src/i18n/index.js`), so its first download is the page plus that chunk.
+const FRENCH_FIRST_DOWNLOAD_BUDGET = Number(process.env.PH_FRENCH_FIRST_DOWNLOAD_BYTES ?? 615_000);
+const frenchFiles = (await readdir(path.join(directory, 'assets'))).filter(
+  (file) => chunkName(file) === 'fr',
+);
+if (frenchFiles.length !== 1)
+  failures.push(`${directory}/assets holds ${frenchFiles.length} French text chunks, expected 1`);
+let frenchDownload = firstDownload;
+for (const file of frenchFiles)
+  frenchDownload += gzipSync(await readFile(path.join(directory, 'assets', file)), {
+    level: 9,
+  }).length;
+if (frenchDownload > FRENCH_FIRST_DOWNLOAD_BUDGET)
+  failures.push(
+    `French first download is ${frenchDownload} bytes gzipped, over ${FRENCH_FIRST_DOWNLOAD_BUDGET}`,
+  );
 if (failures.length) throw new Error(failures.join('\n'));
 console.log(
-  `Bundle budgets passed: game chunks ≤ 500 kB, libraries within budget and lazy; no static mesh catalogs; first download ${firstDownload} of ${FIRST_DOWNLOAD_BUDGET} bytes gzipped.`,
+  `Bundle budgets passed: game chunks ≤ 500 kB, libraries within budget and lazy; no static mesh catalogs; first download ${firstDownload} of ${FIRST_DOWNLOAD_BUDGET} bytes gzipped, ${frenchDownload} of ${FRENCH_FIRST_DOWNLOAD_BUDGET} in French.`,
 );

@@ -23,21 +23,33 @@ const check = (root) =>
   spawnSync(process.execPath, [script, root], {
     cwd: resolve(__dirname, '..'),
     encoding: 'utf8',
-    env: { ...process.env, PH_FIRST_DOWNLOAD_BYTES: '100000' },
+    env: {
+      ...process.env,
+      PH_FIRST_DOWNLOAD_BYTES: '100000',
+      PH_FRENCH_FIRST_DOWNLOAD_BYTES: '130000',
+    },
   });
 const page = (...files) => files.map((file) => `<link href="/assets/${file}">`).join('');
 
 describe('the first-download budget', () => {
   it('accepts a page under its ceiling, ignoring lazy chunks', () => {
     const run = check(
-      site({ 'main-aaaaaaaa.js': 80_000, 'lazy-aaaaaaaa.js': 400_000 }, page('main-aaaaaaaa.js')),
+      site(
+        { 'main-aaaaaaaa.js': 80_000, 'lazy-aaaaaaaa.js': 400_000, 'fr-aaaaaaaa.js': 40_000 },
+        page('main-aaaaaaaa.js'),
+      ),
     );
     expect(run.status, run.stderr).toBe(0);
   });
   it('rejects a first download over it, counting everything linked', () => {
     const run = check(
       site(
-        { 'main-aaaaaaaa.js': 60_000, 'vendor-aaaaaaa.js': 30_000, 'main-aaaaaaaa.css': 30_000 },
+        {
+          'main-aaaaaaaa.js': 60_000,
+          'vendor-aaaaaaa.js': 30_000,
+          'main-aaaaaaaa.css': 30_000,
+          'fr-aaaaaaaa.js': 10,
+        },
         page('main-aaaaaaaa.js', 'vendor-aaaaaaa.js', 'main-aaaaaaaa.css'),
       ),
     );
@@ -45,6 +57,21 @@ describe('the first-download budget', () => {
     expect(run.stderr).toContain('First download');
   });
   it('refuses a page it reads no script from, rather than passing it', () => {
-    expect(check(site({ 'main-aaaaaaaa.js': 10 }, '<p>nothing linked</p>')).status).not.toBe(0);
+    expect(
+      check(site({ 'main-aaaaaaaa.js': 10, 'fr-aaaaaaaa.js': 10 }, '<p>nothing linked</p>')).status,
+    ).not.toBe(0);
+  });
+  // French players wait for their text before the first screen.
+  it('rejects a French first download over its own ceiling', () => {
+    const run = check(
+      site({ 'main-aaaaaaaa.js': 80_000, 'fr-aaaaaaaa.js': 60_000 }, page('main-aaaaaaaa.js')),
+    );
+    expect(run.status).not.toBe(0);
+    expect(run.stderr).toContain('French first download');
+  });
+  it('refuses a build without its French text chunk, rather than passing it', () => {
+    const run = check(site({ 'main-aaaaaaaa.js': 10 }, page('main-aaaaaaaa.js')));
+    expect(run.status).not.toBe(0);
+    expect(run.stderr).toContain('French text chunks');
   });
 });

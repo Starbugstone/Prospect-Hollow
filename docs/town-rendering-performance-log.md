@@ -552,3 +552,19 @@ The town scene is the valley, so the Moon's tram and children are not in it: mea
 own (alternating, unthrottled), the Moon's per-frame work rose from about 115 to 160 µs. The
 check still needs a run on a quiet machine to replace these scaled figures. Raw output is in
 `output/next-release/frames/` (git-ignored).
+
+## French first download, 21 November 2026
+
+A French browser awaits the French text chunk before mounting (`src/i18n/index.js`), so its
+first screen needs the page, everything it links and `fr-*.js`. The first-download check only
+counted the links. `scripts/check-bundle-budget.mjs` now also measures the French path against
+its own ceiling, and fails when the build has no single French chunk to measure.
+
+| Path    | Gzipped at `ea03cc38` | Ceiling |
+| ------- | --------------------- | ------- |
+| English | 461,825 bytes         | 500,000 |
+| French  | 609,510 bytes         | 615,000 |
+
+The French text grew from 116 kB to 145 kB gzipped between `main` and 1.3.0. The ceiling holds it
+where it is; splitting the startup strings from the rest of the dictionary is the way to bring it
+down later.
