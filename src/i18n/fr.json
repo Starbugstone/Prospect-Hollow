@@ -1470,6 +1470,7 @@
   "Post-war": "Après-guerre",
   "{era} · Level {level} of {max}": "{era} · Niveau {level} sur {max}",
   "{era} · Level {level}": "{era} · Niveau {level}",
+  "The first stage costs {price} coins: stage 1 of {count}. All {count} stages cost {total} coins.": "La première étape coûte {price} pièces : étape 1 sur {count}. Les {count} étapes coûtent {total} pièces en tout.",
   "Every city building has 3 levels. Existing services stay open during modernization.": "Chaque bâtiment urbain possède 3 niveaux. Les services existants restent ouverts pendant la modernisation.",
   "Prospect city hall": "Hôtel de ville de Prospect",
   "City hall": "Hôtel de ville",

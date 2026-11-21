@@ -168,6 +168,19 @@
           )
         }}
       </p>
+      <!-- One price buys one stage of several: the letter says so before the choice. -->
+      <p v-if="stagePrices" class="monument-intro" data-commission-stages>
+        {{
+          t(
+            'The first stage costs {price} coins: stage 1 of {count}. All {count} stages cost {total} coins.',
+            {
+              price: number(stagePrices.first),
+              count: stagePrices.count,
+              total: number(stagePrices.total),
+            },
+          )
+        }}
+      </p>
       <div class="monument-choices" role="radiogroup" :aria-label="t('Monument designs')">
         <button
           v-for="choice in area.choices"
@@ -272,6 +285,7 @@ import {
   landmarkPayment,
   landmarkLevel,
   monumentWork,
+  sharedStagePrices,
 } from '../../data/townLandmarks';
 import { commissionFor } from '../../data/commissions';
 import { monumentOpening, monumentStatus } from '../../game/town/TownBuildingFeedback';
@@ -292,6 +306,11 @@ const area = computed(() => AREA_BY_ID[props.id]);
 const era = computed(() => ERA_BY_ID[area.value.era]);
 const unlocked = computed(() => areaUnlocked(props.town, area.value));
 const commission = computed(() => commissionFor(props.id));
+// A commission's designs share one schedule of coin stages, read from the site.
+const stagePrices = computed(() => {
+  const prices = commission.value && sharedStagePrices(area.value);
+  return prices && prices.count > 1 && payment(0).currency === 'coins' ? prices : null;
+});
 const built = computed(() => areaChoice(props.town, area.value));
 const stage = computed(() => areaStage(props.town, area.value));
 const work = computed(() => monumentWork(props.town, area.value));
