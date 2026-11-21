@@ -205,13 +205,18 @@ export function moonSettlerPlan(
   const home =
     buildings.find(({ id }) => id === homeId) ??
     (homes.length ? homes : buildings)[n % (homes.length || buildings.length)];
-  // A `local` resident keeps to their own district, while it has anywhere else to go.
+  // A `local` resident keeps to their own district, while it has anywhere else to go:
+  // its buildings and only the commissions that stand in it.
   const elsewhere = buildings.filter((route) => route !== home),
     nearby = elsewhere.filter((route) => route.district === home.district);
-  const others = local && nearby.length ? nearby : elsewhere;
+  const keepsLocal = local && nearby.length > 0;
+  const others = keepsLocal ? nearby : elsewhere;
+  const open = keepsLocal
+    ? venues.filter(({ route }) => route?.district === home.district)
+    : venues;
   const steps = [];
   for (let trip = 0; trip < 3; trip++) {
-    const venue = venueForTrip(venues, kind, trip, n);
+    const venue = venueForTrip(open, kind, trip, n);
     const visit =
       venue?.route ??
       (others.length ? others[Math.floor(hash(n * 13 + trip * 7 + 1) * others.length)] : home);

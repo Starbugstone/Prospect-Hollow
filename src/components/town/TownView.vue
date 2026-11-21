@@ -168,6 +168,10 @@
           :raid-defense-ids="readyRaidDefenses"
           :construction="construction"
           :need-chips="needs.demand && !playingRaid ? needChips : []"
+          :goal-pills="{
+            project: !!projectGoal && !playingRaid,
+            commission: !!commissionGoal && !playingRaid,
+          }"
           :guidance="sceneGuidance"
           @select="selectBuilding($event, KEEP_CAMERA)"
           @inspect="inspectBuilding($event, KEEP_CAMERA)"

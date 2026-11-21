@@ -232,3 +232,189 @@ it('keeps a moon dial and updates its arrow after the last cargo leaves its exit
   expect(animator.scene.add.image).toHaveBeenCalledWith(0, 0, expect.any(String), 'tile-moon-dial');
   expect(look(animator, 2)).toEqual(look(animator, 0));
 });
+
+// Every marker an obstacle draws stays inside its own cell, so it reads as part of that
+// cell and never as a badge on the neighbouring gem. The board's drawing calls are
+// recorded with their sizes: images at their display size (glyph labels at their
+// rendered text size), circles with their stroke, graphics with their line width.
+function measuringRenderer(cellSize) {
+  const shapes = [];
+  const glyphs = new Map();
+  const shape = (kind, x, y, extra = {}) => {
+    const object = {
+      kind,
+      x,
+      y,
+      origin: [0.5, 0.5],
+      lines: [],
+      lineWidth: 0,
+      ...extra,
+      add(...children) {
+        for (const child of children.flat()) child.parent = object;
+        return object;
+      },
+      destroy() {},
+      setDisplaySize(width, height) {
+        Object.assign(object, { width, height });
+        return object;
+      },
+      setSize(width, height) {
+        Object.assign(object, { width, height });
+        return object;
+      },
+      setPosition(px, py = px) {
+        Object.assign(object, { x: px, y: py });
+        return object;
+      },
+      setOrigin(ox, oy = ox) {
+        object.origin = [ox, oy];
+        return object;
+      },
+      setStrokeStyle(width = 0) {
+        object.lineWidth = width;
+        return object;
+      },
+      lineStyle(width) {
+        object.lineWidth = Math.max(object.lineWidth, width);
+        return object;
+      },
+      moveTo(px, py) {
+        object.lines.push([px, py]);
+        return object;
+      },
+      lineTo(px, py) {
+        object.lines.push([px, py]);
+        return object;
+      },
+    };
+    for (const name of [
+      'setTexture',
+      'setCrop',
+      'setAlpha',
+      'setActive',
+      'setVisible',
+      'setAngle',
+      'setFillStyle',
+      'setDepth',
+      'setScale',
+      'setTint',
+      'beginPath',
+      'strokePath',
+      'fillStyle',
+      'fillCircle',
+      'fillRect',
+    ])
+      object[name] = () => object;
+    shapes.push(object);
+    return object;
+  };
+  // Arial's digits are about 0.56 em wide; symbols and emoji fall back to wider fonts,
+  // so they are measured at a full em.
+  const measure = (text, style) => {
+    const font = parseFloat(style.fontSize);
+    const pad = style.padding ?? {};
+    const em = [...text].reduce((sum, char) => sum + (/[0-9]/.test(char) ? 0.56 : 1), 0);
+    const stroke = style.strokeThickness ?? 0;
+    return {
+      width: font * em + 2 * (pad.x ?? 0) + stroke,
+      height: font * 1.2 + 2 * (pad.y ?? 0) + stroke,
+    };
+  };
+  const textures = {
+    exists: (key) => !key.startsWith('glyph:') || glyphs.has(key),
+    get: () => ({ has: () => true }),
+    createCanvas: (key, width, height) => {
+      glyphs.set(key, { width, height });
+      return { draw() {} };
+    },
+  };
+  const animator = new BoardAnimator({
+    scene: {
+      textures,
+      add: {
+        image: (x, y, key) => shape('image', x, y, glyphs.get(key) ?? {}),
+        sprite: (x, y) => shape('image', x, y),
+        rectangle: (x, y, width, height) => shape('image', x, y, { width, height }),
+        container: (x = 0, y = 0) => shape('container', x, y),
+        circle: (x, y, radius) => shape('circle', x, y, { radius }),
+        graphics: () => shape('graphics', 0, 0),
+      },
+      make: {
+        text: ({ text, style }) => ({ ...measure(text, style), canvas: {}, destroy() {} }),
+      },
+    },
+    backgroundLayer: shape('layer', 0, 0),
+    tileLayer: shape('layer', 0, 0),
+    gemLayer: shape('layer', 0, 0),
+    textures: { relic: { key: 'gem-relic' }, ruby: { key: 'gem-ruby' } },
+  });
+  Object.assign(animator, { boardCols: 1, boardRows: 1, cellSize });
+  return { animator, shapes };
+}
+// Where a recorded shape reaches on the board, from its own origin plus its parents'.
+function reach(object) {
+  let [dx, dy] = [0, 0];
+  for (let parent = object.parent; parent; parent = parent.parent) {
+    dx += parent.x;
+    dy += parent.y;
+  }
+  if (object.kind === 'circle') {
+    const r = object.radius + object.lineWidth / 2;
+    return [object.x + dx - r, object.y + dy - r, object.x + dx + r, object.y + dy + r];
+  }
+  if (object.kind === 'graphics') {
+    const xs = object.lines.map(([x]) => x),
+      ys = object.lines.map(([, y]) => y),
+      half = object.lineWidth / 2;
+    return [
+      Math.min(...xs) + dx - half,
+      Math.min(...ys) + dy - half,
+      Math.max(...xs) + dx + half,
+      Math.max(...ys) + dy + half,
+    ];
+  }
+  const left = object.x + dx - object.width * object.origin[0],
+    top = object.y + dy - object.height * object.origin[1];
+  return [left, top, left + object.width, top + object.height];
+}
+// Variants that draw differently from the registry sample: each Crossgrain stage, both
+// Trace facets, a thick seal and a long survey number.
+const VARIANTS = {
+  'crossgrain (uncut)': { ...ACTIVE.crossgrain, grainRemaining: 3 },
+  'crossgrain (one cut left)': { ...ACTIVE.crossgrain, grainRemaining: 1 },
+  'trace-twins (hexagon)': { ...ACTIVE['trace-twins'], traceFacet: 'hexagon' },
+  'spore (row)': { ...ACTIVE.spore, sporeAxis: 'row' },
+  'survey (two digits)': { ...ACTIVE.survey, surveyOrder: 12 },
+  'triple ice': { type: 'standard', health: 3, maxHealth: 3 },
+  'cracked blast gate': { type: 'blocker', bonusOnly: true, health: 1, maxHealth: 2 },
+};
+// Fixtures, a moon lock and single ice or stone are whole-cell pictures with no markers.
+const UNMARKED = new Set([...FIXTURES, ...OFF_BOARD, 'moon-lock', 'ice', 'stone']);
+const MARKED = [
+  ...OBSTACLES.map(({ id }) => id)
+    .filter((id) => !UNMARKED.has(id))
+    .map((id) => [id, ACTIVE[id]]),
+  ...Object.entries(VARIANTS),
+];
+
+it.each(MARKED)('draws every marker of %s inside its own cell', (_, tile) => {
+  for (const cellSize of [40, 48, 56, 64, 80]) {
+    const { animator, shapes } = measuringRenderer(cellSize);
+    animator.tiles = [tile];
+    animator.drawCells();
+    // The cell's markers: what its overlay holds. Fixtures and fossil pieces are full
+    // pictures drawn to their own extent.
+    const overlay = animator.tileOverlays.get(0);
+    const drawn = shapes.filter(({ parent }) => parent && parent === overlay);
+    expect(drawn.length, `${cellSize}px cell`).toBeGreaterThan(0);
+    for (const object of drawn) {
+      expect(object.width ?? object.radius ?? object.lines.length, 'a measured size').toBeTruthy();
+      const [left, top, right, bottom] = reach(object);
+      const where = `${object.kind} at ${object.x},${object.y} in a ${cellSize}px cell`;
+      expect(left, where).toBeGreaterThanOrEqual(-0.01);
+      expect(top, where).toBeGreaterThanOrEqual(-0.01);
+      expect(right, where).toBeLessThanOrEqual(cellSize + 0.01);
+      expect(bottom, where).toBeLessThanOrEqual(cellSize + 0.01);
+    }
+  }
+});

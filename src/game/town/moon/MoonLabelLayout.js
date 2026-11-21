@@ -1,6 +1,7 @@
 import { MOON_FLOOR_RADIUS } from '../../../data/moonSettlement';
 import { layoutTownLabels } from '../TownLabelLayout';
 import { markerPlace } from '../TownMarkers';
+import { mapHudTop } from '../TownMapHud';
 
 // The SVG map flattens the Moon's ground: x widens and z becomes y under the crater's tilt.
 export const MOON_MAP_SCALE = Object.freeze([1.3, 1.05]);
@@ -82,7 +83,7 @@ export function moonMapLabel({ id, x, y }, view, box = CRATER_BOX) {
 // `avoid` lists what no name may cover (the Quiet Stone), as rectangles in percent of the
 // view about their centres: `{ id, x, y, width, height }`.
 export function layoutMoonLabels(labels, width, height, { avoid = [] } = {}) {
-  const top = width < 600 ? 164 : height < 450 ? 110 : 112;
+  const top = width < 600 ? mapHudTop(3) : height < 450 ? 110 : mapHudTop(2);
   const bottom = height - (height < 450 ? 42 : 120);
   const projected = labels.map((label) => ({
     ...label,

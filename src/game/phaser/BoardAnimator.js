@@ -1337,13 +1337,16 @@ export class BoardAnimator {
     // Sky hatches receive rising cargo at the top of the board.
     if (exit) addImage(tile.hatch ? 'hatch' : mineRelicAppearance(this.theme).exitTexture.slice(5));
     if (sealColor) addImage(`seal-${sealColor}`);
+    // Markers stay inside their own cell (completed-board-markers.test.js): a corner badge
+    // sits in its corner of the tile, and a label grows inward from the tile's edge.
+    const edge = size * 0.47;
     if (layers || frozen)
-      addLabel(size * 0.23, -size * 0.46, frozen ? '❄' : String(layers), {
+      addLabel(edge, -size * 0.46, frozen ? '❄' : String(layers), {
         fontSize: `${Math.max(12, size * 0.23)}px`,
         color: '#ffffff',
         backgroundColor: tile.rootKnot || tile.fossilGroup != null ? '#5b4129' : '#24384f',
         padding: { x: 3, y: 1 },
-      }).setOrigin(0);
+      }).setOrigin(1, 0);
     if (chained) addImage(tile.rootGroup != null ? 'vine' : 'chain');
     if (phase) {
       overlay.add(
@@ -1372,28 +1375,29 @@ export class BoardAnimator {
           ? `tile-crossgrain-${tile.grainRemaining === 1 ? 'horizontal' : 'vertical'}`
           : (skin?.texture ?? `tile-${signal}`);
       const ref = spriteRef(texture, this.scene.textures);
+      // The badge in the tile's lower-left corner. Crossgrain's is larger, so its crack
+      // stays legible.
+      const badge = signal === 'crossgrain' ? 0.56 : 0.43,
+        corner = (0.5 - badge / 2) * size;
       const marker = this.scene.add
-        .image(-size * 0.3, size * 0.29, ref.key, ref.frame)
-        .setDisplaySize(
-          size * (signal === 'crossgrain' ? 0.6 : 0.43),
-          size * (signal === 'crossgrain' ? 0.6 : 0.43),
-        );
+        .image(-corner, corner, ref.key, ref.frame)
+        .setDisplaySize(size * badge, size * badge);
       overlay.add(marker);
       if (signal === 'trace')
-        addLabel(size * 0.28, size * 0.31, tile.traceFacet === 'hexagon' ? '⬡' : '◇', {
+        addLabel(edge, edge, tile.traceFacet === 'hexagon' ? '⬡' : '◇', {
           fontSize: `${Math.max(16, size * 0.32)}px`,
           color: '#e4f8ff',
           backgroundColor: '#17384b',
           padding: { x: 2, y: 0 },
-        });
+        }).setOrigin(1);
       if (signal === 'spore')
-        addLabel(size * 0.16, size * 0.32, tile.sporeAxis === 'column' ? '↕' : '↔', {
+        addLabel(size * 0.16, edge, tile.sporeAxis === 'column' ? '↕' : '↔', {
           fontSize: `${Math.max(17, size * 0.34)}px`,
           color: '#ffffff',
           stroke: '#153a38',
           strokeThickness: 3,
           backgroundColor: '#153a38',
-        });
+        }).setOrigin(0.5, 1);
       // Charge pips: one small static dot per charge, rebuilt only when the charge changes.
       if (signal === 'core' || signal === 'chord')
         for (
@@ -1418,7 +1422,7 @@ export class BoardAnimator {
               .setStrokeStyle(1.5, 0xbff6ff, 0.95),
           );
       if (tile.surveyOrder)
-        addLabel(-size * 0.3, size * 0.29, String(tile.surveyOrder), {
+        addLabel(-corner, corner, String(tile.surveyOrder), {
           fontSize: `${Math.max(11, size * 0.21)}px`,
           color: '#fff7d5',
         });

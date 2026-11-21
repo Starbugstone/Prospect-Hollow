@@ -283,6 +283,9 @@ const props = defineProps({
   construction: Object,
   // Water, food and happiness against the town's size, always visible on the map.
   needChips: { type: Array, default: () => [] },
+  // The goal pills TownView draws down the map's right, `{ project, commission }`: names
+  // keep clear of them (TownMapHud.js).
+  goalPills: { type: Object, default: () => ({}) },
   // The town's open offers and next goal, `{ offers, goal }`, when the owner's village
   // already has them (the campaign store); a visit or the admin viewer derives its own.
   guidance: Object,
@@ -694,6 +697,7 @@ async function update() {
     emit('cinematic-ready');
   }
   updateLabelActions();
+  scene.setHud(hud.value);
   scene.setAvailable([...availableIds.value, ...(props.town.income.stored > 0 ? ['saloon'] : [])]);
   scene.setUpgradeable(props.cinematic ? [] : upgradeIds.value);
   scene.select(props.selected);
@@ -902,6 +906,13 @@ watch(
     scene?.setUpgradeable(value ? [] : upgradeIds.value);
   },
 );
+// The chrome over the valley's map: the needs row and the goal pills.
+const hud = computed(() => ({
+  needs: props.needChips.length > 0 || !!moon.value.homesteads,
+  project: !!props.goalPills.project,
+  commission: !!props.goalPills.commission,
+}));
+watch(hud, (value) => scene?.setHud(value));
 function updateLabelActions() {
   scene?.setLabelActions(
     Object.keys(indicators.value).filter((id) => TOWN_ACTIONS[indicators.value[id]]),
