@@ -122,8 +122,9 @@
             :destination="waitingEvent.settlement"
             @watch="watchWaitingEvent"
           />
+          <!-- The pill steps aside while a raid, an era cinematic or a presentation plays. -->
           <TownCommissionGoal
-            v-if="commissionGoal && !playingRaid"
+            v-if="commissionGoal && !playingRaid && !eraPlaying && !openingPresentation"
             :status="commissionGoal"
             @open="selectBuilding(commissionGoal.site)"
           />
