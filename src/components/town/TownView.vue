@@ -396,7 +396,8 @@
           @mine="goMining"
           @advance-era="beginEra"
         />
-        <p v-if="!directoryPlots.length" class="town-build-empty" role="status">
+        <!-- An open era gate is the next step; TownNextStep above offers it. -->
+        <p v-if="!directoryPlots.length && !gate.available" class="town-build-empty" role="status">
           {{
             t(
               townBuilt
