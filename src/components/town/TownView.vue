@@ -172,7 +172,6 @@
           :goal-pills="{
             project: !!projectGoal && !playingRaid,
             commission: !!commissionGoal && !playingRaid,
-            tabs: tabHeight,
           }"
           :guidance="sceneGuidance"
           @select="selectBuilding($event, KEEP_CAMERA)"
@@ -1163,8 +1162,13 @@ async function handOffEra() {
   // Held only for a presentation; any other refusal drops it, so it never moves the map later.
   if (away && settlement.value !== away && openingPresentation.value) return;
   eraHandoff.value = null;
-  // The map on screen draws last: a settlement's map covers the valley's.
-  [...(mapFrame.value?.querySelectorAll('canvas') ?? [])].at(-1)?.focus({ preventScroll: true });
+  // Focus the map on screen: a settlement's map, which covers the valley's, takes it on its
+  // canvas or, drawn without WebGL, on its first button.
+  const shownMap = away ? mapFrame.value?.querySelector('.town-moon-view') : null;
+  const target = shownMap
+    ? shownMap.querySelector('canvas, button')
+    : mapFrame.value?.querySelector('canvas');
+  target?.focus({ preventScroll: true });
 }
 // The one-second collection clock. Only its readers (cooldown checks in the scene and
 // building card) re-render each second; this view sees derived values that rarely change.

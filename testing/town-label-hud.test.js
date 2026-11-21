@@ -72,9 +72,9 @@ describe('valley names and the map chrome', () => {
 
   // The phone's commission pill sits at the foot of the map, above the tab bar.
   it('on a phone leaves out a name under the commission pill at the foot', () => {
-    // 375 x 740 with a 64 px tab bar: the pill's 44 px line ends 12 px above the bar, 12 px
-    // from the left, at most min(351 - 162, 60% of 351 - 16) = 189 px wide.
-    const [pill] = mapHud(375, 740, { commission: true, tabs: 64 }).chrome;
+    // A 375 x 676 canvas, which ends above the tab bar: the pill's 44 px line ends 12 px
+    // above its foot, 12 px from the left, at most min(351 - 162, 60% of 351 - 16) = 189 px.
+    const [pill] = mapHud(375, 676, { commission: true }).chrome;
     expect(pill).toEqual({
       id: 'hud-commission-foot',
       x: 12 + 189 / 2,
@@ -100,16 +100,19 @@ describe('valley names and the map chrome', () => {
         ).map(({ id, visible }) => [id, visible]),
       );
     const foot = { underFoot: [110, 630], besideFoot: [290, 630], aboveFoot: [110, 500] };
-    expect(names(375, 740, foot, { commission: true, tabs: 64 })).toEqual({
+    expect(names(375, 676, foot, { commission: true })).toEqual({
       underFoot: false,
       besideFoot: true,
       aboveFoot: true,
     });
-    expect(names(375, 740, foot, {}).underFoot).toBe(true);
-    // A short landscape phone, as the council measured: 568 x 320 with its tab bar.
-    const landscape = { lowerLeft: [110, 205], clear: [420, 110] };
-    expect(names(568, 320, landscape, { commission: true, tabs: 65 })).toEqual({
+    expect(names(375, 676, foot, {}).underFoot).toBe(true);
+    // A short landscape phone, as the council measured: 568 x 320 with a 65 px tab bar, so a
+    // 255 px canvas and the pill's top at 199 px. A name ending at 203 px gives way; one
+    // ending above the pill stays.
+    const landscape = { lowerLeft: [110, 181], aboveLeft: [110, 150], clear: [420, 110] };
+    expect(names(568, 255, landscape, { commission: true })).toEqual({
       lowerLeft: false,
+      aboveLeft: true,
       clear: true,
     });
   });
