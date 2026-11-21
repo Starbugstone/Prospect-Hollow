@@ -911,6 +911,7 @@ const hud = computed(() => ({
   needs: props.needChips.length > 0 || !!moon.value.homesteads,
   project: !!props.goalPills.project,
   commission: !!props.goalPills.commission,
+  tabs: props.goalPills.tabs ?? 0,
 }));
 watch(hud, (value) => scene?.setHud(value));
 function updateLabelActions() {

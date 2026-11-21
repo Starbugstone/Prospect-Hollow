@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { PerspectiveCamera, Vector3 } from 'three';
 import { projectLabelPositions } from '../src/game/town/TownLabelProjection';
+import { layoutTownLabels } from '../src/game/town/TownLabelLayout';
 import { mapHud, mapHudTop } from '../src/game/town/TownMapHud';
 
 // The valley's names keep clear of the map's chrome: the header pills, the needs row
@@ -67,6 +68,55 @@ describe('valley names and the map chrome', () => {
       topRight: false,
       clear: true,
     });
+  });
+
+  // The phone's commission pill sits at the foot of the map, above the tab bar.
+  it('on a phone leaves out a name under the commission pill at the foot', () => {
+    // 375 x 740 with a 64 px tab bar: the pill's 44 px line ends 12 px above the bar, 12 px
+    // from the left, at most min(351 - 162, 60% of 351 - 16) = 189 px wide.
+    const [pill] = mapHud(375, 740, { commission: true, tabs: 64 }).chrome;
+    expect(pill).toEqual({
+      id: 'hud-commission-foot',
+      x: 12 + 189 / 2,
+      y: 664 - 24,
+      width: 189,
+      height: 48,
+    });
+    // A name at the pill's place gives way; one beside or above it stays.
+    const names = (width, height, places, hud) =>
+      Object.fromEntries(
+        layoutTownLabels(
+          Object.entries(places).map(([id, [x, y]]) => ({
+            id,
+            visible: true,
+            x: (x / width) * 100,
+            y: (y / height) * 100,
+            width: 120,
+            height: 30,
+          })),
+          width,
+          height,
+          mapHud(width, height, hud),
+        ).map(({ id, visible }) => [id, visible]),
+      );
+    const foot = { underFoot: [110, 630], besideFoot: [290, 630], aboveFoot: [110, 500] };
+    expect(names(375, 740, foot, { commission: true, tabs: 64 })).toEqual({
+      underFoot: false,
+      besideFoot: true,
+      aboveFoot: true,
+    });
+    expect(names(375, 740, foot, {}).underFoot).toBe(true);
+    // A short landscape phone, as the council measured: 568 x 320 with its tab bar.
+    const landscape = { lowerLeft: [110, 205], clear: [420, 110] };
+    expect(names(568, 320, landscape, { commission: true, tabs: 65 })).toEqual({
+      lowerLeft: false,
+      clear: true,
+    });
+  });
+
+  it('reserves the project pill at its own width', () => {
+    expect(mapHud(375, 740, { project: true }).chrome[0].width).toBe(230);
+    expect(mapHud(1280, 800, { project: true, commission: true }).chrome[0].width).toBe(290);
   });
 
   it('shares the header rows with the Moon', () => {
