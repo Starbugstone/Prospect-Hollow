@@ -541,11 +541,11 @@ with the 18 new boards).
       town as a frontier town and saved over it; it now opens the save read-only, and the server
       refuses any upload older than the stored schema
 - [x] The two optional buildings (Moonball Field, Crater Pond Garden)
-- [ ] A tram that runs the outer ring, and child settlers
+- [x] A tram that runs the outer ring, and child settlers
 - [x] The moonstone monument site: Hollowborn Square, three designs at five levels, its own
       path to the outer ring, `NON_MONUMENT_HONOURS` (600 moonstones for all three sites;
       `docs/moonstones.md`)
-- [ ] The two commissions
+- [x] The two commissions (Schoolyard Court, Crew Yard)
 - [ ] Rover expeditions: client, server replay, presentation and an economy rerun. After 1.3.0
       (owner, 11 November 2026)
 - [x] Honours (Outer Ring Builder, calibrated in `docs/honours.md`), French text, docs
@@ -783,6 +783,35 @@ All as built (owner, 11 November 2026), after the pictures and videos in `output
 - [ ] Open the PR from `preprod` to `main`. **Delete this file in that PR**
 - [ ] Deploy the backend and catalogs before the client, because old servers reject unknown content
 - [ ] Confirm the release header on production
+
+### Council review, 21 November 2026
+
+Four reviewers (Gemini Neon, Claude Fable, GPT Astra, GPT Sol) reviewed `preprod` against
+`main` and voted on each finding; a majority of three fixed it before release, and ties kept
+things as they were. Fixed: the cloud restore of towns with landmarks, wanderer finds in their
+own table (`hidden_finds`), the monument level cap, the plaque's private time step, the era
+cinematic's hand-over to the Moon and its stalled-frame cap, the Quiet Stone on the SVG map,
+the next monument named in Build, the commission's stage price, the Build tab's advice once the
+next era is open, labels clear of the map's pills, markers inside their cells, building card
+captions, the French first download and French error text.
+
+Kept: commission prices at 400,000 coins for each of five stages, and the replay tail after
+level 606.
+
+Deferred until after the release:
+
+- [ ] Moon vehicles keep their yield clocks across an unrelated rebuild
+- [ ] A swap during a routed gem's landing squash (check with the board motion run)
+- [ ] Landmark claims in the favourable-sync check, orphaned construction after a correction,
+      empty personalisation maps stored as objects
+- [ ] A starter scaffold on a commission site with no puzzles won
+- [ ] Default Moon framing that shows the outer ring's front parcels on desktop
+- [ ] The SVG map's Earth disc clear of the header, and its crowded phone labels
+- [ ] Moon children readable at the closest zoom
+- [ ] Single-reviewer ideas: SVG parcel targets, crack units in the crystal counter, the
+      commission pill naming its settlement, a tinted pop flash, Build row text size, Honours
+      tab polish, the Earth clipped by fog on a portrait Moon, the Moon's second moonstone chip,
+      a label on the bonus clock
 
 ### What to watch afterwards
 
