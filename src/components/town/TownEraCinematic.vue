@@ -159,6 +159,14 @@ watch(
 .era-caption {
   position: absolute;
   inset: auto 24px 13vh;
+  width: fit-content;
+  max-width: min(760px, calc(100% - 48px));
+  margin-inline: auto;
+  padding: 18px 32px 22px;
+  border-radius: 14px;
+  /* A dark scrim keeps every caption readable over the brightest scenery. */
+  background: #14252ec7;
+  box-shadow: 0 0 48px 20px #14252e59;
   animation: era-title 1.5s ease-out both;
   text-shadow: 0 2px 14px #15242c;
 }
