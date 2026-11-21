@@ -1,14 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import { Box3, Group } from 'three';
 import {
+  MOON_DISTRICTS,
   MOON_LOTS,
   MOON_RING_ROAD,
   MOON_ROADS,
   MOON_ROAD_WIDTH,
   moonApproaches,
   moonEntrance,
+  moonLotDistrict,
   moonPadRadius,
+  moonSiteRoute,
 } from '../src/data/moonSettlement';
+import { commissionFor, commissionUse } from '../src/data/commissions';
+import { AREA_BY_ID } from '../src/data/townLandmarks';
 import {
   MAX_MOON_CHILDREN,
   MOON_CHILD_HOMES,
@@ -614,5 +619,44 @@ describe('Moon-born children', () => {
       'ringMarket',
       'craterInn',
     ]);
+  });
+});
+
+describe('Far Rim residents and crater commissions', () => {
+  // Little Planetarium, unveiled in the crater, asks for every settler trip of the day.
+  const planetarium = () => {
+    const route = moonSiteRoute(AREA_BY_ID['schoolyard-court']);
+    const outcome = commissionFor('schoolyard-court').outcomes['little-planetarium'];
+    return { id: 'schoolyard-court', route, visits: outcome.visits, use: commissionUse(outcome) };
+  };
+  const stops = (plan) => walks(plan).flatMap(({ route }) => [route.from, route.to]);
+
+  it('keeps a local resident in their district while it has workplaces open', () => {
+    const levels = { farRimHomes: 2, resonanceWorkshop: 1, tonewoodConservatory: 1 };
+    const venues = [planetarium()];
+    expect(venues[0].route).toBeTruthy();
+    for (let n = 0; n < 3; n++) {
+      const plan = moonSettlerPlan(levels, 200 + n, 'farRimHomes', venues, 'settler', {
+        local: true,
+      });
+      for (const id of stops(plan)) expect(moonLotDistrict(id), id).toBe(MOON_DISTRICTS.farRim);
+    }
+    // Crater residents still answer the commission.
+    const crater = moonSettlerPlan({ ...levels, settlerDomes: 1 }, 0, null, venues);
+    expect(stops(crater)).toContain('schoolyard-court');
+  });
+
+  it('lets a local resident with nowhere in the district go to the commission', () => {
+    const plan = moonSettlerPlan(
+      { farRimHomes: 1 },
+      200,
+      'farRimHomes',
+      [planetarium()],
+      'settler',
+      {
+        local: true,
+      },
+    );
+    expect(stops(plan)).toContain('schoolyard-court');
   });
 });
