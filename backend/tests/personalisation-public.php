@@ -1,8 +1,10 @@
 <?php
 require __DIR__ . '/support.php';
 use App\PlayerDistinctions;
+// Its own address keeps the shared 127.0.0.1 sign-in limit for the other suites.
+$publicTestIp = '127.' . random_int(1, 254) . '.' . random_int(1, 254) . '.' . random_int(1, 254);
 try {
-    $owner = account();
+    $owner = account(['REMOTE_ADDR' => $publicTestIp]);
     $body = townBody('Emblem Hollow');
     $body['profile']->town->personalisation = (object) [
         'crest' => (object) [
@@ -71,7 +73,7 @@ try {
     );
     // The time distinction on a plaque: visitors see its step, never the owner's next one,
     // which would give away when the account was created.
-    $veteran = account();
+    $veteran = account(['REMOTE_ADDR' => $publicTestIp]);
     $db->get()->update(
         'players',
         ['created_at' => time() - 400 * 86400],
