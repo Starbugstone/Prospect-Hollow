@@ -4,6 +4,7 @@ import { overlapsEventInset } from './TownInset';
 import { forEachWalker } from './TownWalkers';
 import { TOWN_LABEL_DETAIL_DISTANCE, townLabelRank, townLabelDetail } from './TownLabels';
 import { layoutTownLabels } from './TownLabelLayout';
+import { mapHud } from './TownMapHud';
 import { markerPlace, projectMarker } from './TownMarkers';
 
 // A place that gives no width of its own is sized as an ordinary lot.
@@ -86,7 +87,9 @@ export function projectLabelPositions(d) {
         }),
     };
   });
-  d.onLabels(layoutTownLabels(projected, width, height));
+  // Names keep clear of the header, the needs row and the goal pills (TownMapHud.js).
+  const hud = mapHud(width, height, d.hud);
+  d.onLabels(layoutTownLabels(projected, width, height, hud));
   projectVillager(d);
   projectPlaque(d);
 }

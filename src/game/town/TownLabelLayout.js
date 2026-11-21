@@ -96,12 +96,13 @@ const AVOID_GAP = 6;
 // `avoid` lists things on the map no name may cover, as screen rectangles
 // `{ id, x, y, width, height }` about their centres: a name that would cover one steps
 // sideways, just clear of it, and is then placed like any other. The thing's own name
-// (the same `id`) is left where it is.
+// (the same `id`) is left where it is. `chrome` lists the map's own controls drawn over it
+// (TownMapHud.js), in the same form: a name that would cover one is left out.
 export function layoutTownLabels(
   labels,
   width,
   height,
-  { top = 0, bottom = height, avoid = [] } = {},
+  { top = 0, bottom = height, avoid = [], chrome = [] } = {},
 ) {
   const result = labels.map((label) => ({ ...label }));
   if (width > 0 && height > 0) separateActionTargets(result, width, height, top, bottom);
@@ -113,7 +114,8 @@ export function layoutTownLabels(
       y: (label.collection.y * height) / 100,
       width: label.collection.extent ?? ACTION_TARGET,
       height: label.collection.extent ?? ACTION_TARGET,
-    }));
+    }))
+    .concat(chrome);
   const ranked = [...result].sort(
     (a, b) =>
       (a.rank ?? 5) - (b.rank ?? 5) ||

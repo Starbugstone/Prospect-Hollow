@@ -349,6 +349,15 @@ export class TownDiorama extends TownPrimitives {
     this.availablePlots = new Set(ids);
     this.render();
   }
+  // The map chrome over the view, `{ needs, project, commission }`: names keep clear of it
+  // (TownMapHud.js).
+  setHud(hud) {
+    const key = ['needs', 'project', 'commission'].map((part) => !!hud?.[part]).join();
+    if (key === this.hudKey) return;
+    this.hudKey = key;
+    this.hud = hud;
+    this.render();
+  }
   setLabelActions(ids) {
     const key = ids.join(',');
     if (key === this.labelActionKey) return;
