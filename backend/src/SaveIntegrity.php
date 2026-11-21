@@ -926,8 +926,9 @@ final class SaveIntegrity
                 'town',
             ]),
         );
+        $town = $state['town'];
         $state['town'] = array_intersect_key(
-            $state['town'],
+            $town,
             array_flip([
                 'coins',
                 'moonstoneVersion',
@@ -950,6 +951,13 @@ final class SaveIntegrity
                 'transition',
             ]),
         );
+        // The landmarks the replay protects (protected(): town.landmarks), so a restore of
+        // this checkpoint compares monuments and commissions with what was signed. Older
+        // checkpoints lack the key; landmarks() recovers theirs from the cloud history.
+        $state['town']['personalisation'] = [
+            'areas' => $town['personalisation']['areas'] ?? [],
+            'areaLevels' => $town['personalisation']['areaLevels'] ?? [],
+        ];
         $payload = json_encode(
             [
                 'version' => 1,
@@ -971,6 +979,36 @@ final class SaveIntegrity
         return $body .
             '.' .
             hash_hmac('sha256', 'prospect-hollow:save-checkpoint:v1:' . $body, Env::appSecret());
+    }
+    /**
+     * A signed checkpoint's state with its protected landmarks. A checkpoint signed before
+     * they were carried takes them from the cloud save sealed at the same epoch and
+     * sequence, which recorded the same town; without one it has none, as before.
+     *
+     * @param array<string, mixed> $signed From readCheckpoint().
+     * @param list<object|null> $saves The current cloud save and its history.
+     * @return array<string, mixed>
+     */
+    private function landmarks(array $signed, array $saves): array
+    {
+        $state = $signed['state'];
+        if (is_array($state['town']['personalisation'] ?? null)) {
+            return $state;
+        }
+        foreach ($saves as $save) {
+            $data = $save ? self::arrayOf($save) : null;
+            if (
+                ($data['integrity']['epoch'] ?? null) === $signed['epoch'] &&
+                ($data['integrity']['baseSequence'] ?? null) === $signed['sequence']
+            ) {
+                $state['town']['personalisation'] = [
+                    'areas' => $data['town']['personalisation']['areas'] ?? [],
+                    'areaLevels' => $data['town']['personalisation']['areaLevels'] ?? [],
+                ];
+                break;
+            }
+        }
+        return $state;
     }
     private function readCheckpoint(mixed $token, string $townId): ?array
     {
@@ -1364,7 +1402,7 @@ final class SaveIntegrity
             ) {
                 self::mismatch('recovery.checkpoint');
             }
-            $signedProfile = $signed['state'];
+            $signedProfile = $this->landmarks($signed, [$previous, ...$history]);
             $signedProfile['powers'] = array_map(
                 fn($id, $quantity) => ['id' => $id, 'quantity' => $quantity],
                 array_keys($signedProfile['powers']),

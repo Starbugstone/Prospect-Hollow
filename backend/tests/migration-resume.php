@@ -12,6 +12,9 @@ $names = [
     'town_travels',
     'email_changes_player',
     'email_changes',
+    'hidden_finds_host',
+    'hidden_finds_town',
+    'hidden_finds',
     'helmet_finds_host',
     'helmet_finds_town',
     'helmet_finds',
@@ -185,6 +188,39 @@ try {
         count($connection->createSchemaManager()->listTableIndexes($prefix . 'towns')) >= 4,
         'retry preserves required indexes',
     );
+    // Migration 26 moves every find but the space helmet out of helmet_finds, also when it
+    // resumes after copying a row but before removing it, and when it runs again.
+    $finds = fn(string $table) => array_map(
+        fn($row) => [$row['player_id'], $row['kind'], (int) $row['found_at']],
+        $connection->fetchAllAssociative(
+            'SELECT player_id,kind,found_at FROM ' . $prefix . $table . ' ORDER BY kind,found_at',
+        ),
+    );
+    foreach ([[100, 'helmet'], [101, 'wanderers'], [102, 'wanderers']] as [$at, $kind]) {
+        $connection->insert($prefix . 'helmet_finds', [
+            'player_id' => 'kept',
+            'found_at' => $at,
+            'town_id' => 'legacy-approval',
+            'kind' => $kind,
+        ]);
+    }
+    $connection->insert($prefix . 'hidden_finds', [
+        'player_id' => 'kept',
+        'kind' => 'wanderers',
+        'found_at' => 101,
+        'town_id' => 'legacy-approval',
+    ]);
+    foreach ([1, 2] as $run) {
+        $connection->executeStatement(
+            'DELETE FROM ' . $prefix . 'schema_versions WHERE version=26',
+        );
+        $migration->migrate();
+    }
+    check(
+        $finds('helmet_finds') === [['kept', 'helmet', 100]] &&
+            $finds('hidden_finds') === [['kept', 'wanderers', 101], ['kept', 'wanderers', 102]],
+        'wanderer finds move to hidden_finds once, also when the move resumes or repeats',
+    );
     check(
         $connection
             ->createSchemaManager()
@@ -255,6 +291,7 @@ try {
             'town_sync_rejections',
             'town_travels',
             'email_changes',
+            'hidden_finds',
             'helmet_finds',
             'admin_settings',
             'player_distinction_revocations',

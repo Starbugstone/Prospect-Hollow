@@ -1,7 +1,7 @@
 <?php
 // Pure save/public-projection checks: no account, clock, database or network needed.
 require dirname(__DIR__) . '/vendor/autoload.php';
-use App\TownPersonalisation;
+use App\{JsonNumber, TownPersonalisation};
 
 $schema = json_decode(
     file_get_contents(dirname(__DIR__) . '/content/public-schema.json'),
@@ -377,6 +377,76 @@ checkPersonalisation(
     TownPersonalisation::purchase($state, $legacyCommand, $schema['eras']) === null,
     'unsupported monument price version rejected',
 );
+// Unversioned receipts keep their linear prices and era ceilings, but never pass a
+// site's progression: no monument has more than five levels, whatever its terms.
+$lastEra = $schema['eras'][count($schema['eras']) - 1];
+$levels = count($schema['personalisation']['monumentProgression']['levels']);
+$legacyTop = array_replace($state, ['era' => $lastEra, 'coins' => 1000000]);
+$legacyTop['personalisation']['areaLevels']['meadow'] = $levels - 1;
+$legacyCommand = array_replace($legacyCommand, ['expectedLevel' => $levels - 1]);
+unset($legacyCommand['monumentVersion']);
+$topped = TownPersonalisation::purchase($legacyTop, $legacyCommand, $schema['eras']);
+checkPersonalisation(
+    $topped !== null &&
+        $topped['personalisation']['areaLevels']['meadow'] === $levels &&
+        $legacyTop['coins'] - $topped['coins'] === 600 * $levels,
+    'an unversioned receipt still reaches the last level at its original price',
+);
+foreach ([null, 2, $schema['personalisation']['monumentProgression']['version']] as $terms) {
+    $beyond = array_replace($legacyCommand, ['expectedLevel' => $levels]);
+    if ($terms !== null) {
+        $beyond['monumentVersion'] = $terms;
+    }
+    checkPersonalisation(
+        TownPersonalisation::purchase($topped, $beyond, $schema['eras']) === null,
+        'no receipt terms raise a monument past its progression (' . ($terms ?? 1) . ')',
+    );
+}
+// Only the sites the game sold before receipts carried terms (until 2026-10-08) accept
+// unversioned ones; every later site refuses them, so they never price a new site.
+$unversioned = [
+    'meadow',
+    'monument',
+    'motor-court',
+    'arts-court',
+    'horizon',
+    'light-court',
+    'stargazer-lawn',
+    'homecoming-green',
+];
+foreach ($schema['personalisation']['areas'] as $area) {
+    $site = openSite(
+        array_replace(json_decode(json_encode($rules->defaultTown), true), [
+            'era' => $lastEra,
+            'coins' => JsonNumber::MAX_SAFE_INTEGER,
+            'moonstones' => JsonNumber::MAX_SAFE_INTEGER,
+        ]),
+        $area,
+        $schema,
+    );
+    $first = [
+        'id' => $area['id'],
+        'slot' => 0,
+        'value' => $area['choices'][0],
+        'expectedChoice' => null,
+        'expectedLevel' => 0,
+    ];
+    checkPersonalisation(
+        (TownPersonalisation::purchase($site, $first, $schema['eras']) !== null) ===
+            in_array($area['id'], $unversioned, true),
+        $area['id'] . ' accepts unversioned receipts only if it was sold before terms existed',
+    );
+    checkPersonalisation(
+        TownPersonalisation::purchase(
+            $site,
+            $first + [
+                'monumentVersion' => $schema['personalisation']['monumentProgression']['version'],
+            ],
+            $schema['eras'],
+        ) !== null,
+        $area['id'] . ' sells its first stage on current terms',
+    );
+}
 
 // Construction of the latest paid level is cosmetic and kept exactly as the client keeps
 // it; anything damaged, stale or historical shows the finished monument instead.

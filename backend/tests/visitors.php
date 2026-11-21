@@ -656,7 +656,7 @@ try {
     $pairFound = status(200, $pair($guest, $originId), 'visitor finds the pair');
     $pairAt = (int) $db
         ->get()
-        ->fetchOne("SELECT found_at FROM helmet_finds WHERE player_id=? AND kind='wanderers'", [
+        ->fetchOne("SELECT found_at FROM hidden_finds WHERE player_id=? AND kind='wanderers'", [
             $guest['id'],
         ]);
     check(
@@ -666,6 +666,26 @@ try {
                 $helmetRows,
         'the pair is found while the helmet rests, as a row of its own kind',
     );
+    // Rolling back to release 1.2 stays safe: it reads `helmet_finds` with no kind, so the
+    // table holds astronaut finds only. Its own queries see no wandering pair.
+    check(
+        (int) $db->get()->fetchOne("SELECT COUNT(*) FROM helmet_finds WHERE kind<>'helmet'") ===
+            0 &&
+            (int) $db->get()->fetchOne('SELECT COUNT(*) FROM helmet_finds') === $helmetRows &&
+            $db
+                ->get()
+                ->fetchFirstColumn(
+                    'SELECT found_at FROM helmet_finds WHERE town_id=? AND found_at>=? ORDER BY found_at',
+                    [$originId, 0],
+                ) ===
+                $db
+                    ->get()
+                    ->fetchFirstColumn(
+                        "SELECT found_at FROM helmet_finds WHERE town_id=? AND kind='helmet' ORDER BY found_at",
+                        [$originId],
+                    ),
+        'helmet_finds holds no wandering pair, so a 1.2 rollback signs no pair as an astronaut',
+    );
     foreach ([[$guest, $originId], [$other, $otherHome]] as [$session, $townId]) {
         $again = status(409, $pair($session, $townId), 'pair taken');
         check(
@@ -673,7 +693,7 @@ try {
             'each town\'s pair is found by one visitor per 12 hours',
         );
     }
-    $db->get()->update('helmet_finds', ['host_town_id' => null], ['kind' => 'wanderers']);
+    $db->get()->update('hidden_finds', ['host_town_id' => null], ['kind' => 'wanderers']);
     check(
         status(409, $pair($guest, $originId), 'pair resting')['code'] === 'wanderers_resting',
         'a player finds one wandering pair per 12 hours',

@@ -1215,8 +1215,9 @@ the helmet's state, persistence or server code.
 - Server: the definitions are exported as `economy.hiddenFinds` in the save rules.
   `SaveIntegrity` replays every find's commands and signs receipts with the find's ID;
   `PublicTown::findHidden` keeps each find's limits (one per host town and one per player
-  per 12 hours, per kind) in `helmet_finds`, whose `kind` column (migration 25) defaults
-  to `helmet` for earlier rows.
+  per 12 hours, per kind). Space-helmet finds stay in `helmet_finds`, which release 1.2
+  reads without a kind; every other find is a `hidden_finds` row of its kind (migration
+  26), chosen by `PublicTown::findTable()`. A new find needs no new table or migration.
 - The wandering pair (`wanderers`, from New Hollow Rising) is the second definition: an
   upright raccoon and its Willowkin (`TownWanderers.js`). `wanderersPlace` puts them in the
   valley or on the Moon from `completedRuns`; the valley casts them as one sidewalk walker

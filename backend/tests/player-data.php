@@ -199,6 +199,13 @@ try {
         'town_id' => $namedHome['townId'],
         'host_town_id' => $hostTown['townId'],
     ]);
+    $db->get()->insert('hidden_finds', [
+        'player_id' => $named['id'],
+        'kind' => 'wanderers',
+        'found_at' => time() - 60,
+        'town_id' => $namedHome['townId'],
+        'host_town_id' => $hostTown['townId'],
+    ]);
     // Retained support comparisons remain exportable even when their cloud
     // revision has already left the five-save history.
     $rejectedRow = $db
@@ -265,7 +272,10 @@ try {
             $export['visitsMade'][0]['shownAs'] === 'Clementine' &&
             count($export['astronautFinds']) === 1 &&
             $export['astronautFinds'][0]['foundIn'] === 'Lantern Rest' &&
-            $export['astronautFinds'][0]['rewardedTown'] === 'Copper Ridge',
+            $export['astronautFinds'][0]['rewardedTown'] === 'Copper Ridge' &&
+            array_keys($export['astronautFinds'][0]) === ['foundIn', 'rewardedTown', 'foundAt'] &&
+            count($export['wanderersFinds']) === 1 &&
+            $export['wanderersFinds'][0]['foundIn'] === 'Lantern Rest',
         'the export holds the account, activity, towns and visits ' .
             json_encode(array_diff_key($export, ['towns' => 1])),
     );
