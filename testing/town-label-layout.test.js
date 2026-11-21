@@ -23,6 +23,24 @@ it('keeps selection and work ahead of routine names as a settlement grows', () =
   expect(selected.every((lot) => lot.x === 50 && lot.y === 50)).toBe(true);
 });
 
+// A label the player asked to see (a tapped landmark's) slides inside the map's bounds;
+// every other label off the edge or under the header still hides.
+it('slides a keepInView label inside the bounds instead of hiding it', () => {
+  const edge = { id: 'stone', x: 96, y: 5, width: 232, visible: true };
+  const [hidden] = layoutTownLabels([edge], 390, 844, { top: 164, bottom: 724 });
+  expect(hidden.visible).toBe(false);
+  const [kept] = layoutTownLabels([{ ...edge, keepInView: true }], 390, 844, {
+    top: 164,
+    bottom: 724,
+  });
+  expect(kept.visible).toBe(true);
+  expect((kept.x * 390) / 100 + 232 / 2).toBeLessThanOrEqual(390 - 8);
+  expect((kept.y * 844) / 100).toBeGreaterThan(164 - 42);
+  // A label already inside stays exactly where it was projected.
+  const inside = { id: 'stone', x: 50, y: 50, width: 120, visible: true, keepInView: true };
+  expect(layoutTownLabels([inside], 390, 844)[0]).toMatchObject({ x: 50, y: 50, visible: true });
+});
+
 it('lets an unfamiliar place use the same default clearance and stable tie breaking', () => {
   const a = { id: 'a', x: 50, y: 50, visible: true };
   const b = { ...a, id: 'b' };

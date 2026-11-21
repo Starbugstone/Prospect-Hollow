@@ -13,6 +13,14 @@ const node = (type, text = '') => ({
   tagName: type.toUpperCase(),
   text,
   props: {},
+  style: {
+    setProperty(name, value) {
+      this[name] = value;
+    },
+    removeProperty(name) {
+      delete this[name];
+    },
+  },
   children: [],
   parent: null,
   isConnected: true,
@@ -55,18 +63,53 @@ const renderer = createRenderer({
   },
 });
 
+// Child components render on the client too, each compiled once per file when it is first
+// rendered.
+const clients = new Map();
+const isComponent = (value) =>
+  !!value && typeof value === 'object' && !!value.ssrRender && !value.render && !!value.__file;
+function clientChildren(state) {
+  for (const [key, value] of Object.entries(state))
+    if (isComponent(value)) state[key] = clientFile(value);
+}
+function clientFile(component) {
+  const path = component.__file;
+  if (!clients.has(path)) {
+    let render;
+    clients.set(path, {
+      ...component,
+      ssrRender: undefined,
+      setup: component.setup && withClientChildren(component.setup),
+      get render() {
+        return (render ??= compileTemplate(path));
+      },
+    });
+  }
+  return clients.get(path);
+}
+const withClientChildren = (setup, prepare) => (props, context) => {
+  const state = setup(props, context) ?? {};
+  clientChildren(state);
+  prepare?.(state);
+  return state;
+};
+function compileTemplate(path, template = sfc(path).template.content) {
+  const descriptor = sfc(path);
+  const bindingMetadata =
+    descriptor.script || descriptor.scriptSetup
+      ? compileScript(descriptor, { id: path }).bindings
+      : {};
+  // No static vnodes: the fake nodes cannot parse HTML strings.
+  return Vue.compile(template, { prefixIdentifiers: true, bindingMetadata, hoistStatic: false });
+}
+
 /** A copy of `component` that renders `template` on the client; `prepare(state)` may adjust its setup. */
 export function clientComponent(component, path, template = sfc(path).template.content, prepare) {
-  const bindingMetadata = compileScript(sfc(path), { id: path }).bindings;
   return {
     ...component,
     ssrRender: undefined,
-    setup(props, context) {
-      const state = component.setup(props, context);
-      prepare?.(state);
-      return state;
-    },
-    render: Vue.compile(template, { prefixIdentifiers: true, bindingMetadata }),
+    setup: withClientChildren(component.setup ?? (() => ({})), prepare),
+    render: compileTemplate(path, template),
   };
 }
 

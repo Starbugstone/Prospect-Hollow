@@ -178,6 +178,25 @@
           :title="lotInfo[lot.id].label"
           @click="activateLabel(lot.id, $event)"
         />
+        <!-- The SVG map's landmark (the Quiet Stone): a tap or a key shows its label, as a
+             tap does in 3D. -->
+        <button
+          v-for="target in landmarkTargets"
+          :key="`landmark-${target.id}`"
+          type="button"
+          class="town-moon-landmark"
+          :data-moon-landmark-target="target.id"
+          :aria-label="lotInfo[target.id].label"
+          :title="lotInfo[target.id].label"
+          :aria-pressed="selectedLot === target.id"
+          :style="{
+            left: `${target.x}%`,
+            top: `${target.y}%`,
+            width: `${target.width}%`,
+            height: `${target.height}%`,
+          }"
+          @click="toggleLandmark(target.id)"
+        />
       </div>
       <div class="town-action-icons" role="group" :aria-label="t('Village buildings')">
         <TownActionIcon
@@ -398,9 +417,10 @@ const stone = computed(() => quietStoneLabel(props.town));
 const mapLandmarks = computed(() =>
   mapDistricts.value
     .filter((district) => district.stone && stone.value)
-    .map(({ centre, stone: slab }) => {
+    .map(({ centre }) => {
       const [x, y] = moonMapPoint(...centre);
-      return { id: stone.value.id, x, y: y - slab.size[1] };
+      // The stone stands at the top of the map, under the header: its name hangs below it.
+      return { id: stone.value.id, x, y: y + 12 };
     }),
 );
 const allLots = computed(() => [...mapLots.value, ...mapMonuments.value, ...mapLandmarks.value]);
@@ -437,27 +457,33 @@ const lotInfo = computed(() => {
 });
 const collecting = (id) =>
   id === 'moonstoneWorkshop' && lotInfo.value[id]?.status?.kind === 'coins';
+// Where the SVG map draws each district's stone, in percent of the view about its centre.
+const stoneBoxes = computed(() =>
+  mapDistrictShapes.value
+    .filter((district) => district.stone)
+    .map(({ x, y, stone: [w, h] }) => {
+      const [left, top] = moonMapPercent([x - w / 2, y - h], viewport.value, mapBox.value),
+        [right, bottom] = moonMapPercent([x + w / 2, y], viewport.value, mapBox.value);
+      return {
+        id: QUIET_STONE.id,
+        x: (left + right) / 2,
+        y: (top + bottom) / 2,
+        width: right - left,
+        height: bottom - top,
+      };
+    }),
+);
+// The SVG map's tap targets for a landmark that has something to say.
+const landmarkTargets = computed(() =>
+  unavailable.value ? stoneBoxes.value.filter(({ id }) => lotInfo.value[id]?.landmark) : [],
+);
 const placedLots = computed(() => {
   const { width, height } = viewport.value;
   const projected = unavailable.value
     ? allLots.value.map((lot) => moonMapLabel(lot, viewport.value, mapBox.value))
     : labels.value;
   // No name covers the Quiet Stone: the scene projects its box, the SVG map knows its own.
-  const avoid = unavailable.value
-    ? mapDistrictShapes.value
-        .filter((district) => district.stone)
-        .map(({ x, y, stone: [w, h] }) => {
-          const [left, top] = moonMapPercent([x - w / 2, y - h], viewport.value, mapBox.value),
-            [right, bottom] = moonMapPercent([x + w / 2, y], viewport.value, mapBox.value);
-          return {
-            id: QUIET_STONE.id,
-            x: (left + right) / 2,
-            y: (top + bottom) / 2,
-            width: right - left,
-            height: bottom - top,
-          };
-        })
-    : obstacles.value;
+  const avoid = unavailable.value ? stoneBoxes.value : obstacles.value;
   const placed = layoutMoonLabels(
     projected.map((lot) => {
       const info = lotInfo.value[lot.id];
@@ -487,6 +513,8 @@ const placedLots = computed(() => {
                 attention,
               })),
         action: !!TOWN_ACTIONS[props.indicators[lot.id]],
+        // A tapped landmark's label is what the tap shows, so it never hides off the edge.
+        keepInView: !!info.landmark,
       };
     }),
     width,
@@ -519,8 +547,13 @@ const choose = (id) => {
 // gesture; their click opens a lot only from the keyboard, or on the SVG map. Opening
 // the workshop collects its moonstones, as the valley's saloon pays out (TownView).
 function activateLabel(id, event) {
-  if (lotInfo.value[id]?.landmark) return;
-  if (!scene || keyboardActivation(event)) choose(id);
+  if (!scene || keyboardActivation(event))
+    if (lotInfo.value[id]?.landmark) toggleLandmark(id);
+    else choose(id);
+}
+// A landmark opens nothing: a tap shows its label, and another puts it away.
+function toggleLandmark(id) {
+  selectedLot.value = selectedLot.value === id ? null : id;
 }
 function cameraKey(event) {
   const action = cameraKeyAction(event);
@@ -593,7 +626,7 @@ async function start() {
       // A tapped lot or monument site opens like its label.
       onSelect: (id) => choose(id),
       // A tapped landmark shows its label; there is nothing to open.
-      onLandmark: (id) => (selectedLot.value = selectedLot.value === id ? null : id),
+      onLandmark: toggleLandmark,
       onVipSpend: (receipt) => emit('vip-spend', receipt),
       onFind: (tap) => emit('find', tap),
       onFindZoom: (find) => emit('find-zoom', find),
@@ -686,6 +719,23 @@ defineExpose({
 .town-moon-surface {
   position: absolute;
   inset: 0;
+}
+/* Sized to the drawn stone, never smaller than a finger. */
+.town-moon-landmark {
+  position: absolute;
+  min-width: 44px;
+  min-height: 44px;
+  translate: -50% -50%;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  pointer-events: auto;
+}
+.town-moon-landmark:focus-visible {
+  outline: 3px solid #89e2f5;
+  outline-offset: 2px;
 }
 .town-moon-canvas:focus-visible {
   outline: 3px solid #89e2f5;
