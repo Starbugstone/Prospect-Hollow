@@ -5,6 +5,21 @@ namespace App;
 /** Bounded appearance data and optional, server-priced landmark purchases. */
 final class TownPersonalisation
 {
+    /**
+     * The sites the game sold before purchase receipts carried a `monumentVersion`
+     * (2026-10-06 to 2026-10-08, preprod only): unversioned receipts can come from them
+     * alone. Historical and fixed; a site added later never joins it.
+     */
+    private const UNVERSIONED_SITES = [
+        'meadow',
+        'monument',
+        'motor-court',
+        'arts-court',
+        'horizon',
+        'light-court',
+        'stargazer-lawn',
+        'homecoming-green',
+    ];
     public static function catalog(): array
     {
         return PublicTown::schema()['personalisation'];
@@ -184,13 +199,19 @@ final class TownPersonalisation
         ) {
             return null;
         }
-        // Unversioned offline receipts retain the original prices and era ceilings.
+        // Unversioned offline receipts retain the original prices and era ceilings, at the
+        // sites that sold on those terms.
         $version = $command['monumentVersion'] ?? 1;
         $progression = $catalog['monumentProgression'];
-        if (!in_array($version, [1, 2, $progression['version']], true)) {
+        if (
+            !in_array($version, [1, 2, $progression['version']], true) ||
+            ($version === 1 && !in_array($id, self::UNVERSIONED_SITES, true))
+        ) {
             return null;
         }
-        $maximum = $version === 1 ? 1 + $now - $intro : count($progression['levels']);
+        // No terms raise a site past its progression; old terms also kept their era ceiling.
+        $length = $area['timeless'] ? 1 : count($progression['levels']);
+        $maximum = $version === 1 ? min($length, 1 + $now - $intro) : $length;
         // A site keeps its first monument; timeless masterpieces are complete.
         if ($current && ($area['timeless'] || $current !== $choice || $stage >= $maximum)) {
             return null;

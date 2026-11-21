@@ -174,8 +174,25 @@ Monument sites follow the same interaction as every other building:
   remain specific to the design (winding wheels, solar petals, pods, planets, etc.).
 - Existing paid stage numbers stay in saves and verified receipts; models above
   five display the complete wonder. No purchased choice or honour is removed.
-  New receipts carry `monumentVersion: 2`; unversioned receipts replay the old
-  era ceilings and prices, preserving offline purchases and existing checkpoints.
+  Receipts carry the price terms they were bought on (`monumentVersion`, 3 today;
+  2 for older outbox entries). Unversioned receipts replay the original linear
+  prices and era ceilings, preserving offline purchases and existing checkpoints,
+  with two limits on the server (`TownPersonalisation::purchase()`):
+  - No terms raise a site past its five levels. An unversioned receipt once
+    allowed one level per era since the site opened (the meadow up to 17); that
+    is now capped at five. Levels above five already paid stay in the save. Only
+    a preprod receipt from those days for a sixth level, never synced since,
+    would now be dropped, keeping its coins.
+  - Only the eight sites sold before receipts carried terms (meadow, monument,
+    motor-court, arts-court, horizon, light-court, stargazer-lawn and
+    homecoming-green, sold on preprod from 6 to 8 October 2026) accept
+    unversioned receipts. Every later site refuses them. Production never sold a
+    monument without terms, so this refuses no genuine receipt.
+
+  Those eight sites still accept the cheaper linear prices up to level five,
+  since a receipt cannot prove when it was queued. Version 2 terms are kept as
+  they were: on every site they cost at least as much as current terms.
+
 - The Build tab lists every unlocked site under **Monuments** (open sites with their
   starting price, built ones with their stage, construction progress or next upgrade
   price) and names the next site to open. Monument purchases are separate from
