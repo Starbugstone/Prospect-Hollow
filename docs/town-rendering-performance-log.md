@@ -568,3 +568,20 @@ its own ceiling, and fails when the build has no single French chunk to measure.
 The French text grew from 116 kB to 145 kB gzipped between `main` and 1.3.0. The ceiling holds it
 where it is; splitting the startup strings from the rest of the dictionary is the way to bring it
 down later.
+
+## Council fixes frame check, 21 November 2026
+
+`testing/browser/frame-budget.cjs` on `5d08eb5d` (the council's fixes), alternating with
+`ea03cc38` (before them) on two dev servers at once, Twin Hollows town, 4x slowdown. The machine
+sat at a load average of 8–25 from other sessions, so every figure reads far above the 17 November
+ones and the ceilings fail on both builds; compare within the table only.
+
+| Build      | Town script ms per frame, rounds 1 / 2 / 3 |
+| ---------- | ------------------------------------------ |
+| `ea03cc38` | 282.4 / 120.6 / 432.1                      |
+| `5d08eb5d` | 281.7 / 321.8 / 311.2                      |
+
+The two builds overlap round by round, so the fixes add no measurable town cost. Boards 13, 376,
+397 and 583 read 12–19 ms in the same session against the 12 ms ceiling, about the 2–3 times the
+load explains. The release still needs this check on a quiet machine. Raw output stays in the
+session scratchpad, not the repository.
