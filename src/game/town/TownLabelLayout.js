@@ -97,7 +97,9 @@ const AVOID_GAP = 6;
 // `{ id, x, y, width, height }` about their centres: a name that would cover one steps
 // sideways, just clear of it, and is then placed like any other. The thing's own name
 // (the same `id`) is left where it is. `chrome` lists the map's own controls drawn over it
-// (TownMapHud.js), in the same form: a name that would cover one is left out.
+// (TownMapHud.js), in the same form: a name that would cover one is left out. A label marked
+// `keepInView` (one the player asked to see, such as a tapped landmark's) slides inside the
+// map's bounds rather than hiding.
 export function layoutTownLabels(
   labels,
   width,
@@ -145,6 +147,15 @@ export function layoutTownLabels(
       const clear = obstacle.x + side * ((rect.width + obstacle.width) / 2 + AVOID_GAP + 1);
       label.nudge = (label.nudge ?? 0) + clear - rect.x;
       label.x += ((clear - rect.x) / width) * 100;
+      rect = labelRect(label, width, height);
+    }
+    if (label.keepInView && width > 0 && height > 0) {
+      const inside = (value, low, high) =>
+        low > high ? value : Math.min(Math.max(value, low), high);
+      const x = inside(rect.x, 8 + rect.width / 2, width - 8 - rect.width / 2);
+      const y = inside(rect.y, top + rect.height / 2, bottom - rect.height / 2);
+      label.x += ((x - rect.x) / width) * 100;
+      label.y += ((y - rect.y) / height) * 100;
       rect = labelRect(label, width, height);
     }
     label.visible =

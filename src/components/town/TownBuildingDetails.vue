@@ -45,9 +45,7 @@
             "
           />
         </svg>
-        <small>{{
-          t(project ? 'Under construction' : offer ? 'After building' : building.stages[stage])
-        }}</small>
+        <small>{{ caption }}</small>
       </div>
       <div v-if="offer || project" class="town-benefit-preview">
         <div
@@ -365,6 +363,7 @@ import { ERA_BY_ID } from '../../data/eras';
 import { computed, inject } from 'vue';
 import { t } from '../../i18n';
 import { BUILDING_BY_ID } from '../../data/town';
+import { CITY_BUILDINGS } from '../../data/city';
 import { eraGate, eraBuildingLevel, modernizesInEra } from '../../game/town/TownEras';
 import { forgeProductionRuns } from '../../data/eras';
 import { buildingServiceLevel } from '../../data/buildingProgression';
@@ -426,6 +425,7 @@ const cooldownSeconds = computed(() =>
   ),
 );
 const building = computed(() => BUILDING_BY_ID[props.id]);
+const ERA_CAPTIONED = new Set(CITY_BUILDINGS.map(({ id }) => id));
 // A building this era leaves alone keeps showing the era of its finish.
 const keptFinish = computed(
   () =>
@@ -434,6 +434,20 @@ const keptFinish = computed(
     !modernizesInEra(props.town.era, props.id) &&
     !!props.town.buildingEras[props.id],
 );
+// The caption under the drawing. A city building's stages name an era and level, so it
+// names the era and level the drawing shows, as the badge does, rather than the era that
+// introduced it; other buildings keep their stage's name.
+const caption = computed(() => {
+  if (project.value) return t('Under construction');
+  if (offer.value) return t('After building');
+  const era = props.town.buildingEras[props.id];
+  if (stage.value && ERA_CAPTIONED.has(props.id) && ERA_BY_ID[era])
+    return t('{era} · Level {level}', {
+      era: t(ERA_BY_ID[era].label),
+      level: props.town.buildingEraLevels[props.id] || stage.value,
+    });
+  return t(building.value.stages[stage.value]);
+});
 const requirement = computed(() => plotRequirement(props.town, props.id));
 const needs = computed(() => townNeeds(props.town));
 const stage = computed(() => props.town.buildings[props.id]);

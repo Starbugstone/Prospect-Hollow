@@ -747,6 +747,20 @@ function areaOpensMet(town, opens) {
 // A site opens with its era and whatever its `opens` waits for.
 export const areaUnlocked = (town, area) =>
   areaEraReached(town, area) && areaOpensMet(town, area.opens);
+/**
+ * The locked site that opens soonest: the earliest era first and, within an era, a site that
+ * opens with the era itself before one that waits for a building or a commission. Ties keep
+ * the catalogue's order. Null once every site is open.
+ */
+export function nextAreaToOpen(town, areas = PERSONAL_AREAS) {
+  const era = (area) => ERAS.findIndex((e) => e.id === area.era);
+  const waits = (area) => (area.opens ? 1 : 0);
+  return (
+    areas
+      .filter((area) => !areaUnlocked(town, area))
+      .sort((a, b) => era(a) - era(b) || waits(a) - waits(b))[0] ?? null
+  );
+}
 // Five permanent milestones; era growth never adds another bill. Each paid level is
 // built over `puzzles` completed puzzles (any puzzle, replays too), then unveiled with
 // a `grand` cinematic or a short `reveal`. Timeless monuments build like a foundation.
@@ -826,6 +840,24 @@ export function landmarkPrice(area, choice, level, version = LANDMARK_PROGRESSIO
 // A monument is built once and retains its selected design.
 export const areaMaximum = (town, area) => (areaUnlocked(town, area) ? areaCapacity(area) : 0);
 const areaCapacity = (area) => (area.timeless ? 1 : LANDMARK_PROGRESSION.levels.length);
+/**
+ * A site's stage prices when every design shares one schedule, as a commission's even
+ * stages do: `{ first, count, total }`. Null when designs are priced differently or a price
+ * is unknown.
+ */
+export function sharedStagePrices(area) {
+  const count = areaCapacity(area);
+  const schedules = (area?.choices ?? []).map((choice) =>
+    Array.from({ length: count }, (_, n) => landmarkPrice(area, choice, n + 1)),
+  );
+  const [schedule] = schedules;
+  if (
+    !schedule ||
+    schedules.some((prices) => prices.some((price, n) => price === null || price !== schedule[n]))
+  )
+    return null;
+  return { first: schedule[0], count, total: schedule.reduce((sum, price) => sum + price, 0) };
+}
 // Historical paid stages remain saved; their visible model caps at the final milestone.
 export const areaStage = (town, area) =>
   areaUnlocked(town, area) && town.personalisation?.areas?.[area.id]?.[0]

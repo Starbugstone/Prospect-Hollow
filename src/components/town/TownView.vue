@@ -122,8 +122,9 @@
             :destination="waitingEvent.settlement"
             @watch="watchWaitingEvent"
           />
+          <!-- The pill steps aside while a raid, an era cinematic or a presentation plays. -->
           <TownCommissionGoal
-            v-if="commissionGoal && !playingRaid"
+            v-if="commissionGoal && !playingRaid && !eraPlaying && !openingPresentation"
             :status="commissionGoal"
             @open="selectBuilding(commissionGoal.site)"
           />
@@ -399,7 +400,8 @@
           @mine="goMining"
           @advance-era="beginEra"
         />
-        <p v-if="!directoryPlots.length" class="town-build-empty" role="status">
+        <!-- An open era gate is the next step; TownNextStep above offers it. -->
+        <p v-if="!directoryPlots.length && !gate.available" class="town-build-empty" role="status">
           {{
             t(
               townBuilt
@@ -708,6 +710,7 @@ import {
   landmarkPrice,
   landmarkPayment,
   monumentWork,
+  nextAreaToOpen,
 } from '../../data/townLandmarks';
 import { personaliseTown } from '../../data/townPersonalisation';
 import { CREST_EMBLEM_IDS } from '../../data/townCrests';
@@ -1081,9 +1084,8 @@ const monumentSites = computed(() =>
 // New Hollow's letters, then the Far Rim's story in the order it unfolds.
 const newHollowLetters = computed(() => [...moonLetters(town.value), ...signalLetters(town.value)]);
 const valleyLetters = computed(() => commissionLetters(town.value, HOME_SETTLEMENT));
-const nextMonumentSite = computed(() =>
-  PERSONAL_AREAS.find((area) => !areaUnlocked(town.value, area)),
-);
+// The Build tab names the locked site that opens soonest.
+const nextMonumentSite = computed(() => nextAreaToOpen(town.value));
 const sceneTown = computed(() => {
   const earned = [
     ...Object.keys(campaign.honours.earned),
@@ -1145,10 +1147,13 @@ function playEraSound(cue) {
 function completeEraCinematic() {
   eraRevealed.value = true;
   if (!campaign.acknowledgeEra()) return;
-  // An era built entirely on another settlement opens its map once the cinematic ends.
+  // An era built entirely on another settlement opens its map once the cinematic ends:
+  // after this update, when the scene no longer plays the cinematic and may leave the valley.
   const away = eraSettlement(town.value.era);
-  if (away) townScene.value?.showSettlement(away);
-  nextTick(() => mapFrame.value?.querySelector('canvas')?.focus({ preventScroll: true }));
+  nextTick(() => {
+    if (away) townScene.value?.showSettlement(away);
+    mapFrame.value?.querySelector('canvas')?.focus({ preventScroll: true });
+  });
 }
 // The one-second collection clock. Only its readers (cooldown checks in the scene and
 // building card) re-render each second; this view sees derived values that rarely change.
