@@ -93,7 +93,8 @@ application secret, so the game can redeem a find only for the town it was made 
 redeems each find newer than its `helmetVisitAt` once (the `helmet-visitor` journal action,
 checked by the save replay) and shows a notice with the coins. The cleanup job removes finds
 older than 30 days. Migration 20 adds the table and migration 22 indexes it by host town, for
-the share-link view and find checks. The account data export lists these finds.
+the share-link view and find checks. The account data export lists these finds as
+`astronautFinds`, and every other find under its own key (`wanderersFinds`).
 
 ## Presence lifecycle
 
@@ -250,8 +251,13 @@ change stores a new projection.
 
 The space helmet above is one hidden find; the wandering pair (`wanderers`, from New Hollow
 Rising) is another, under the same rules and counted separately. For a find `X`:
-`POST /api/v1/villages/{publicId}/X` with `{townId}` stores a `helmet_finds` row of `kind` X
-(migration 25; earlier rows are `helmet`), with 409 `no_X`, `X_taken` or `X_resting`; the
+`POST /api/v1/villages/{publicId}/X` with `{townId}` stores a row of `kind` X, with 409
+`no_X`, `X_taken` or `X_resting`. The space helmet's rows stay in `helmet_finds` (its `kind`
+column, migration 25, is always `helmet`), because release 1.2 reads that table without a
+kind. Every other find is a `hidden_finds` row (migration 26, which also moved the wandering
+pairs found before it). `PublicTown::findTable()` names the table, and every query filters by
+kind, so a release ignores finds it does not know. Each table's key is one player's find of
+one kind at one second; the rests keep finds of one kind 12 hours apart. The
 shared town carries `XReadyAt`; the owner poll returns `XFinds: [{at, receipt}]`, the
 receipt signed with the find's ID; and the save replays `X-find` and `X-visitor` against the
 town fields `XRun` and `XVisitAt`. See `docs/era-architecture.md` ("Hidden finds").

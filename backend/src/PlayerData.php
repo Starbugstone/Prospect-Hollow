@@ -308,24 +308,34 @@ final class PlayerData
                     ];
                 }
             };
-            $finds = function () use ($db, $id, $time): \Generator {
+            // Each hidden find under its own key: the space helmet's `astronautFinds`, as
+            // shipped, then `wanderersFinds` and any later find's `<id>Finds`.
+            $finds = function (string $find) use ($db, $id, $time): \Generator {
                 foreach (
                     self::exportRows(
                         $db,
-                        'SELECT h.name AS host,t.name AS home,f.found_at,f.kind FROM helmet_finds f JOIN towns t ON t.id=f.town_id LEFT JOIN towns h ON h.id=f.host_town_id WHERE f.player_id=?',
-                        [$id],
+                        'SELECT h.name AS host,t.name AS home,f.found_at FROM ' .
+                            PublicTown::findTable($find) .
+                            ' f JOIN towns t ON t.id=f.town_id LEFT JOIN towns h ON h.id=f.host_town_id WHERE f.player_id=? AND f.kind=?',
+                        [$id, $find],
                         ['f.found_at' => 'ASC'],
                     )
-                    as $find
+                    as $row
                 ) {
                     yield [
-                        'find' => $find['kind'],
-                        'foundIn' => $find['host'],
-                        'rewardedTown' => $find['home'],
-                        'foundAt' => $time($find['found_at']),
+                        'foundIn' => $row['host'],
+                        'rewardedTown' => $row['home'],
+                        'foundAt' => $time($row['found_at']),
                     ];
                 }
             };
+            $hiddenFinds = [];
+            foreach (array_keys((new SaveIntegrity())->hiddenFinds()) as $find) {
+                $find = (string) $find;
+                $hiddenFinds[$find === 'helmet' ? 'astronautFinds' : $find . 'Finds'] = $finds(
+                    $find,
+                );
+            }
             $refused = function () use ($db, $id, $time): \Generator {
                 foreach (
                     self::exportRows(
@@ -382,7 +392,7 @@ final class PlayerData
                 'towns' => $towns(),
                 'visitsMade' => $visits(),
                 'favouriteTowns' => $favourites(),
-                'astronautFinds' => $finds(),
+                ...$hiddenFinds,
                 'refusedCloudSaves' => $refused(),
                 'distinctions' => $distinctions,
             ]);

@@ -528,7 +528,9 @@ final class VisitorService
                             ),
                         ],
                         $db->fetchFirstColumn(
-                            'SELECT found_at FROM helmet_finds WHERE town_id=? AND kind=? AND found_at>=? ORDER BY found_at',
+                            'SELECT found_at FROM ' .
+                                PublicTown::findTable($find) .
+                                ' WHERE town_id=? AND kind=? AND found_at>=? ORDER BY found_at',
                             [$town, $find, $now - PublicTown::FIND_KEEP],
                         ),
                     );

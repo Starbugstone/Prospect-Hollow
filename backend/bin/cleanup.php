@@ -40,9 +40,11 @@ $db->executeStatement('DELETE FROM admin_sessions WHERE expires_at<? OR used_at<
     time() - 3600,
 ]);
 // Hidden finds are redeemed within this window and only rest the finder for 12 hours.
-$db->executeStatement('DELETE FROM helmet_finds WHERE found_at<?', [
-    time() - App\PublicTown::FIND_KEEP,
-]);
+foreach (['helmet_finds', 'hidden_finds'] as $table) {
+    $db->executeStatement("DELETE FROM $table WHERE found_at<?", [
+        time() - App\PublicTown::FIND_KEEP,
+    ]);
+}
 // Blocked uploads kept for the admin sync log; each town also keeps only its latest few.
 App\SyncRejections::expire($db);
 // Daily active-player marks feed the admin charts; keep 90 days.

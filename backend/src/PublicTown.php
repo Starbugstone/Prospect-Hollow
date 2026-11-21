@@ -175,14 +175,11 @@ final class PublicTown
         }
         $village->saloonReadyAt = $this->saloonReadyAt($row['collected_at']);
         // Each hidden find's rest for this host: `helmetReadyAt`, `wanderersReadyAt`, ...
-        $found = $this->database
-            ->get()
-            ->fetchAllKeyValue(
-                'SELECT kind,MAX(found_at) FROM helmet_finds WHERE host_town_id=? GROUP BY kind',
-                [$row['id']],
+        foreach ($this->hiddenFinds() as $find) {
+            $village->{$find . 'ReadyAt'} = self::restedAt(
+                self::lastFind($this->database->get(), $find, 'host_town_id', $row['id']),
+                self::FIND_REST,
             );
-        foreach (array_keys(($this->rules ??= new SaveIntegrity())->hiddenFinds()) as $find) {
-            $village->{$find . 'ReadyAt'} = self::restedAt($found[$find] ?? null, self::FIND_REST);
         }
         return $this->distinguish(self::published($village), $row['player_id']);
     }
@@ -254,12 +251,34 @@ final class PublicTown
     // own: a player makes a find in another town at most once per 12 hours, and each town's
     // find is made by one visitor per 12 hours however many visit. The find is redeemed in
     // the town the finder visits as, for half an hour of that town's own saloon takings, so
-    // visiting richer towns pays no more. Unredeemed finds are kept for 30 days. The
-    // `helmet_finds` table holds every kind; `kind` tells them apart.
+    // visiting richer towns pays no more. Unredeemed finds are kept for 30 days.
     public const FIND_REST = 43200;
     public const FIND_KEEP = 30 * 86400;
     // What the API's messages call each find. Codes use the find's ID (`helmet_taken`).
     private const FIND_NAMES = ['helmet' => 'astronaut', 'wanderers' => 'wandering pair'];
+    /**
+     * Where a find's rows are kept. Space-helmet finds stay alone in `helmet_finds`, which
+     * release 1.2 reads without a kind, so rolling back never turns another find into an
+     * astronaut receipt or rest. Every other find is a `hidden_finds` row of its kind. Both
+     * tables have a `kind` column (`helmet` in `helmet_finds`) and every query names the
+     * kind, so a release ignores the finds it does not know.
+     */
+    public static function findTable(string $find): string
+    {
+        return $find === 'helmet' ? 'helmet_finds' : 'hidden_finds';
+    }
+    /** The latest find of a kind by a player (`player_id`) or in a host town (`host_town_id`). */
+    private static function lastFind(
+        \Doctrine\DBAL\Connection $db,
+        string $find,
+        string $column,
+        string $id,
+    ): mixed {
+        return $db->fetchOne(
+            'SELECT MAX(found_at) FROM ' . self::findTable($find) . " WHERE $column=? AND kind=?",
+            [$id, $find],
+        );
+    }
     /** @return list<string> the hidden finds a visitor can make, by ID */
     public function hiddenFinds(): array
     {
@@ -317,10 +336,7 @@ final class PublicTown
                 }
                 $now = time();
                 $taken = self::restedAt(
-                    $db->fetchOne(
-                        'SELECT MAX(found_at) FROM helmet_finds WHERE host_town_id=? AND kind=?',
-                        [$host['id'], $find],
-                    ),
+                    self::lastFind($db, $find, 'host_town_id', $host['id']),
                     self::FIND_REST,
                 );
                 if ($taken > $now) {
@@ -331,10 +347,7 @@ final class PublicTown
                     );
                 }
                 $resting = self::restedAt(
-                    $db->fetchOne(
-                        'SELECT MAX(found_at) FROM helmet_finds WHERE player_id=? AND kind=?',
-                        [$session['player_id'], $find],
-                    ),
+                    self::lastFind($db, $find, 'player_id', $session['player_id']),
                     self::FIND_REST,
                 );
                 if ($resting > $now) {
@@ -344,22 +357,17 @@ final class PublicTown
                         ['code' => $find . '_resting', 'readyAt' => $resting],
                     );
                 }
-                // A row is one player's find at one second, whatever its kind: a second kind
-                // found within the same second takes the next one. The player lock above
-                // makes the read safe. Rests count from the stored second.
-                $latest = $db->fetchOne(
-                    'SELECT MAX(found_at) FROM helmet_finds WHERE player_id=?',
-                    [$session['player_id']],
-                );
-                $at = max($now, $latest === null || $latest === false ? 0 : (int) $latest + 1);
-                $db->insert('helmet_finds', [
+                // A row is one player's find of one kind at one second: its rest keeps the
+                // player from another of that kind for 12 hours, under the player lock
+                // above. Finds of other kinds have keys or tables of their own.
+                $db->insert(self::findTable($find), [
                     'player_id' => $session['player_id'],
-                    'found_at' => $at,
+                    'found_at' => $now,
                     'town_id' => $home,
                     'host_town_id' => $host['id'],
                     'kind' => $find,
                 ]);
-                return ['readyAt' => $at + self::FIND_REST];
+                return ['readyAt' => $now + self::FIND_REST];
             });
     }
     public static function saloonReadyAt(mixed $at): int
