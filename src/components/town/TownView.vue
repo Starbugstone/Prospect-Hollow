@@ -1141,10 +1141,13 @@ function playEraSound(cue) {
 function completeEraCinematic() {
   eraRevealed.value = true;
   if (!campaign.acknowledgeEra()) return;
-  // An era built entirely on another settlement opens its map once the cinematic ends.
+  // An era built entirely on another settlement opens its map once the cinematic ends:
+  // after this update, when the scene no longer plays the cinematic and may leave the valley.
   const away = eraSettlement(town.value.era);
-  if (away) townScene.value?.showSettlement(away);
-  nextTick(() => mapFrame.value?.querySelector('canvas')?.focus({ preventScroll: true }));
+  nextTick(() => {
+    if (away) townScene.value?.showSettlement(away);
+    mapFrame.value?.querySelector('canvas')?.focus({ preventScroll: true });
+  });
 }
 // The one-second collection clock. Only its readers (cooldown checks in the scene and
 // building card) re-render each second; this view sees derived values that rarely change.
