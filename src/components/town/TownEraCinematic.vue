@@ -69,6 +69,8 @@ const duration = ERA_CONSTRUCTION.duration * 1000;
 const { dialog, elapsed, finished, start, complete } = useCinematic({
   duration: () => duration,
   running: () => props.ready && !props.paused,
+  // One stalled frame on a slow device must not play the cinematic to its end.
+  maxStep: 250,
   onOpen() {
     if (props.reducedMotion) still();
     else {
