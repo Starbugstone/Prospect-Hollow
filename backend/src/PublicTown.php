@@ -205,7 +205,9 @@ final class PublicTown
             $village->appearance->plaqueDistinctions = new \stdClass();
             foreach ($playerPlaques as $building => $id) {
                 if (isset($received[$owner][$id])) {
-                    $village->appearance->plaqueDistinctions->$id = $received[$owner][$id];
+                    $village->appearance->plaqueDistinctions->$id = PlayerDistinctions::published(
+                        $received[$owner][$id],
+                    );
                 } else {
                     unset($plaques->$building);
                 }
