@@ -363,7 +363,6 @@ import { ERA_BY_ID } from '../../data/eras';
 import { computed, inject } from 'vue';
 import { t } from '../../i18n';
 import { BUILDING_BY_ID } from '../../data/town';
-import { CITY_BUILDINGS } from '../../data/city';
 import { eraGate, eraBuildingLevel, modernizesInEra } from '../../game/town/TownEras';
 import { forgeProductionRuns } from '../../data/eras';
 import { buildingServiceLevel } from '../../data/buildingProgression';
@@ -425,7 +424,11 @@ const cooldownSeconds = computed(() =>
   ),
 );
 const building = computed(() => BUILDING_BY_ID[props.id]);
-const ERA_CAPTIONED = new Set(CITY_BUILDINGS.map(({ id }) => id));
+// Buildings whose stages are named by era and level ("River & Rail · Level 3"), from the
+// River & Rail Age on; Frontier buildings name each stage instead.
+const ERA_STAGE = / · Level \d+$/;
+const eraCaptioned = (definition) =>
+  definition.stages.length > 1 && definition.stages.slice(1).every((name) => ERA_STAGE.test(name));
 // A building this era leaves alone keeps showing the era of its finish.
 const keptFinish = computed(
   () =>
@@ -434,14 +437,14 @@ const keptFinish = computed(
     !modernizesInEra(props.town.era, props.id) &&
     !!props.town.buildingEras[props.id],
 );
-// The caption under the drawing. A city building's stages name an era and level, so it
-// names the era and level the drawing shows, as the badge does, rather than the era that
-// introduced it; other buildings keep their stage's name.
+// The caption under the drawing. A building whose stages name an era and level names the
+// era and level the drawing shows, as the badge does, rather than the era that introduced
+// it; other buildings keep their stage's name.
 const caption = computed(() => {
   if (project.value) return t('Under construction');
   if (offer.value) return t('After building');
   const era = props.town.buildingEras[props.id];
-  if (stage.value && ERA_CAPTIONED.has(props.id) && ERA_BY_ID[era])
+  if (stage.value && eraCaptioned(building.value) && ERA_BY_ID[era])
     return t('{era} · Level {level}', {
       era: t(ERA_BY_ID[era].label),
       level: props.town.buildingEraLevels[props.id] || stage.value,

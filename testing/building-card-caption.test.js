@@ -68,3 +68,23 @@ it('keeps the named stages of buildings that have them', async () => {
   const { caption } = await card(town, 'well');
   expect(caption).toBe(BUILDING_BY_ID.well.stages[town.buildings.well]);
 });
+
+// Every building whose stages name an era and level, from the River & Rail Age on, not only
+// the city's: a River & Rail depot modernized for the Moonward Age names the Moonward Age.
+it('captions every modernized era-and-level building with its drawn era', async () => {
+  const town = finishedTown('moonward');
+  const modernized = BUILDINGS.filter(
+    ({ id, introducedEra, stages }) =>
+      town.buildings[id] &&
+      town.buildingEras[id] !== introducedEra &&
+      stages.slice(1).every((name) => / · Level \d+$/.test(name)),
+  );
+  expect(modernized.map(({ id }) => id)).toContain('railDepot');
+  for (const { id, introducedEra } of modernized) {
+    const { caption, badge } = await card(town, id);
+    const drawn = t(ERA_BY_ID[town.buildingEras[id]].label);
+    expect(decode(caption), id).toBe(t('{era} · Level {level}', { era: drawn, level: 3 }));
+    expect(decode(badge), id).toContain(drawn);
+    expect(decode(caption), id).not.toContain(t(ERA_BY_ID[introducedEra].label));
+  }
+});
