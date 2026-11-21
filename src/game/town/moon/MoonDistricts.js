@@ -214,6 +214,8 @@ export class MoonDistricts {
     this.root.traverse((mesh) => {
       mesh.geometry?.dispose();
       mesh.material?.dispose();
+      // The star map's instance matrices are released only by the mesh's own dispose.
+      if (mesh.isInstancedMesh) mesh.dispose();
     });
     this.root.clear();
   }
