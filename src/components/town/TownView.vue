@@ -172,6 +172,7 @@
           :goal-pills="{
             project: !!projectGoal && !playingRaid,
             commission: !!commissionGoal && !playingRaid,
+            tabs: tabHeight,
           }"
           :guidance="sceneGuidance"
           @select="selectBuilding($event, KEEP_CAMERA)"
@@ -1144,16 +1145,26 @@ function playEraSound(cue) {
   stopEraSound();
   cancelEraSound = game.audioManager?.playArcadeCue?.(cue) ?? (() => {});
 }
+// The settlement an era built entirely elsewhere hands over to once its cinematic ends. The
+// scene leaves the valley only after this update, when it no longer plays the cinematic,
+// and not while a valley presentation queued behind it plays; it is held until then.
+const eraHandoff = ref(null);
 function completeEraCinematic() {
   eraRevealed.value = true;
   if (!campaign.acknowledgeEra()) return;
-  // An era built entirely on another settlement opens its map once the cinematic ends:
-  // after this update, when the scene no longer plays the cinematic and may leave the valley.
-  const away = eraSettlement(town.value.era);
-  nextTick(() => {
-    if (away) townScene.value?.showSettlement(away);
-    mapFrame.value?.querySelector('canvas')?.focus({ preventScroll: true });
-  });
+  eraHandoff.value = eraSettlement(town.value.era) ?? null;
+  nextTick(handOffEra);
+}
+async function handOffEra() {
+  const away = eraHandoff.value;
+  if (away && !eraPlaying.value) townScene.value?.showSettlement(away);
+  // The scene reports the map it shows after its own update.
+  await nextTick();
+  // Held only for a presentation; any other refusal drops it, so it never moves the map later.
+  if (away && settlement.value !== away && openingPresentation.value) return;
+  eraHandoff.value = null;
+  // The map on screen draws last: a settlement's map covers the valley's.
+  [...(mapFrame.value?.querySelectorAll('canvas') ?? [])].at(-1)?.focus({ preventScroll: true });
 }
 // The one-second collection clock. Only its readers (cooldown checks in the scene and
 // building card) re-render each second; this view sees derived values that rarely change.
@@ -1370,6 +1381,10 @@ const eraPlaying = computed(() => eventStage.value.era);
 const playingRaid = computed(() => eventStage.value.raid);
 const openingPresentation = computed(() => eventStage.value.presentation);
 const waitingEvent = computed(() => eventStage.value.waiting);
+// An era handoff held for a presentation follows once it ends (completeEraCinematic).
+watch([eraPlaying, openingPresentation], () => eraHandoff.value && handOffEra(), {
+  flush: 'post',
+});
 function watchWaitingEvent() {
   townScene.value?.showSettlement(waitingEvent.value?.settlement);
 }

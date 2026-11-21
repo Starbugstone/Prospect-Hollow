@@ -91,7 +91,7 @@ function recorder() {
 }
 // The village view with its real scene wiring and era cinematic. The valley's 3D scene is
 // a recorder; the scene's settlement map is drawn as in its template.
-async function village(era) {
+async function village(era, extra = {}) {
   const index = ERAS.findIndex(({ id }) => id === era);
   const from = ERAS[index - 1].id;
   const town = {
@@ -99,6 +99,7 @@ async function village(era) {
     era,
     tourSeen: true,
     transition: { id: `${from}:${era}`, from, to: era, pending: true },
+    ...extra,
   };
   useCampaignStore().town = town;
   let view, scene;
@@ -161,6 +162,23 @@ describe('An era cinematic hands over to the settlement its era builds on', () =
     expect(button(root, 'era-skip')).toBeFalsy();
     expect(scene.shown.value).toBe('moon');
     expect(view.settlement.value).toBe('moon');
+    expect(visibleMap(root)).toBe('moon');
+  });
+
+  // A valley presentation queued behind the cinematic plays first; the handoff waits for it.
+  it('hands over after a valley presentation that plays once the cinematic is skipped', async () => {
+    const { root, view, scene } = await village('quiet-signal', {
+      presentations: { 'three-star-celebration': 'pending' },
+    });
+    button(root, 'era-skip').props.onClick();
+    await settle();
+    expect(view.eraPlaying.value).toBe(false);
+    expect(view.openingPresentation.value?.id).toBe('three-star-celebration');
+    expect(visibleMap(root)).toBe('valley');
+    view.completePresentation();
+    await settle();
+    expect(view.openingPresentation.value).toBeFalsy();
+    expect(scene.shown.value).toBe('moon');
     expect(visibleMap(root)).toBe('moon');
   });
 
