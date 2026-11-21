@@ -911,6 +911,150 @@ try {
         ),
         'native origin allowlist',
     );
+    // A town that owns a monument and commissions restores from its cloud history and
+    // keeps a preserved save on conflict ("Keep preserved save"), then syncs as usual.
+    $flows = json_decode(
+        file_get_contents(__DIR__ . '/fixtures/integrity-flows.json'),
+        false,
+        64,
+        JSON_THROW_ON_ERROR,
+    )->fixtures;
+    $landmarked = account(['REMOTE_ADDR' => '127.0.0.31']);
+    foreach (
+        [
+            'optional landmark monument: construction and upgrades',
+            'every commission sponsored, the Willowkin Glade opened from the Moon',
+        ]
+        as $flowIndex => $flowName
+    ) {
+        $flow = array_values(array_filter($flows, fn($f) => $f->name === $flowName))[0];
+        // The API reply decodes to arrays: give the save's maps back their object shape.
+        $upload = function (array $profile): object {
+            $profile = json_decode(json_encode($profile), false, 64, JSON_THROW_ON_ERROR);
+            foreach (['records', 'continuousRecords'] as $map) {
+                $profile->$map = (object) $profile->$map;
+            }
+            return $profile;
+        };
+        $areasOf = fn(array $view) => [
+            $view['profile']['town']['personalisation']['areas'],
+            $view['profile']['town']['personalisation']['areaLevels'],
+        ];
+        $body = townBody('Monument Hollow ' . ['A', 'B'][$flowIndex]);
+        $body['profile'] = $flow->before;
+        $townId = status(
+            200,
+            callApi('POST', 'towns', $body, $landmarked),
+            $flowName . ': baseline',
+        )['townId'];
+        $owned = status(
+            200,
+            callApi(
+                'PUT',
+                'towns/' . $townId,
+                ['baseRevision' => 1, 'uploadId' => uuid(), 'profile' => $flow->after],
+                $landmarked,
+            ),
+            $flowName . ': landmarks bought',
+        );
+        check($areasOf($owned)[0] !== [], $flowName . ': the cloud save owns landmarks');
+        // Another device moves the cloud save on by one puzzle start.
+        $ahead = $upload($owned['profile']);
+        $sequence = $owned['integrity']['ackSequence'];
+        $ahead->issuedRun++;
+        $ahead->integrity->actions = [
+            (object) [
+                'sequence' => $sequence + 1,
+                'id' => uuid(),
+                'kind' => 'run-start',
+                'data' => (object) [
+                    'runId' => $ahead->issuedRun,
+                    'mode' => 'normal',
+                    'levelId' => 1,
+                    'at' => time() * 1000,
+                ],
+            ],
+        ];
+        $cloud = status(
+            200,
+            callApi(
+                'PUT',
+                'towns/' . $townId,
+                ['baseRevision' => 2, 'uploadId' => uuid(), 'profile' => $ahead],
+                $landmarked,
+            ),
+            $flowName . ': another device plays on',
+        );
+        check(
+            $cloud['integrity']['ackSequence'] === $sequence + 1,
+            $flowName . ': the cloud save moves past the landmark purchase',
+        );
+        $older = array_values(
+            array_filter(
+                status(
+                    200,
+                    callApi('GET', 'towns/' . $townId . '/history', null, $landmarked),
+                    $flowName . ': history',
+                )['revisions'],
+                fn($entry) => $entry['revision'] === 2,
+            ),
+        )[0]['profile'];
+        $restored = status(
+            200,
+            callApi(
+                'PUT',
+                'towns/' . $townId . '/resolve',
+                ['baseRevision' => 3, 'uploadId' => uuid(), 'profile' => $upload($older)],
+                $landmarked,
+            ),
+            $flowName . ': cloud history restore',
+        );
+        check(
+            $areasOf($restored) === $areasOf($owned) &&
+                $restored['integrity']['ackSequence'] === $sequence,
+            $flowName . ': the restored save keeps its landmarks',
+        );
+        // The first device kept its pre-restore copy, at the newer cloud sequence.
+        $kept = status(
+            200,
+            callApi(
+                'PUT',
+                'towns/' . $townId . '/resolve',
+                [
+                    'baseRevision' => 4,
+                    'uploadId' => uuid(),
+                    'profile' => $upload($cloud['profile']),
+                ],
+                $landmarked,
+            ),
+            $flowName . ': keep preserved save',
+        );
+        check(
+            $areasOf($kept) === $areasOf($owned),
+            $flowName . ': conflict recovery keeps the landmarks',
+        );
+        $synced = status(
+            200,
+            callApi(
+                'PUT',
+                'towns/' . $townId,
+                ['baseRevision' => 5, 'uploadId' => uuid(), 'profile' => $upload($kept['profile'])],
+                $landmarked,
+            ),
+            $flowName . ': normal sync afterwards',
+        );
+        check(
+            $synced['revision'] === 6 &&
+                $areasOf($synced) === $areasOf($owned) &&
+                $synced['integrity']['status'] === 'tracked' &&
+                (int) $db
+                    ->get()
+                    ->fetchOne('SELECT COUNT(*) FROM town_sync_rejections WHERE town_id=?', [
+                        $townId,
+                    ]) === 0,
+            $flowName . ': no step of the restore or the next sync is corrected or refused',
+        );
+    }
     status(200, callApi('POST', 'auth/revoke-all', (object) [], $a), 'revoke all');
     status(401, callApi('GET', 'account', null, $a), 'revoked session');
     status(

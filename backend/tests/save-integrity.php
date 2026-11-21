@@ -2611,6 +2611,113 @@ integrityDenied(
     'save_integrity_mismatch',
     'direct coin injection after an override baseline',
 );
+// Cloud history restore and conflict recovery ("Keep preserved save") of a town that owns a
+// monument or commissions. The restored save's signed checkpoint carries the landmarks the
+// replay protects; one signed before it did takes them from the matching cloud history.
+function integrityWithoutLandmarks(object $save): object
+{
+    $profile = integrityData($save);
+    [$body] = explode('.', $profile['integrity']['checkpoint']);
+    $payload = json_decode(
+        gzuncompress(base64_decode(strtr($body, '-_', '+/'))),
+        true,
+        64,
+        JSON_THROW_ON_ERROR,
+    );
+    unset($payload['state']['town']['personalisation']);
+    $body = rtrim(
+        strtr(base64_encode(gzcompress(json_encode($payload, JSON_THROW_ON_ERROR), 6)), '+/', '-_'),
+        '=',
+    );
+    $profile['integrity']['checkpoint'] =
+        $body .
+        '.' .
+        hash_hmac('sha256', 'prospect-hollow:save-checkpoint:v1:' . $body, $_ENV['APP_SECRET']);
+    return integrityObject($profile);
+}
+$landmarkFlows = [
+    'optional landmark monument: construction and upgrades',
+    'every commission sponsored, the Willowkin Glade opened from the Moon',
+];
+foreach ($fixtures->fixtures as $fixture) {
+    if (!in_array($fixture->name, $landmarkFlows, true)) {
+        continue;
+    }
+    $landmarksOf = fn(object $save) => [
+        integrityData($save)['town']['personalisation']['areas'],
+        integrityData($save)['town']['personalisation']['areaLevels'],
+    ];
+    $clock = $fixture->serverNow;
+    $starting = $validator->accept($fixture->before, null, $fixture->baselineServerNow ?? $clock);
+    $owned = $validator->accept($fixture->after, $starting, $clock);
+    $sequence = SaveIntegrity::receipt($owned)['ackSequence'];
+    // Another device moves the cloud save on by one journalled puzzle start.
+    $ahead = integrityData($owned);
+    $ahead['integrity']['actions'] = [
+        integrityAction($sequence + 1, 'run-start', [
+            'runId' => $ahead['issuedRun'] + 1,
+            'mode' => 'normal',
+            'levelId' => 1,
+            'at' => $clock + 1000,
+        ]),
+    ];
+    $cloud = $validator->reconcile(integrityObject($ahead), $owned, $clock + 1000);
+    assertIntegrity(
+        SaveIntegrity::receipt($cloud)['ackSequence'] === $sequence + 1 &&
+            $landmarksOf($cloud) === $landmarksOf($owned) &&
+            $landmarksOf($owned)[0] !== [],
+        $fixture->name . ': the cloud save moves past the owned landmarks',
+    );
+    $older = fn() => json_decode(json_encode($owned), false, 64, JSON_THROW_ON_ERROR);
+    $restored = $validator->accept($older(), $cloud, $clock + 2000, true, [
+        $cloud,
+        $owned,
+        $starting,
+    ]);
+    assertIntegrity(
+        $landmarksOf($restored) === $landmarksOf($owned) &&
+            SaveIntegrity::receipt($restored)['ackSequence'] === $sequence,
+        $fixture->name . ': cloud history restores the town with its landmarks',
+    );
+    $kept = $validator->accept($older(), $cloud, $clock + 2000, true);
+    assertIntegrity(
+        $landmarksOf($kept) === $landmarksOf($owned),
+        $fixture->name . ': conflict recovery keeps the preserved save with its landmarks',
+    );
+    $next = $validator->accept(
+        json_decode(json_encode($restored), false, 64, JSON_THROW_ON_ERROR),
+        $restored,
+        $clock + 3000,
+    );
+    assertIntegrity(
+        SaveIntegrity::receipt($next)['status'] === 'tracked' &&
+            $landmarksOf($next) === $landmarksOf($owned),
+        $fixture->name . ': a normal sync continues from the restored save',
+    );
+    $raised = integrityData($owned);
+    $raised['town']['personalisation']['areas']['meadow'] = ['headframe'];
+    $raised['town']['personalisation']['areaLevels']['meadow'] = 1;
+    integrityDenied(
+        fn() => $validator->accept(integrityObject($raised), $cloud, $clock + 2000, true, [
+            $cloud,
+            $owned,
+        ]),
+        'save_integrity_mismatch',
+        $fixture->name . ': a restore cannot add a landmark its checkpoint did not sign',
+    );
+    $legacy = integrityWithoutLandmarks($owned);
+    assertIntegrity(
+        $landmarksOf($validator->accept($legacy, $cloud, $clock + 2000, true, [$cloud, $owned])) ===
+            $landmarksOf($owned),
+        $fixture->name . ': an older checkpoint recovers its landmarks from the matching history',
+    );
+    integrityDenied(
+        fn() => $validator->accept($legacy, $cloud, $clock + 2000, true, [$cloud, $starting]),
+        'save_integrity_mismatch',
+        $fixture->name .
+            ': an older checkpoint without matching history cannot vouch for landmarks',
+    );
+}
 if ($origin === null) {
     unset($_ENV['APP_ORIGIN']);
 } else {
