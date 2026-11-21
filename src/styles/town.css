@@ -1875,8 +1875,10 @@ html:has(.town-museum[open]) {
   font-size: 14px;
   line-height: 1.45;
 }
+/* With names off, a landmark still answers: the SVG map keeps its target, and a landmark's
+   label, which shows only once the player taps it, keeps the name and line. */
 .town-labels-hidden .town-scene-labels,
-.town-labels-hidden .town-moon-lots {
+.town-labels-hidden .town-moon-lots > :not(.town-moon-landmark, .landmark) {
   display: none;
 }
 .town-in-cinematic > button,

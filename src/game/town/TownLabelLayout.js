@@ -88,6 +88,9 @@ function separateActionTargets(labels, width, height, top, bottom) {
       label.collection = { ...label.collection, x: (x / width) * 100, y: (y / height) * 100 };
 }
 
+// Pixels a label may sit past the map's edge from floating-point rounding alone.
+const EDGE_ROUNDING = 1e-6;
+
 // The gap a name keeps from something it steps aside for.
 const AVOID_GAP = 6;
 // Every map keeps names attached to their projected places. Higher priority wins
@@ -158,13 +161,14 @@ export function layoutTownLabels(
       label.y += ((y - rect.y) / height) * 100;
       rect = labelRect(label, width, height);
     }
+    // A label slid exactly to an edge comes back from percentages a rounding error past it.
     label.visible =
       width > 0 &&
       height > 0 &&
-      rect.x - rect.width / 2 >= 8 &&
-      rect.x + rect.width / 2 <= width - 8 &&
-      rect.y - rect.height / 2 >= top &&
-      rect.y + rect.height / 2 <= bottom &&
+      rect.x - rect.width / 2 >= 8 - EDGE_ROUNDING &&
+      rect.x + rect.width / 2 <= width - 8 + EDGE_ROUNDING &&
+      rect.y - rect.height / 2 >= top - EDGE_ROUNDING &&
+      rect.y + rect.height / 2 <= bottom + EDGE_ROUNDING &&
       !occupied.some((other) => labelsOverlap(rect, other));
     if (label.visible) occupied.push(rect);
   }

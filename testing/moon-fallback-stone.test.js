@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import TownMoonView from '../src/components/town/TownMoonView.vue';
 import { createTown } from '../src/data/town';
@@ -65,6 +66,12 @@ it.each([
   ['desktop', { width: 1280, height: 800 }],
   ['phone', { width: 390, height: 844 }],
   ['landscape phone', { width: 844, height: 390 }],
+  // Sizes where the label slides exactly to an edge and comes back a rounding error past it.
+  ['short landscape map', { width: 844, height: 360 }],
+  ['large phone', { width: 430, height: 932 }],
+  ['phone 414', { width: 414, height: 896 }],
+  ['small landscape phone', { width: 667, height: 375 }],
+  ['landscape phone 812', { width: 812, height: 375 }],
 ])(
   'gives the Quiet Stone a tap and keyboard target that shows its description (%s)',
   async (_, viewport) => {
@@ -100,4 +107,28 @@ it.each([
 it('draws no stone target before the Far Rim opens', async () => {
   const { root } = await fallbackMoon({ ...createTown(), era: 'hollow-rising' });
   expect(stoneTarget(root)).toBeFalsy();
+});
+
+// Turning village names off hides every ordinary label, but not the stone's target, nor the
+// name and line a tap on the stone shows (town.css): both carry the class the rule spares.
+it('keeps the stone answering with village names turned off', async () => {
+  const css = readFileSync('src/styles/town.css', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  const hiding = [...css.matchAll(/([^{}]+)\{([^}]*)\}/g)]
+    .filter(([, , body]) => /display:\s*none/.test(body))
+    .flatMap(([, selectors]) => selectors.split(/,(?![^(]*\))/).map((value) => value.trim()))
+    .filter((selector) => selector.startsWith('.town-labels-hidden'));
+  const lots = hiding.filter((selector) => selector.includes('.town-moon-lots'));
+  // Only the lots' children are hidden, never the container the stone's target sits in.
+  expect(lots.length).toBeGreaterThan(0);
+  for (const selector of lots) {
+    expect(selector).toMatch(/\.town-moon-lots\s*>\s*:not\(/);
+    expect(selector).toContain('.town-moon-landmark');
+    expect(selector).toMatch(/[ ,(]\.landmark\)/);
+  }
+  const town = { ...createTown(), era: 'quiet-signal' };
+  const { root } = await fallbackMoon(town, { width: 390, height: 844 });
+  expect(stoneTarget(root).props.class).toContain('town-moon-landmark');
+  stoneTarget(root).props.onClick({ detail: 1 });
+  await settle();
+  expect(String(stoneLabel(root).props.class).split(' ')).toContain('landmark');
 });

@@ -167,6 +167,7 @@
           :aria-pressed="selected === lot.id"
           :class="{
             selected: selected === lot.id,
+            landmark: !!lotInfo[lot.id].landmark,
             'has-action-icon': !!TOWN_ACTIONS[indicators[lot.id]],
           }"
           :style="{
