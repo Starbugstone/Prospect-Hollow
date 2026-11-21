@@ -2705,11 +2705,32 @@ foreach ($fixtures->fixtures as $fixture) {
         'save_integrity_mismatch',
         $fixture->name . ': a restore cannot add a landmark its checkpoint did not sign',
     );
+    // A save sealed before checkpoints carried landmarks stores the very checkpoint its
+    // client later sends back.
     $legacy = integrityWithoutLandmarks($owned);
     assertIntegrity(
-        $landmarksOf($validator->accept($legacy, $cloud, $clock + 2000, true, [$cloud, $owned])) ===
-            $landmarksOf($owned),
+        $landmarksOf(
+            $validator->accept($legacy, $cloud, $clock + 2000, true, [$cloud, $legacy]),
+        ) === $landmarksOf($owned),
         $fixture->name . ': an older checkpoint recovers its landmarks from the matching history',
+    );
+    // A restore re-seals another save at the same epoch and sequence: a newer save in
+    // history with other landmarks and its own checkpoint must not stand in for this one.
+    $reused = integrityData($owned);
+    $reused['town']['personalisation']['areas'] = [];
+    $reused['town']['personalisation']['areaLevels'] = [];
+    $reused['integrity']['checkpoint'] = integrityData(integrityWithoutLandmarks($starting))[
+        'integrity'
+    ]['checkpoint'];
+    assertIntegrity(
+        $landmarksOf(
+            $validator->accept($legacy, $cloud, $clock + 2000, true, [
+                $cloud,
+                integrityObject($reused),
+                $legacy,
+            ]),
+        ) === $landmarksOf($owned),
+        $fixture->name . ': an older checkpoint takes its landmarks from the save it sealed',
     );
     integrityDenied(
         fn() => $validator->accept($legacy, $cloud, $clock + 2000, true, [$cloud, $starting]),

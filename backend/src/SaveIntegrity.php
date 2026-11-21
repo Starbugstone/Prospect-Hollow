@@ -982,31 +982,45 @@ final class SaveIntegrity
     }
     /**
      * A signed checkpoint's state with its protected landmarks. A checkpoint signed before
-     * they were carried takes them from the cloud save sealed at the same epoch and
-     * sequence, which recorded the same town; without one it has none, as before.
+     * they were carried takes them from the cloud save sealed with that same checkpoint,
+     * which recorded the same town. A restore can seal another save at the same epoch and
+     * sequence, so that pair alone decides only for a save stored without its checkpoint.
+     * Without either, the checkpoint vouches for no landmarks, as before.
      *
      * @param array<string, mixed> $signed From readCheckpoint().
+     * @param string $token The checkpoint as the client sent it.
      * @param list<object|null> $saves The current cloud save and its history.
      * @return array<string, mixed>
      */
-    private function landmarks(array $signed, array $saves): array
+    private function landmarks(array $signed, string $token, array $saves): array
     {
         $state = $signed['state'];
         if (is_array($state['town']['personalisation'] ?? null)) {
             return $state;
         }
+        $sealed = null;
         foreach ($saves as $save) {
             $data = $save ? self::arrayOf($save) : null;
+            $integrity = $data['integrity'] ?? null;
             if (
-                ($data['integrity']['epoch'] ?? null) === $signed['epoch'] &&
-                ($data['integrity']['baseSequence'] ?? null) === $signed['sequence']
+                ($integrity['epoch'] ?? null) !== $signed['epoch'] ||
+                ($integrity['baseSequence'] ?? null) !== $signed['sequence']
             ) {
-                $state['town']['personalisation'] = [
-                    'areas' => $data['town']['personalisation']['areas'] ?? [],
-                    'areaLevels' => $data['town']['personalisation']['areaLevels'] ?? [],
-                ];
+                continue;
+            }
+            if (($integrity['checkpoint'] ?? null) === $token) {
+                $sealed = $data;
                 break;
             }
+            if (!isset($integrity['checkpoint'])) {
+                $sealed ??= $data;
+            }
+        }
+        if ($sealed) {
+            $state['town']['personalisation'] = [
+                'areas' => $sealed['town']['personalisation']['areas'] ?? [],
+                'areaLevels' => $sealed['town']['personalisation']['areaLevels'] ?? [],
+            ];
         }
         return $state;
     }
@@ -1402,7 +1416,10 @@ final class SaveIntegrity
             ) {
                 self::mismatch('recovery.checkpoint');
             }
-            $signedProfile = $this->landmarks($signed, [$previous, ...$history]);
+            $signedProfile = $this->landmarks($signed, (string) $journal['checkpoint'], [
+                $previous,
+                ...$history,
+            ]);
             $signedProfile['powers'] = array_map(
                 fn($id, $quantity) => ['id' => $id, 'quantity' => $quantity],
                 array_keys($signedProfile['powers']),
