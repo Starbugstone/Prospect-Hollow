@@ -19,7 +19,7 @@ const UPDATES = [
   {
     date: '2026-11-17',
     title: 'A livelier valley in every era',
-    text: 'Every era now brings its own villagers, animals and Willowkin, and homes, halls, shops and workshops each get a look of their own. Roofs take the tones of the 3D town on the 2D map, each era’s cinematic tours the works, and ordinary moves on the board feel snappier. Look out for a wandering raccoon and its Willowkin friend: find them for a reward.',
+    text: 'Every era now brings its own villagers and animals, with Willowkin from the Canopy Age on, and homes, halls, shops and workshops each get a look of their own. Roofs take the tones of the 3D town on the 2D map, each era’s cinematic tours the works, and ordinary moves on the board feel snappier. Look out for a wandering raccoon and its Willowkin friend: find them for a reward.',
   },
   {
     date: '2026-11-04',
