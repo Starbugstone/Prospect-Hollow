@@ -17,10 +17,11 @@ it('names the levels Seam Explorer counts', () => {
 });
 
 it('names every site Landmark Patron counts', () => {
-  const { measure, requirement } = family('landmark-patron');
+  // The site list is the family's scope, shown once beside the per-rank requirement.
+  const { measure, scope } = family('landmark-patron');
   for (const area of measure.areas) {
     const { label } = AREA_BY_ID[area];
-    expect(requirement, area).toContain(label);
-    expect(fr[requirement], area).toContain(fr[label]);
+    expect(scope, area).toContain(label);
+    expect(fr[scope], area).toContain(fr[label]);
   }
 });

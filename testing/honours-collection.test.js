@@ -140,6 +140,13 @@ describe('The honours collection', () => {
     expect(seam).toContain(text);
   });
 
+  it('names the sites Landmark Patron counts on its card', async () => {
+    const patron = card(await collection(townState(), { tab: 'town' }), 'landmark-patron');
+    expect(patron).toContain('Sponsor monuments at 1 of the listed sites.');
+    expect(patron).toContain('Founders’ Meadow');
+    expect(patron).toContain('Moonrock Court');
+  });
+
   it('frames earned families in their best metal with a rank track and their date', async () => {
     const html = await collection(townState());
     const score = card(html, 'score');
@@ -469,6 +476,17 @@ describe('The honour detail', () => {
     expect(html).not.toMatch(/level-\d+/);
     expect(rungs(html)[0]).toContain('2 / 12 continuous seams explored');
     expect(rungs(html)[0]).toContain('role="progressbar"');
+  });
+
+  it('names the sites Landmark Patron counts once, not on every rank', async () => {
+    const html = await detail('landmark-patron');
+    // Each site appears once in the detail; the ladder keeps one short line per rank.
+    expect(html.split('Founders’ Meadow')).toHaveLength(2);
+    expect(html.split('Moonrock Court')).toHaveLength(2);
+    const ladder = rungs(html);
+    expect(ladder).toHaveLength(3);
+    for (const rung of ladder) expect(rung).not.toContain('Founders’ Meadow');
+    expect(ladder[1]).toContain('Sponsor monuments at 5 of the listed sites.');
   });
 
   it('keeps a locked honour off the showcase', async () => {

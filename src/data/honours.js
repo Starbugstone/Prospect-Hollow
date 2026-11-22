@@ -488,7 +488,8 @@ const MEASURES = Object.freeze({
 
 // ---------- Families ----------
 // Every family's ranks from the content. Ranks list `metal`, `goal` and, when they
-// differ from the family, `measure`, `name`, `requirement` and `popup`.
+// differ from the family, `measure`, `name`, `requirement` and `popup`. A family's
+// optional `scope` (a long list of what counts) is shown once, not on every rank.
 export function honourFamilies({
   eras = ERAS,
   gemTypes = GEM_TYPES,
@@ -842,8 +843,10 @@ export function honourFamilies({
       name: 'Landmark Patron',
       art: { image: '/art/rewards/monument.svg' },
       measure: { kind: 'landmarks', areas: HONOUR_MONUMENT_SITES },
-      requirement:
-        'Sponsor monuments at {goal} of these sites: Founders’ Meadow, Monument Square, the Promenade, the Arts Quarter, Horizon Park, Riverlight Court, Stargazers’ Lawn, Homecoming Green, Earthrise Plaza, Moonstone Garden and Moonrock Court.',
+      requirement: 'Sponsor monuments at {goal} of the listed sites.',
+      // Shown once for the family, not on every rank of the ladder.
+      scope:
+        'Listed sites: Founders’ Meadow, Monument Square, the Promenade, the Arts Quarter, Horizon Park, Riverlight Court, Stargazers’ Lawn, Homecoming Green, Earthrise Plaza, Moonstone Garden and Moonrock Court.',
       popup: '{goal} monument sites sponsored',
       progress: '{value} / {goal} monument sites sponsored',
       ranks: [1, 5, 9].map((goal, index) => ({ metal: RANK_METALS[index], goal, since: 5 })),
@@ -987,6 +990,7 @@ function defineRank(family, rank, index, content) {
     since: rank.since ?? 1,
     name: rank.name ?? family.name,
     requirement: rank.requirement ?? family.requirement,
+    scope: family.scope ?? null,
     popup: rank.popup ?? family.popup,
     progressText: rank.progress ?? family.progress ?? null,
     goal: rank.goal,
