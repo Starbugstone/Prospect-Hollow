@@ -1,9 +1,12 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
+import { createApp } from 'vue';
 import TownView from '../src/components/town/TownView.vue';
 import { createTown } from '../src/data/town';
 import { pendingPresentation } from '../src/data/townPresentations';
-import { useCampaignStore } from '../src/stores/campaignStore';
+import { createLocalIntegrityPlugin } from '../src/services/localIntegrity';
+import { SAVE_KEY } from '../src/services/localProfile';
+import { freshProfile, useCampaignStore } from '../src/stores/campaignStore';
 import { renderFragment } from './helpers/componentFragments';
 
 // A full local store (a quota error) must never trap the player in a saved event's
@@ -43,12 +46,18 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 // The village view over a saved town, with the storage then filling up.
-async function village(town) {
+// The production store, with its integrity guard (mutations only through its actions).
+function guardedPinia() {
   const pinia = createPinia();
+  pinia.use(createLocalIntegrityPlugin());
+  createApp({}).use(pinia);
   setActivePinia(pinia);
+  return pinia;
+}
+async function village(town) {
+  const pinia = guardedPinia();
+  saves.set(SAVE_KEY, JSON.stringify({ ...freshProfile(), town: { ...town, tourSeen: true } }));
   const store = useCampaignStore();
-  store.town = { ...town, tourSeen: true };
-  expect(store.save()).toBe(true);
   full = true;
   let view;
   await renderFragment({
@@ -63,7 +72,7 @@ async function village(town) {
 // What the next session loads from storage.
 function nextSession() {
   full = false;
-  setActivePinia(createPinia());
+  guardedPinia();
   return useCampaignStore().town;
 }
 
