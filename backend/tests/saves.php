@@ -1152,6 +1152,56 @@ try {
         $resumed['revision'] === 4 && !isset($resumed['correction']),
         'the next ordinary sync after the restore is accepted as is',
     );
+    // A legacy modernization asking three puzzles syncs as the game loads it: normalizeTown()
+    // clamps required and wins to the offer's two runs, and the server agrees.
+    $legacyProfile = json_decode(json_encode($saveRules->defaultProfile));
+    $legacyProfile->town->era = 'river-rail';
+    $legacyProfile->town->buildings->well = 3;
+    $legacyProfile->town->buildingEras->well = 'frontier';
+    $legacyProfile->town->buildingEraLevels->well = 0;
+    $legacyProfile->town->projects = (object) [
+        'well' => (object) [
+            'id' => 'well',
+            'type' => 'modernization',
+            'stage' => 3,
+            'fromEra' => 'frontier',
+            'targetEra' => 'river-rail',
+            'eraLevel' => 1,
+            'wins' => 3,
+            'required' => 3,
+            'cost' => 100,
+        ],
+    ];
+    $legacyProfile->integrity = (object) [
+        'version' => 1,
+        'epoch' => uuid(),
+        'baseSequence' => 0,
+        'clientAt' => time() * 1000,
+        'actions' => [],
+    ];
+    $legacyBody = townBody('Legacy Works');
+    $legacyBody['profile'] = $legacyProfile;
+    $legacy = status(200, callApi('POST', 'towns', $legacyBody, $upgraded), 'legacy project town');
+    $loaded = $upload($legacy['profile']);
+    $loaded->town->projects->well->required = 2;
+    $loaded->town->projects->well->wins = 2;
+    $legacySync = status(
+        200,
+        callApi(
+            'PUT',
+            'towns/' . $legacy['townId'],
+            ['baseRevision' => 1, 'uploadId' => uuid(), 'profile' => $loaded],
+            $upgraded,
+        ),
+        'legacy project sync',
+    );
+    check(
+        !isset($legacySync['correction']) &&
+            $legacySync['profile']['town']['projects']['well']['required'] === 2 &&
+            $legacySync['profile']['town']['projects']['well']['wins'] === 2,
+        'a legacy project clamped by the game syncs without a correction ' .
+            json_encode($legacySync['correction'] ?? null),
+    );
     // Without its checkpoint, an exact copy of a stored snapshot is proof enough.
     $copy = $upload($preUpgrade['profile']);
     unset($copy->integrity->checkpoint);

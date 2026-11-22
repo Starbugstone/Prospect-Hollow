@@ -735,6 +735,15 @@ final class SaveIntegrity
                 unset($p['town']['projects'][$id]);
             }
         }
+        // Mirrors normalizeTown(): an older project never waits for more puzzles than the
+        // offer it belongs to, and its wins are clamped with it.
+        foreach ($p['town']['projects'] as $id => $project) {
+            $runs = $this->projectRuns($p['town'], $id, $project);
+            if ($runs !== null) {
+                $p['town']['projects'][$id]['required'] = min($project['required'], $runs);
+                $p['town']['projects'][$id]['wins'] = min($project['wins'], $runs);
+            }
+        }
         $p['town']['progressionVersion'] = $defaults['town']['progressionVersion'];
         if (!in_array($profile['town']['moonstoneVersion'] ?? null, [1, 2], true)) {
             $credit = $this->moonBuildingCredit($p['town']);
@@ -764,6 +773,25 @@ final class SaveIntegrity
         $p['chestsWithoutBuilderHammer'] = min(9, $p['chestsWithoutBuilderHammer']);
         $this->settleForge($p['town']);
         return $p;
+    }
+    /**
+     * The puzzles a project's offer asks, as projectRuns() and the modernization offer give
+     * them to normalizeTown(); null when the game has no offer to clamp the project to.
+     */
+    private function projectRuns(array $town, string $id, array $project): ?int
+    {
+        if (($project['type'] ?? null) === 'modernization') {
+            unset($town['projects'][$id]);
+            $offer = $this->offer($town, $id);
+            return ($offer['type'] ?? null) === 'modernization' &&
+                $offer['stage'] === $project['stage'] &&
+                $offer['targetEra'] === $project['targetEra'] &&
+                $offer['runs'] > 0
+                ? $offer['runs']
+                : null;
+        }
+        $runs = $this->rules['buildings'][$id]['upgrades'][$project['stage'] - 1]['runs'] ?? 1;
+        return $runs > 0 ? min($this->rules['maxConstructionRuns'], $runs) : null;
     }
     private function protected(array $p): array
     {
