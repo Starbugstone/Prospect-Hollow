@@ -114,7 +114,7 @@ const UPDATES = [
   {
     date: '2026-09-28',
     title: 'Live score in the mine',
-    text: 'Follow your score, stars and chests while you play. Every run now earns simple completion, score and speed chests.',
+    text: 'Follow your score, stars and chests while you play. Finish for one chest. Meet both the score and time targets for two.',
   },
   {
     date: '2026-09-28',

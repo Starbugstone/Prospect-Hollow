@@ -36,9 +36,7 @@
         v-if="speedLeft > 0"
         class="meter-speed"
         :class="{ closing: speedLeft < 15000 }"
-        :title="
-          t('Finish within {time} for a bonus chest', { time: formatTime(game.speedTargetMs) })
-        "
+        :title="t('Time target: {time}', { time: formatTime(game.speedTargetMs) })"
       >
         <GameIcon name="clock" />{{ formatTime(speedLeft) }}
       </span>
@@ -80,7 +78,7 @@ const chestLabel = computed(
   () =>
     chests.value.map((chest) => t(chest.label)).join(' · ') +
     (chestTarget.value
-      ? ` — ${t('Score {score} for a bonus chest', { score: number(chestTarget.value) })}`
+      ? ` — ${t('Finish for one chest. Meet both the score and time targets for two.')} ${t('Score target: {score}', { score: number(chestTarget.value) })}`
       : ''),
 );
 const popped = ref(0);

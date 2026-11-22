@@ -20,7 +20,8 @@
       </button>
     </header>
     <p v-if="!introduction">
-      {{ t('Complete every pictured goal. The score and clock earn extra chests.') }}
+      {{ t('Complete every pictured goal.') }}
+      {{ t('Finish for one chest. Meet both the score and time targets for two.') }}
     </p>
     <ul>
       <li v-for="obstacle in obstacles" :key="obstacle.id">
