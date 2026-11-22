@@ -24,8 +24,14 @@ export function finishEra(id, era) {
 export const eraBuildingLevel = (town, id) => {
   if (town.era === FRONTIER_ERA || BUILDING_BY_ID[id]?.introducedEra === town.era)
     return town.buildings[id] ?? 0;
-  // A building this era leaves alone is already finished for it.
-  if (!modernizesInEra(town.era, id)) return ERA_BUILDING_LEVELS;
+  // A building this era leaves alone is already finished for it, except an optional one
+  // (the Saucer Pad), which keeps the level it was built to: none while unbuilt. A finished
+  // one reads as before, so no modernization opens; the server counts only required
+  // buildings (era completion, projects).
+  if (!modernizesInEra(town.era, id))
+    return BUILDING_BY_ID[id]?.requiredForEraCompletion === false
+      ? Math.min(ERA_BUILDING_LEVELS, town.buildings[id] ?? 0)
+      : ERA_BUILDING_LEVELS;
   return town.buildingEras[id] === town.era ? town.buildingEraLevels?.[id] || 1 : 0;
 };
 export function modernization(town, id) {

@@ -6,11 +6,18 @@
         <h2 id="building-title">{{ t(building.name) }}</h2>
       </div>
       <span class="town-level-badge">{{
-        t(town.era !== 'frontier' ? '{era} · Level {level} of {max}' : 'Level {level} / {max}', {
-          era: t(ERA_BY_ID[keptFinish ? town.buildingEras[id] : town.era].label),
-          level: keptFinish ? town.buildingEraLevels[id] || 3 : eraBuildingLevel(town, id),
-          max: town.era !== 'frontier' ? 3 : building.upgrades.length,
-        })
+        unbuiltEarlier
+          ? t('Unbuilt')
+          : t(
+              town.era !== 'frontier' ? '{era} · Level {level} of {max}' : 'Level {level} / {max}',
+              {
+                era: t(ERA_BY_ID[keptFinish ? town.buildingEras[id] : town.era].label),
+                level: keptFinish
+                  ? town.buildingEraLevels[id] || eraBuildingLevel(town, id)
+                  : eraBuildingLevel(town, id),
+                max: town.era !== 'frontier' ? 3 : building.upgrades.length,
+              },
+            )
       }}</span>
     </div>
     <TownMoonstoneWorkshop
@@ -429,6 +436,14 @@ const building = computed(() => BUILDING_BY_ID[props.id]);
 const ERA_STAGE = / · Level \d+$/;
 const eraCaptioned = (definition) =>
   definition.stages.length > 1 && definition.stages.slice(1).every((name) => ERA_STAGE.test(name));
+// An optional building of an earlier era that was never built (the Saucer Pad later on)
+// has no level of this era to show.
+const unbuiltEarlier = computed(
+  () =>
+    props.town.era !== 'frontier' &&
+    !stage.value &&
+    building.value.introducedEra !== props.town.era,
+);
 // A building this era leaves alone keeps showing the era of its finish.
 const keptFinish = computed(
   () =>
