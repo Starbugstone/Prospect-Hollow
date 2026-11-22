@@ -1,0 +1,124 @@
+{
+  "version": 1,
+  "level": 595,
+  "mode": "normal",
+  "seed": 595,
+  "resumed": false,
+  "actions": [
+    {
+      "type": "swap",
+      "a": 7,
+      "b": 14,
+      "inPlace": false
+    },
+    {
+      "type": "swap",
+      "a": 9,
+      "b": 16,
+      "inPlace": false
+    },
+    {
+      "type": "swap",
+      "a": 9,
+      "b": 16,
+      "inPlace": false
+    },
+    {
+      "type": "swap",
+      "a": 30,
+      "b": 31,
+      "inPlace": false
+    },
+    {
+      "type": "swap",
+      "a": 26,
+      "b": 33,
+      "inPlace": false
+    },
+    {
+      "type": "swap",
+      "a": 18,
+      "b": 25,
+      "inPlace": false
+    },
+    {
+      "type": "swap",
+      "a": 1,
+      "b": 8,
+      "inPlace": false
+    },
+    {
+      "type": "swap",
+      "a": 2,
+      "b": 3,
+      "inPlace": false
+    },
+    {
+      "type": "swap",
+      "a": 10,
+      "b": 17,
+      "inPlace": false
+    },
+    {
+      "type": "swap",
+      "a": 17,
+      "b": 18,
+      "inPlace": false
+    },
+    {
+      "type": "swap",
+      "a": 17,
+      "b": 24,
+      "inPlace": false
+    },
+    {
+      "type": "swap",
+      "a": 11,
+      "b": 18,
+      "inPlace": false
+    },
+    {
+      "type": "swap",
+      "a": 1,
+      "b": 8,
+      "inPlace": false
+    },
+    {
+      "type": "swap",
+      "a": 1,
+      "b": 8,
+      "inPlace": false
+    },
+    {
+      "type": "swap",
+      "a": 15,
+      "b": 16,
+      "inPlace": false
+    },
+    {
+      "type": "swap",
+      "a": 21,
+      "b": 22,
+      "inPlace": false
+    },
+    {
+      "type": "swap",
+      "a": 24,
+      "b": 25,
+      "inPlace": false
+    },
+    {
+      "type": "swap",
+      "a": 38,
+      "b": 38,
+      "inPlace": true
+    },
+    {
+      "type": "swap",
+      "a": 63,
+      "b": 64,
+      "inPlace": false
+    }
+  ],
+  "fingerprint": "a1eb2c53"
+}
