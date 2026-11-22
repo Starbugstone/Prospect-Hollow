@@ -162,7 +162,7 @@
           {{ t('Replace and continue') }}</button
         ><button @click="cancel">{{ t('Cancel') }}</button>
       </div>
-      <p v-if="saveError" role="alert" class="account-hint">{{ t(saveError) }}</p>
+      <p v-if="saveError" role="alert" class="account-hint">{{ saveErrorText }}</p>
       <p v-if="saveStatus" role="status" class="account-hint">{{ t(saveStatus) }}</p>
     </section>
     <section ref="deleteSection" class="account-section account-danger">
@@ -296,8 +296,16 @@ async function copyShareLink() {
   setTimeout(() => (copied.value = false), 2000);
 }
 // The panel only manages the town being played, so its live progress is this town's backup.
-const { pendingSave, readingFile, saveError, saveStatus, selectSave, importProgress, cancel } =
-  useSaveImport(changed);
+const {
+  pendingSave,
+  readingFile,
+  saveError,
+  saveErrorText,
+  saveStatus,
+  selectSave,
+  importProgress,
+  cancel,
+} = useSaveImport(changed);
 function exportBackup() {
   saveError.value = '';
   saveStatus.value = '';

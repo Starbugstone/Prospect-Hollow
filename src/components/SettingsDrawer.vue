@@ -145,7 +145,7 @@
             <button type="button" @click="cancel">{{ t('Cancel') }}</button>
           </div>
         </div>
-        <p v-if="saveError" role="alert" class="save-error">{{ t(saveError) }}</p>
+        <p v-if="saveError" role="alert" class="save-error">{{ saveErrorText }}</p>
         <p v-if="saveStatus" role="status">{{ t(saveStatus) }}</p>
       </section>
       <button v-if="canCopyRun" type="button" class="text-button" @click="copyRun">
@@ -233,6 +233,7 @@ const {
   pendingSave,
   readingFile,
   saveError,
+  saveErrorText,
   saveStatus,
   reset,
   selectSave,

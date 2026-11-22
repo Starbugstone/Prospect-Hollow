@@ -48,7 +48,7 @@
         <button type="button" class="town-secondary" @click="cancel">{{ t('Cancel') }}</button>
       </div>
     </div>
-    <p v-if="saveError" role="alert" class="landing-old-save-error">{{ t(saveError) }}</p>
+    <p v-if="saveError" role="alert" class="landing-old-save-error">{{ saveErrorText }}</p>
   </section>
 </template>
 <script setup>
@@ -60,9 +60,8 @@ import GameIcon from './GameIcon.vue';
 const emit = defineEmits(['imported']);
 const campaign = useCampaignStore();
 const saveInput = ref(null);
-const { pendingSave, readingFile, saveError, selectSave, importProgress, cancel } = useSaveImport(
-  () => emit('imported'),
-);
+const { pendingSave, readingFile, saveError, saveErrorText, selectSave, importProgress, cancel } =
+  useSaveImport(() => emit('imported'));
 </script>
 <style scoped>
 .landing-old-save {

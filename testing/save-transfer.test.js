@@ -8,7 +8,7 @@ import {
   saveFileName,
   saveFileTooLarge,
 } from '../src/services/saveTransfer';
-import { setLocale } from '../src/i18n';
+import { setLocale, t } from '../src/i18n';
 import { OTHER_TOWN_BACKUP, townStorage } from '../src/services/townStorage';
 import { LEVEL_COUNT } from '../src/data/campaign';
 import { BUILDING_BY_ID } from '../src/data/town';
@@ -248,7 +248,7 @@ it('offers the old-game backup for confirmation before replacing the village', a
   await importer.selectSave(
     event({ name: 'big.json', size: MAX_SAVE_FILE_BYTES + 1, text: async () => text }),
   );
-  expect(importer.saveError.value).toBe(
+  expect(importer.saveErrorText.value).toBe(
     `Choose a backup file smaller than ${MAX_SAVE_FILE_BYTES / 1024 / 1024} MB.`,
   );
   expect(imported).toHaveBeenCalledOnce();
@@ -329,6 +329,22 @@ it('round-trips a long offline journal, and still loads its pretty-printed 1.2 b
     expect(useCampaignStore().integrity.actions).toHaveLength(receipts);
   }
 }, 600_000);
+
+it('shows the oversized-backup refusal in the language on screen, also after a switch', async () => {
+  const importer = useSaveImport();
+  // What the backup pickers render for the refusal.
+  const shown = () => importer.saveErrorText?.value ?? t(importer.saveError.value);
+  const large = { name: 'large.json', size: MAX_SAVE_FILE_BYTES + 1, text: async () => '' };
+  await importer.selectSave({ target: { files: [large], value: 'large.json' } });
+  expect(shown()).toBe('Choose a backup file smaller than 12 MB.');
+  setLocale('fr');
+  try {
+    expect(shown()).toBe('Choisissez une sauvegarde de moins de 12 Mo.');
+  } finally {
+    setLocale('en');
+  }
+  expect(shown()).toBe('Choose a backup file smaller than 12 MB.');
+});
 
 it('states the shared backup size limit in French too', () => {
   setLocale('fr');

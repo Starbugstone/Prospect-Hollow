@@ -11,9 +11,12 @@ import { t } from '../i18n';
 // about twice the size of the same save: a long offline journal passed its old 5 MiB.
 const MAX_SAVE_FILE_MIB = 12;
 export const MAX_SAVE_FILE_BYTES = MAX_SAVE_FILE_MIB * 1024 * 1024;
-/** The file picker's refusal of a backup above MAX_SAVE_FILE_BYTES, in the player's language. */
-export const saveFileTooLarge = () =>
-  t('Choose a backup file smaller than {size} MB.', { size: MAX_SAVE_FILE_MIB });
+/** The file picker's refusal of a backup above MAX_SAVE_FILE_BYTES, kept untranslated. */
+export const SAVE_FILE_TOO_LARGE = 'Choose a backup file smaller than {size} MB.';
+/** Values for the save messages' placeholders. */
+export const SAVE_FILE_LIMIT = Object.freeze({ size: MAX_SAVE_FILE_MIB });
+/** The same refusal in the player's language. */
+export const saveFileTooLarge = () => t(SAVE_FILE_TOO_LARGE, SAVE_FILE_LIMIT);
 const invalidSave = () => new Error('Choose a valid Prospect Hollow save JSON file.');
 const isObject = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
 
