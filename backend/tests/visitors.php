@@ -1074,6 +1074,76 @@ try {
         );
     }
     check($book()['present'] === [], 'last concurrent tab departure closes presence');
+    // A home town whose name the guestbook cannot publish ("O'B" cleans to two letters)
+    // still earns its travel, for a private visit and for a public one.
+    $traveled = fn(string $origin) => $db
+        ->get()
+        ->fetchOne('SELECT COUNT(*) FROM town_travels WHERE origin_town_id=? AND host_town_id=?', [
+            $origin,
+            $hostId,
+        ]);
+    foreach ([true, false] as $private) {
+        $traveller = account();
+        $shortTown = status(
+            200,
+            visitorApi('POST', 'towns', townBody("O'B"), $traveller),
+            'unpublishable home town',
+        )['townId'];
+        status(
+            200,
+            visitorApi(
+                'PATCH',
+                'towns/' . $shortTown . '/settings',
+                ['baseRevision' => 1, 'name' => "O'B", 'isPublic' => true],
+                $traveller,
+            ),
+            'share unpublishable home town',
+        );
+        status(
+            200,
+            visitorApi(
+                'PATCH',
+                'account/profile',
+                [
+                    'displayName' => 'Quiet Ona',
+                    'visitingTownId' => $shortTown,
+                    'anonymousVisits' => $private,
+                ],
+                $traveller,
+            ),
+            'traveller profile',
+        );
+        $tab = bin2hex(random_bytes(32));
+        $arrival = status(
+            200,
+            visitorApi(
+                'POST',
+                $presence,
+                ['token' => $tab, 'browserToken' => bin2hex(random_bytes(32)), 'sequence' => 1],
+                $traveller,
+            ),
+            'unpublishable town visit',
+        );
+        $entry = array_values(
+            array_filter($book()['present'], fn($row) => $row['id'] === $arrival['visitId']),
+        )[0];
+        check(
+            (int) $traveled($shortTown) === 1,
+            ($private ? 'private' : 'public') . ' visit from an unpublishable town earns travel',
+        );
+        check(
+            $entry['townName'] === null &&
+                $entry['publicId'] === null &&
+                !$entry['townGone'] &&
+                $entry['name'] === ($private ? '' : 'Quiet Ona'),
+            'guestbook omits an unpublishable home town and its link',
+        );
+        status(
+            200,
+            visitorApi('DELETE', $presence, ['token' => $tab, 'sequence' => 2]),
+            'unpublishable town departs',
+        );
+    }
     status(
         200,
         visitorApi(

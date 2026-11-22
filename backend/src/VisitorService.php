@@ -378,6 +378,8 @@ final class VisitorService
                 $rows = $chosen;
             }
         }
+        // The visit travels from the chosen town, or else the first one the guestbook can
+        // name. The name only decides what the guestbook shows, never the travel credit.
         foreach ($rows as $town) {
             $name = $this->public->guestName($town['name']);
             if (!$name) {
@@ -388,8 +390,9 @@ final class VisitorService
                 $identity['town_name'] = $name;
                 $identity['era'] = $this->era(json_decode($town['profile'])->town->era ?? null);
             }
-            break;
+            return $identity;
         }
+        $identity['origin_town_id'] = $rows[0]['id'] ?? null;
         return $identity;
     }
 
