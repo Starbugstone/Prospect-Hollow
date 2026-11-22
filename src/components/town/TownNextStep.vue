@@ -155,8 +155,9 @@ const previewStage = computed(() =>
     : preview.value?.stage + Number(preview.value === goal.value),
 );
 const previewEraLevel = computed(() => preview.value?.eraLevel ?? previewStage.value);
+// Optional buildings (the Saucer Pad…) never hold an era back, so they stay out of its bar.
 const eraProgress = computed(() =>
-  BUILDINGS.filter((b) => plotInEra(props.town, b.id)).reduce(
+  BUILDINGS.filter((b) => b.requiredForEraCompletion && plotInEra(props.town, b.id)).reduce(
     (progress, b) => {
       progress.total += props.town.era === 'frontier' ? b.upgrades.length : 3;
       progress.done += eraBuildingLevel(props.town, b.id);
