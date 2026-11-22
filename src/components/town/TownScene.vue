@@ -562,10 +562,18 @@ async function focusPlace(id) {
 }
 // Camera buttons are gone: drag, pinch, wheel and keys move the view; Village resets it.
 const resetView = () => camera()?.cameraAction('reset');
+// Find visitor / Find me: the visitor walks the valley, so a settlement's map covering it
+// closes first. A visitor who has left keeps the map on screen, as does a presentation
+// playing on it (the valley's own presentations refuse the camera too).
+function findVisitor(id) {
+  if (shownPresentation.value || !scene?.canFindVisitor(id)) return false;
+  closeSettlement();
+  return scene.findVisitor(id);
+}
 defineExpose({
   focusPlace,
   showSettlement,
-  findVisitor: (id) => scene?.findVisitor(id) ?? false,
+  findVisitor,
   resetView,
   collectionOrigin,
   cinematicFrame: (progress) => {

@@ -127,12 +127,19 @@ export function cameraAction(d, action) {
   if (action === 'reset') d.frameTown();
 }
 
-export function findVisitor(d, id) {
-  if (d.raid || d.cinematic || d.presentation || d.eventCamera) return false;
+// A live visitor still in the valley whom the camera may turn to now, or null.
+function findableVisitor(d, id) {
+  if (d.raid || d.cinematic || d.presentation || d.eventCamera) return null;
   const actor = d.liveVisitors?.actors.find(
     (entry) => entry.liveId === String(id) && entry.leavingAt === undefined,
   );
-  if (!actor?.root.visible || actor.root.parent !== d.world) return false;
+  return actor?.root.visible && actor.root.parent === d.world ? actor : null;
+}
+/** Whether `findVisitor` would show this live visitor, without moving the camera. */
+export const canFindVisitor = (d, id) => !!findableVisitor(d, id);
+export function findVisitor(d, id) {
+  const actor = findableVisitor(d, id);
+  if (!actor) return false;
   const target = actor.root.position.clone().add(point(0, 1, 0));
   const offset = d.camera.position.clone().sub(d.controls.target).normalize().multiplyScalar(16);
   d.controls.target.copy(target);

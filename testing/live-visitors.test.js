@@ -240,6 +240,11 @@ it('finds and pins a named live guest independently of ordinary town actors', ()
   const saved = JSON.stringify(d.town);
   d.setReducedMotion(true);
   d.setLiveVisitors([visitor('self', { self: true }), visitor('matt', { name: 'Matt' })]);
+  // Asking whether a visitor can be found moves nothing.
+  const camera = d.camera.position.clone();
+  expect(d.canFindVisitor('matt')).toBe(true);
+  expect(d.canFindVisitor('missing')).toBe(false);
+  expect(d.camera.position.equals(camera)).toBe(true);
   expect(d.findVisitor('matt')).toBe(true);
   expect(d.namedVillager.liveId).toBe('matt');
   expect(d.villagerLabelPinned).toBe(true);
@@ -250,6 +255,7 @@ it('finds and pins a named live guest independently of ordinary town actors', ()
   expect(d.namedVillager.root.userData.villager.name).toContain('Camille (you)');
   expect(d.findVisitor('missing')).toBe(false);
   d.raid = {};
+  expect(d.canFindVisitor('matt')).toBe(false);
   expect(d.findVisitor('matt')).toBe(false);
   d.raid = null;
   d.setLiveVisitors([]);

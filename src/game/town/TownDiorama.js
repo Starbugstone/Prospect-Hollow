@@ -48,6 +48,7 @@ import {
   CAMERA_FOCUS_HEIGHT,
   CAMERA_MIN_DISTANCE,
   cameraAction,
+  canFindVisitor,
   findVisitor,
   frameTown,
   focusTownPlace,
@@ -297,6 +298,9 @@ export class TownDiorama extends TownPrimitives {
   }
   cameraAction(action) {
     cameraAction(this, action);
+  }
+  canFindVisitor(id) {
+    return canFindVisitor(this, id);
   }
   findVisitor(id) {
     return findVisitor(this, id);

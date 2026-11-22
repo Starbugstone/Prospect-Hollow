@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
+import { h } from 'vue';
 import TownScene from '../src/components/town/TownScene.vue';
 import { createTown } from '../src/data/town';
 import { clientComponent, findNode, mountComponent, settle } from './helpers/componentMount';
@@ -70,7 +71,12 @@ async function valley() {
     setup.scene = recorder();
     state = setup;
   });
-  const { root, unmount } = mountComponent(Scene, { town, now: 0, needChips: [WATER] }, { pinia });
+  // What TownView and a shared visit call: the scene's exposed methods.
+  let exposed;
+  const View = {
+    render: () => h(Scene, { town, now: 0, needChips: [WATER], ref: (scene) => (exposed = scene) }),
+  };
+  const { root, unmount } = mountComponent(View, {}, { pinia });
   await settle();
   // Every node records its focus.
   const track = (node) => {
@@ -78,7 +84,7 @@ async function valley() {
     node.children.forEach(track);
   };
   track(root);
-  return { root, state, unmount };
+  return { root, state, exposed, unmount };
 }
 const byClass = (root, name) =>
   findNode(root, (node) =>
@@ -137,5 +143,33 @@ it('leaves focus that is elsewhere on the page where it is', async () => {
   state.closeSettlement();
   await settle();
   expect(focus.log).toEqual([]);
+  unmount();
+});
+
+// Find visitor / Find me (the guestbook, a visitor notice, a shared visit) shows a visitor
+// who walks the valley: the Moon covering it closes first. The camera moves only for this
+// explicit command; a visitor who has left keeps the Moon on screen.
+it('reveals the valley before finding a visitor who is there', async () => {
+  const { root, state, exposed, unmount } = await valley();
+  state.showSettlement('moon');
+  await settle();
+  state.scene.canFindVisitor.mockReturnValue(true);
+  state.scene.findVisitor.mockReturnValue(true);
+  expect(exposed.findVisitor('visitor-1')).toBe(true);
+  await settle();
+  expect(moonMap(root)).toBeFalsy();
+  expect(state.scene.findVisitor).toHaveBeenCalledWith('visitor-1');
+  unmount();
+});
+
+it('keeps the Moon on screen when the visitor has left', async () => {
+  const { root, state, exposed, unmount } = await valley();
+  state.showSettlement('moon');
+  await settle();
+  state.scene.canFindVisitor.mockReturnValue(false);
+  expect(exposed.findVisitor('visitor-1')).toBe(false);
+  await settle();
+  expect(moonMap(root)).toBeTruthy();
+  expect(state.scene.findVisitor).not.toHaveBeenCalled();
   unmount();
 });
