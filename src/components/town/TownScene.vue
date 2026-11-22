@@ -13,7 +13,9 @@
     @pointercancel="cancelPointer"
     @lostpointercapture="cancelPointer"
   >
-    <div v-if="unavailable" class="town-graphics-unavailable" role="alert">
+    <!-- While another settlement's map covers the valley, the valley's own controls are
+         inert: Tab and Enter reach only the map on screen. -->
+    <div v-if="unavailable" class="town-graphics-unavailable" role="alert" :inert="covered">
       <p>{{ t('The village needs 3D graphics, which could not start on this device.') }}</p>
       <span>
         <button type="button" @click="retryGraphics">{{ t('Try again') }}</button>
@@ -25,12 +27,14 @@
     <GameViewStatus
       v-else-if="!graphicsReady"
       class="town-graphics-loading"
+      :inert="covered"
       label="Preparing your village…"
     />
     <canvas
       :key="canvasVersion"
       ref="canvas"
       tabindex="0"
+      :inert="covered"
       :aria-label="t('Town camera. Arrow keys rotate, plus and minus zoom, Home resets the view.')"
       @keydown="cameraKey"
     />
@@ -38,6 +42,7 @@
       v-if="eventInset && !reducedMotion"
       class="town-event-inset"
       :class="{ 'passive-arrival-inset': eventInset.passive }"
+      :inert="covered"
       :role="eventInset.passive ? 'button' : 'img'"
       :tabindex="eventInset.passive ? 0 : undefined"
       :aria-label="eventInset.passive ? t('Show visitor nametag') : t(eventInset.label)"
@@ -66,6 +71,7 @@
       v-if="villagerLabel"
       ref="villagerElement"
       class="villager-name"
+      :inert="covered"
       role="status"
       :style="{ left: `${villagerLabel.x}%`, top: `${villagerLabel.y}%` }"
       ><template v-if="!villagerLabel.live">{{ t('VIP visitor') }} · </template
@@ -75,11 +81,12 @@
       v-if="plaqueLabel"
       ref="plaqueElement"
       class="villager-name"
+      :inert="covered"
       role="status"
       :style="{ left: `${plaqueLabel.x}%`, top: `${plaqueLabel.y}%` }"
       >{{ t(plaqueLabel.name) }}</span
     >
-    <div class="town-action-icons">
+    <div class="town-action-icons" :inert="covered">
       <TownActionIcon
         v-for="anchor in actionAnchors"
         :key="anchor.id"
@@ -98,6 +105,7 @@
     </div>
     <div
       class="town-scene-labels"
+      :inert="covered"
       role="group"
       :aria-label="t(readOnly ? 'Village buildings' : 'Choose a plot or enter the mine')"
     >
@@ -136,6 +144,7 @@
     <div
       v-if="needChips.length || moon.homesteads"
       class="town-map-needs"
+      :inert="covered"
       role="group"
       :aria-label="t('Basic town needs')"
       @pointerdown.stop
@@ -314,6 +323,7 @@ const moonLabel = computed(() =>
 const shown = ref(HOME_SETTLEMENT);
 const settlementView = ref(null);
 const settlementMap = computed(() => mapOf(shown.value));
+const covered = computed(() => !!settlementMap.value);
 const presentationSettlement = computed(() => eventSettlement(props.presentation));
 const valleyPresentation = computed(() =>
   props.presentation && presentationSettlement.value === HOME_SETTLEMENT
@@ -343,6 +353,35 @@ function openMoon() {
   if (canLeaveValley() && !reachable(MOON_SETTLEMENT)) return emit('locate', 'spaceElevator');
   showSettlement(MOON_SETTLEMENT);
 }
+// Focus follows the map on screen when it would otherwise be lost under the covered valley
+// or with a closed map: into a settlement's map as it opens (its canvas or, drawn without
+// WebGL, its first button), and back to what opened it, or the valley's canvas, as it
+// closes. Focus elsewhere on the page (a Build row, say) stays where it is.
+let opener = null;
+const focusLost = (element) =>
+  !element ||
+  element === document.body ||
+  !element.isConnected ||
+  !!sceneElement.value?.contains?.(element);
+watch(
+  covered,
+  (now, before) => {
+    if (now && !before) opener = document.activeElement;
+  },
+  { flush: 'sync' },
+);
+watch(
+  covered,
+  (now) => {
+    const lost = focusLost(now ? opener : document.activeElement);
+    const back = opener?.isConnected && !opener.closest?.('[inert]') ? opener : canvas.value;
+    if (!now) opener = null;
+    if (!lost) return;
+    const target = now ? settlementView.value?.$el?.querySelector?.('canvas, button') : back;
+    target?.focus?.({ preventScroll: true });
+  },
+  { flush: 'post' },
+);
 watch(
   shown,
   (id) => {
