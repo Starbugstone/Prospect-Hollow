@@ -267,7 +267,12 @@ const poller = createVillagePoller({
         (village[`${id}ReadyAt`] ?? 0) * 1000,
       );
   },
-  gone: () => (unshared.value = true),
+  // The controls go with the share; an open card or full screen must not outlive them.
+  gone() {
+    unshared.value = true;
+    inspected.value = '';
+    fullscreen.value = false;
+  },
 });
 // Full screen works like the game's village: the map fills the viewport without the
 // Fullscreen API, the page stops scrolling, and Escape leaves unless a card is open.

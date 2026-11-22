@@ -49,7 +49,7 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { loadVisitorProfile, saveVisitorProfile } from '../../services/visitorApi';
-import { townStorage } from '../../services/townStorage';
+import { activeTownId } from '../../services/townStorage';
 import { visitorName, visitorTitle } from '../../data/liveVisitors';
 import { t } from '../../i18n';
 
@@ -68,10 +68,8 @@ const preview = computed(() =>
 );
 const previewTown = computed(
   () =>
-    (
-      towns.value.find((town) => town.townId === (townId.value || townStorage.activeMeta().id)) ??
-      towns.value[0]
-    )?.name,
+    (towns.value.find((town) => town.townId === (townId.value || activeTownId())) ?? towns.value[0])
+      ?.name,
 );
 async function load() {
   loading.value = true;
