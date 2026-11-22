@@ -46,13 +46,17 @@ export async function request(
   if (native && !base.startsWith('https://'))
     throw new Error('Cloud saving needs an HTTPS server configured for this app.');
   // The stored generation fences replies after another tab changes the account. A public
-  // read (a share-link visit) still goes out when local storage is denied; every other
-  // request needs that fence and fails with the storage error.
+  // read that answers the same for everyone (a shared village, the privacy contact) still
+  // goes out when local storage is denied; every other request, including the visitor
+  // profile with the account's towns and CSRF token, needs that fence and fails with the
+  // storage error.
+  const publicRead =
+    authentication && method === 'GET' && (path.startsWith('villages/') || path === 'privacy');
   const storedAuth = () => {
     try {
       return townStorage.auth().generation;
     } catch (error) {
-      if (authentication && method === 'GET') return unreadableAuth;
+      if (publicRead) return unreadableAuth;
       throw error;
     }
   };

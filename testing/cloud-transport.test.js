@@ -398,5 +398,9 @@ it('sends public reads when local storage is denied and keeps the account fence 
   expect(fetch).toHaveBeenCalledTimes(2);
   await expect(tapSaloon('scene')).rejects.toThrow('Local storage denied');
   await expect(request('account')).rejects.toThrow('Local storage denied');
+  // The visitor profile answers for the signed-in account (its towns and CSRF token), so it
+  // keeps the fence too, and the visit page never starts presence it cannot keep.
+  const { loadVisitorProfile } = await import('../src/services/visitorApi');
+  await expect(loadVisitorProfile()).rejects.toThrow('Local storage denied');
   expect(fetch).toHaveBeenCalledTimes(2);
 });
