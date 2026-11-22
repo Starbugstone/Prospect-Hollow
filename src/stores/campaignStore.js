@@ -60,7 +60,7 @@ import { SAVE_SCHEMA_VERSION } from '../data/saveFormat';
 import { TOWN_PROJECTS } from '../data/townProjects';
 import { finishedRewardProjects } from '../game/town/TownProjects';
 
-import { townStorage } from '../services/townStorage';
+import { activeTownId, townStorage } from '../services/townStorage';
 import { localProfile, SAVE_KEY } from '../services/localProfile';
 import { createIntegrity, appendIntegrityAction } from '../services/saveIntegrity';
 import { createSaveFile, parseSaveFile } from '../services/saveTransfer';
@@ -131,6 +131,8 @@ const defaults = () => ({
   readOnly: false,
   // Session only, never saved: acknowledgements that could not be stored (presentedTown).
   heldAcknowledgements: [],
+  // The town they were held for: a reload of that same town (a cloud refresh) keeps them.
+  heldTown: null,
   lastConstruction: [],
   lastChapterReward: null,
   // The starter projects the latest building action finished, for the village to celebrate.
@@ -537,6 +539,7 @@ export const useCampaignStore = defineStore('campaign', {
     acknowledge(key, changes) {
       if (this.commit(changes)) return true;
       if (!this.heldAcknowledgements.includes(key)) this.heldAcknowledgements.push(key);
+      this.heldTown = activeTownId();
       return false;
     },
     canPlay(id, mode = 'normal') {
@@ -588,6 +591,12 @@ export const useCampaignStore = defineStore('campaign', {
       if (integrityOnly) {
         this.integrity = next.integrity;
         return;
+      }
+      // A refresh of the same town (a cloud pull) keeps what the player already dismissed
+      // and the next save that works stores it; another town starts with none held.
+      if (this.heldAcknowledgements.length && activeTownId() === this.heldTown) {
+        next.heldAcknowledgements = this.heldAcknowledgements;
+        next.heldTown = this.heldTown;
       }
       this.$patch((state) => {
         for (const [key, value] of Object.entries(next)) {

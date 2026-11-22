@@ -203,3 +203,115 @@ it('keeps the Build tab open for a purchase after a held railway opening', async
   expect(store.town.coins).toBeLessThan(before);
   expect(view.dialogMode.value).toBe('build');
 });
+
+it('retains a dismissed era receipt across a same-town cloud refresh before the next save', async () => {
+  const town = completedRiverTown();
+  town.transition = {
+    id: 'frontier:river-rail',
+    from: 'frontier',
+    to: 'river-rail',
+    pending: true,
+  };
+  const { store, view } = await village(town);
+  view.completeEraCinematic();
+  expect(store.heldAcknowledgements).toEqual(['era:frontier:river-rail']);
+  full = false;
+  const refreshed = JSON.parse(saves.get(SAVE_KEY));
+  refreshed.town.coins += 50;
+  saves.set(SAVE_KEY, JSON.stringify(refreshed));
+  store.reloadLocal();
+  expect(store.save()).toBe(true);
+  expect(JSON.parse(saves.get(SAVE_KEY)).town.transition.pending).toBe(false);
+});
+
+it('retains a held era receipt through a sync pull for the active account town', async () => {
+  const { townStorage } = await import('../src/services/townStorage');
+  const { localProfile } = await import('../src/services/localProfile');
+  const { createSyncService } = await import('../src/services/syncService');
+  const account = { id: 'mayor' };
+  const townId = crypto.randomUUID();
+  const town = completedRiverTown();
+  town.transition = {
+    id: 'frontier:river-rail',
+    from: 'frontier',
+    to: 'river-rail',
+    pending: true,
+  };
+  const remote = { townId, name: 'Review', revision: 1, profile: { ...freshProfile(), town } };
+  townStorage.account(account);
+  townStorage.remember(remote, account.id);
+  townStorage.select(townId, account.id);
+  guardedPinia();
+  const store = useCampaignStore();
+  full = true;
+  expect(store.acknowledgeEra()).toBe(false);
+  expect(store.heldAcknowledgements).toEqual(['era:frontier:river-rail']);
+  full = false;
+  const updated = structuredClone(JSON.parse(JSON.stringify(remote)));
+  updated.revision++;
+  updated.profile.town.coins += 50;
+  const applied = vi.fn(() => {
+    const resume = localProfile.suspendWrites();
+    try {
+      store.reloadLocal();
+    } finally {
+      resume();
+    }
+  });
+  const sync = createSyncService({
+    storage: townStorage,
+    request: async () => updated,
+    account: () => account,
+    targets: () => [{ meta: townStorage.activeMeta() }],
+    applied,
+  });
+  await sync.sync();
+  expect(applied).toHaveBeenCalledOnce();
+  expect(store.town.coins).toBe(updated.profile.town.coins);
+  expect(store.save()).toBe(true);
+  expect(townStorage.active().profile.town.transition.pending).toBe(false);
+});
+
+it('keeps Build open before a held railway receipt has been saved', async () => {
+  const town = createTown();
+  town.buildings.railDepot = 1;
+  town.presentations = { 'railway-opening': 'pending' };
+  const { store, view } = await village(town);
+  view.completePresentation();
+  expect(pendingPresentation(store.town)?.id).toBe('railway-opening');
+  view.dialogMode.value = 'build';
+  view.showConstruction(true);
+  expect(view.dialogMode.value).toBe('build');
+});
+
+it('drops held acknowledgements when another town is loaded', async () => {
+  const { townStorage } = await import('../src/services/townStorage');
+  const account = { id: 'mayor' };
+  const town = completedRiverTown();
+  town.transition = {
+    id: 'frontier:river-rail',
+    from: 'frontier',
+    to: 'river-rail',
+    pending: true,
+  };
+  const first = {
+    townId: crypto.randomUUID(),
+    name: 'First',
+    revision: 1,
+    profile: { ...freshProfile(), town },
+  };
+  const second = structuredClone({ ...first, townId: crypto.randomUUID(), name: 'Second' });
+  townStorage.account(account);
+  townStorage.remember(first, account.id);
+  townStorage.remember(second, account.id);
+  townStorage.select(first.townId, account.id);
+  guardedPinia();
+  const store = useCampaignStore();
+  full = true;
+  expect(store.acknowledgeEra()).toBe(false);
+  full = false;
+  townStorage.select(second.townId, account.id);
+  store.reloadLocal();
+  expect(store.heldAcknowledgements).toEqual([]);
+  expect(store.town.transition.pending).toBe(true);
+});
