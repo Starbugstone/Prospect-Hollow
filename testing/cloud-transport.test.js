@@ -384,3 +384,19 @@ it('resolves the API URL on the page before handing it to the background transpo
   await request('account/profile', undefined, 'GET', true);
   expect(fetch.mock.calls[0][0]).toBe('https://game.example/api/v1/account/profile');
 });
+it('sends public reads when local storage is denied and keeps the account fence for writes', async () => {
+  townStorage.account({ id: 'account-a' });
+  configureSync({});
+  const denied = () => {
+    throw new DOMException('Local storage denied', 'SecurityError');
+  };
+  localStorage.getItem = denied;
+  fetch.mockResolvedValue({ ok: true, status: 200, json: async () => ({ villageId: 'scene' }) });
+  const { publicVillage, latestVillage, tapSaloon } = await import('../src/services/cloudProfile');
+  await expect(publicVillage('scene')).resolves.toMatchObject({ villageId: 'scene' });
+  await expect(latestVillage('scene')).resolves.toMatchObject({ villageId: 'scene' });
+  expect(fetch).toHaveBeenCalledTimes(2);
+  await expect(tapSaloon('scene')).rejects.toThrow('Local storage denied');
+  await expect(request('account')).rejects.toThrow('Local storage denied');
+  expect(fetch).toHaveBeenCalledTimes(2);
+});

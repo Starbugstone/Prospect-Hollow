@@ -10,6 +10,7 @@ import { waitForSyncIdle } from './syncIdle';
 import { fetchCloudReply } from './backgroundTransport';
 const native = Capacitor.isNativePlatform();
 const base = (import.meta.env.VITE_API_BASE ?? '/api/v1').replace(/\/$/, '');
+const unreadableAuth = Symbol('unreadable account record');
 let bearer = '',
   epoch = 0,
   service,
@@ -44,12 +45,23 @@ export async function request(
   if (!cloud.account && !authentication) throw new Error('Sign in to use cloud features.');
   if (native && !base.startsWith('https://'))
     throw new Error('Cloud saving needs an HTTPS server configured for this app.');
+  // The stored generation fences replies after another tab changes the account. A public
+  // read (a share-link visit) still goes out when local storage is denied; every other
+  // request needs that fence and fails with the storage error.
+  const storedAuth = () => {
+    try {
+      return townStorage.auth().generation;
+    } catch (error) {
+      if (authentication && method === 'GET') return unreadableAuth;
+      throw error;
+    }
+  };
   const generation = epoch,
-    storedGeneration = townStorage.auth().generation;
+    storedGeneration = storedAuth();
   const townId = path.match(/^towns\/([^/]+)/)?.[1] ?? (path === 'towns' ? body?.townId : null);
   if (!authentication) await waitForSyncIdle();
   const serialized = body === undefined ? undefined : await backgroundJson.stringify(body);
-  if (generation !== epoch || storedGeneration !== townStorage.auth().generation)
+  if (generation !== epoch || storedGeneration !== storedAuth())
     throw new Error('The account changed while this request was in progress.');
   // Relative API bases resolve against the page, including when fetch executes
   // from an assets-directory worker or a Capacitor document origin.
@@ -87,7 +99,7 @@ export async function request(
           : `Cloud saving failed (HTTP ${response.status}). Your local progress is kept.`,
     };
   });
-  if (generation !== epoch || storedGeneration !== townStorage.auth().generation)
+  if (generation !== epoch || storedGeneration !== storedAuth())
     throw new Error('The account changed while this request was in progress.');
   if (
     townId &&
