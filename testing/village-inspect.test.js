@@ -27,6 +27,22 @@ function sharedTown(buildings) {
   });
 }
 
+// The lifetime moonstones counter is the owner's: the public payload does not carry it, so a
+// visitor's card would read 0 whatever the owner earned.
+it('keeps the lifetime moonstones counter on the owner’s Homecoming Hall card only', async () => {
+  const owner = { ...createTown(), era: 'twin-hollows', moonstonesEarned: 87 };
+  owner.buildings.homecomingHall = 1;
+  const { buildings, buildingEras, buildingEraLevels, era, personalisation } = owner;
+  const shared = villageAppearance({
+    era,
+    appearance: { buildings, buildingEras, buildingEraLevels, era, personalisation },
+  });
+  const visitor = await card({ id: 'homecomingHall', town: shared, readOnly: true });
+  expect(visitor).not.toContain('Lifetime moonstones earned');
+  const own = await card({ id: 'homecomingHall', town: owner, hammers: 0 });
+  expect(own).toContain('Lifetime moonstones earned: 87');
+});
+
 describe('shared-town building cards', () => {
   const town = sharedTown({ well: 1, farm: 1, home: 3, saloon: 3, blacksmith: 2, armory: 1 });
 

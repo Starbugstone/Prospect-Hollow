@@ -27,7 +27,8 @@
       :cooldown-seconds="cooldownSeconds"
       @collect="$emit('collect-moonstones')"
     />
-    <p v-if="id === 'homecomingHall'">
+    <!-- The owner's own counter: a shared village's public payload does not carry it. -->
+    <p v-if="id === 'homecomingHall' && !readOnly">
       {{ t('Lifetime moonstones earned: {count}', { count: town.moonstonesEarned ?? 0 }) }}
     </p>
     <div class="town-detail-hero">
