@@ -80,6 +80,7 @@ import {
 import { createTown, BANDIT_EVENT } from '../data/town';
 import { HIDDEN_FINDS, hiddenFindCommands, hiddenFindFields } from '../data/hiddenFinds';
 import { advanceEra } from '../game/town/TownEras';
+import { acknowledgementKey } from '../game/town/TownEventSettlement';
 import {
   normalizeTown,
   saloonIncomeRate,
@@ -128,6 +129,8 @@ const defaults = () => ({
   settledRun: 0,
   saveWarning: '',
   readOnly: false,
+  // Session only, never saved: acknowledgements that could not be stored (presentedTown).
+  heldAcknowledgements: [],
   lastConstruction: [],
   lastChapterReward: null,
   // The starter projects the latest building action finished, for the village to celebrate.
@@ -468,7 +471,9 @@ export const useCampaignStore = defineStore('campaign', {
         this.town.firstLightsSeen
       )
         return false;
-      return this.commit({ town: { ...this.town, firstLightsSeen: true } });
+      return this.acknowledge(acknowledgementKey.firstLights, {
+        town: { ...this.town, firstLightsSeen: true },
+      });
     },
     advanceEra(expectedEra) {
       if (this.activeRun) return false;
@@ -514,17 +519,24 @@ export const useCampaignStore = defineStore('campaign', {
     },
     acknowledgePresentation(id) {
       const next = acknowledgePresentation(this.town, id);
-      return !!next && this.commit({ town: next });
+      return !!next && this.acknowledge(acknowledgementKey.presentation(id), { town: next });
     },
     acknowledgeEra() {
       const town = this.town;
       if (!town.transition?.pending) return false;
-      return this.commit({
+      return this.acknowledge(acknowledgementKey.era(town.transition), {
         town: {
           ...town,
           transition: { ...town.transition, pending: false },
         },
       });
+    },
+    // Saves a saved event's acknowledgement. One that cannot be saved is held for the
+    // session, so its cinematic or dialog closes while the receipt stays pending.
+    acknowledge(key, changes) {
+      if (this.commit(changes)) return true;
+      if (!this.heldAcknowledgements.includes(key)) this.heldAcknowledgements.push(key);
+      return false;
     },
     canPlay(id, mode = 'normal') {
       return (

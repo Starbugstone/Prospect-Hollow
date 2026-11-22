@@ -37,6 +37,34 @@ function pendingPresentation(town, definitions = {}, belongs) {
   );
 }
 
+// A saved event's acknowledgement that the store could not save (a full local store, a
+// read-only save) is held for the session: its screen counts it as seen so the player is
+// never trapped in its cinematic or dialog, while the saved receipt stays pending and plays
+// again in a later session.
+export const acknowledgementKey = {
+  era: (transition) => `era:${transition?.id}`,
+  presentation: (id) => `presentation:${id}`,
+  firstLights: 'first-lights',
+};
+/** The town as the screen presents its saved events, with `held` acknowledgements seen. */
+export function presentedTown(town, held = []) {
+  if (!held.length) return town;
+  const presentations = Object.fromEntries(
+    Object.entries(town.presentations ?? {}).map(([id, state]) => [
+      id,
+      state === 'pending' && held.includes(acknowledgementKey.presentation(id)) ? 'seen' : state,
+    ]),
+  );
+  const eraHeld =
+    town.transition?.pending && held.includes(acknowledgementKey.era(town.transition));
+  return {
+    ...town,
+    presentations,
+    transition: eraHeld ? { ...town.transition, pending: false } : town.transition,
+    firstLightsSeen: town.firstLightsSeen || held.includes(acknowledgementKey.firstLights),
+  };
+}
+
 // One display contract for saved era transitions, incidents, building/milestone
 // receipts and player-requested unveilings. Selecting a stage never consumes one.
 export function townEventStage({

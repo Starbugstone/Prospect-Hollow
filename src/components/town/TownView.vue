@@ -690,8 +690,10 @@
 <script setup>
 import TownSettlementNotice from './TownSettlementNotice.vue';
 import {
+  acknowledgementKey,
   eraSettlement,
   placeSettlement,
+  presentedTown,
   townEventStage,
 } from '../../game/town/TownEventSettlement';
 import { HOME_SETTLEMENT, settlementId } from '../../data/settlements';
@@ -811,6 +813,9 @@ const campaign = useCampaignStore(),
 const cloudAccount = inject('cloudAccount', null);
 const game = useGameStore();
 const town = computed(() => campaign.town);
+// Saved events as the screen presents them: one whose acknowledgement could not be saved
+// this session counts as seen, so its cinematic or dialog never traps the player.
+const eventTown = computed(() => presentedTown(town.value, campaign.heldAcknowledgements));
 const {
   townId: visitorTownId,
   snapshot: visitorSnapshot,
@@ -1110,7 +1115,7 @@ const sceneTown = computed(() => {
     ...preview,
     displayHonours: campaign.honours,
     displayDistinctions: personalDistinctions.value,
-    ...(town.value.transition?.pending && !eraRevealed.value
+    ...(eventTown.value.transition?.pending && !eraRevealed.value
       ? { era: town.value.transition.from }
       : {}),
   };
@@ -1150,7 +1155,12 @@ function playEraSound(cue) {
 const eraHandoff = ref(null);
 function completeEraCinematic() {
   eraRevealed.value = true;
-  if (!campaign.acknowledgeEra()) return;
+  const transition = town.value.transition;
+  if (
+    !campaign.acknowledgeEra() &&
+    !campaign.heldAcknowledgements.includes(acknowledgementKey.era(transition))
+  )
+    return;
   eraHandoff.value = eraSettlement(town.value.era) ?? null;
   nextTick(handOffEra);
 }
@@ -1298,7 +1308,7 @@ const collectionOpen = computed(
   () =>
     props.active &&
     !!honourRequests.collection &&
-    !town.value.transition?.pending &&
+    !eventTown.value.transition?.pending &&
     !openingPresentation.value,
 );
 const { unseen: unseenDistinctions, showcaseable: personalDistinctions } = usePlayerDistinctions({
@@ -1341,8 +1351,8 @@ const firstLightsOpen = computed(
     settlement.value === HOME_SETTLEMENT &&
     town.value.era === 'industrial' &&
     town.value.buildings.powerHouse > 0 &&
-    !town.value.firstLightsSeen &&
-    !town.value.transition?.pending &&
+    !eventTown.value.firstLightsSeen &&
+    !eventTown.value.transition?.pending &&
     !dialogMode.value &&
     !museumOpen.value &&
     !collectionOpen.value &&
@@ -1365,7 +1375,7 @@ const presentationFallback = ref(false);
 // Selecting a presentation never consumes its saved receipt or applies rewards.
 const eventStage = computed(() =>
   townEventStage({
-    town: town.value,
+    town: eventTown.value,
     settlement: settlement.value,
     active: props.active,
     raid: activeRaid.value,
@@ -1377,7 +1387,7 @@ const eventStage = computed(() =>
         : null,
       town.value.era === 'industrial' &&
       town.value.buildings.powerHouse > 0 &&
-      !town.value.firstLightsSeen
+      !eventTown.value.firstLightsSeen
         ? { id: 'first-lights' }
         : null,
     ],
@@ -1490,7 +1500,7 @@ const coaching = computed(
     !!tutorial.value &&
     settlement.value === HOME_SETTLEMENT &&
     !activeRaid.value &&
-    !town.value.transition?.pending &&
+    !eventTown.value.transition?.pending &&
     !openingPresentation.value &&
     !firstLightsOpen.value &&
     !tourOpen.value &&
@@ -1507,7 +1517,7 @@ const townMenuActive = computed(
     !settings.isSettingsOpen &&
     !dialogMode.value &&
     !activeRaid.value &&
-    !town.value.transition?.pending &&
+    !eventTown.value.transition?.pending &&
     !openingPresentation.value &&
     !firstLightsOpen.value &&
     !tourOpen.value &&
