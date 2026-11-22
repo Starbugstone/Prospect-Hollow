@@ -27,8 +27,8 @@ require separate evidence.
   [hosting instructions](../../../docs/backend/hosting.md).
 - Share-link visit and privacy notice: `testing/browser/public-pages.cjs` (mocked
   network, a Vite server with the Moon input check's Docker setup) opens `/visit`
-  without Web Locks beside a newer save, joins as a first-time visitor and reloads
-  both pages after a failed chunk.
+  without Web Locks, beside a newer save and with local storage denied (one case each),
+  joins as a first-time visitor and reloads both pages after a failed chunk.
 - Board motion: `testing/browser/board-motion.cjs`; mandatory when gravity,
   board animation or board shapes change, as described in `AGENTS.md`.
 - Unlimited moves and late completion: `testing/chapter-progression.test.js`.
