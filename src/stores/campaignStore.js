@@ -159,6 +159,15 @@ const honourState = (state) => ({
   powers: toRaw(state.powers),
   honours: state.honours,
 });
+// The slot and town a profile is loaded from, best effort: an account copy and the device
+// copy can share a town id, and a backup import replaces the town in the same slot.
+const townIdentity = () => {
+  try {
+    return `${townStorage.selectedKey()}|${activeTownId()}`;
+  } catch {
+    return null;
+  }
+};
 const chestId = (chest) => chest.id ?? `${chest.runId}-${chest.source}`;
 // `opening` names the chests the live game still shows unopened: the player claims those.
 const load = (loaded = localProfile.load(), persistRecovered = true, opening = []) => {
@@ -176,7 +185,7 @@ const load = (loaded = localProfile.load(), persistRecovered = true, opening = [
       : [];
     state.saveWarning = loaded.warning ?? '';
     state.readOnly = !!loaded.readOnly;
-    state.loadedTown = activeTownId();
+    state.loadedTown = townIdentity();
     state.town = normalizeTown(saved?.town);
     state.vipReceipts = normalizeVipReceipts(saved?.vipReceipts);
     state.honours = normalizeHonours(saved?.honours);
@@ -638,6 +647,7 @@ export const useCampaignStore = defineStore('campaign', {
         );
       }
       localProfile.load();
+      next.loadedTown = townIdentity();
       this.$patch((state) => Object.assign(state, next));
     },
     collectForgeTNT(now = Date.now()) {

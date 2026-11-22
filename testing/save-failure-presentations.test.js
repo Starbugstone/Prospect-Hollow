@@ -348,3 +348,68 @@ it('keeps a device town receipt pending when sign-out in another tab precedes di
   expect(store.save()).toBe(true);
   expect(townStorage.active().profile.town.transition.pending).toBe(true);
 });
+
+it('keeps the imported town dismissal through a same-town reload', async () => {
+  const { townStorage } = await import('../src/services/townStorage');
+  const { createSaveFile } = await import('../src/services/saveTransfer');
+  townStorage.ensure(freshProfile());
+  guardedPinia();
+  const store = useCampaignStore();
+  const town = completedRiverTown();
+  town.transition = {
+    id: 'frontier:river-rail',
+    from: 'frontier',
+    to: 'river-rail',
+    pending: true,
+  };
+  const imported = { id: crypto.randomUUID(), name: 'Imported' };
+  store.importSave(createSaveFile({ ...freshProfile(), town }, imported));
+  expect(townStorage.activeMeta().id).toBe(imported.id);
+  full = true;
+  expect(store.acknowledgeEra()).toBe(false);
+  full = false;
+  store.reloadLocal();
+  expect(store.save()).toBe(true);
+  expect(townStorage.active().profile.town.transition.pending).toBe(false);
+});
+
+it('keeps the device copy pending after attaching it, signing out in a second tab and dismissing in the old view', async () => {
+  const { townStorage, createTownStorage } = await import('../src/services/townStorage');
+  const town = completedRiverTown();
+  town.transition = {
+    id: 'frontier:river-rail',
+    from: 'frontier',
+    to: 'river-rail',
+    pending: true,
+  };
+  const profile = { ...freshProfile(), town };
+  townStorage.ensure(profile);
+  const id = townStorage.activeMeta().id;
+  const account = { id: 'mayor' };
+  townStorage.account(account);
+  townStorage.attach(
+    { townId: id, name: 'Account copy', revision: 1 },
+    account.id,
+    townStorage.activeMeta().sequence,
+  );
+  guardedPinia();
+  const store = useCampaignStore();
+  expect(townStorage.activeMeta().owner).toBe(account.id);
+  const currentKey = townStorage.selectedKey();
+  townStorage.setWriteGuard((key) => key === currentKey);
+  try {
+    createTownStorage({
+      storage: () => globalThis.localStorage,
+      session: () => null,
+      changed: () => {},
+    }).logout();
+    expect(townStorage.activeMeta().owner).toBeNull();
+    expect(store.acknowledgeEra()).toBe(false);
+    townStorage.setWriteGuard(() => true);
+    store.reloadLocal();
+    expect(store.save()).toBe(true);
+    expect(townStorage.active().profile.town.transition.pending).toBe(true);
+  } finally {
+    townStorage.setWriteGuard(() => true);
+  }
+});
