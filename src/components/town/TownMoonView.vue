@@ -480,9 +480,11 @@ const landmarkTargets = computed(() =>
 );
 const placedLots = computed(() => {
   const { width, height } = viewport.value;
+  // The scene's labels are its last frame's: a town update (an earlier save restored while
+  // a visitor watches) can relock a site they still name until the next frame.
   const projected = unavailable.value
     ? allLots.value.map((lot) => moonMapLabel(lot, viewport.value, mapBox.value))
-    : labels.value;
+    : labels.value.filter((lot) => lotInfo.value[lot.id]);
   // No name covers the Quiet Stone: the scene projects its box, the SVG map knows its own.
   const avoid = unavailable.value ? stoneBoxes.value : obstacles.value;
   const placed = layoutMoonLabels(

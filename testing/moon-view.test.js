@@ -14,6 +14,7 @@ import {
   purchaseLandmark,
 } from '../src/data/townLandmarks';
 import { bound, find, renderFragment, sfc } from './helpers/componentFragments';
+import { clientComponent, mountComponent, settle } from './helpers/componentMount';
 import { openEverySite } from './helpers/siteOpening';
 
 // The Moon map keeps the valley's contracts (AGENTS.md, settlement maps): the same
@@ -276,5 +277,48 @@ describe('Navigation reaches the camera of the map on screen', () => {
     expect(valley.focusPlace).toHaveBeenCalledWith('well');
     state.cameraKey(key('Home'));
     expect(valley.cameraAction).toHaveBeenCalledWith('reset');
+  });
+});
+
+describe('A town update that relocks a Moon site', () => {
+  // An owner restoring an earlier save while a visitor watches: the scene's last projected
+  // labels still name the site the town no longer opens until its next frame.
+  it('drops the stale label instead of failing the update', async () => {
+    vi.stubGlobal('document', { addEventListener() {}, removeEventListener() {} });
+    vi.stubGlobal('window', { addEventListener() {}, removeEventListener() {} });
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        observe() {}
+        disconnect() {}
+      },
+    );
+    const town = reactive({ ...createTown(), era: 'twin-hollows' });
+    town.buildings.earthlightGreenhouse = 3;
+    let state;
+    const template = `<div ref="viewElement">${byClass(moonAst, 'town-moon-lots')}</div>`;
+    const View = clientComponent(TownMoonView, MOON, template, (setup) => (state = setup));
+    const { root, unmount } = mountComponent(View, { town, readOnly: true }, { pinia });
+    await settle();
+    const site = 'earthlight-conservatory';
+    expect(state.lotInfo.value[site]).toBeTruthy();
+    state.viewport.value = { width: 1200, height: 800 };
+    state.cameraDistance.value = 40;
+    state.labels.value = [
+      { id: site, visible: true, x: 50, y: 60 },
+      { id: 'settlerDomes', visible: true, x: 30, y: 40 },
+    ];
+    await settle();
+    const lots = (node = root) => [
+      ...(node.props['data-moon-lot'] ? [node.props['data-moon-lot']] : []),
+      ...node.children.flatMap(lots),
+    ];
+    expect(lots()).toContain(site);
+    town.buildings.earthlightGreenhouse = 2;
+    await settle();
+    expect(state.lotInfo.value[site]).toBeUndefined();
+    expect(lots()).not.toContain(site);
+    expect(lots()).toContain('settlerDomes');
+    unmount();
   });
 });
