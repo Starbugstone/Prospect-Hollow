@@ -93,12 +93,18 @@ window.audit=(injectOcclusion=false)=>{
   }finally{d.render=render;}
   return {frames,terrainMeshes:terrain.length};
 };
-window.frame=(time)=>{d.elapsed=time;d.presentationFrame(time);return {
-  eye:d.camera.position.toArray(),focus:d.controls.target.toArray(),draws:d.renderer.info.render.calls
-};};
+window.frame=(time)=>{
+  const before=d.renderer.info.render.frame;
+  d.elapsed=time;d.presentationFrame(time);
+  return {
+    eye:d.camera.position.toArray(),focus:d.controls.target.toArray(),
+    draws:d.renderer.info.render.calls,rendered:d.renderer.info.render.frame>before
+  };
+};
 window.still=()=>{
-  const before=d.camera.position.clone();d.presentationFrame(16,true);
-  return before.equals(d.camera.position);
+  const eye=d.camera.position.clone(),focus=d.controls.target.clone();
+  d.presentationFrame(16,true);
+  return eye.equals(d.camera.position)&&focus.equals(d.controls.target);
 };
 window.record=async()=>{
   const stream=document.querySelector('canvas').captureStream(30);
@@ -156,15 +162,17 @@ window.record=async()=>{
             );
             for (const time of [0.75, 7, 16]) {
               const pose = await page.evaluate((time) => window.frame(time), time);
-              assert.ok(pose.draws > 0, 'The real renderer must draw the shot');
+              assert.ok(pose.rendered && pose.draws > 0, 'The real renderer must draw the shot');
               const name = `${settlement}-${id}-${width}-${startName}-${time}`;
               await page.screenshot({ path: path.join(output, `${name}.png`), timeout: 60000 });
               report.push({ name, ...audit, ...pose });
             }
+            // Start from the pre-reveal pose so applying the animated final pose would move it.
+            await page.evaluate(({ id, start }) => window.prepare(id, start), { id, start });
             assert.equal(
               await page.evaluate(() => window.still()),
               true,
-              'Reduced motion preserves the camera',
+              'Reduced motion preserves the camera position and focus',
             );
             if (captureSite === id && width === 390 && startName === 'low') {
               await page.evaluate(({ id, start }) => window.prepare(id, start), { id, start });

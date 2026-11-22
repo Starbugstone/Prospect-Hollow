@@ -1,6 +1,6 @@
 ---
 name: verify-prospect-hollow
-description: Run Prospect Hollow's isolated Docker verification journeys for valley construction persistence, mine feedback, Moon input, Moonstone transactions, and cinematic terrain clearance. Use for gameplay or settlement verification and maintaining these recipes.
+description: Run Prospect Hollow's isolated Docker journeys for valley construction, mine feedback and museum replay, Moon input and labels, Moonstone transactions, and cinematic terrain clearance. Use for gameplay or settlement verification and maintaining these recipes.
 ---
 
 # Verify Prospect Hollow gameplay

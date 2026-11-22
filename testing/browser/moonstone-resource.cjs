@@ -42,10 +42,14 @@ window.getScene=()=>app._instance.subTree.component.setupState.scene;
       true,
     );
     await page.getByText('Stored 12', { exact: true }).waitFor();
+    const offer = page.getByText('Sell all 42 moonstones for 10,500 coins?', { exact: true });
+    const initial = { coins: 1000, stones: 42, earned: 57 };
     await page.getByRole('button', { name: 'Sell all', exact: true }).click();
-    await page.getByText('Sell all 42 moonstones for 10,500 coins?', { exact: true }).waitFor();
-    assert.deepEqual(await balance(), { coins: 1000, stones: 42, earned: 57 });
+    await offer.waitFor();
+    assert.deepEqual(await balance(), initial);
     await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+    assert.equal(await offer.isVisible(), false, 'Cancel closes the sale confirmation');
+    assert.deepEqual(await balance(), initial);
     await page.getByRole('button', { name: /^Sell 10/ }).click();
     await page.getByText('Sold 10 moonstones for 2,500 coins.', { exact: true }).waitFor();
     assert.deepEqual(await balance(), { coins: 3500, stones: 32, earned: 57 });

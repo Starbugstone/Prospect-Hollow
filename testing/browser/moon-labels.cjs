@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const { chromium, SOFTWARE_WEBGL, moonPage, openFixture, pageErrors } = require('./helpers.cjs');
 // PH_MOON_ERA checks a later era's map, with its outer ring and sites (default Twin Hollows).
 const ERA = process.env.PH_MOON_ERA || 'twin-hollows';
+const shots = process.env.PH_SCREENSHOT_DIR;
 const fixture = moonPage(`
 import {createApp,h,reactive} from '/node_modules/.vite/deps/vue.js';
 import Moon from '/src/components/town/TownMoonView.vue';
@@ -26,7 +27,7 @@ window.getMoon=()=>app._instance.subTree.component.setupState;
   const browser = await chromium.launch({ args: SOFTWARE_WEBGL });
   try {
     for (const fallback of [false, true]) {
-      const page = await browser.newPage({ hasTouch: true });
+      const page = await browser.newPage({ hasTouch: true, locale: 'en-US' });
       page.setDefaultTimeout(120000);
       const errors = pageErrors(page, { echo: true });
       page.on('requestfailed', (request) =>
@@ -55,11 +56,14 @@ window.getMoon=()=>app._instance.subTree.component.setupState;
           setSelected(id);
         };
       }, fallback);
-      for (const [width, height] of [
+      const sizes = [
         [1440, 900],
         [900, 360],
         [375, 740],
-      ]) {
+      ];
+      const checkStone = fallback && ERA === 'quiet-signal';
+      if (checkStone) sizes.push([844, 360], [430, 932]);
+      for (const [width, height] of sizes) {
         await page.evaluate(() => {
           window.getMoon().selectedLot = null;
           document.activeElement?.blur();
@@ -110,10 +114,10 @@ window.getMoon=()=>app._instance.subTree.component.setupState;
             hammerBox.y + hammerBox.height <= height,
           'Ready construction shows its finish icon on screen',
         );
-        if (process.env.PH_SCREENSHOT_DIR) {
+        if (shots) {
           await page.screenshot({
             animations: 'disabled',
-            path: `${process.env.PH_SCREENSHOT_DIR}/moon-${fallback ? 'svg' : 'webgl'}-${width}.png`,
+            path: `${shots}/moon-${fallback ? 'svg' : 'webgl'}-${width}.png`,
           });
         }
         for (const [i, a] of layout.entries()) {
@@ -176,9 +180,9 @@ window.getMoon=()=>app._instance.subTree.component.setupState;
           .locator('#fixture')
           .evaluate((element) => element.classList.add('town-labels-hidden'));
         assert.equal(
-          await page.locator('.town-moon-lots').isVisible(),
-          false,
-          'Hidden village labels hide the Moon labels too',
+          await page.locator('.town-moon-lot:not(.landmark):visible').count(),
+          0,
+          'Hidden village labels hide ordinary Moon labels',
         );
         assert.ok(await hammer.isVisible(), 'Hidden labels keep the finish icon');
         await page.evaluate(() => window.selected.push(null));
@@ -188,6 +192,30 @@ window.getMoon=()=>app._instance.subTree.component.setupState;
           'settlerDomes',
           'The finish icon opens its building with labels hidden',
         );
+        if (checkStone) {
+          const stone = page.locator('[data-moon-landmark-target="quietStone"]');
+          const label = page.locator('[data-moon-lot="quietStone"]');
+          const selected = await page.evaluate(() => [...window.selected]);
+          assert.equal(await stone.getAttribute('aria-pressed'), 'false');
+          assert.equal(await label.isVisible(), false, 'The stone begins without a label');
+          await stone.tap({ timeout: 10000 });
+          await label.waitFor();
+          assert.equal(await stone.getAttribute('aria-pressed'), 'true');
+          assert.match(await label.innerText(), /The Quiet Stone\s+It answered/);
+          const box = await label.boundingBox();
+          assert.ok(
+            box.x >= 0 && box.y >= 0 && box.x + box.width <= width && box.y + box.height <= height,
+            'The stone description fits on screen',
+          );
+          if (shots) await page.screenshot({ path: `${shots}/quiet-stone-${width}.png` });
+          await stone.press('Enter');
+          assert.equal(await stone.getAttribute('aria-pressed'), 'false');
+          assert.equal(await label.isVisible(), false, 'Enter toggles the stone description off');
+          assert.deepEqual(await page.evaluate(() => window.selected), selected);
+          console.log(
+            `SVG ${width}x${height}: Quiet Stone touch and keyboard with names off passed.`,
+          );
+        }
         await page
           .locator('#fixture')
           .evaluate((element) => element.classList.remove('town-labels-hidden'));
@@ -198,6 +226,12 @@ window.getMoon=()=>app._instance.subTree.component.setupState;
             window.getMoon().selectedLot = 'moonstoneWorkshop';
             window.town.moonstoneProduction = { stored: 30, wins: 0 };
           }, language);
+          await page
+            .getByRole('button', {
+              name: language === 'fr' ? 'Retour à la vallée' : 'Back to the valley',
+              exact: true,
+            })
+            .waitFor();
           await page.evaluate(() => new Promise((done) => requestAnimationFrame(done)));
           const overflow = await page.locator('.town-moon-lot:not(.is-pin)').evaluateAll((labels) =>
             labels.flatMap((label) => {

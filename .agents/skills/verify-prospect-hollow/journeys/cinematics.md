@@ -17,9 +17,11 @@ first-level monuments. It does not modify a real player's save.
 4. Sample each 16-second timeline every 0.25 seconds. Cast a ray from the camera
    toward the court near ground level; no rendered terrain mesh may block it.
 5. Render and capture the approach at 0.75 seconds, the reveal at 7 seconds and
-   the final low shot at 16 seconds. Assert the renderer drew the scene and inspect
-   the images for readable subjects and unwanted foreground occlusion.
-6. Apply the reduced-motion final frame and check that it leaves the camera still.
+   the final low shot at 16 seconds. Assert that each capture advances the
+   renderer's frame counter. Inspect the images for readable subjects and unwanted
+   foreground occlusion.
+6. Restore the starting pose, apply the reduced-motion final frame and check
+   that both camera position and focus stay fixed.
 
 Expected: 48 rendered keyframe captures, a passing terrain self-check on each
 scenario, no blocking terrain rays, and no uncaught or console errors. This is
@@ -27,6 +29,10 @@ a sampled scene fixture; it does not exercise the normal UI entry, captions,
 audio, persistence, every design or every camera pose. Unit coverage for all
 current site choices and representative upgrade levels lives in
 `testing/cinematic-terrain.test.js`.
+
+`testing/era-cinematic-handoff.test.js`, `testing/era-cinematic-clock.test.js` and
+`testing/era-cinematic-end-card.test.js` cover the era handoff, playback clock and
+caption treatment in focused regressions.
 
 Evidence: `cinematics.log`, `artifacts/cinematics/report.json` and 48 PNGs.
 The report includes eye/focus coordinates, terrain mesh count and sampled frame

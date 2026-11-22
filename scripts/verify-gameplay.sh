@@ -8,9 +8,10 @@ usage() {
 Usage: bash scripts/verify-gameplay.sh all
        bash scripts/verify-gameplay.sh start
        bash scripts/verify-gameplay.sh doctor RUN_DIRECTORY
-       bash scripts/verify-gameplay.sh run RUN_DIRECTORY [valley|mine|moon-input|moonstones|cinematics|all]
+       bash scripts/verify-gameplay.sh run RUN_DIRECTORY [JOURNEY|all]
        bash scripts/verify-gameplay.sh cleanup RUN_DIRECTORY [--dry-run]
 
+Journeys: valley, mine, continuous-navigation, moon-input, moon-labels, moonstones, cinematics.
 all creates a fresh isolated stack, runs doctor and every journey, and cleans up.
 start prints its run directory; use it for later commands. Evidence stays there.
 Docker/Compose and network access for image/package downloads are prerequisites.
@@ -97,20 +98,27 @@ start() {
 }
 run_journeys() {
   local requested="${1:-all}" failed=0 name script status
-  case "$requested" in valley|mine|moon-input|moonstones|cinematics|all) ;; *) die "Unknown journey: $requested" ;; esac
+  local -a browser_options
+  case "$requested" in valley|mine|continuous-navigation|moon-input|moon-labels|moonstones|cinematics|all) ;; *) die "Unknown journey: $requested" ;; esac
   doctor >"$PH_RUN/doctor.log" 2>&1 || { cat "$PH_RUN/doctor.log"; return 1; }
   printf 'journey\tstatus\n' >"$PH_RUN/results.tsv"
-  for name in valley mine moon-input moonstones cinematics; do
+  for name in valley mine continuous-navigation moon-input moon-labels moonstones cinematics; do
     [[ "$requested" == all || "$requested" == "$name" ]] || continue
+    browser_options=()
     case "$name" in
       valley) script=valley-persistence.cjs ;;
       mine) script=mine-feedback.cjs ;;
+      continuous-navigation) script=continuous-navigation.cjs ;;
       moon-input) script=moon-input.cjs ;;
+      moon-labels)
+        script=moon-labels.cjs
+        browser_options=(-e PH_MOON_ERA=quiet-signal -e PH_SCREENSHOT_DIR=/app/output/playwright/moon-labels)
+        ;;
       moonstones) script=moonstone-resource.cjs ;;
       cinematics) script=cinematic-terrain.cjs ;;
     esac
     echo "Running $name (log: $PH_RUN/$name.log)"
-    if dc run --rm --no-deps browser timeout 20m node "testing/browser/$script" >"$PH_RUN/$name.log" 2>&1; then
+    if dc run --rm --no-deps "${browser_options[@]}" browser timeout 20m node "testing/browser/$script" >"$PH_RUN/$name.log" 2>&1; then
       status=passed
     else
       status=failed
