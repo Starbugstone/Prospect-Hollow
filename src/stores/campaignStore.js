@@ -133,6 +133,9 @@ const defaults = () => ({
   heldAcknowledgements: [],
   // The town they were held for: a reload of that same town (a cloud refresh) keeps them.
   heldTown: null,
+  // The town this store loaded, which can differ from the selected one for a moment after
+  // another tab switches it.
+  loadedTown: null,
   lastConstruction: [],
   lastChapterReward: null,
   // The starter projects the latest building action finished, for the village to celebrate.
@@ -173,6 +176,7 @@ const load = (loaded = localProfile.load(), persistRecovered = true, opening = [
       : [];
     state.saveWarning = loaded.warning ?? '';
     state.readOnly = !!loaded.readOnly;
+    state.loadedTown = activeTownId();
     state.town = normalizeTown(saved?.town);
     state.vipReceipts = normalizeVipReceipts(saved?.vipReceipts);
     state.honours = normalizeHonours(saved?.honours);
@@ -539,7 +543,7 @@ export const useCampaignStore = defineStore('campaign', {
     acknowledge(key, changes) {
       if (this.commit(changes)) return true;
       if (!this.heldAcknowledgements.includes(key)) this.heldAcknowledgements.push(key);
-      this.heldTown = activeTownId();
+      this.heldTown = this.loadedTown;
       return false;
     },
     canPlay(id, mode = 'normal') {
@@ -594,7 +598,7 @@ export const useCampaignStore = defineStore('campaign', {
       }
       // A refresh of the same town (a cloud pull) keeps what the player already dismissed
       // and the next save that works stores it; another town starts with none held.
-      if (this.heldAcknowledgements.length && activeTownId() === this.heldTown) {
+      if (this.heldAcknowledgements.length && next.loadedTown === this.heldTown) {
         next.heldAcknowledgements = this.heldAcknowledgements;
         next.heldTown = this.heldTown;
       }

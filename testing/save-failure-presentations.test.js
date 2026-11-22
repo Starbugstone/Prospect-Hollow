@@ -315,3 +315,36 @@ it('drops held acknowledgements when another town is loaded', async () => {
   expect(store.heldAcknowledgements).toEqual([]);
   expect(store.town.transition.pending).toBe(true);
 });
+
+it('keeps a device town receipt pending when sign-out in another tab precedes dismissal in the old view', async () => {
+  const { townStorage, createTownStorage } = await import('../src/services/townStorage');
+  const town = completedRiverTown();
+  town.transition = {
+    id: 'frontier:river-rail',
+    from: 'frontier',
+    to: 'river-rail',
+    pending: true,
+  };
+  const profile = { ...freshProfile(), town };
+  townStorage.ensure(profile);
+  const deviceId = townStorage.activeMeta().id;
+  const account = { id: 'mayor' };
+  const townId = crypto.randomUUID();
+  townStorage.account(account);
+  townStorage.remember({ townId, name: 'Account town', revision: 1, profile }, account.id);
+  townStorage.select(townId, account.id);
+  guardedPinia();
+  const store = useCampaignStore();
+  expect(townStorage.activeMeta().id).toBe(townId);
+  // A different tab signs out. The storage event that replaces this tab's view is queued.
+  createTownStorage({
+    storage: () => globalThis.localStorage,
+    session: () => null,
+    changed: () => {},
+  }).logout();
+  expect(townStorage.activeMeta().id).toBe(deviceId);
+  expect(store.acknowledgeEra()).toBe(false);
+  store.reloadLocal();
+  expect(store.save()).toBe(true);
+  expect(townStorage.active().profile.town.transition.pending).toBe(true);
+});
