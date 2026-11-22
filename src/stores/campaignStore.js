@@ -80,7 +80,7 @@ import {
 import { createTown, BANDIT_EVENT } from '../data/town';
 import { HIDDEN_FINDS, hiddenFindCommands, hiddenFindFields } from '../data/hiddenFinds';
 import { advanceEra } from '../game/town/TownEras';
-import { acknowledgementKey } from '../game/town/TownEventSettlement';
+import { acknowledgementKey, presentedTown } from '../game/town/TownEventSettlement';
 import {
   normalizeTown,
   saloonIncomeRate,
@@ -532,7 +532,8 @@ export const useCampaignStore = defineStore('campaign', {
       });
     },
     // Saves a saved event's acknowledgement. One that cannot be saved is held for the
-    // session, so its cinematic or dialog closes while the receipt stays pending.
+    // session, so its cinematic or dialog closes while the receipt stays pending until the
+    // next save that works stores it (save).
     acknowledge(key, changes) {
       if (this.commit(changes)) return true;
       if (!this.heldAcknowledgements.includes(key)) this.heldAcknowledgements.push(key);
@@ -558,10 +559,17 @@ export const useCampaignStore = defineStore('campaign', {
       const { honours, added } = evaluateHonours(honourState(this), { at: Date.now() });
       const profile = this.profile();
       if (added.length) profile.honours = honours;
+      // Acknowledgements held after a failed save are stored with the next save that works.
+      const held = this.heldAcknowledgements;
+      if (held.length) profile.town = presentedTown(profile.town, held);
       const saved = localProfile.save(profile, (integrity) => {
         this.integrity = plainIntegrity(integrity);
       });
       if (saved && added.length) this.honours = honours;
+      if (saved && held.length) {
+        this.town = presentedTown(this.town, held);
+        this.heldAcknowledgements = [];
+      }
       this.saveWarning = saved
         ? ''
         : 'Your progress is not saving. Keep this page open to continue.';

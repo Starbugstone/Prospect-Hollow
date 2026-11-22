@@ -1712,7 +1712,7 @@ function startWork(stage, keepDirectory = false) {
   };
 }
 function showConstruction(keepDirectory = false, locate = true) {
-  if (pendingPresentation(town.value)) keepDirectory = false;
+  if (pendingPresentation(eventTown.value)) keepDirectory = false;
   if (!keepDirectory) closeDialog();
   // The build list stays open: its builds swap in place without a reveal.
   construction.value = {

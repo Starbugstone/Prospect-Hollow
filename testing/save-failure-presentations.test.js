@@ -2,7 +2,8 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { createApp } from 'vue';
 import TownView from '../src/components/town/TownView.vue';
-import { createTown } from '../src/data/town';
+import { BUILDINGS, createTown } from '../src/data/town';
+import { normalizeTown } from '../src/game/town/TownRules';
 import { pendingPresentation } from '../src/data/townPresentations';
 import { createLocalIntegrityPlugin } from '../src/services/localIntegrity';
 import { SAVE_KEY } from '../src/services/localProfile';
@@ -132,4 +133,73 @@ it('still saves the acknowledgement when storage works', async () => {
   expect(view.openingPresentation.value).toBeFalsy();
   expect(store.saveWarning).toBe('');
   expect(pendingPresentation(nextSession())).toBeUndefined();
+});
+
+// A town with every Frontier and River & Rail upgrade built: River & Rail is complete.
+function completedRiverTown() {
+  const town = createTown();
+  town.era = 'river-rail';
+  town.coins = 250000;
+  town.completedRuns = 72;
+  for (const b of BUILDINGS.filter((b) => ['frontier', 'river-rail'].includes(b.introducedEra))) {
+    town.buildings[b.id] = b.upgrades.length;
+    town.buildingEras[b.id] = 'river-rail';
+    town.buildingEraLevels[b.id] = 3;
+  }
+  return normalizeTown(town);
+}
+
+it('saves a held era acknowledgement with the next save that works', async () => {
+  const town = completedRiverTown();
+  town.transition = {
+    id: 'frontier:river-rail',
+    from: 'frontier',
+    to: 'river-rail',
+    pending: true,
+  };
+  const { store, view } = await village(town);
+  view.completeEraCinematic();
+  expect(view.eraPlaying.value).toBe(false);
+  expect(view.gate.value.next.enabled).toBe(true);
+  // Storage recovers: the next save stores the acknowledgement, so the era can advance.
+  full = false;
+  expect(store.save()).toBe(true);
+  expect(store.heldAcknowledgements).toEqual([]);
+  expect(store.town.transition.pending).toBe(false);
+  expect(JSON.parse(saves.get(SAVE_KEY)).town.transition.pending).toBe(false);
+  expect(store.advanceEra('river-rail')).toBe(true);
+  expect(nextSession().era).toBe('industrial');
+});
+
+it('keeps a held acknowledgement held while saves still fail', async () => {
+  const town = createTown();
+  town.buildings.railDepot = 1;
+  town.presentations = { 'railway-opening': 'pending' };
+  const { store, view } = await village(town);
+  view.completePresentation();
+  expect(store.save()).toBe(false);
+  expect(store.heldAcknowledgements).toEqual(['presentation:railway-opening']);
+  expect(pendingPresentation(store.town)?.id).toBe('railway-opening');
+  full = false;
+  expect(store.save()).toBe(true);
+  expect(store.heldAcknowledgements).toEqual([]);
+  expect(pendingPresentation(nextSession())).toBeUndefined();
+});
+
+it('keeps the Build tab open for a purchase after a held railway opening', async () => {
+  const town = createTown();
+  town.coins = 1e7;
+  town.buildings.railDepot = 1;
+  town.presentations = { 'railway-opening': 'pending' };
+  const { store, view } = await village(town);
+  view.completePresentation();
+  expect(view.openingPresentation.value).toBeFalsy();
+  full = false;
+  view.dialogMode.value = 'build';
+  const row = view.buildList.value.find((entry) => entry.offer?.cost > 0);
+  expect(row).toBeDefined();
+  const before = store.town.coins;
+  view.selectParcel(row.id);
+  expect(store.town.coins).toBeLessThan(before);
+  expect(view.dialogMode.value).toBe('build');
 });
