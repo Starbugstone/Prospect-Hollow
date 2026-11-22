@@ -17,6 +17,13 @@ $saves = new SaveService($db, $auth, $public);
 $api = new ApiController($auth, $saves, $public, $db);
 $count = 0;
 $accounts = [];
+// Each suite signs in from its own address. CI runs the suites one after another, and the
+// sign-in limit (30 per 15 minutes for each address) would otherwise spill from one suite
+// into the next as suites grow. A header given to account() still wins.
+define(
+    'TEST_SIGN_IN_IP',
+    '127.' . random_int(1, 254) . '.' . random_int(1, 254) . '.' . random_int(1, 254),
+);
 function check(bool $ok, string $label): void
 {
     global $count;
@@ -90,6 +97,7 @@ function account(array $headers = []): array
         'email' => $email,
         'expires_at' => time() + 900,
     ]);
+    $headers += ['REMOTE_ADDR' => TEST_SIGN_IN_IP];
     $result = callApi('POST', 'auth/confirm', ['token' => $token], [], $headers);
     $data = status(200, $result, 'sign in');
     $accounts[] = $data['account']['id'];
