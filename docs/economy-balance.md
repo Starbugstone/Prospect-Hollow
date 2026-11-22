@@ -19,7 +19,11 @@ boards. "Required town complete" waits for the last playable era (The Quiet Sign
 `output/next-release/balance-1120/` (git-ignored).
 
 **Mine coins.** Levels 1–546 pay **16.3M** as before. Levels 547–606 add **4.26M** (3.47M on
-17 November), for **20.6M** in all, against the plan's estimate of about 21.0M:
+17 November), for **20.6M** in all, against the plan's estimate of about 21.0M. These
+coins were measured before the 22 November cellar-chain change, which cut chapter 100's summed
+median score (595–600, seeds 1–30) from 331.7k to 292.7k; if its coins fall in proportion,
+that is about 62k, or 1.5% of what levels 547–606 pay
+([crystal seam guide](crystal-seam-levels.md#chained-gems-in-the-rooted-vaults-cellars-22-november-2026)):
 
 | Levels                | Mean coins per board (3 seeds) | 17 November |
 | --------------------- | -----------------------------: | ----------: |

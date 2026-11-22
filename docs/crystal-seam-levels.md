@@ -30,7 +30,9 @@ the share of 20 held-out runs per level (seeds 101–120) that earned them.
 
 Every chapter keeps the rhythm of the campaign: introduce, practice, deliver, stretch,
 rest, finale. Slot medians over the ten chapters are 24, 27, 31, 37, 17 and 47 moves, and each
-chapter's finale is its longest board.
+chapter's finale is its longest board. These medians predate the 22 November cellar-chain
+change, which shortened chapter 100
+([see that section](#chained-gems-in-the-rooted-vaults-cellars-22-november-2026)).
 
 - **Each chapter opens on the board that proved its pairing** while it was on trial
   (547, 553, 559, 565, 571, 577, 583, 589, 595 and 601), with the same layout and level
@@ -69,6 +71,9 @@ the same seeds as `testing/helpers/campaignSimulation.js`. Raw results are local
 - **Moves:** median 29, 90th percentile 52, maximum 114; 6 of 1,800 calibration runs went
   beyond 100 moves (three on 606, the pack's finale, two on 576 and one on 556). Free
   reshuffles: 45 in 1,800 runs, most of them on Ember sidings (22) and Frost relays (12).
+  These figures predate the 22 November cellar-chain change, which shortened chapter 100 and
+  recalibrated 595–598 and 600
+  ([see that section](#chained-gems-in-the-rooted-vaults-cellars-22-november-2026)).
 
 Boards that failed on the first drafts were changed rather than accepted:
 
