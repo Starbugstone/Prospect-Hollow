@@ -112,7 +112,8 @@ final class PlayerData
 
     /**
      * Pages with a stable unique cursor, including on MySQL whose PDO driver buffers
-     * query results. Large save rows use a page of one; small metadata uses 100.
+     * query results. A large row pages one at a time only in its primary-key order (save
+     * history); exportByKey() reads the others. Small metadata uses pages of 100.
      * All columns and directions come from the fixed export queries below.
      * @return \Generator<int, array<string, mixed>>
      */
@@ -173,6 +174,30 @@ final class PlayerData
     }
 
     /**
+     * Large rows in keyset order: the small ordered keys page as usual, then each row is
+     * read alone by its primary key, so the database never sorts the large columns. The
+     * player lock held by the export keeps both reads of the same rows.
+     * @return \Generator<int, array<string, mixed>>
+     */
+    private static function exportByKey(
+        Connection $db,
+        string $keys,
+        array $params,
+        array $order,
+        string $row,
+        array $rowParams,
+    ): \Generator {
+        $key = array_key_last($order);
+        $field = substr($key, strrpos($key, '.') + 1);
+        foreach (self::exportRows($db, $keys, $params, $order) as $cursor) {
+            $found = $db->fetchAssociative($row, [$cursor[$field], ...$rowParams]);
+            if ($found) {
+                yield $found;
+            }
+        }
+    }
+
+    /**
      * Everything stored about the account, in one JSON document. Spooling inside the
      * authorized transaction reports errors before headers, then releases its player
      * lock before the client downloads. Raw save JSON never needs decoding here.
@@ -199,12 +224,13 @@ final class PlayerData
             }
             $towns = function () use ($db, $id, $time): \Generator {
                 foreach (
-                    self::exportRows(
+                    self::exportByKey(
                         $db,
-                        'SELECT t.*,s.collected_at,(SELECT COUNT(*) FROM town_travels r WHERE r.origin_town_id=t.id) AS travels FROM towns t LEFT JOIN saloon_collections s ON s.town_id=t.id WHERE t.player_id=?',
+                        'SELECT t.id,t.saved_at FROM towns t WHERE t.player_id=?',
                         [$id],
                         ['t.saved_at' => 'DESC', 't.id' => 'ASC'],
-                        1,
+                        'SELECT t.*,s.collected_at,(SELECT COUNT(*) FROM town_travels r WHERE r.origin_town_id=t.id) AS travels FROM towns t LEFT JOIN saloon_collections s ON s.town_id=t.id WHERE t.id=? AND t.player_id=?',
+                        [$id],
                     )
                     as $town
                 ) {
@@ -338,12 +364,13 @@ final class PlayerData
             }
             $refused = function () use ($db, $id, $time): \Generator {
                 foreach (
-                    self::exportRows(
+                    self::exportByKey(
                         $db,
-                        'SELECT r.*,t.name FROM town_sync_rejections r JOIN towns t ON t.id=r.town_id WHERE t.player_id=?',
+                        'SELECT r.id,r.rejected_at FROM town_sync_rejections r JOIN towns t ON t.id=r.town_id WHERE t.player_id=?',
                         [$id],
                         ['r.rejected_at' => 'ASC', 'r.id' => 'ASC'],
-                        1,
+                        'SELECT r.*,t.name FROM town_sync_rejections r JOIN towns t ON t.id=r.town_id WHERE r.id=? AND t.player_id=?',
+                        [$id],
                     )
                     as $rejection
                 ) {

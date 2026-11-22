@@ -565,6 +565,86 @@ try {
             ]),
         'the traveller’s own travels leave with their towns',
     );
+    // Saves and support comparisons export in their keyset order even when timestamps tie,
+    // each large row read once by its key rather than sorted again for every page.
+    $archivist = account(['REMOTE_ADDR' => $dataTestIp]);
+    $tied = time() - 100;
+    $archiveTowns = [];
+    $archiveRejections = [];
+    $reject = function (string $town, int $at) use ($db, &$archiveRejections) {
+        $id = bin2hex(random_bytes(16));
+        $db->get()->insert('town_sync_rejections', [
+            'id' => $id,
+            'town_id' => $town,
+            'rejected_at' => $at,
+            'revision' => 1,
+            'code' => 'test',
+            'field' => 'town.coins',
+            'message' => 'ARCHIVE-' . $id,
+            'upload' => '{}',
+            'cloud' => '{}',
+            'expected' => null,
+        ]);
+        $archiveRejections[] = ['at' => $at, 'id' => $id];
+    };
+    foreach (['Tie One', 'Tie Two', 'Later Three'] as $index => $name) {
+        $town = status(200, dataApi('POST', 'towns', townBody($name), $archivist), $name)['townId'];
+        $db->get()->update(
+            'towns',
+            ['saved_at' => $tied + ($index === 2 ? 50 : 0)],
+            [
+                'id' => $town,
+            ],
+        );
+        $archiveTowns[] = ['at' => $tied + ($index === 2 ? 50 : 0), 'id' => $town];
+        for ($n = 0; $n < 4; $n++) {
+            $reject($town, $tied * 1000 + ($n % 2) * 1000);
+        }
+    }
+    usort($archiveTowns, fn($a, $b) => [$b['at'], $a['id']] <=> [$a['at'], $b['id']]);
+    usort($archiveRejections, fn($a, $b) => [$a['at'], $a['id']] <=> [$b['at'], $b['id']]);
+    // MySQL's session counters of rows read by index and table scans, sorting included.
+    $rowsRead = fn() => $db->isMySql()
+        ? array_sum(
+            $db
+                ->get()
+                ->fetchAllKeyValue(
+                    "SHOW SESSION STATUS WHERE Variable_name IN ('Handler_read_next','Handler_read_rnd_next')",
+                ),
+        )
+        : 0;
+    $exportArchive = function () use ($archivist, $rowsRead) {
+        $before = $rowsRead();
+        $export = status(200, dataApi('GET', 'account/export', null, $archivist), 'archive');
+        return [$export, $rowsRead() - $before];
+    };
+    [$archive, $read] = $exportArchive();
+    check(
+        array_column($archive['towns'], 'townId') === array_column($archiveTowns, 'id') &&
+            array_column($archive['refusedCloudSaves'], 'reason') ===
+                array_map(fn($r) => 'ARCHIVE-' . $r['id'], $archiveRejections),
+        'export pages towns and comparisons in order through tied timestamps',
+    );
+    // Twelve more comparisons cost MySQL a few reads apiece, not a scan of every remaining
+    // comparison for each page (about 490 more rows read when each page sorted them all).
+    foreach ($archiveTowns as $town) {
+        for ($n = 0; $n < 4; $n++) {
+            $reject($town['id'], $tied * 1000 + 500);
+        }
+    }
+    usort($archiveRejections, fn($a, $b) => [$a['at'], $a['id']] <=> [$b['at'], $b['id']]);
+    [$archive, $readMore] = $exportArchive();
+    check(
+        array_column($archive['refusedCloudSaves'], 'reason') ===
+            array_map(fn($r) => 'ARCHIVE-' . $r['id'], $archiveRejections),
+        'the larger export keeps its order',
+    );
+    check(
+        $readMore - $read <= 48,
+        'each exported comparison is read by its key, not sorted again for every page (' .
+            ($readMore - $read) .
+            ' more rows read)',
+    );
     echo "Player data checks passed ($count assertions).\n";
 } finally {
     cleanup();
