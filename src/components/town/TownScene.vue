@@ -374,7 +374,11 @@ watch(
   covered,
   (now) => {
     const lost = focusLost(now ? opener : document.activeElement);
-    const back = opener?.isConnected && !opener.closest?.('[inert]') ? opener : canvas.value;
+    // The page body is no place to return to: the valley's canvas takes focus instead.
+    const back =
+      opener !== document.body && opener?.isConnected && !opener.closest?.('[inert]')
+        ? opener
+        : canvas.value;
     if (!now) opener = null;
     if (!lost) return;
     const target = now ? settlementView.value?.$el?.querySelector?.('canvas, button') : back;

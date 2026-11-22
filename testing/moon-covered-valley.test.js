@@ -133,6 +133,24 @@ it('moves focus into the Moon as it opens and back to the valley as it closes', 
   unmount();
 });
 
+// In a browser the page body is a connected element: as the opener it leaves nothing to
+// return to, so focus goes to the valley's canvas.
+it('returns focus to the valley canvas when the page body opened the Moon', async () => {
+  document.body.isConnected = true;
+  document.body.closest = () => null;
+  document.body.focus = () => focus.log.push('body');
+  const { root, state, unmount } = await valley();
+  const valleyCanvas = valleyControls(root)[0];
+  state.showSettlement('moon');
+  await settle();
+  const moonCanvas = moonMap(root).children[0];
+  document.activeElement = document.body;
+  state.closeSettlement();
+  await settle();
+  expect(focus.log).toEqual([moonCanvas, valleyCanvas]);
+  unmount();
+});
+
 it('leaves focus that is elsewhere on the page where it is', async () => {
   const { state, unmount } = await valley();
   // A Build row outside the map opened the Moon lot.
