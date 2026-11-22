@@ -378,18 +378,21 @@ final class VisitorService
                 $rows = $chosen;
             }
         }
-        // The visit travels from the chosen town, or else the first one the guestbook can
-        // name. The name only decides what the guestbook shows, never the travel credit.
+        // A private visit shows no home town, so it travels from the chosen or first town.
+        if ($private) {
+            $identity['origin_town_id'] = $rows[0]['id'] ?? null;
+            return $identity;
+        }
+        // A public visit travels from the chosen town, or else the first one the guestbook
+        // can name. The name only decides what the guestbook shows, never the travel credit.
         foreach ($rows as $town) {
             $name = $this->public->guestName($town['name']);
             if (!$name) {
                 continue;
             }
             $identity['origin_town_id'] = $town['id'];
-            if (!$private) {
-                $identity['town_name'] = $name;
-                $identity['era'] = $this->era(json_decode($town['profile'])->town->era ?? null);
-            }
+            $identity['town_name'] = $name;
+            $identity['era'] = $this->era(json_decode($town['profile'])->town->era ?? null);
             return $identity;
         }
         $identity['origin_town_id'] = $rows[0]['id'] ?? null;

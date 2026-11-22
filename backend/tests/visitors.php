@@ -1144,6 +1144,65 @@ try {
             'unpublishable town departs',
         );
     }
+    // A private visit shows no home town, so with no town chosen it travels from the
+    // player's first town even when only an older one has a publishable name.
+    $traveller = account();
+    $firstTown = status(
+        200,
+        visitorApi('POST', 'towns', townBody("O'B"), $traveller),
+        'unpublishable first town',
+    )['townId'];
+    status(
+        200,
+        visitorApi(
+            'PATCH',
+            'towns/' . $firstTown . '/settings',
+            ['baseRevision' => 1, 'name' => "O'B", 'isPublic' => true],
+            $traveller,
+        ),
+        'share the unpublishable first town',
+    );
+    $namedTown = status(
+        200,
+        visitorApi('POST', 'towns', townBody('Silver Gulch'), $traveller),
+        'publishable second town',
+    )['townId'];
+    status(
+        200,
+        visitorApi(
+            'PATCH',
+            'account/profile',
+            ['displayName' => 'Quiet Ona', 'anonymousVisits' => true],
+            $traveller,
+        ),
+        'private traveller without a visiting town',
+    );
+    $tab = bin2hex(random_bytes(32));
+    $arrival = status(
+        200,
+        visitorApi(
+            'POST',
+            $presence,
+            ['token' => $tab, 'browserToken' => bin2hex(random_bytes(32)), 'sequence' => 1],
+            $traveller,
+        ),
+        'private visit without a chosen town',
+    );
+    check(
+        $db
+            ->get()
+            ->fetchOne('SELECT origin_town_id FROM visitor_visits WHERE id=?', [
+                $arrival['visitId'],
+            ]) === $firstTown &&
+            (int) $traveled($firstTown) === 1 &&
+            (int) $traveled($namedTown) === 0,
+        'a private visit without a chosen town travels from the first town',
+    );
+    status(
+        200,
+        visitorApi('DELETE', $presence, ['token' => $tab, 'sequence' => 2]),
+        'private first-town visit departs',
+    );
     status(
         200,
         visitorApi(
