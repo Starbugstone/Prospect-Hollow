@@ -214,7 +214,7 @@
       </div>
     </div>
     <header class="town-moon-header">
-      <button type="button" class="town-moon-back" @click="emit('close')">
+      <button ref="backButton" type="button" class="town-moon-back" @click="emit('close')">
         <span aria-hidden="true">←</span> {{ t('Back to the valley') }}
       </button>
       <div class="town-moon-title">
@@ -326,6 +326,7 @@ const emit = defineEmits([
   'find-zoom',
 ]);
 const canvas = ref(null);
+const backButton = ref(null);
 const viewElement = ref(null);
 const viewport = shallowRef({ width: 0, height: 0 });
 let labelObserver;
@@ -600,11 +601,15 @@ const recovery = useGraphicsRecovery({
   restart: () => start(),
   fail: (error) => {
     console.warn('3D Moon unavailable.', error);
+    // The SVG map replaces the canvas: focus on it moves to Back to the valley rather
+    // than falling to the page.
+    const focused = !!canvas.value && document.activeElement === canvas.value;
     unavailable.value = true;
     // Let a render in progress unwind before releasing its resources.
     nextTick(() => {
       scene?.dispose();
       scene = null;
+      if (focused) backButton.value?.focus({ preventScroll: true });
     });
     if (props.presentation) {
       emit('presentation-unavailable');
