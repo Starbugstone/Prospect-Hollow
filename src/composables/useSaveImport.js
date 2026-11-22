@@ -1,6 +1,6 @@
 import { ref } from 'vue';
 import { useCampaignStore } from '../stores/campaignStore';
-import { MAX_SAVE_FILE_BYTES, parseSaveFile } from '../services/saveTransfer';
+import { MAX_SAVE_FILE_BYTES, parseSaveFile, saveFileTooLarge } from '../services/saveTransfer';
 import { OTHER_TOWN_BACKUP } from '../services/townStorage';
 
 /**
@@ -33,19 +33,19 @@ export function useSaveImport(onImported = () => {}) {
     saveStatus.value = '';
     readingFile.value = true;
     try {
-      if (file.size > MAX_SAVE_FILE_BYTES)
-        throw new Error('Choose a backup file smaller than 5 MB.');
+      if (file.size > MAX_SAVE_FILE_BYTES) {
+        saveError.value = saveFileTooLarge();
+        return;
+      }
       const text = await file.text();
       if (version !== selectionVersion) return;
       parseSaveFile(text);
       pendingSave.value = { name: file.name, text };
     } catch (error) {
       if (version === selectionVersion)
-        saveError.value =
-          error.message?.startsWith('Choose a backup') ||
-          error.message?.startsWith('This save format')
-            ? error.message
-            : 'That file is not a Prospect Hollow backup.';
+        saveError.value = error.message?.startsWith('This save format')
+          ? error.message
+          : 'That file is not a Prospect Hollow backup.';
     } finally {
       if (version === selectionVersion) readingFile.value = false;
     }

@@ -2082,7 +2082,7 @@
   "Save a backup file": "Enregistrer une sauvegarde",
   "Load a backup file": "Charger une sauvegarde",
   "That file is not a Prospect Hollow backup.": "Ce fichier n’est pas une sauvegarde de Prospect Hollow.",
-  "Choose a backup file smaller than 5 MB.": "Choisissez une sauvegarde de moins de 5 Mo.",
+  "Choose a backup file smaller than {size} MB.": "Choisissez une sauvegarde de moins de {size} Mo.",
   "Replace your current village with this backup? Save a backup first if you want to keep it.": "Remplacer votre village actuel par cette sauvegarde ? Enregistrez-le d’abord si vous souhaitez le conserver.",
   "Keyboard controls": "Commandes au clavier",
   "Start a new village": "Commencer un nouveau village",

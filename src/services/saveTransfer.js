@@ -5,8 +5,15 @@ import { chestReward } from '../data/rewards';
 import { knownChestTerms } from '../data/economy';
 import { MOONSTONE_ECONOMY, MOONSTONE_VERSION } from '../data/moonstones';
 import { SUPPORTED_SAVE_SCHEMAS, isWholeNumber } from '../data/saveFormat';
+import { t } from '../i18n';
 
-export const MAX_SAVE_FILE_BYTES = 5 * 1024 * 1024;
+// Backups are compact JSON. The limit still admits the pretty-printed files 1.2 wrote,
+// about twice the size of the same save: a long offline journal passed its old 5 MiB.
+const MAX_SAVE_FILE_MIB = 12;
+export const MAX_SAVE_FILE_BYTES = MAX_SAVE_FILE_MIB * 1024 * 1024;
+/** The file picker's refusal of a backup above MAX_SAVE_FILE_BYTES, in the player's language. */
+export const saveFileTooLarge = () =>
+  t('Choose a backup file smaller than {size} MB.', { size: MAX_SAVE_FILE_MIB });
 const invalidSave = () => new Error('Choose a valid Prospect Hollow save JSON file.');
 const isObject = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
 
@@ -17,17 +24,13 @@ const isObject = (value) => value !== null && typeof value === 'object' && !Arra
  * @returns {string} Downloadable JSON containing the profile and export metadata.
  */
 export function createSaveFile(profile, town = townStorage.state()?.active) {
-  return JSON.stringify(
-    {
-      format: SAVE_KEY,
-      version: 1,
-      exportedAt: new Date().toISOString(),
-      town: town ? { id: town.id, name: town.name } : undefined,
-      profile,
-    },
-    null,
-    2,
-  );
+  return JSON.stringify({
+    format: SAVE_KEY,
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    town: town ? { id: town.id, name: town.name } : undefined,
+    profile,
+  });
 }
 
 /**

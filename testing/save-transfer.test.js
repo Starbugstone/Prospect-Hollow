@@ -2,12 +2,19 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { SAVE_SCHEMA_VERSION } from '../src/data/saveFormat';
 import { useCampaignStore, SAVE_KEY } from '../src/stores/campaignStore';
-import { MAX_SAVE_FILE_BYTES, parseSaveFile, saveFileName } from '../src/services/saveTransfer';
+import {
+  MAX_SAVE_FILE_BYTES,
+  parseSaveFile,
+  saveFileName,
+  saveFileTooLarge,
+} from '../src/services/saveTransfer';
+import { setLocale } from '../src/i18n';
 import { OTHER_TOWN_BACKUP, townStorage } from '../src/services/townStorage';
 import { LEVEL_COUNT } from '../src/data/campaign';
 import { BUILDING_BY_ID } from '../src/data/town';
 import { CHEST_DROPS, chestReward } from '../src/data/rewards';
 import { useSaveImport } from '../src/composables/useSaveImport';
+import { createIntegrity } from '../src/services/saveIntegrity';
 import { readFileSync } from 'node:fs';
 
 // Real backups written by the game on main, so beta testers can carry their village
@@ -241,7 +248,9 @@ it('offers the old-game backup for confirmation before replacing the village', a
   await importer.selectSave(
     event({ name: 'big.json', size: MAX_SAVE_FILE_BYTES + 1, text: async () => text }),
   );
-  expect(importer.saveError.value).toBe('Choose a backup file smaller than 5 MB.');
+  expect(importer.saveError.value).toBe(
+    `Choose a backup file smaller than ${MAX_SAVE_FILE_BYTES / 1024 / 1024} MB.`,
+  );
   expect(imported).toHaveBeenCalledOnce();
 });
 
@@ -275,4 +284,59 @@ it('explains when an account town is offered another town’s backup', async () 
   expect(importer.saveError.value).toBe(OTHER_TOWN_BACKUP);
   expect(imported).not.toHaveBeenCalled();
   expect(campaign.town.coins).toBe(7);
+});
+
+// 1.2 wrote backups pretty-printed and refused its own files above 5 MiB.
+const OLD_LIMIT = 5 * 1024 * 1024;
+it('round-trips a long offline journal, and still loads its pretty-printed 1.2 backup', async () => {
+  const campaign = useCampaignStore();
+  campaign.integrity = { ...createIntegrity(), checkpoint: 'synthetic-signed-checkpoint' };
+  vi.spyOn(campaign, 'save').mockReturnValue(true);
+  const pretty = () => JSON.stringify(JSON.parse(campaign.exportSave()), null, 2);
+  for (let i = 0; i % 100 || new Blob([pretty()]).size <= OLD_LIMIT; i++) {
+    const runId = campaign.beginRun('normal', 1);
+    const chests = campaign.recordVictory({
+      id: 1,
+      runId,
+      score: 5000,
+      target: 2500,
+      starTarget: 3000,
+      combo: 3,
+      elapsedMs: 100001,
+      speedTargetMs: 100000,
+      jewels: 70,
+      chooseRewards: true,
+    });
+    for (const chest of chests) campaign.claimChest(chest.id);
+  }
+  const text = campaign.exportSave();
+  const old = pretty();
+  expect(text).toBe(JSON.stringify(JSON.parse(text)));
+  expect(new Blob([old]).size).toBeGreaterThan(OLD_LIMIT);
+  expect(new Blob([old]).size).toBeLessThanOrEqual(MAX_SAVE_FILE_BYTES);
+  const receipts = campaign.integrity.actions.length;
+  for (const [name, backup] of [
+    ['journal.json', text],
+    ['journal-1.2.json', old],
+  ]) {
+    const importer = useSaveImport();
+    await importer.selectSave({ target: { files: [new File([backup], name)], value: name } });
+    expect(importer.saveError.value).toBe('');
+    expect(importer.pendingSave.value.name).toBe(name);
+    setActivePinia(createPinia());
+    useCampaignStore().importSave(backup);
+    expect(useCampaignStore().records[1].score).toBe(5000);
+    expect(useCampaignStore().integrity.actions).toHaveLength(receipts);
+  }
+}, 600_000);
+
+it('states the shared backup size limit in French too', () => {
+  setLocale('fr');
+  try {
+    expect(saveFileTooLarge()).toBe(
+      `Choisissez une sauvegarde de moins de ${MAX_SAVE_FILE_BYTES / 1024 / 1024} Mo.`,
+    );
+  } finally {
+    setLocale('en');
+  }
 });
