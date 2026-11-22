@@ -1362,9 +1362,16 @@ final class SaveIntegrity
                 return true;
             }
         }
+        // A snapshot saved under a newer schema is not a save this town held under the
+        // incoming one, so matching its protected state must not write it back older.
+        $schema = $incoming['schemaVersion'] ?? 2;
         $restored = $this->protected($this->normalized($incoming));
         foreach ($history as $entry) {
-            if (self::same($this->protected($this->normalized(self::arrayOf($entry))), $restored)) {
+            $snapshot = self::arrayOf($entry);
+            if (
+                ($snapshot['schemaVersion'] ?? 2) <= $schema &&
+                self::same($this->protected($this->normalized($snapshot)), $restored)
+            ) {
                 return true;
             }
         }

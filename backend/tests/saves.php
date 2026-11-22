@@ -1152,6 +1152,68 @@ try {
         $resumed['revision'] === 4 && !isset($resumed['correction']),
         'the next ordinary sync after the restore is accepted as is',
     );
+    // A schema 4 copy of a schema 5 snapshot is not a save this town held under schema 4:
+    // accepting it would write the newer town back under the older schema.
+    $startRun = function (array $saved, int $base) use ($upload, $upgradedId, $upgraded): array {
+        $started = $upload($saved['profile']);
+        $started->issuedRun++;
+        $started->integrity->actions = [
+            (object) [
+                'sequence' => $saved['integrity']['ackSequence'] + 1,
+                'id' => uuid(),
+                'kind' => 'run-start',
+                'data' => (object) [
+                    'runId' => $started->issuedRun,
+                    'mode' => 'normal',
+                    'levelId' => 1,
+                    'at' => time() * 1000,
+                ],
+            ],
+        ];
+        $synced = status(
+            200,
+            callApi(
+                'PUT',
+                'towns/' . $upgradedId,
+                ['baseRevision' => $base, 'uploadId' => uuid(), 'profile' => $started],
+                $upgraded,
+            ),
+            'schema 5 puzzle start',
+        );
+        check(
+            $synced['revision'] === $base + 1 && !isset($synced['correction']),
+            'a schema 5 puzzle start syncs as is',
+        );
+        return $synced;
+    };
+    // Revision 5 has state only schema 5 ever held; revision 6 moves it into history.
+    $fifthOnly = $startRun($resumed, 4);
+    $startRun($fifthOnly, 5);
+    $relabelled = $upload($fifthOnly['profile']);
+    $relabelled->schemaVersion = 4;
+    unset($relabelled->integrity->checkpoint);
+    check(
+        status(
+            422,
+            callApi(
+                'PUT',
+                'towns/' . $upgradedId . '/resolve',
+                ['baseRevision' => 6, 'uploadId' => uuid(), 'profile' => $relabelled],
+                $upgraded,
+            ),
+            'schema 4 copy of a schema 5 snapshot',
+        )['code'] === 'save_rules_unsupported',
+        'a schema 4 restore matching only a schema 5 snapshot is refused',
+    );
+    check(
+        (int) $db->get()->fetchOne('SELECT revision FROM towns WHERE id=?', [$upgradedId]) === 6 &&
+            json_decode(
+                (string) $db
+                    ->get()
+                    ->fetchOne('SELECT profile FROM towns WHERE id=?', [$upgradedId]),
+            )->schemaVersion === 5,
+        'the town keeps its schema 5 save',
+    );
     // A legacy modernization asking three puzzles syncs as the game loads it: normalizeTown()
     // clamps required and wins to the offer's two runs, and the server agrees.
     $legacyProfile = json_decode(json_encode($saveRules->defaultProfile));
@@ -1211,11 +1273,11 @@ try {
             callApi(
                 'PUT',
                 'towns/' . $upgradedId . '/resolve',
-                ['baseRevision' => 4, 'uploadId' => uuid(), 'profile' => $copy],
+                ['baseRevision' => 6, 'uploadId' => uuid(), 'profile' => $copy],
                 $upgraded,
             ),
             'schema 4 snapshot restore without checkpoint',
-        )['revision'] === 5,
+        )['revision'] === 7,
         'a schema 4 restore matching a stored snapshot is accepted',
     );
     status(200, callApi('POST', 'auth/revoke-all', (object) [], $a), 'revoke all');
