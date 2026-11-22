@@ -1055,6 +1055,119 @@ try {
             $flowName . ': no step of the restore or the next sync is corrected or refused',
         );
     }
+    // A save from before the game moved to schema 5 stays restorable from cloud history
+    // once the town has synced under schema 5; an unknown older-schema save does not.
+    $upgraded = account(['REMOTE_ADDR' => '127.0.0.32']);
+    $schemaFour = json_decode(json_encode($trackedProfile));
+    $schemaFour->schemaVersion = 4;
+    $schemaFour->integrity->epoch = uuid();
+    $upgradedBody = townBody('Upgraded Gulch');
+    $upgradedBody['profile'] = $schemaFour;
+    $first = status(200, callApi('POST', 'towns', $upgradedBody, $upgraded), 'schema 4 town');
+    $upgradedId = $first['townId'];
+    check($first['profile']['schemaVersion'] === 4, 'the town starts on schema 4');
+    $next = $upload($first['profile']);
+    $next->schemaVersion = 5;
+    $fifth = status(
+        200,
+        callApi(
+            'PUT',
+            'towns/' . $upgradedId,
+            ['baseRevision' => 1, 'uploadId' => uuid(), 'profile' => $next],
+            $upgraded,
+        ),
+        'schema 5 sync',
+    );
+    check($fifth['profile']['schemaVersion'] === 5, 'the town now saves under schema 5');
+    $preUpgrade = status(
+        200,
+        callApi('GET', 'towns/' . $upgradedId . '/history', null, $upgraded),
+        'pre-upgrade history',
+    )['revisions'][0];
+    check(
+        $preUpgrade['revision'] === 1 && $preUpgrade['profile']['schemaVersion'] === 4,
+        'cloud history keeps the schema 4 save',
+    );
+    $unknown = $upload($preUpgrade['profile']);
+    unset($unknown->integrity->checkpoint);
+    $unknown->builderHammers = $unknown->builderHammers + 1;
+    check(
+        status(
+            422,
+            callApi(
+                'PUT',
+                'towns/' . $upgradedId . '/resolve',
+                ['baseRevision' => 2, 'uploadId' => uuid(), 'profile' => $unknown],
+                $upgraded,
+            ),
+            'unverified schema 4 restore',
+        )['code'] === 'save_rules_unsupported',
+        'a schema 4 restore that matches no stored save is refused',
+    );
+    check(
+        status(
+            422,
+            callApi(
+                'PUT',
+                'towns/' . $upgradedId,
+                [
+                    'baseRevision' => 2,
+                    'uploadId' => uuid(),
+                    'profile' => $upload($preUpgrade['profile']),
+                ],
+                $upgraded,
+            ),
+            'schema 4 ordinary sync',
+        )['code'] === 'save_rules_unsupported',
+        'an ordinary schema 4 sync still cannot overwrite a schema 5 town',
+    );
+    $restoredFour = status(
+        200,
+        callApi(
+            'PUT',
+            'towns/' . $upgradedId . '/resolve',
+            [
+                'baseRevision' => 2,
+                'uploadId' => uuid(),
+                'profile' => $upload($preUpgrade['profile']),
+            ],
+            $upgraded,
+        ),
+        'schema 4 history restore',
+    );
+    check($restoredFour['revision'] === 3, 'the pre-upgrade save is restored');
+    $afterRestore = $upload($restoredFour['profile']);
+    $afterRestore->schemaVersion = 5;
+    $resumed = status(
+        200,
+        callApi(
+            'PUT',
+            'towns/' . $upgradedId,
+            ['baseRevision' => 3, 'uploadId' => uuid(), 'profile' => $afterRestore],
+            $upgraded,
+        ),
+        'sync after the schema 4 restore',
+    );
+    check(
+        $resumed['revision'] === 4 && !isset($resumed['correction']),
+        'the next ordinary sync after the restore is accepted as is',
+    );
+    // Without its checkpoint, an exact copy of a stored snapshot is proof enough.
+    $copy = $upload($preUpgrade['profile']);
+    unset($copy->integrity->checkpoint);
+    check(
+        status(
+            200,
+            callApi(
+                'PUT',
+                'towns/' . $upgradedId . '/resolve',
+                ['baseRevision' => 4, 'uploadId' => uuid(), 'profile' => $copy],
+                $upgraded,
+            ),
+            'schema 4 snapshot restore without checkpoint',
+        )['revision'] === 5,
+        'a schema 4 restore matching a stored snapshot is accepted',
+    );
     status(200, callApi('POST', 'auth/revoke-all', (object) [], $a), 'revoke all');
     status(401, callApi('GET', 'account', null, $a), 'revoked session');
     status(

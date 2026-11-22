@@ -1317,6 +1317,31 @@ final class SaveIntegrity
     {
         return $this->changed;
     }
+    /** Whether a restore matches a stored history snapshot or carries this town's checkpoint. */
+    private function knownRestore(
+        array $incoming,
+        ?array $journal,
+        array $history,
+        string $townId,
+    ): bool {
+        if ($journal && isset($journal['checkpoint'])) {
+            $signed = $this->readCheckpoint($journal['checkpoint'], $townId);
+            if (
+                $signed &&
+                $signed['epoch'] === $journal['epoch'] &&
+                $signed['sequence'] === $journal['baseSequence']
+            ) {
+                return true;
+            }
+        }
+        $restored = $this->protected($this->normalized($incoming));
+        foreach ($history as $entry) {
+            if (self::same($this->protected($this->normalized(self::arrayOf($entry))), $restored)) {
+                return true;
+            }
+        }
+        return false;
+    }
     /** Whether the last reconciled upload claimed more than the replay in any resource. */
     public function favourable(): bool
     {
@@ -1339,8 +1364,14 @@ final class SaveIntegrity
         // A client that writes an older format than the stored save cannot understand it (from
         // schema 3: Moon resources, 4: stored production, 5: eras a 1.2 client does not know),
         // so its upload would fold the town back. Schema 2 saves predate the guard.
+        // A restore the player chose is the exception once it proves to be a save this town
+        // already held: a stored history snapshot or a signed checkpoint of this town.
         $oldSchema = $old['schemaVersion'] ?? 2;
-        if ($oldSchema >= 3 && ($incoming['schemaVersion'] ?? 2) < $oldSchema) {
+        if (
+            $oldSchema >= 3 &&
+            ($incoming['schemaVersion'] ?? 2) < $oldSchema &&
+            !($resolve && $this->knownRestore($incoming, $journal, $history, $townId))
+        ) {
             self::incompatible();
         }
 
