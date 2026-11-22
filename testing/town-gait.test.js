@@ -1,11 +1,12 @@
 import { afterEach, expect, it } from 'vitest';
 import { BoxGeometry, Group, MeshBasicMaterial, Scene } from 'three';
 import { createTown } from '../src/data/town';
-import { swingLimbs } from '../src/game/town/TownGait';
+import { CHILD_SCALE, swingLimbs } from '../src/game/town/TownGait';
 import { TownDiorama } from '../src/game/town/TownDiorama';
 import { TownPrimitives } from '../src/game/town/TownPrimitives';
 import {
   animateMoonSettler,
+  createMoonSettlers,
   moonSettlerPlan,
   moonSuitFigure,
 } from '../src/game/town/moon/MoonSettlers';
@@ -73,7 +74,14 @@ it('drives valley villagers and Moon settlers with the same skeleton and cycle',
   const settler = { ...moonSuitFigure(kit, { parent: new Group() }), plan: null };
   settler.plan = moonSettlerPlan({ settlerDomes: 1, craterIceWell: 1 }, 0);
   for (const figure of [actor, settler]) {
-    expect(figure.body.parent).toBe(figure.root);
+    // A valley villager's body hangs from a node that only scales it to its own height.
+    const stature = figure.root.children.find((child) => child.name === 'Villager figure');
+    expect(figure.body.parent).toBe(stature ?? figure.root);
+    if (stature) {
+      expect(stature.position.length()).toBe(0);
+      expect(stature.scale.x).toBe(stature.scale.y);
+      expect(stature.scale.x).toBe(stature.scale.z);
+    }
     expect(figure.body.position.y).toBeCloseTo(0.54);
     for (const { upper, lower } of [...figure.arms, ...figure.legs]) {
       expect(lower.parent).toBe(upper);
@@ -115,4 +123,36 @@ it('drives valley villagers and Moon settlers with the same skeleton and cycle',
     }
   }
   expect(strides).toBeGreaterThan(10);
+});
+
+it('walks Moon-born children on the same skeleton and cycle, with a child’s shorter stride', () => {
+  const kit = new TownPrimitives();
+  disposables.push(() => kit.disposePrimitives());
+  const levels = { lanternRow: 2, earthviewTerraces: 1, craterSchool: 1 };
+  const children = createMoonSettlers(kit, new Group(), levels).filter(
+    ({ root }) => root.name === 'New Hollow child',
+  );
+  expect(children.length).toBeGreaterThan(0);
+  for (const child of children) {
+    // The valley skeleton under a uniform child scale: body at hip height, paired joints.
+    expect(child.size).toBe(CHILD_SCALE);
+    expect(child.body.position.y).toBeCloseTo(0.54);
+    for (let node = child.body.parent; node && node !== child.root; node = node.parent)
+      expect([node.scale.x, node.scale.y, node.scale.z]).toEqual([1, 1, 1]);
+    for (const { upper, lower } of [...child.arms, ...child.legs]) expect(lower.parent).toBe(upper);
+    let strides = 0;
+    for (let time = 0; time < child.plan.duration; time += 0.37) {
+      const now = { ...animateMoonSettler(child, time) };
+      if (!child.root.visible) continue;
+      expect(child.root.scale.x).toBeCloseTo(now.scale * CHILD_SCALE, 9);
+      // The joints a valley villager would have at the same step: a child's step is the
+      // adult's at the distance divided by its scale, so its strides are shorter.
+      const reference = { arms: limbs(), legs: limbs() };
+      const step = (now.distance / CHILD_SCALE / 1.2) * Math.PI * 2;
+      swingLimbs(reference.arms, reference.legs, step, now.walking);
+      expect(pose(child)).toEqual(pose(reference).map((value) => expect.closeTo(value, 9)));
+      if (now.walking) strides++;
+    }
+    expect(strides).toBeGreaterThan(10);
+  }
 });

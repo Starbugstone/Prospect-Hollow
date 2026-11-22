@@ -489,6 +489,16 @@
     },
     "version": 2
   },
+  "mine-surveys-diamond": {
+    "goal": 75,
+    "measure": {
+      "kind": "count",
+      "counter": "mine",
+      "key": "surveys",
+      "modes": ["normal", "continuous"]
+    },
+    "version": 2
+  },
   "mine-ore-orders-bronze": {
     "goal": 10,
     "measure": {
@@ -608,6 +618,117 @@
       "modes": ["normal", "continuous"]
     },
     "version": 2
+  },
+  "mine-trace-twins-bronze": {
+    "goal": 1,
+    "measure": {
+      "kind": "count",
+      "counter": "mine",
+      "key": "traceTwins",
+      "modes": ["normal", "continuous"]
+    },
+    "version": 2
+  },
+  "mine-trace-twins-silver": {
+    "goal": 8,
+    "measure": {
+      "kind": "count",
+      "counter": "mine",
+      "key": "traceTwins",
+      "modes": ["normal", "continuous"]
+    },
+    "version": 2
+  },
+  "mine-trace-twins-gold": {
+    "goal": 15,
+    "measure": {
+      "kind": "count",
+      "counter": "mine",
+      "key": "traceTwins",
+      "modes": ["normal", "continuous"]
+    },
+    "version": 2
+  },
+  "mine-crossgrain-bronze": {
+    "goal": 3,
+    "measure": {
+      "kind": "count",
+      "counter": "mine",
+      "key": "crossgrain",
+      "modes": ["normal", "continuous"]
+    },
+    "version": 2
+  },
+  "mine-crossgrain-silver": {
+    "goal": 25,
+    "measure": {
+      "kind": "count",
+      "counter": "mine",
+      "key": "crossgrain",
+      "modes": ["normal", "continuous"]
+    },
+    "version": 2
+  },
+  "mine-crossgrain-gold": {
+    "goal": 50,
+    "measure": {
+      "kind": "count",
+      "counter": "mine",
+      "key": "crossgrain",
+      "modes": ["normal", "continuous"]
+    },
+    "version": 2
+  },
+  "mine-chords-bronze": {
+    "goal": 2,
+    "measure": {
+      "kind": "count",
+      "counter": "mine",
+      "key": "chords",
+      "modes": ["normal", "continuous"]
+    },
+    "version": 2
+  },
+  "mine-chords-silver": {
+    "goal": 20,
+    "measure": {
+      "kind": "count",
+      "counter": "mine",
+      "key": "chords",
+      "modes": ["normal", "continuous"]
+    },
+    "version": 2
+  },
+  "mine-chords-gold": {
+    "goal": 45,
+    "measure": {
+      "kind": "count",
+      "counter": "mine",
+      "key": "chords",
+      "modes": ["normal", "continuous"]
+    },
+    "version": 2
+  },
+  "far-seam-bronze": {
+    "goal": 552,
+    "measure": {
+      "kind": "level"
+    },
+    "version": 1
+  },
+  "far-seam-silver": {
+    "goal": 582,
+    "measure": {
+      "kind": "level"
+    },
+    "version": 1
+  },
+  "far-seam-gold": {
+    "goal": 606,
+    "measure": {
+      "kind": "level"
+    },
+    "version": 1
   },
   "ages-bronze": {
     "goal": 2,
@@ -820,6 +941,123 @@
     },
     "version": 1
   },
+  "outer-ring-bronze": {
+    "goal": 1,
+    "measure": {
+      "kind": "buildingLevels",
+      "settlement": "moon",
+      "buildings": [
+        "ringTram",
+        "dewfallCistern",
+        "orchardVaults",
+        "lanternRow",
+        "ringMarket",
+        "craterSchool",
+        "earthviewTerraces",
+        "expeditionGarage",
+        "craterInn",
+        "starwatchDish",
+        "moonballField",
+        "craterPondGarden"
+      ]
+    },
+    "version": 1
+  },
+  "outer-ring-silver": {
+    "goal": 15,
+    "measure": {
+      "kind": "buildingLevels",
+      "settlement": "moon",
+      "buildings": [
+        "ringTram",
+        "dewfallCistern",
+        "orchardVaults",
+        "lanternRow",
+        "ringMarket",
+        "craterSchool",
+        "earthviewTerraces",
+        "expeditionGarage",
+        "craterInn",
+        "starwatchDish",
+        "moonballField",
+        "craterPondGarden"
+      ]
+    },
+    "version": 1
+  },
+  "outer-ring-gold": {
+    "goal": 30,
+    "measure": {
+      "kind": "buildingLevels",
+      "settlement": "moon",
+      "buildings": [
+        "ringTram",
+        "dewfallCistern",
+        "orchardVaults",
+        "lanternRow",
+        "ringMarket",
+        "craterSchool",
+        "earthviewTerraces",
+        "expeditionGarage",
+        "craterInn",
+        "starwatchDish",
+        "moonballField",
+        "craterPondGarden"
+      ]
+    },
+    "version": 1
+  },
+  "far-rim-bronze": {
+    "goal": 1,
+    "measure": {
+      "kind": "buildingLevels",
+      "settlement": "moon",
+      "buildings": [
+        "listeningHouse",
+        "stillwaterBasin",
+        "tonewoodConservatory",
+        "farRimHomes",
+        "resonanceWorkshop",
+        "signalTerrace",
+        "patternGarden"
+      ]
+    },
+    "version": 1
+  },
+  "far-rim-silver": {
+    "goal": 9,
+    "measure": {
+      "kind": "buildingLevels",
+      "settlement": "moon",
+      "buildings": [
+        "listeningHouse",
+        "stillwaterBasin",
+        "tonewoodConservatory",
+        "farRimHomes",
+        "resonanceWorkshop",
+        "signalTerrace",
+        "patternGarden"
+      ]
+    },
+    "version": 1
+  },
+  "far-rim-gold": {
+    "goal": 18,
+    "measure": {
+      "kind": "buildingLevels",
+      "settlement": "moon",
+      "buildings": [
+        "listeningHouse",
+        "stillwaterBasin",
+        "tonewoodConservatory",
+        "farRimHomes",
+        "resonanceWorkshop",
+        "signalTerrace",
+        "patternGarden"
+      ]
+    },
+    "version": 1
+  },
   "saucer-welcome-bronze": {
     "goal": 1,
     "measure": {
@@ -913,6 +1151,66 @@
         "moonstone-garden",
         "moonrock-court"
       ]
+    },
+    "version": 1
+  },
+  "commissioner-bronze": {
+    "goal": 1,
+    "measure": {
+      "kind": "landmarks",
+      "areas": ["earthlight-conservatory", "homecoming-commons"]
+    },
+    "version": 1
+  },
+  "commissioner-silver": {
+    "goal": 2,
+    "measure": {
+      "kind": "landmarks",
+      "areas": ["earthlight-conservatory", "homecoming-commons"]
+    },
+    "version": 1
+  },
+  "commissioner-gold": {
+    "goal": 3,
+    "measure": {
+      "kind": "landmarks",
+      "areas": [
+        "earthlight-conservatory",
+        "homecoming-commons",
+        "willowkin-glade",
+        "schoolyard-court",
+        "crew-yard"
+      ]
+    },
+    "version": 1
+  },
+  "commissioner-diamond": {
+    "goal": 5,
+    "measure": {
+      "kind": "landmarks",
+      "areas": [
+        "earthlight-conservatory",
+        "homecoming-commons",
+        "willowkin-glade",
+        "schoolyard-court",
+        "crew-yard"
+      ]
+    },
+    "version": 1
+  },
+  "keen-eye-bronze": {
+    "goal": 1,
+    "measure": {
+      "kind": "found",
+      "finds": ["helmet", "wanderers"]
+    },
+    "version": 1
+  },
+  "keen-eye-silver": {
+    "goal": 2,
+    "measure": {
+      "kind": "found",
+      "finds": ["helmet", "wanderers"]
     },
     "version": 1
   },

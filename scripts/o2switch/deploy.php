@@ -130,8 +130,16 @@ class HostingDeployer
         $root = $this->config['root'];
         $this->lock = fopen("$root/deploy.lock", 'c');
         if (!flock($this->lock, LOCK_EX | LOCK_NB)) {
-            echo "Another deployment command holds the lock; skipping.\n";
-            return;
+            fclose($this->lock);
+            // A cron poll overlapping running work is normal. An operator command must
+            // fail instead, so a runbook step such as disable cannot pass having done nothing.
+            if ($command === 'poll') {
+                echo "Another deployment command holds the lock; skipping.\n";
+                return;
+            }
+            throw new RuntimeException(
+                "Another deployment command holds the lock; $command did nothing. Run it again once that command has finished.",
+            );
         }
         // Reload after acquiring the lock. All state writers use this same lock.
         $this->state = is_file("$root/state/state.json")

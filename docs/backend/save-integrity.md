@@ -201,6 +201,14 @@ Invented checkpoints, changed signatures and checkpoints from another town canno
 establish a new baseline. Signing and verification run during cloud sync, not on
 individual moves or local saves.
 
+The signed state includes the landmarks the replay protects: each monument or
+commission site's design (`town.personalisation.areas`) and paid stage
+(`areaLevels`). Construction progress and other cosmetics stay outside it.
+Checkpoints signed by earlier servers lack them, and take them from the cloud
+save stored at the same epoch and sequence: the current save or one in its
+history. Without such a save, the checkpoint vouches for no
+landmarks, and a restore that claims some is refused, as before.
+
 Confirming a backup-file import into an account town marks its next immutable
 upload as explicit recovery. The signed checkpoint and offline suffix use the
 same recovery route as cloud history. Retry preserves that intent and exact

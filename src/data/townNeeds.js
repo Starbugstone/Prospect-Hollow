@@ -13,6 +13,9 @@ export const NEED_SOURCES = [
   { stat: 'water', id: 'well', eraTiers: 'waterworks' },
   { stat: 'food', kind: 'farm', per: 4, service: true },
   { stat: 'food', id: 'farm', eraTiers: 'farmCapacity' },
+  // New Hollow's own ice well and greenhouse, once an era modernizes them.
+  { stat: 'water', id: 'craterIceWell', eraTiers: 'moonWaterworks' },
+  { stat: 'food', id: 'earthlightGreenhouse', eraTiers: 'moonFarm' },
   { stat: 'food', id: 'fisherman', per: 1, service: true, max: 5 },
   { stat: 'food', id: 'market', per: 10 },
   { stat: 'housing', kind: 'home', per: 2, service: true },

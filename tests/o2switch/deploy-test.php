@@ -149,10 +149,57 @@ try {
     $lock = fopen("$root/deploy.lock", 'c');
     flock($lock, LOCK_EX);
     $before = $deployer->builds;
-    (new FixtureDeployer($config))->command('deploy');
-    verify($deployer->builds === $before, 'Lock must prevent concurrent deployment');
+    $blocked = new FixtureDeployer($config);
+    $blocked->sha = str_repeat('e', 40);
+    $refused = null;
+    try {
+        $blocked->command('deploy');
+    } catch (RuntimeException $e) {
+        $refused = $e->getMessage();
+    }
+    verify(
+        $blocked->builds === 0 && $deployer->builds === $before,
+        'Lock must prevent concurrent deployment',
+    );
+    verify(
+        $refused !== null && str_contains($refused, 'deploy did nothing'),
+        'A deploy skipped under the lock must fail and say it did nothing',
+    );
+    // The real CLI: an operator command skipped under the lock exits nonzero, so a
+    // runbook step cannot pass while polling stays on; an overlapping cron poll exits 0.
+    file_put_contents("$root/state/enabled", "enabled\n");
+    $cli = "$root/config.json";
+    file_put_contents($cli, json_encode($config, JSON_THROW_ON_ERROR));
+    chmod($cli, 0600);
+    $run = function (string $command) use ($cli): array {
+        $process = proc_open(
+            [PHP_BINARY, __DIR__ . '/../../scripts/o2switch/deploy.php', $cli, $command],
+            [1 => ['pipe', 'w'], 2 => ['pipe', 'w']],
+            $pipes,
+        );
+        $output = stream_get_contents($pipes[1]) . stream_get_contents($pipes[2]);
+        fclose($pipes[1]);
+        fclose($pipes[2]);
+        return [proc_close($process), $output];
+    };
+    foreach (['disable', 'enable', 'retry', 'rollback', 'deploy', 'status'] as $command) {
+        [$exit, $output] = $run($command);
+        verify(
+            $exit !== 0 && str_contains($output, "$command did nothing"),
+            "A $command skipped under the lock must exit nonzero: $exit $output",
+        );
+    }
+    verify(is_file("$root/state/enabled"), 'A skipped disable must leave polling on');
+    [$exit, $output] = $run('poll');
+    verify($exit === 0, "An overlapping poll must exit 0: $exit $output");
     flock($lock, LOCK_UN);
     fclose($lock);
+    [$exit, $output] = $run('disable');
+    verify(
+        $exit === 0 && !is_file("$root/state/enabled"),
+        "An uncontended disable must remove state/enabled: $exit $output",
+    );
+    unlink($cli);
     $good = [
         'head_sha' => str_repeat('a', 40),
         'head_branch' => 'main',

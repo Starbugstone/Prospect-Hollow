@@ -7,18 +7,21 @@ progress 2 and 12 stored. Elevator and all Moon lots are level 3. No account.
 **Implementation:** `testing/browser/moonstone-resource.cjs`.
 
 The intercepted `/moonstone-resource-test` mounts the real workshop component and
-campaign store. Its collection cooldown is 30 seconds.
+campaign store. A fixed 30-second prop disables the workshop's collection button.
+`testing/collection-cooldown.test.js` covers expiry and rejection of an early retry.
 
 1. **Collect 12 moonstones** is disabled in the workshop; **Stored 12** is shown.
 2. Click **Sell all**. The confirmation asks about 42 stones for 10,500 coins;
-   balances remain unchanged. Click **Cancel**.
+   balances remain unchanged. Click **Cancel** and check that the confirmation
+   closes and balances still match.
 3. Click **Sell 10**: the receipt reports 2,500 coins; balances become 3,500 coins
    and 32 stones, with lifetime earned still 57.
 4. Choose **Sell all**, then **Confirm sale**. Balances become 11,500 coins and zero
    stones; lifetime earned remains 57.
 5. Mount the real Moon map with the same store and activate the **Moonstone workshop**
-   label containing **Collect 12 moonstones**. Held stones become 12, lifetime earned
-   becomes 69, stored production becomes zero and progress stays 2.
+   label containing **Collect 12 moonstones**. The fixture sends that selection
+   directly to `campaign.collectMoonstones`. Held stones become 12, lifetime
+   earned becomes 69, stored production becomes zero and progress stays 2.
 
 Inspect the serialized `crystal-cascade-profile-v3` device save, independently of
 the reactive store: all final counters must match. The fixture reseeds on navigation,

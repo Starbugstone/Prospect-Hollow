@@ -1,8 +1,10 @@
 <?php
 require __DIR__ . '/support.php';
 use App\PlayerDistinctions;
+// Its own address keeps the shared 127.0.0.1 sign-in limit for the other suites.
+$publicTestIp = '127.' . random_int(1, 254) . '.' . random_int(1, 254) . '.' . random_int(1, 254);
 try {
-    $owner = account();
+    $owner = account(['REMOTE_ADDR' => $publicTestIp]);
     $body = townBody('Emblem Hollow');
     $body['profile']->town->personalisation = (object) [
         'crest' => (object) [
@@ -69,6 +71,54 @@ try {
         $appearance['personalisation']['crest']['emblemColour'] === '#123456',
         'public emblem colour retained',
     );
+    // The time distinction on a plaque: visitors see its step, never the owner's next one,
+    // which would give away when the account was created.
+    $veteran = account(['REMOTE_ADDR' => $publicTestIp]);
+    $db->get()->update(
+        'players',
+        ['created_at' => time() - 400 * 86400],
+        [
+            'id' => $veteran['id'],
+        ],
+    );
+    $plaqued = townBody('Veteran Hollow');
+    $plaqued['profile']->town->personalisation = (object) [
+        'plaques' => (object) ['mine' => 'player-time'],
+    ];
+    $plaquedId = status(200, callApi('POST', 'towns', $plaqued, $veteran), 'plaque save')['townId'];
+    $plaquedPublic = status(
+        200,
+        callApi(
+            'PATCH',
+            'towns/' . $plaquedId . '/settings',
+            ['baseRevision' => 1, 'name' => $plaqued['name'], 'isPublic' => true],
+            $veteran,
+        ),
+        'share plaqued town',
+    )['publicId'];
+    $plaquedVisit = status(200, callApi('GET', 'villages/' . $plaquedPublic), 'visit plaqued town');
+    check(
+        ($plaquedVisit['appearance']['plaqueDistinctions']['player-time']['tenure'] ?? null) === [
+            'unit' => 'year',
+            'count' => 1,
+        ],
+        'a time plaque shows its current step to visitors',
+    );
+    $leaks = function (mixed $value) use (&$leaks): bool {
+        if (!is_array($value)) {
+            return false;
+        }
+        if (is_array($value['tenure'] ?? null) && array_key_exists('next', $value['tenure'])) {
+            return true;
+        }
+        foreach ($value as $child) {
+            if ($leaks($child)) {
+                return true;
+            }
+        }
+        return false;
+    };
+    check(!$leaks($plaquedVisit), 'no public payload carries the next time step');
     $cards = status(200, callApi('GET', 'account', null, $owner), 'crest town summary')['towns'];
     check($cards[0]['summary']['crest']['emblem'] === 'otter', 'saved-town card carries the crest');
     echo "Public personalisation checks passed ($count assertions).\n";

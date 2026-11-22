@@ -46,6 +46,11 @@ Willowkin plant the first tree of the floating island in chapter 23.
   met the earlier portal see its "New in this mine" guide again, marked Updated.
 - **Breakthrough chambers** are sealed rows behind a cracked wall that only bonus blasts
   break. When the whole wall is down, the chamber opens and fills from above.
+- **Route chambers** (`route: true` in a level's `chambers`) are ways into the same place,
+  of which the player needs only one. Their cracked walls count toward no goal, are left
+  out of the goal counters, and may stay standing when the level ends. A route chamber
+  may hold nothing the goal counts; the generator rejects one that does. Once one route is
+  open, the hint stops aiming at the other walls.
 - **No ice on extraction levels.** A level whose goal is lighting lanterns or delivering
   cargo carries no ice.
 
@@ -211,3 +216,276 @@ Stone ceiling) and 429 (Rigging vault: Behind the rigging, now with banded stone
 from 439). With 100 hint-led seeds, 411 takes a median of 29 moves (it was 31 with orders)
 and 429 a median of 25 (29.5); both finished every run. Six colors roughly double the effort
 of a board, so they suit only levels that would otherwise need heavy collection goals.
+
+## Boards on trial
+
+Every board below has since joined chapters 92–101 at the level number it was measured
+with; [the crystal seams guide](crystal-seam-levels.md) describes those chapters and the
+two boards that changed (548 and 560). The measurements below are the trial record.
+Settings still lists the boards for the open phone checks, each now playing its campaign
+level.
+
+A new board can be played before it joins the campaign. `src/data/prototypeBoards.js` lists
+them in the level grammar of this file. They sit outside `LEVEL_COUNT` and the save. Only
+the debug tools (development, preprod and `VITE_DEBUG_TOOLS=true` builds) open one: tap it
+under **Boards on trial** in Settings (More options) from the village, which works on a
+phone, or call `prospectDebug.playPrototype('<key>')` in the console. The public game has
+neither. A banner marks the run, powers are
+hidden, and finishing records nothing: no reward, record, honour or obstacle seen. A board
+keeps the level number it would take (its id also seeds its layout), so appending it there
+gives the same board.
+
+The first is chapter 94's route-choice board, `deep-lantern-routes` ("The deep lantern:
+Two ways down", level 559's slot). Two lanterns and two phase seals sit in a 2 × 2 well
+that no swap can reach. A thick cracked block above it opens a drop shaft, where the
+well lights through vertical matches. A thin wall to its right opens a side chamber,
+where it lights through horizontal matches. `testing/route-chambers.test.js` covers the
+rules and the store, and `testing/levels/prototype-routes.test.js` measures 60 hint-led
+seeds per variant (`npm run test:levels`).
+
+| 60 seeds (hint-led)              | Median moves | Max | Well cells lit by                     |
+| -------------------------------- | -----------: | --: | ------------------------------------- |
+| Both routes                      |           23 |  61 | 52 horizontal, 35 vertical, 212 blast |
+| Drop shaft only                  |           24 |  69 | 66 vertical, 230 blast                |
+| Side chamber only                |           25 | 111 | 96 horizontal, 199 blast              |
+| Neither route (bonuses only)     |           32 | 148 | 291 blast                             |
+| Drop shaft open from the start   |           10 |  29 | 218 vertical, 81 blast                |
+| Side chamber open from the start |           12 |  70 | 62 horizontal, 178 blast              |
+
+With both routes available, the shaft opened first in 33 runs and the side chamber in 23
+(median move 20 and 12), and every run finished. The "lit by" columns count each hit
+that lit a lantern or wore down a seal in the well.
+
+### Pairing prototypes: chapters 92 and 93
+
+Two more boards try the mechanic pairings proposed for the next chapters. Both use only
+shipped mechanics and art, and borrow a shipped chapter's backdrop and cargo until theirs
+exist.
+
+**`echo-gallery-crossing`** ("Echo gallery: Crossed paths", level 547's slot) pairs lens
+mirrors and starglass with portals, which had never shared a board. Two moon gems ride the
+siding through the portal and drop down the middle column, where two panes of starglass
+stand between the exit pad and the basket. The beams come from the other side: the column
+relay on the right wall bursts on to both corner mirrors, and each diagonal crosses a pane.
+The thick pane needs a second turned beam, and a floor core gives crosses in line with the
+lower mirror.
+
+How beams and portals meet was the open question for this pairing. A portal pad fills its
+cell like a void, so a beam passes over a pad and does not come out of its pair. A player
+could reasonably expect either, so this board keeps every beam's path clear of both pads
+and the question never arises. `testing/prototype-boards.test.js` holds it to that. A
+later board that wants a beam to cross a pad needs that rule decided, shown and explained
+first.
+
+**`turning-orchard-both-ways`** ("Turning orchard: Up and down", level 553's slot) pairs
+the moon dial with floatstones held by root knots. Each floatstone has one way out, and
+they are opposite: a sky hatch above the left one and a basket below the right one. A
+floatstone moves against gravity, so one leaves as the cavern stands and the other only
+after a bonus blast turns the dial. The knots sit beside the floatstones, clear of both
+ways out.
+
+`testing/prototype-boards.test.js` runs the shipped layout rules on every board on trial
+(no ice on extraction boards, a route for all cargo, reachable starglass), checks that
+each one finishes in the game store beyond 100 moves after its speed target and saves
+nothing, and that the renderer draws it with its own chapter's art. A board on trial is
+numbered past the campaign, so the renderer takes the theme from the level itself.
+`testing/levels/prototype-pairings.test.js` measures 60 hint-led seeds
+(`npm run test:levels`):
+
+| 60 seeds (hint-led)          | Moves: 10th / median / 90th / max | Median score | What happened first                                                 |
+| ---------------------------- | --------------------------------- | -----------: | ------------------------------------------------------------------- |
+| Echo gallery: Crossed paths  | 9 / 16 / 25 / 56                  |       31,100 | Both panes gone by move 4, moon gems home by moves 8 and 10         |
+| Turning orchard: Up and down | 10 / 21 / 37 / 81                 |       37,200 | Knots cut by move 4, first home at 6, dial turned at 12, done at 21 |
+
+Every run finished without a reshuffle. No moon gem was delivered while a pane stood, and
+every orchard run turned the dial at least once. Chest targets are 80% of the median
+score (25,000 and 30,000). The hint-led player always takes the hint, so these counts
+show that the pairings are solvable and roughly how long they run. Whether they are fun
+is for a person to judge on a phone. The board motion check reports no overlaps or
+stutters on all three boards over eight hinted moves.
+
+### Pairing prototypes: chapters 95–101
+
+One board on trial for each remaining chapter of the release 1.3.0 plan, in each chapter's
+first level slot (565, 571, 577, 583, 589, 595 and 601). Chapters 98–101 open act VI, so
+those boards use its first color set (plan 30 onwards in `chapterPalettes`). Each borrows a
+shipped chapter's backdrop and cargo art.
+
+**`shifting-survey-stars`** ("Shifting survey: Shifting stars") pairs survey markers with
+phase seals. Eight markers make a trail from the bottom left corner, up the left side,
+across the top and down the right, and a double phase seal sits beside each marker. A
+marker lights from a match on or beside it, so most matches that light one run through its
+seal, whose gem changes color after every move. A change that lines up a match beside the
+next marker lights it; beside a later marker it lights nothing yet. A sapphire order of 40
+fills as the trail is lit.
+
+**`ember-sidings-gates`** ("Ember sidings: Banked fires") pairs charge cores with portals
+and moon gems. Two moon gems ride the siding through the portal and drop down the middle
+column, where two thick gates stand between the exit pad and the basket. A brazier sits
+either side of that column between the gates. Its bomb lands on its own cell, and the blast
+reaches both gates and no portal pad. A sapphire order of 40 sets the pace.
+
+**`buried-routes-bed`** ("Buried routes: Shaft or gallery") pairs dust fossils with route
+chambers. Two fossils lie either side of a sealed one-cell shaft and under a sealed
+gallery, where no swap reaches them. The shaft opens behind one thick block, and matches
+across its foot brush both fossils from the side. The gallery opens behind four thin walls,
+and matches there brush them from above. Unlike the chapter 94 well, each route reaches
+both fossils, so the choice is between a narrow way in that costs two hits and a wide one
+that costs four.
+
+**`frost-relays-grain`** ("Frost relays: Frozen grain") pairs frozen gems and spore relays
+with crossgrain crystals. Two bands of frost each hide a row relay between two crystals.
+Frozen gems flank every crystal, so its row holds no match until they thaw, and a match
+down through the crystal seals its vertical crack and thaws the frost beside it. Each relay
+sits inside the frost, so it fires only once a neighbour has thawed. Its burst runs along
+its own row and seals the horizontal crack of both crystals there. No relay lies on
+another's line, so one match no longer thaws the whole board as on the first draft
+(`frost-relays-chain`, where a column relay set off both row relays).
+
+Lanterns were proposed first, but a frozen gem sits on ice (it is an ice layer in
+`testing/helpers/boardRules.js`) and a lantern board carries none. The board keeps ordinary
+ice, and the generator lays none under a crystal, as it lays none under a relay.
+
+**`tidal-pearls-chords`** ("Tidal pearls: Falling chords") pairs pearls and one ore order
+with chord crystals. Two pearls fall from the top row to the baskets below them, and three
+chord crystals cross the middle, two on the pearls' way down. A crystal needs three
+different colours matched on it, so the emerald order of 30 can take at most one socket
+of each. The first draft (`tidal-pearls-pairs`) used twin gravity, which already ships
+with pearls in Twin gravity. On 60 seeds a split-gravity version with four chords took a
+median of 27 moves (90th percentile 40) against 21 (36) in normal gravity, with more
+sockets filled by white light (37% against 24%), so the board drops twin gravity.
+
+**`rooted-vault-knots`** ("Rooted vault: Bound shut") pairs root knots with a breakthrough
+chamber and chains. Three knots and their vines fill the row above the chamber's cracked
+wall, so no gem there can be swapped until a knot is cut. Each knot is cut by a match
+beside it, and a vine also breaks on its own when matched. Behind the wall, the chamber
+holds three chained gems.
+
+**`far-seam-traces`** ("The far seam: Either way out") pairs route chambers with trace
+twins and a moon dial. A floatstone waits between two sealed one-cell shafts: a thick wall
+above leads to the hatch, a thin wall below to the basket. A floatstone moves against
+gravity, so the way up works as the cavern stands; the way down works only once a bonus
+blast turns the dial in the bottom-left corner. One pair of trace stamps sits diagonally
+across the floatstone, each beside a wall, with a gate above the upper stamp and below the
+lower one. A row matched on either stamp copies on to the far wall; a column, on to the far
+gate. The gates also stop the columns that would miss, so every line through a stamp
+copies on to a wall or a gate. The lens prisms of the first draft (`far-seam-either-way`)
+were only a helper and are gone, so no beam meets a copy.
+
+Two earlier placements failed on the hint-led player. A stamp with open space above and
+below fired on a column at move 1 on every seed, because the starting board is the same
+for every seed, and its copy hit nothing (2 useful copies in 120). Two pairs with gates
+around both made the copies count but cramped the middle (20 reshuffles over 60 runs), and
+opened the top shaft by move 6, so the dial never mattered.
+
+The same test file checks each board's own rules: a seal beside every marker and a trail
+that starts in the corner, both gates inside each brazier's bomb, a fossil bed out of
+every swap's reach that both routes open on to, crystals whose rows the frost blocks and
+relays hidden in it, pearls that each fall through one chord crystal, roots over the whole
+row above the wall, a floatstone with one way out in each gravity, and every line through
+a trace stamp copied on to a wall or a gate. `testing/levels/prototype-pairings-95-101.test.js`
+measures 60 hint-led seeds per board, plus variants that take the pairing apart:
+
+| 60 seeds (hint-led)             | Moves: 10th / median / 90th / max | Median score | Reshuffles | Bonuses made | What the pairing did                                                                                   |
+| ------------------------------- | --------------------------------- | -----------: | ---------: | -----------: | ------------------------------------------------------------------------------------------------------ |
+| Shifting survey: Shifting stars | 11 / 15 / 20 / 27                 |       35,800 |          0 |            7 | Of 480 markers lit, 295 by a match through their seal, 46 by a phase shift (in 30 runs)                |
+| Ember sidings: Banked fires     | 12 / 19 / 30 / 62                 |       32,700 |          0 |            9 | 2 brazier bombs a run; gates gone by move 6, moon gems home by moves 10 and 12                         |
+| … without braziers              | 14 / 23 / 37 / 77                 |       31,500 |          2 |            8 | Gates gone by move 13, moon gems home by moves 16 and 17                                               |
+| Buried routes: Shaft or gallery | 12 / 22 / 37 / 66                 |       37,500 |          0 |           11 | Shaft opened first in 43 runs (move 12), gallery in 17 (move 14); both in 51                           |
+| … shaft only                    | 15 / 36 / 80 / 116                |       41,800 |          2 |           13 |                                                                                                        |
+| … gallery only                  | 17 / 31 / 58 / 102                |       47,300 |          1 |           14 |                                                                                                        |
+| … neither route (bonuses only)  | 22 / 48 / 112 / 153               |       54,500 |          3 |           17 |                                                                                                        |
+| Frost relays: Frozen grain      | 12 / 19 / 28 / 37                 |       33,000 |          0 |            7 | Of 480 cracks, 198 sealed by a match, 203 by a relay burst, 79 by a bonus; 199 of 960 thaws by a burst |
+| … without relays                | 14 / 20 / 32 / 41                 |       33,800 |          0 |            8 | 328 cracks sealed by a match, 152 by a bonus                                                           |
+| Tidal pearls: Falling chords    | 12 / 19 / 31 / 46                 |       29,100 |          0 |            8 | Of 540 sockets, 413 filled by a colour (51 emerald), 127 by white light; pearls home by moves 8 and 15 |
+| Rooted vault: Bound shut        | 13 / 25 / 42 / 61                 |       43,400 |          0 |           14 | Knots cut by move 9, chamber open at 12 (after the last knot in 34 runs)                               |
+| … without roots                 | 6 / 19 / 55 / 86                  |       38,400 |          0 |           11 | Chamber open at move 6                                                                                 |
+| The far seam: Either way out    | 9 / 21 / 42 / 70                  |       21,000 |          3 |            6 | Out through the top in 39 runs, the floor in 21; the copy broke a gate in all 60 runs                  |
+| … without stamps                | 18 / 35 / 63 / 93                 |       32,300 |          7 |            9 | Out through the top in 40 runs, the floor in 20                                                        |
+
+Moves and the move numbers in the last column are medians unless marked. Every run
+finished, none beyond 100 moves, and reshuffles are the free ones of a board with no match.
+Chest targets are 80% of the median score, rounded to 500 for the first four boards:
+28,500, 26,000, 30,000 and 34,500. The three reworked boards use exactly 80%, as the crystal
+seam trials do, and the level test holds them to it: 26,400, 23,280 and 16,800.
+
+What the numbers say about each pairing, before anyone plays them on a phone:
+
+- **Survey markers and phase seals** work together: three in five markers light through
+  their seal, and half the runs see a shift light one. Keep.
+- **Braziers, portals and moon gems** work: the bombs halve the time the gates stand, and
+  the 90th percentile drops from 37 to 30 moves. Keep.
+- **Fossils and route chambers** is the strongest pairing. Either route alone takes a
+  median of 31–36 moves, both together 22, and players take both. Keep.
+- **Frozen gems, spore relays and crossgrain crystals** work together. Frost takes away
+  a crystal's row, so its first crack comes from a match down its column; the hidden relay's
+  burst seals most of the second (203 cracks against 79 by crafted bonuses). Relays now
+  thaw one gem in five, not three in four, and they trim the slow tail (90th percentile 28
+  against 32). Keep.
+- **Pearls, one order and chord crystals** work: three sockets in four take a colour, so
+  the crystal asks for variety rather than blasts, and the pearls, the order and the
+  crystals finish close together (order filled at move 15, last pearl home at 15). The
+  order colour fills only one socket in eight, so the two goals compete rather than
+  share. Keep, without twin gravity.
+- **Root knots, a breakthrough chamber and chains** work: the roots hold the chamber
+  shut for twice as long (move 12 against 6) and, by keeping play above the wall, shorten
+  the slow tail (90th percentile 42 against 55). Keep.
+- **Route chambers, trace twins and a moon dial**: the stamps cut the median from 35
+  moves to 21 and the 90th percentile from 63 to 42, and both ways out are still taken.
+  The hint-led player always fired the pair on a column, breaking a gate; none of its
+  copies opened a wall, though a row would. Whether people choose the wall is for phone
+  play to show. A gate holds up its column, so the three cells under the upper gate stay
+  empty from the first copy until that gate breaks, as under any shipped gate.
+
+The board motion check reports no overlaps or stutters on all seven boards over eight
+hinted moves (the reworked boards: 471, 387 and 412 frames). On its seed, `rooted-vault-knots` cleared in seven, so the check reported
+"only 7 hinted moves" for it. Screenshots at 375 × 740 (start and after six hinted
+moves) were taken for each board, and for the three reworked boards the start, the guide,
+mid-play and the crystal's first action at 375 × 740 and 1440 × 900
+(`PH_CRYSTAL_FOLDER=output/trial-98-101 PH_CRYSTAL_KEYS=… testing/browser/new-crystal-trials.cjs`).
+None has been played on a phone yet.
+
+## Crystal seam mechanics and shape trials
+
+The owner approved three original crystal behaviours for the 1.3.0 trials
+(10 November 2026); [the proposal and measurements](new-mechanics.md) record the
+review decisions. They joined the campaign with chapters 92–101; human phone play is
+still open.
+
+- **Trace twins** (`t`, or `j` for a second facet pair) link two matching facets.
+  A player's swap matching on a stamp copies every matching line through it to
+  its twin, preserving offsets, then consumes both. T/L matches copy both lines.
+  Neighbouring matches, cascades, phase shifts and direct blasts do not fire it.
+  Copies clip at edges and voids; they are discrete blast cells, so lenses never
+  turn them. The trial has no lenses, and its matching facets and aligned gates
+  show where the horizontal copy will land before the swap. A moving facet and
+  individual cell flashes distinguish it from a spore beam.
+- **Crossgrain crystal** (`i`) has a horizontal and a vertical crack. Matching on
+  the crystal in each direction seals that crack; repeats do nothing. A blast
+  seals only one remaining crack per move, horizontal first if both remain.
+  The neck trial deliberately removes horizontal match space at two crystals,
+  requiring matches plus aimed bonuses. Healed cracks close; after both, the
+  entire icon disappears.
+- **Chord crystal** (`s`) has three sockets, filled by different match colours on
+  its own cell. Repeats and neighbouring matches do nothing. A blast adds one
+  white wildcard socket per move; a new colour may fill any remaining socket.
+  Cascades count as ordinary matches. The full crystal and all sockets disappear.
+  Its trial places a phase seal between the two chords for colour preparation.
+
+Every new marker uses the existing floor objective, hints, replay and free
+recovery. None limits moves or time. The guide has original SVG art and French
+instructions; the trial-only elements are deliberately non-mastery. Every
+completed marker is checked against the appearance of a plain cell.
+
+The clearing-only **Arrowhead** outline (formerly Crystal stair) has an interior
+spring on its lower-left wing. **Twin windows** has two-row holes and a
+three-cell-wide central crafting area. Every playable cell on both belongs to a
+possible three-cell match line. All five boards finish on 60 hint-led seeds,
+with chest targets at exactly 80% of median score. Their keys are
+`trace-twins-first-impression` (548), `crossgrain-narrow-neck` (554),
+`chord-changing-colours` (560), `arrowhead-inner-spring` (549) and
+`twin-windows-crafting-spine` (555). See `testing/levels/new-crystal-trials.test.js`.
+The shared prototype store test includes them automatically and finishes each
+beyond 100 moves after the optional speed target. Motion checks report no
+stutters or overlaps on all five. Screenshots are local to
+`output/new-mechanics/`, generated by `testing/browser/new-crystal-trials.cjs`.

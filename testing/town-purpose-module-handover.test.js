@@ -1,4 +1,5 @@
 import { afterEach, beforeAll, expect, it } from 'vitest';
+import { eraSettlement } from '../src/game/town/TownEventSettlement';
 import { Box3, Group, Scene, Vector3 } from 'three';
 import { BUILDINGS, createTown } from '../src/data/town';
 import { ERAS, eraEvolution } from '../src/data/eras';
@@ -131,7 +132,10 @@ function substantialStructure(root, module, context) {
 
 const transitions = eras.slice(1).flatMap((era, index) => {
   const previous = eras[index];
-  return architecture(previous.id) && architecture(era.id) ? [[previous.id, era.id]] : [];
+  // An era that builds only on another settlement rebuilds no valley purpose modules.
+  return architecture(previous.id) && architecture(era.id) && !eraSettlement(era.id)
+    ? [[previous.id, era.id]]
+    : [];
 });
 
 it.each(transitions)(

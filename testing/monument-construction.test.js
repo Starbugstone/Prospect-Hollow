@@ -38,6 +38,7 @@ import { useCampaignStore } from '../src/stores/campaignStore';
 import { setLocale } from '../src/i18n';
 import TownMonumentSite from '../src/components/town/TownMonumentSite.vue';
 import TownPresentationCinematic from '../src/components/town/TownPresentationCinematic.vue';
+import { openSite } from './helpers/siteOpening';
 
 const meadow = AREA_BY_ID.meadow;
 const square = PERSONAL_AREAS.find((area) => area.timeless);
@@ -88,7 +89,7 @@ describe('Monument construction rules', () => {
   it('builds each paid level over completed puzzles, one level at a time', () => {
     expect(LANDMARK_PROGRESSION.levels.map((level) => level.puzzles)).toEqual([3, 1, 1, 1, 1]);
     for (const area of PERSONAL_AREAS) {
-      let town = rich(area.era);
+      let town = openSite(rich(area.era), area);
       const levels = area.timeless ? 1 : 5;
       for (let level = 1; level <= levels; level++) {
         const gate = isEraComplete(town);
@@ -316,13 +317,14 @@ describe('Monument construction in the town', () => {
           const required = LANDMARK_PROGRESSION.levels[level - 1].puzzles;
           // The widest steps: every material pile, the crane, then bunting once ready.
           for (const wins of [0, 1, required]) {
-            const town = createTown();
-            town.era = ERAS.at(-1).id;
-            Object.assign(town.personalisation, {
+            const base = createTown();
+            base.era = ERAS.at(-1).id;
+            Object.assign(base.personalisation, {
               areas: { [area.id]: [choice] },
               areaLevels: { [area.id]: level },
               construction: { [area.id]: { level, wins } },
             });
+            const town = openSite(base, area);
             const d = fixture(town);
             const site =
               area.settlement === 'moon'

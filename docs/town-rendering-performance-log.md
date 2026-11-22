@@ -487,3 +487,101 @@ Remaining hotspots in these measurements:
 
 These are headless numbers. Physical phones still need a pass with `prospectDebug.townTimings()`
 and `townFrameStats()`.
+
+## Frame and download budgets, November 2026
+
+`testing/browser/frame-budget.cjs` holds the game's own script time per frame on a dev build with a
+375×690 viewport and a 4× CPU slowdown. The first-download figure comes from the production build.
+SwiftShader draws on the CPU, so these guard against regressions and don't predict a phone.
+
+| Scene                              | Script per frame | Ceiling | Frame interval p50 / p95 |
+| ---------------------------------- | ---------------- | ------- | ------------------------ |
+| Level 13                           | 3.1–3.9 ms       | 12 ms   | 16.7 / 33.4 ms           |
+| Level 60                           | 5.1 ms           | 12 ms   | 16.7 / 33.4 ms           |
+| Level 376                          | 5.8–7.0 ms       | 12 ms   | 16.7 / 33.4–50 ms        |
+| Level 397                          | 4.4–5.5 ms       | 12 ms   | 16.7 / 33.4 ms           |
+| Twin Hollows town, camera orbiting | 24.7 ms          | 35 ms   | 50.1 / 149.9 ms          |
+
+First download: 443 kB gzipped against a 480 kB ceiling. The town at this slowdown exceeds a 60 fps
+frame on script alone, which matches earlier entries in this log; its ceiling stops it getting worse.
+
+## First download, 11 November 2026
+
+The era art pass (villager outfits, roof tones, the era cinematic's camera) took the first download
+from 473.8 kB to 478.4 kB gzipped, 1.6 kB under its ceiling. Two changes followed.
+
+| Change                               | Where                                                                                            | Effect / revert note                                                                                                                                                                                                                                                                  |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Board renderer loads with the board  | `src/game/phaser/boardPresenters.js`, `attachRenderer()` in `src/stores/game/rendererBinding.js` | The game store imported `BoardAnimator` and `BoardInput`, so the board's animation, effects and sprite frames (about 100 kB of source) downloaded before the first screen. `BoardCanvas.vue` now hands them over with its renderer. `testing/board-chunk.test.js` holds the boundary. |
+| Ceiling raised from 480 kB to 500 kB | `FIRST_DOWNLOAD_BUDGET` in `scripts/check-bundle-budget.mjs`                                     | Requested by the owner to leave room for era art. Revert: set it back to `480_000`.                                                                                                                                                                                                   |
+
+First download after both changes and the newcomer animals and home variants: 458.4 kB gzipped
+against the 500 kB ceiling. The frame budget was not re-measured cleanly on the development machine
+(see the session notes in the commit); run `testing/browser/frame-budget.cjs` on a quiet machine
+before a release.
+
+## Board feel pass, 11 November 2026
+
+`src/game/phaser/BoardJuice.js` adds decoration to ordinary moves: a lift and duck on a swap, a
+squash as a gem lands, a rippled pop with a flash for a match, a rising score, and a small camera
+shake from the third cascade tier. Its tweens run beside the move and are never awaited; a match
+gains at most 48 ms (`CLEAR_RIPPLE`) and the opening cascade about 130 ms. Reduced motion turns
+all of it off. Revert: remove the `this.juice` calls in `BoardAnimator.js`.
+
+Mine script time per frame after the pass, same harness as the table above (4× slowdown, measured
+on a busy development machine): level 13 4.7 ms, level 376 8.7 ms, level 397 5.5 ms, against the
+12 ms ceiling. `testing/browser/board-motion.cjs` reports no stutter or stacked gems on levels 13,
+373, 376, 385 and 397.
+
+## Release 1.3.0 frame check, 17 November 2026
+
+`testing/browser/frame-budget.cjs` (375 × 690, 4x CPU slowdown, script ms per frame), alternating
+builds on the same dev server setup. The WSL development machine sat at a load average of 7–9 with
+nothing busy in it, so every figure reads high; compare within a row, not with older entries.
+
+| Build                                                                            | Levels 13 / 376 / 397       | Twin Hollows town |
+| -------------------------------------------------------------------------------- | --------------------------- | ----------------- |
+| `b7d8fb82` (this log's 24.7 ms baseline)                                         | 3.3–4.4 / 7.0–7.8 / 4.8–6.5 | 41.2, 41.0        |
+| `7f9685e1` (preprod before the 1.3.0 additions)                                  | 4.8–6.1 / 7.0–8.1 / 5.8–5.9 | 46.2, 42.5, 71.1  |
+| `d6f8e137` (with the third commission, Hollowborn Square, the tram and children) | 5.0–7.4 / 7.8–8.8 / 5.5–7.6 | 49.3, 45.8, 48.1  |
+
+The baseline build that measured 24.7 ms on 2 November reads 41 ms here, so this machine reads
+about 1.65 times high. Scaled by that, the town is about 27–28 ms with the 1.3.0 additions,
+under its 35 ms ceiling, and within noise of the build before them; the boards stay under 12 ms.
+The town scene is the valley, so the Moon's tram and children are not in it: measured on their
+own (alternating, unthrottled), the Moon's per-frame work rose from about 115 to 160 µs. The
+check still needs a run on a quiet machine to replace these scaled figures. Raw output is in
+`output/next-release/frames/` (git-ignored).
+
+## French first download, 21 November 2026
+
+A French browser awaits the French text chunk before mounting (`src/i18n/index.js`), so its
+first screen needs the page, everything it links and `fr-*.js`. The first-download check only
+counted the links. `scripts/check-bundle-budget.mjs` now also measures the French path against
+its own ceiling, and fails when the build has no single French chunk to measure.
+
+| Path    | Gzipped at `ea03cc38` | Ceiling |
+| ------- | --------------------- | ------- |
+| English | 461,825 bytes         | 500,000 |
+| French  | 609,510 bytes         | 615,000 |
+
+The French text grew from 116 kB to 145 kB gzipped between `main` and 1.3.0. The ceiling holds it
+where it is; splitting the startup strings from the rest of the dictionary is the way to bring it
+down later.
+
+## Council fixes frame check, 21 November 2026
+
+`testing/browser/frame-budget.cjs` on `5d08eb5d` (the council's fixes), alternating with
+`ea03cc38` (before them) on two dev servers at once, Twin Hollows town, 4x slowdown. The machine
+sat at a load average of 8–25 from other sessions, so every figure reads far above the 17 November
+ones and the ceilings fail on both builds; compare within the table only.
+
+| Build      | Town script ms per frame, rounds 1 / 2 / 3 |
+| ---------- | ------------------------------------------ |
+| `ea03cc38` | 282.4 / 120.6 / 432.1                      |
+| `5d08eb5d` | 281.7 / 321.8 / 311.2                      |
+
+The two builds overlap round by round, so the fixes add no measurable town cost. Boards 13, 376,
+397 and 583 read 12–19 ms in the same session against the 12 ms ceiling, about the 2–3 times the
+load explains. The release still needs this check on a quiet machine. Raw output stays in the
+session scratchpad, not the repository.

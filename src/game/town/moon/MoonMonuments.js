@@ -1,5 +1,11 @@
 import { Box3, Vector3 } from 'three';
-import { MOON_LOTS, MOON_SITE_PAD } from '../../../data/moonSettlement';
+import { commissionFor } from '../../../data/commissions';
+import {
+  MOON_LOTS,
+  MOON_SITE_PAD,
+  moonDistrictsShown,
+  moonLotsShown,
+} from '../../../data/moonSettlement';
 import {
   areasForSettlement,
   areaChoice,
@@ -18,6 +24,8 @@ export const MOON_MONUMENT_AREAS = areasForSettlement(MOON_SETTLEMENT);
 export const moonMonumentSignature = (town) =>
   JSON.stringify([
     town.personalisation?.crest ?? null,
+    // A new era's lots bring their labels.
+    moonLotsShown(town),
     ...MOON_MONUMENT_AREAS.map((area) => [
       areaUnlocked(town, area),
       areaChoice(town, area),
@@ -27,15 +35,46 @@ export const moonMonumentSignature = (town) =>
   ]);
 /**
  * Where each lot's and open monument site's label hangs: over its building, or lower
- * over a site. Every Moon lot, then each site the town has opened.
+ * over a site. Every Moon lot the town sees, then each site the town has opened, then the
+ * landmark of each district it has reached.
  */
 export const moonLabelAnchors = (town) => [
-  ...Object.entries(MOON_LOTS).map(([id, [x, z]]) => ({ id, position: new Vector3(x, 3.4, z) })),
+  ...moonLotsShown(town).map((id) => {
+    const [x, z] = MOON_LOTS[id];
+    return { id, position: new Vector3(x, 3.4, z) };
+  }),
   ...MOON_MONUMENT_AREAS.filter((area) => town && areaUnlocked(town, area)).map((area) => ({
     id: area.id,
     position: new Vector3(area.positions[0][0], 2, area.positions[0][1]),
   })),
+  // A district's landmark has a label over its top, shown only once it is tapped.
+  ...(town ? moonDistrictsShown(town) : [])
+    .filter(({ stone }) => stone)
+    .map(({ centre, stone }) => ({
+      id: stone.id,
+      position: new Vector3(centre[0], stone.size[1] + 1, centre[1]),
+    })),
 ];
+
+/**
+ * What no map name may cover: each reached district's fixed landmark, as the eight corners
+ * of its box in the world. The scene projects them; the layout steps names aside.
+ */
+export const moonLabelObstacles = (town) =>
+  (town ? moonDistrictsShown(town) : [])
+    .filter(({ stone }) => stone)
+    .map(({ centre, stone }) => {
+      const [width, height, depth] = stone.size,
+        [cos, sin] = [Math.cos(stone.turn), Math.sin(stone.turn)];
+      const corners = [];
+      for (const x of [-width / 2, width / 2])
+        for (const z of [-depth / 2, depth / 2])
+          for (const y of [0, height])
+            corners.push(
+              new Vector3(centre[0] + x * cos + z * sin, y, centre[1] - x * sin + z * cos),
+            );
+      return { id: stone.id, corners };
+    });
 
 // The shared unveiling stages suited settlers from the Moon's one figure builder.
 // Purchases, saved work, scaffolds, ribbon, shots and cleanup remain shared.
@@ -52,7 +91,9 @@ export function buildMoonMonuments(d, parent, town) {
     site.userData.monumentSite = area.id;
     const choice = areaChoice(town, area),
       work = monumentWork(town, area);
-    if (work || choice) moonParcelPad(d, site, MOON_SITE_PAD, { flush: true });
+    // A commission is a place to enter: its pad is raised like a building lot's, to the
+    // level its public path and walkers reach. Other monuments build from the ground.
+    if (work || choice) moonParcelPad(d, site, MOON_SITE_PAD, { flush: !commissionFor(area.id) });
     if (work) buildMonumentWorks(d, site, choice, work, area, town.era);
     else if (choice) {
       const model = buildLandmark(d, site, choice, areaShownStage(town, area), area.timeless);
@@ -88,6 +129,7 @@ export function syncMoonMonuments(scene, town) {
   scene.d.clearGroup(scene.monuments);
   scene.monuments = buildMoonMonuments(scene.d, scene.scene, town);
   scene.lots = moonLabelAnchors(town);
+  scene.labelObstacles = moonLabelObstacles(town);
   scene.requestFrame();
 }
 

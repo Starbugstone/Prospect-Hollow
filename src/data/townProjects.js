@@ -172,6 +172,44 @@ export const TOWN_PROJECTS = [
     'Keep a welcome in the valley',
     ['homecomingHall', 'spaceElevator', 'moonpost'],
   ],
+  [
+    'hollow-rising',
+    'outer-ring',
+    'Lay the outer ring',
+    ['ringTram', 'dewfallCistern', 'orchardVaults', 'ribbonLanding'],
+  ],
+  [
+    'hollow-rising',
+    'moon-born',
+    'Homes for the first Moon-born',
+    ['lanternRow', 'earthviewTerraces', 'craterSchool', 'newHollowCommons'],
+  ],
+  [
+    'hollow-rising',
+    'crater-welcome',
+    'Open New Hollow to visitors',
+    ['ringMarket', 'craterInn', 'starwatchDish', 'square'],
+  ],
+  [
+    'hollow-rising',
+    'own-supplies',
+    'A town that feeds itself',
+    ['craterIceWell', 'earthlightGreenhouse', 'expeditionGarage', 'roverBarn'],
+  ],
+  // The Quiet Signal's three stages: Listen, Understand, Answer.
+  [
+    'quiet-signal',
+    'far-rim-listen',
+    'Listen at the Far Rim',
+    ['listeningHouse', 'stillwaterBasin', 'starwatchDish'],
+  ],
+  [
+    'quiet-signal',
+    'far-rim-understand',
+    'Read the pattern',
+    ['tonewoodConservatory', 'resonanceWorkshop', 'farRimHomes'],
+  ],
+  ['quiet-signal', 'far-rim-answer', 'Send New Hollow’s answer', ['signalTerrace', 'square']],
 ].map(([era, id, title, buildings, hammers = 0]) => ({ era, id, title, buildings, hammers }));
 
 export const PROJECT_MILESTONES = ['Open the doors', 'Make room to grow', 'Complete the project'];

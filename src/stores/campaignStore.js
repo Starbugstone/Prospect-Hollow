@@ -1,3 +1,4 @@
+import { commissionFor } from '../data/commissions';
 import {
   MOONSTONE_VERSION,
   advanceMoonstoneProduction,
@@ -59,7 +60,7 @@ import { SAVE_SCHEMA_VERSION } from '../data/saveFormat';
 import { TOWN_PROJECTS } from '../data/townProjects';
 import { finishedRewardProjects } from '../game/town/TownProjects';
 
-import { townStorage } from '../services/townStorage';
+import { activeTownId, townStorage } from '../services/townStorage';
 import { localProfile, SAVE_KEY } from '../services/localProfile';
 import { createIntegrity, appendIntegrityAction } from '../services/saveIntegrity';
 import { createSaveFile, parseSaveFile } from '../services/saveTransfer';
@@ -77,13 +78,15 @@ import {
   COIN_TIERS,
 } from '../data/rewards';
 import { createTown, BANDIT_EVENT } from '../data/town';
+import { HIDDEN_FINDS, hiddenFindCommands, hiddenFindFields } from '../data/hiddenFinds';
 import { advanceEra } from '../game/town/TownEras';
+import { acknowledgementKey, presentedTown } from '../game/town/TownEventSettlement';
 import {
   normalizeTown,
   saloonIncomeRate,
   settleSaloonIncome,
-  spaceHelmetFindable,
-  spaceHelmetReward,
+  hiddenFindable,
+  hiddenFindReward,
   collectionCooldownRemaining,
   raidBounty,
   miningPayout,
@@ -126,6 +129,13 @@ const defaults = () => ({
   settledRun: 0,
   saveWarning: '',
   readOnly: false,
+  // Session only, never saved: acknowledgements that could not be stored (presentedTown).
+  heldAcknowledgements: [],
+  // The town they were held for: a reload of that same town (a cloud refresh) keeps them.
+  heldTown: null,
+  // The town this store loaded, which can differ from the selected one for a moment after
+  // another tab switches it.
+  loadedTown: null,
   lastConstruction: [],
   lastChapterReward: null,
   // The starter projects the latest building action finished, for the village to celebrate.
@@ -149,6 +159,15 @@ const honourState = (state) => ({
   powers: toRaw(state.powers),
   honours: state.honours,
 });
+// The slot and town a profile is loaded from, best effort: an account copy and the device
+// copy can share a town id, and a backup import replaces the town in the same slot.
+const townIdentity = () => {
+  try {
+    return `${townStorage.selectedKey()}|${activeTownId()}`;
+  } catch {
+    return null;
+  }
+};
 const chestId = (chest) => chest.id ?? `${chest.runId}-${chest.source}`;
 // `opening` names the chests the live game still shows unopened: the player claims those.
 const load = (loaded = localProfile.load(), persistRecovered = true, opening = []) => {
@@ -166,6 +185,7 @@ const load = (loaded = localProfile.load(), persistRecovered = true, opening = [
       : [];
     state.saveWarning = loaded.warning ?? '';
     state.readOnly = !!loaded.readOnly;
+    state.loadedTown = townIdentity();
     state.town = normalizeTown(saved?.town);
     state.vipReceipts = normalizeVipReceipts(saved?.vipReceipts);
     state.honours = normalizeHonours(saved?.honours);
@@ -393,6 +413,10 @@ export const useCampaignStore = defineStore('campaign', {
       return null;
     },
     completedCount: (state) => Object.keys(state.records).length,
+    // False once every level is done: the mine then sends players to replays.
+    newLevelsLeft() {
+      return this.completedCount < LEVEL_COUNT;
+    },
     completion: (state) => campaignCompletion(state.records),
     // What the village derives from the town's offers, computed once per town state and
     // read by every view: the map, the Build tab, its next step and the victory screen.
@@ -462,7 +486,9 @@ export const useCampaignStore = defineStore('campaign', {
         this.town.firstLightsSeen
       )
         return false;
-      return this.commit({ town: { ...this.town, firstLightsSeen: true } });
+      return this.acknowledge(acknowledgementKey.firstLights, {
+        town: { ...this.town, firstLightsSeen: true },
+      });
     },
     advanceEra(expectedEra) {
       if (this.activeRun) return false;
@@ -508,17 +534,26 @@ export const useCampaignStore = defineStore('campaign', {
     },
     acknowledgePresentation(id) {
       const next = acknowledgePresentation(this.town, id);
-      return !!next && this.commit({ town: next });
+      return !!next && this.acknowledge(acknowledgementKey.presentation(id), { town: next });
     },
     acknowledgeEra() {
       const town = this.town;
       if (!town.transition?.pending) return false;
-      return this.commit({
+      return this.acknowledge(acknowledgementKey.era(town.transition), {
         town: {
           ...town,
           transition: { ...town.transition, pending: false },
         },
       });
+    },
+    // Saves a saved event's acknowledgement. One that cannot be saved is held for the
+    // session, so its cinematic or dialog closes while the receipt stays pending until the
+    // next save that works stores it (save).
+    acknowledge(key, changes) {
+      if (this.commit(changes)) return true;
+      if (!this.heldAcknowledgements.includes(key)) this.heldAcknowledgements.push(key);
+      this.heldTown = this.loadedTown;
+      return false;
     },
     canPlay(id, mode = 'normal') {
       return (
@@ -540,10 +575,17 @@ export const useCampaignStore = defineStore('campaign', {
       const { honours, added } = evaluateHonours(honourState(this), { at: Date.now() });
       const profile = this.profile();
       if (added.length) profile.honours = honours;
+      // Acknowledgements held after a failed save are stored with the next save that works.
+      const held = this.heldAcknowledgements;
+      if (held.length) profile.town = presentedTown(profile.town, held);
       const saved = localProfile.save(profile, (integrity) => {
         this.integrity = plainIntegrity(integrity);
       });
       if (saved && added.length) this.honours = honours;
+      if (saved && held.length) {
+        this.town = presentedTown(this.town, held);
+        this.heldAcknowledgements = [];
+      }
       this.saveWarning = saved
         ? ''
         : 'Your progress is not saving. Keep this page open to continue.';
@@ -562,6 +604,12 @@ export const useCampaignStore = defineStore('campaign', {
       if (integrityOnly) {
         this.integrity = next.integrity;
         return;
+      }
+      // A refresh of the same town (a cloud pull) keeps what the player already dismissed
+      // and the next save that works stores it; another town starts with none held.
+      if (this.heldAcknowledgements.length && next.loadedTown === this.heldTown) {
+        next.heldAcknowledgements = this.heldAcknowledgements;
+        next.heldTown = this.heldTown;
       }
       this.$patch((state) => {
         for (const [key, value] of Object.entries(next)) {
@@ -599,6 +647,7 @@ export const useCampaignStore = defineStore('campaign', {
         );
       }
       localProfile.load();
+      next.loadedTown = townIdentity();
       this.$patch((state) => Object.assign(state, next));
     },
     collectForgeTNT(now = Date.now()) {
@@ -866,36 +915,45 @@ export const useCampaignStore = defineStore('campaign', {
         ? coins
         : null;
     },
-    // Finding the space-helmet wearer pays an hour of saloon takings, once per completed
-    // puzzle. Returns the coins (0 without saloon takings), or null when already found.
-    findSpaceHelmet(now = Date.now()) {
-      if (!Number.isSafeInteger(now) || !spaceHelmetFindable(this.town)) return null;
+    // Making a hidden find (`HIDDEN_FINDS`: the space-helmet wearer, ...) pays an hour of
+    // saloon takings, once per completed puzzle. Returns the coins (0 without saloon
+    // takings), or null when already found or not out yet.
+    findHidden(id, now = Date.now()) {
+      if (!Number.isSafeInteger(now) || !hiddenFindable(this.town, id)) return null;
       const town = this.town,
         run = town.completedRuns,
-        coins = Math.min(spaceHelmetReward(town, 'owner'), Number.MAX_SAFE_INTEGER - town.coins);
+        coins = Math.min(hiddenFindReward(town, id, 'owner'), Number.MAX_SAFE_INTEGER - town.coins);
       return this.commit(
-        { town: { ...town, coins: town.coins + coins, helmetRun: run } },
-        { kind: 'helmet-find', data: { at: now, run } },
+        { town: { ...town, coins: town.coins + coins, [hiddenFindFields(id).run]: run } },
+        { kind: hiddenFindCommands(id).find, data: { at: now, run } },
       )
         ? coins
         : null;
     },
-    // A space helmet this player found in another town, redeemed here with the server's
+    // A hidden find this player made in another town, redeemed here with the server's
     // signed receipt for half an hour of this town's saloon takings. Older finds than the
     // last one redeemed are ignored, so every poll may offer the same list again.
-    redeemHelmetVisit(find, now = Date.now()) {
+    redeemHiddenFind(id, find, now = Date.now()) {
+      const field = HIDDEN_FINDS[id] && hiddenFindFields(id).visitAt;
       if (
+        !field ||
         !Number.isSafeInteger(find?.at) ||
-        find.at <= this.town.helmetVisitAt ||
+        find.at <= this.town[field] ||
         typeof find.receipt !== 'string' ||
         !Number.isSafeInteger(now)
       )
         return null;
       const town = this.town,
-        coins = Math.min(spaceHelmetReward(town, 'visitor'), Number.MAX_SAFE_INTEGER - town.coins);
+        coins = Math.min(
+          hiddenFindReward(town, id, 'visitor'),
+          Number.MAX_SAFE_INTEGER - town.coins,
+        );
       return this.commit(
-        { town: { ...town, coins: town.coins + coins, helmetVisitAt: find.at } },
-        { kind: 'helmet-visitor', data: { at: now, foundAt: find.at, receipt: find.receipt } },
+        { town: { ...town, coins: town.coins + coins, [field]: find.at } },
+        {
+          kind: hiddenFindCommands(id).visitor,
+          data: { at: now, foundAt: find.at, receipt: find.receipt },
+        },
       )
         ? coins
         : null;
@@ -1219,6 +1277,7 @@ export const useCampaignStore = defineStore('campaign', {
           this.lastConstruction.push({
             id,
             monument: areaChoice(this.town, AREA_BY_ID[id]),
+            ...(commissionFor(id) ? { commission: true } : {}),
             stage: work.level,
             wins: work.wins,
             required: work.required,

@@ -1,4 +1,4 @@
-import { createApp, defineAsyncComponent, watch } from 'vue';
+import { createApp, watch } from 'vue';
 import { locale, browserLocale, t } from './i18n';
 import { createPinia } from 'pinia';
 import { createLocalIntegrityPlugin } from './services/localIntegrity';
@@ -6,7 +6,8 @@ import { createDebugTools, debugToolsAllowed } from './services/debugTools';
 import { townStorage } from './services/townStorage';
 import CloudRoot from './components/CloudRoot.vue';
 import { useCampaignStore } from './stores/campaignStore';
-import { isPlayRoute, isPrivacyRoute, isVisitRoute, upgradeLegacyLink } from './services/appRoute';
+import { isPlayRoute, upgradeLegacyLink } from './services/appRoute';
+import { publicPage } from './services/publicPages';
 import './styles/base.css';
 import './styles/theme.css';
 import './styles/arcade.css';
@@ -14,17 +15,10 @@ import './styles/mine.css';
 import './styles/ux.css';
 
 upgradeLegacyLink();
-// A share link mounts only the read-only visit page: no game, town or sync starts.
-const visiting = isVisitRoute();
-// The privacy notice is a document: it opens even where the game cannot save.
-const privacy = isPrivacyRoute();
-const app = createApp(
-  privacy
-    ? defineAsyncComponent(() => import('./components/privacy/PrivacyPage.vue'))
-    : visiting
-      ? defineAsyncComponent(() => import('./components/community/VisitRoot.vue'))
-      : CloudRoot,
-);
+// A share link mounts only the read-only visit page, and the privacy notice only itself:
+// no game, town or sync starts.
+const page = publicPage();
+const app = createApp(page ?? CloudRoot);
 const pinia = createPinia();
 pinia.use(createLocalIntegrityPlugin());
 
@@ -48,7 +42,9 @@ app.onUnmount(() => {
   delete window.prospectDebug;
 });
 async function start() {
-  if (privacy) {
+  // Public pages open even where the game cannot save (no Web Locks, a save from a newer
+  // version), so they mount before the save migration.
+  if (page) {
     app.mount('#app');
     return;
   }
@@ -62,7 +58,7 @@ async function start() {
       throw new Error('Safe saving requires a browser with Web Locks support.');
     }
     app.mount('#app');
-    if (!visiting && (isPlayRoute() || useCampaignStore(pinia).hasVisitedVillage)) {
+    if (isPlayRoute() || useCampaignStore(pinia).hasVisitedVillage) {
       import('./components/town/TownView.vue');
       import('./game/town/TownDiorama');
     }

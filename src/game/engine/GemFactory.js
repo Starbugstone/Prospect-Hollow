@@ -1,3 +1,5 @@
+import { gameRandom } from './gameRandom.js';
+
 // The original six gems, still the default palette when a level gives none.
 export const BASE_GEM_TYPES = Object.freeze([
   'ruby',
@@ -19,4 +21,4 @@ export const createGem = (type, { highlight = false } = {}) => ({
 });
 
 export const randomGemType = (types = BASE_GEM_TYPES) =>
-  types[Math.floor(Math.random() * types.length)];
+  types[Math.floor(gameRandom() * types.length)];

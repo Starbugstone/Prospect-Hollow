@@ -96,10 +96,20 @@
           class="next-step-mine"
           @click="$emit('mine')"
         >
-          <TownIcon name="mine" />{{ t('Play level {level}', { level: campaign.nextLevel }) }}
+          <TownIcon name="mine" />{{
+            campaign.newLevelsLeft
+              ? t('Play level {level}', { level: campaign.nextLevel })
+              : t('Replay levels')
+          }}
         </button>
       </div>
     </div>
+    <TownCommissionGoal
+      v-if="commission"
+      inline
+      :status="commission"
+      @open="$emit('select', commission.site)"
+    />
     <JourneyProgress />
   </section>
 </template>
@@ -111,16 +121,19 @@ import { computed } from 'vue';
 import { t, number } from '../../i18n';
 import { BUILDINGS, BUILDING_BY_ID } from '../../data/town';
 import { plotInEra, eraBuildingLevel } from '../../game/town/TownEras';
+import { commissionStatus } from '../../data/commissions';
 import { useNextStepAction } from '../../composables/useNextStepAction';
 import { constructionRuns, population } from '../../game/town/TownRules';
 import TownIcon from './TownIcon.vue';
 import TownBuilding from './TownBuilding.vue';
+import TownCommissionGoal from './TownCommissionGoal.vue';
 import TownDefenseStatus from './TownDefenseStatus.vue';
 import JourneyProgress from '../JourneyProgress.vue';
 const props = defineProps({ town: Object, hammers: Number });
 const emit = defineEmits(['select', 'inspect', 'build-free', 'mine', 'advance-era']);
 const campaign = useCampaignStore();
 const tip = computed(() => townTip(campaign));
+const commission = computed(() => commissionStatus(props.town)[0] ?? null);
 const showEraProgress = computed(
   () =>
     props.town.era !== 'frontier' || Object.values(props.town.buildings).some((level) => level > 1),
@@ -142,8 +155,9 @@ const previewStage = computed(() =>
     : preview.value?.stage + Number(preview.value === goal.value),
 );
 const previewEraLevel = computed(() => preview.value?.eraLevel ?? previewStage.value);
+// Optional buildings (the Saucer Pad…) never hold an era back, so they stay out of its bar.
 const eraProgress = computed(() =>
-  BUILDINGS.filter((b) => plotInEra(props.town, b.id)).reduce(
+  BUILDINGS.filter((b) => b.requiredForEraCompletion && plotInEra(props.town, b.id)).reduce(
     (progress, b) => {
       progress.total += props.town.era === 'frontier' ? b.upgrades.length : 3;
       progress.done += eraBuildingLevel(props.town, b.id);

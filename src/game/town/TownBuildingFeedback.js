@@ -1,4 +1,5 @@
 import { BUILDING_BY_ID } from '../../data/town';
+import { commissionFor } from '../../data/commissions';
 import { ERA_BY_ID } from '../../data/eras';
 import {
   AREA_BY_ID,
@@ -65,14 +66,19 @@ const LIST = {
 // `{ kind, text }` for a building, or null when a read-only visitor sees nothing.
 // `kind` is the state, so a view can choose its markup: the construction count also
 // carries a `title`. `context: 'list'` gives the Build tab's wording. The valley's labels
-// add the mine (`nextLevel`) and the visitor view (`readOnly`), which shows levels only.
+// add the mine (`nextLevel`, or none once every level is done and the mine offers replays)
+// and the visitor view (`readOnly`), which shows levels only.
 export function buildingStatus(
   town,
   id,
   { context = 'map', readOnly = false, nextLevel, ...state } = {},
 ) {
   if (readOnly) return town.buildings?.[id] ? { kind: 'built', text: MAP.built(town, id) } : null;
-  if (id === 'mine') return { kind: 'mine', text: t('Level {level}', { level: nextLevel }) };
+  if (id === 'mine')
+    return {
+      kind: 'mine',
+      text: nextLevel == null ? t('Replay levels') : t('Level {level}', { level: nextLevel }),
+    };
   const kind = buildingState(town, id, state);
   const wording = (context === 'list' && LIST[kind]) || MAP[kind];
   const status = { kind, text: wording(town, id, state.need) };
@@ -86,6 +92,24 @@ export function buildingStatus(
   return status;
 }
 
+// What a site waits for, in the words of its locked messages: a commission at one of
+// several sites (`sites`), a finished building (`building`, `level`) or its era. An opening
+// this build does not know keeps the site closed (`areaOpensMet`) and reads as its era.
+export function monumentOpening(area) {
+  const opens = area?.opens;
+  if (Array.isArray(opens?.sites))
+    return {
+      kind: 'sites',
+      sites: opens.sites
+        .map((id) => AREA_BY_ID[id])
+        .filter(Boolean)
+        .map((site) => t(site.label))
+        .join(t(' or ')),
+    };
+  const building = BUILDING_BY_ID[opens?.building];
+  if (building) return { kind: 'building', building: t(building.shortName), level: opens.level };
+  return { kind: 'era', era: t(ERA_BY_ID[area?.era]?.label ?? '') };
+}
 // A monument site's state, highest priority first.
 function monumentState(town, area) {
   if (!areaUnlocked(town, area)) return 'locked';
@@ -101,22 +125,30 @@ const stageOf = (town, area) => ({
 // A site's wording on the Moon's map labels, its card's badge and the Build tab's rows.
 const MONUMENT = {
   map: {
-    open: () => t('Choose a design'),
+    open: (town, area) => t(commissionFor(area.id) ? 'New commission' : 'Choose a design'),
     work: () => t('Under construction'),
     ready: () => t('Ready to unveil'),
     built: () => t('Monument'),
     timeless: () => t('Monument'),
   },
   card: {
-    locked: (town, area) => t('Opens in {era}', { era: t(ERA_BY_ID[area.era].label) }),
-    open: () => t('Open site · optional'),
+    locked: (town, area) => {
+      const opening = monumentOpening(area);
+      if (opening.kind === 'sites') return t('Opens after another commission');
+      if (opening.kind === 'building') return t('Opens at {building} level {level}', opening);
+      return t('Opens in {era}', opening);
+    },
+    open: (town, area) => t(commissionFor(area.id) ? 'New commission' : 'Open site · optional'),
     work: () => t('Under construction'),
     ready: () => t('Ready to unveil'),
     built: (town, area) => t('Stage {stage} of {maximum}', stageOf(town, area)),
     timeless: () => t('Monument'),
   },
   list: {
-    open: (town, area) => t('Open site · {count} designs', { count: area.choices.length }),
+    open: (town, area) =>
+      commissionFor(area.id)
+        ? t('New commission · {count} outcomes', { count: area.choices.length })
+        : t('Open site · {count} designs', { count: area.choices.length }),
     work: (town, area) => {
       const work = monumentWork(town, area);
       return t(

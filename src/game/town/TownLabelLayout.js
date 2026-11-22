@@ -2,7 +2,11 @@ import { labelsOverlap } from './TownLabels';
 
 // The shared pill has a bounded name and an inline status. Its width estimate is
 // also the renderer's max-width, so translated text cannot outgrow its clearance.
-export const townLabelWidth = (name) => Math.min(280, Math.max(100, name.length * 7 + 70));
+// The name reserves room for a short status ("Lv. 3"); a longer one ("Choose a
+// design") widens the pill so neither part is cut off. Desktop sizes: 13px name,
+// 9px status (phones use smaller type, so the same width fits there too).
+export const townLabelWidth = (name, status = '') =>
+  Math.min(280, Math.max(100, name.length * 7 + 70, name.length * 7 + 39 + status.length * 5.5));
 
 // Mirrors TownMapLabel's translate(-50%, -30%) and its action/mine offsets. Reserve
 // the largest responsive height; the mine includes its enlarged touch target.
@@ -32,11 +36,24 @@ function separateActionTargets(labels, width, height, top, bottom) {
       label,
       x: (label.collection.x * width) / 100,
       y: (label.collection.y * height) / 100,
+      // A map that draws smaller icons gives each one's extent, and the leash that keeps
+      // it by its own place (TownMarkers.js).
+      extent: label.collection.extent ?? ACTION_TARGET,
+      leash: label.collection.leash ?? Infinity,
+      home: [(label.collection.x * width) / 100, (label.collection.y * height) / 100],
       moved: false,
     }));
-  const half = ACTION_TARGET / 2;
   const settle = (target) => {
+    const half = target.extent / 2;
     target.moved = true;
+    // Never further from its own place than its leash: neighbours overlap first.
+    const [hx, hy] = target.home,
+      away = Math.hypot(target.x - hx, target.y - hy);
+    if (away > target.leash) {
+      target.x = hx + ((target.x - hx) / away) * target.leash;
+      target.y = hy + ((target.y - hy) / away) * target.leash;
+    }
+    if (target.leash < Infinity) return;
     target.x = Math.max(half, Math.min(width - half, target.x));
     target.y = Math.max(top + half, Math.min(bottom - half, target.y));
   };
@@ -51,7 +68,8 @@ function separateActionTargets(labels, width, height, top, bottom) {
         const directionX = distance ? (b.x - a.x) / distance : Math.cos(fan);
         const directionY = distance ? (b.y - a.y) / distance : Math.sin(fan);
         // Targets are square: along this line they clear once one axis does.
-        const clear = ACTION_TARGET / Math.max(Math.abs(directionX), Math.abs(directionY));
+        const clear =
+          (a.extent + b.extent) / 2 / Math.max(Math.abs(directionX), Math.abs(directionY));
         if (distance >= clear) continue;
         touching = true;
         const push = (clear - distance) / 2;
@@ -70,10 +88,27 @@ function separateActionTargets(labels, width, height, top, bottom) {
       label.collection = { ...label.collection, x: (x / width) * 100, y: (y / height) * 100 };
 }
 
+// Pixels a label may sit past the map's edge from floating-point rounding alone.
+const EDGE_ROUNDING = 1e-6;
+
+// The gap a name keeps from something it steps aside for.
+const AVOID_GAP = 6;
 // Every map keeps names attached to their projected places. Higher priority wins
 // a collision; it never pushes another name into a new slot. Map adapters supply
 // their chrome bounds and projected action points, not their own density policy.
-export function layoutTownLabels(labels, width, height, { top = 0, bottom = height } = {}) {
+// `avoid` lists things on the map no name may cover, as screen rectangles
+// `{ id, x, y, width, height }` about their centres: a name that would cover one steps
+// sideways, just clear of it, and is then placed like any other. The thing's own name
+// (the same `id`) is left where it is. `chrome` lists the map's own controls drawn over it
+// (TownMapHud.js), in the same form: a name that would cover one is left out. A label marked
+// `keepInView` (one the player asked to see, such as a tapped landmark's) slides inside the
+// map's bounds rather than hiding.
+export function layoutTownLabels(
+  labels,
+  width,
+  height,
+  { top = 0, bottom = height, avoid = [], chrome = [] } = {},
+) {
   const result = labels.map((label) => ({ ...label }));
   if (width > 0 && height > 0) separateActionTargets(result, width, height, top, bottom);
   const occupied = result
@@ -82,9 +117,10 @@ export function layoutTownLabels(labels, width, height, { top = 0, bottom = heig
       id: label.id,
       x: (label.collection.x * width) / 100,
       y: (label.collection.y * height) / 100,
-      width: ACTION_TARGET,
-      height: ACTION_TARGET,
-    }));
+      width: label.collection.extent ?? ACTION_TARGET,
+      height: label.collection.extent ?? ACTION_TARGET,
+    }))
+    .concat(chrome);
   const ranked = [...result].sort(
     (a, b) =>
       (a.rank ?? 5) - (b.rank ?? 5) ||
@@ -107,13 +143,32 @@ export function layoutTownLabels(labels, width, height, { top = 0, bottom = heig
         direction * ((rect.height + ownAction.height) / 2 + 5);
       rect = labelRect(label, width, height);
     }
+    for (const obstacle of avoid) {
+      if (obstacle.id === label.id || !labelsOverlap(rect, obstacle, AVOID_GAP)) continue;
+      // To the side the name already leans toward; ties go right.
+      const side = rect.x < obstacle.x ? -1 : 1;
+      const clear = obstacle.x + side * ((rect.width + obstacle.width) / 2 + AVOID_GAP + 1);
+      label.nudge = (label.nudge ?? 0) + clear - rect.x;
+      label.x += ((clear - rect.x) / width) * 100;
+      rect = labelRect(label, width, height);
+    }
+    if (label.keepInView && width > 0 && height > 0) {
+      const inside = (value, low, high) =>
+        low > high ? value : Math.min(Math.max(value, low), high);
+      const x = inside(rect.x, 8 + rect.width / 2, width - 8 - rect.width / 2);
+      const y = inside(rect.y, top + rect.height / 2, bottom - rect.height / 2);
+      label.x += ((x - rect.x) / width) * 100;
+      label.y += ((y - rect.y) / height) * 100;
+      rect = labelRect(label, width, height);
+    }
+    // A label slid exactly to an edge comes back from percentages a rounding error past it.
     label.visible =
       width > 0 &&
       height > 0 &&
-      rect.x - rect.width / 2 >= 8 &&
-      rect.x + rect.width / 2 <= width - 8 &&
-      rect.y - rect.height / 2 >= top &&
-      rect.y + rect.height / 2 <= bottom &&
+      rect.x - rect.width / 2 >= 8 - EDGE_ROUNDING &&
+      rect.x + rect.width / 2 <= width - 8 + EDGE_ROUNDING &&
+      rect.y - rect.height / 2 >= top - EDGE_ROUNDING &&
+      rect.y + rect.height / 2 <= bottom + EDGE_ROUNDING &&
       !occupied.some((other) => labelsOverlap(rect, other));
     if (label.visible) occupied.push(rect);
   }

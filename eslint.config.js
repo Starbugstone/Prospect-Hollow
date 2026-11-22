@@ -11,6 +11,7 @@ export const MAP_OVERLAY_FILES = [
   'src/components/GameViewStatus.vue',
   'src/components/SaveStatusPill.vue',
   'src/components/town/TownActionIcon.vue',
+  'src/components/town/TownCommissionGoal.vue',
   'src/components/town/TownCrest.vue',
   'src/components/town/TownDefenseStatus.vue',
   'src/components/town/TownIcon.vue',
@@ -20,6 +21,7 @@ export const MAP_OVERLAY_FILES = [
   'src/components/town/TownMoon.vue',
   'src/components/town/TownMoonBuilding.vue',
   'src/components/town/TownMoonConstruction.vue',
+  'src/components/town/TownMoonShapes.vue',
   'src/components/town/TownMoonMonument.vue',
   'src/components/town/TownMoonView.vue',
   'src/components/town/TownMoonstoneBalance.vue',
@@ -84,6 +86,22 @@ export default [
   {
     files: ['src/game/town/TownControls.js'],
     rules: { 'no-restricted-imports': 'off' },
+  },
+  {
+    // Puzzles replay from a seed and the player's moves: rules roll gameRandom. Animation may use Math.random.
+    files: ['src/game/engine/**/*.js', 'src/stores/game/**/*.js'],
+    ignores: ['src/game/engine/gameRandom.js'],
+    rules: {
+      'no-restricted-properties': [
+        'error',
+        {
+          object: 'Math',
+          property: 'random',
+          message:
+            'Puzzle rules must replay from their seed: use gameRandom from src/game/engine/gameRandom.js.',
+        },
+      ],
+    },
   },
   {
     // The maps stay uncluttered (AGENTS.md, settlement maps): lists, dropdowns and

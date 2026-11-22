@@ -15,6 +15,42 @@ final class AdminService
         private PublicTown $public,
     ) {}
 
+    /** Live saves are read this many at a time, so MySQL never buffers them all. */
+    private const TOWN_BATCH = 20;
+    /**
+     * Stats of every live town matching `$where`, keyed by owner, in id order: a page of
+     * profiles at a time, each decoded alone.
+     * @param list<mixed> $params
+     * @param array<int, ArrayParameterType> $types
+     * @return \Generator<string, array<string, mixed>>
+     */
+    private static function townStats(
+        Connection $db,
+        string $where,
+        array $params = [],
+        array $types = [],
+    ): \Generator {
+        $after = '';
+        do {
+            $rows = $db->fetchAllAssociative(
+                'SELECT id,player_id,profile FROM towns WHERE deleted_at IS NULL AND ' .
+                    $where .
+                    ' AND id>? ORDER BY id LIMIT ' .
+                    self::TOWN_BATCH,
+                [...$params, $after],
+                $types,
+            );
+            $read = count($rows);
+            foreach ($rows as $index => $row) {
+                $after = $row['id'];
+                $owner = $row['player_id'];
+                $stats = self::stats(self::decode($row['profile']));
+                // Each profile leaves memory once its stats are taken.
+                unset($rows[$index], $row);
+                yield $owner => $stats;
+            }
+        } while ($read === self::TOWN_BATCH);
+    }
     private static function decode(?string $json): mixed
     {
         try {
@@ -176,11 +212,7 @@ final class AdminService
         }
         $eras = array_fill_keys(PublicTown::schema()['eras'], 0);
         $levels = [];
-        foreach (
-            $db->iterateAssociative('SELECT profile FROM towns WHERE deleted_at IS NULL')
-            as $row
-        ) {
-            $stats = self::stats(self::decode($row['profile']));
+        foreach (self::townStats($db, '1=1') as $stats) {
             $eras[$stats['era']] = ($eras[$stats['era']] ?? 0) + 1;
             $levels[] = $stats['levels'];
         }
@@ -231,14 +263,15 @@ final class AdminService
         $towns = [];
         if ($rows) {
             foreach (
-                $db->fetchAllAssociative(
-                    'SELECT player_id,profile FROM towns WHERE deleted_at IS NULL AND player_id IN (?)',
+                self::townStats(
+                    $db,
+                    'player_id IN (?)',
                     [array_column($rows, 'id')],
                     [ArrayParameterType::STRING],
                 )
-                as $town
+                as $player => $stats
             ) {
-                $towns[$town['player_id']][] = self::stats(self::decode($town['profile']));
+                $towns[$player][] = $stats;
             }
         }
         $rank = array_flip(PublicTown::schema()['eras']);

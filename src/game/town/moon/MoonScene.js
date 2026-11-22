@@ -4,9 +4,19 @@ import {
   moonMonumentPresentation,
   syncMoonMonuments,
 } from './MoonMonuments';
-import { animateMoonSettler, createMoonSettlers, moonSuitFigure } from './MoonSettlers';
+import {
+  animateMoonSettler,
+  createMoonSettlers,
+  createMoonWanderers,
+  moonSuitFigure,
+  moonSettlerPose,
+} from './MoonSettlers';
+import { hiddenFindTap } from '../TownHiddenFinds';
+import { pairTargets, wanderersPlace } from '../TownWanderers';
+import { MOON_SETTLEMENT } from '../../../data/settlements';
 import { areaUnlocked } from '../../../data/townLandmarks';
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { createTownControls } from '../TownControls';
 import { createTapGesture } from '../TownTapGesture';
 import { cameraAction, focusCamera } from '../TownCamera';
@@ -39,20 +49,49 @@ import {
   dressMoonVip,
   moonClimberArrival,
   moonClimberLift,
+  moonVipAhead,
 } from './MoonVips';
+import { outerRingRovers } from '../../../data/moonModernizations';
+import { OUTER_RING_ROVER, moonRoverAngle, moonRoverStep, rememberWalkers } from './MoonRovers';
+import { createMoonTram, moonTramRails } from './MoonTram';
 import {
+  MOON_FLOOR_RADIUS,
   MOON_LOTS,
   MOON_PAD_TOP,
+  MOON_RIM_RADIUS,
   MOON_PATH_LIFT,
   MOON_RING_ROAD,
+  MOON_ROADS,
   MOON_ROAD_LIFT,
+  MOON_ROAD_WIDTH,
   moonApproachHeight,
   moonApproaches,
+  moonCommissionVenues,
+  moonSiteRoute,
+  moonSiteRoutes,
+  moonDistrictAt,
+  moonDistrictsShown,
+  moonLotDistrict,
   MOON_PARCEL_SIDES,
   moonLotPose,
+  moonLotsShown,
+  moonPadRadius,
   moonParcels,
   moonPathDistance,
+  moonRoadDistance,
+  moonSegmentDistance,
+  moonSpokes,
 } from '../../../data/moonSettlement';
+import { MoonDistricts } from './MoonDistricts';
+import { markerHeight, projectMarker } from '../TownMarkers';
+// Where someone on foot will be a moment from now: a settler's own day, or a touring
+// VIP's route. Anyone else is only seen where they stand.
+const settlerAhead = (person, time, out) =>
+  person.plan
+    ? moonSettlerPose(person.plan, time, out)
+    : person.itinerary
+      ? moonVipAhead(person, time, out)
+      : null;
 
 // New Hollow on the Moon: a small scene of its own beside the valley's. One
 // renderer, a crater of lots, the ribbon arriving from the valley, settlers,
@@ -173,7 +212,17 @@ function noise(x, z) {
   return top + (bottom - top) * sz;
 }
 // Soft craters: a shallow bowl with a raised lip. The settlement keeps only small
-// ones, clear of every lot and the ring road.
+// ones, clear of every lot and road.
+// The scatter reads the crater's own lots, sites and paths only: a district opened by a
+// later era levels its own ground (districtGround) and never moves a crater anywhere else.
+const CRATER_LOTS = Object.entries(MOON_LOTS)
+  .filter(([id]) => !moonLotDistrict(id))
+  .map(([, at]) => at);
+const CRATER_SITES = MOON_MONUMENT_AREAS.filter((area) => !moonDistrictAt(...area.positions[0]));
+const CRATER_PATHS = [
+  ...moonApproaches().filter(({ district }) => !district),
+  ...CRATER_SITES.map(moonSiteRoute).filter(Boolean),
+];
 const CRATERS = (() => {
   const list = [];
   for (let n = 0; list.length < 46 && n < 400; n++) {
@@ -181,42 +230,68 @@ const CRATERS = (() => {
       r = 8 + hash(n + 300) * 190;
     const x = Math.cos(a) * r,
       z = Math.sin(a) * r;
-    const inside = r < 44;
+    const inside = r < MOON_FLOOR_RADIUS + 3;
     const size = inside ? 1.4 + hash(n + 400) * 1.6 : 3 + hash(n + 400) * (r / 22);
-    if (Object.values(MOON_LOTS).some(([lx, lz]) => Math.hypot(lx - x, lz - z) < 7 + size))
-      continue;
+    if (CRATER_LOTS.some(([lx, lz]) => Math.hypot(lx - x, lz - z) < 7 + size)) continue;
     if (
-      MOON_MONUMENT_AREAS.some(
+      CRATER_SITES.some(
         (area) =>
           Math.hypot(x - area.positions[0][0], z - area.positions[0][1]) < area.radius + 1.6 * size,
       )
     )
       continue;
-    if (Math.abs(r - MOON_RING_ROAD) < 2.5 + size) continue;
+    if (moonRoadDistance(x, z) < 1.7 + MOON_ROAD_WIDTH / 2 + size) continue;
     // Reserve the same authored access corridors that the road mesh draws.
     // A crater's complete lip stays outside the public path, not just its bowl.
-    if (moonPathDistance(x, z) < 1.6 * size + 0.6) continue;
+    if (moonPathDistance(x, z, CRATER_PATHS) < 1.6 * size + 0.6) continue;
     list.push({ x, z, size, depth: inside ? 0.22 : 0.5 + size * 0.08 });
   }
   return list;
 })();
-export function moonHeight(x, z) {
+// How much of the natural ground remains at (x, z) once `districts` are opened: none on a
+// district's level floor and along its road, all of it beyond the blend.
+const ROAD_SHOULDER = 4.5;
+function districtGround(x, z, districts) {
+  let keep = 1;
+  for (const { centre, floor, blend, road } of districts) {
+    keep = Math.min(
+      keep,
+      smoothBetween(floor, floor + blend, Math.hypot(x - centre[0], z - centre[1])),
+      smoothBetween(
+        ROAD_SHOULDER,
+        ROAD_SHOULDER + blend / 2,
+        moonSegmentDistance(x, z, road[0], road[1]),
+      ),
+    );
+  }
+  return keep;
+}
+const NO_DISTRICTS = Object.freeze([]);
+/**
+ * The Moon's ground at (x, z). `districts` are the districts the town has opened
+ * (moonDistrictsShown): each levels its own hollow beyond the rim. Without any, this is
+ * the crater every town before those eras sees.
+ */
+export function moonHeight(x, z, districts = NO_DISTRICTS) {
+  const keep = districts.length ? districtGround(x, z, districts) : 1;
+  if (!keep) return 0;
   const r = Math.hypot(x, z);
   // The settlement floor is level; a soft rim rings it; hills swell beyond.
-  const rim = 3.6 * Math.exp(-(((r - 53) / 6.5) ** 2));
+  const rim = 3.6 * Math.exp(-(((r - MOON_RIM_RADIUS) / 6.5) ** 2));
   const hills =
-    smoothBetween(62, 130, r) *
+    smoothBetween(MOON_RIM_RADIUS + 9, MOON_RIM_RADIUS + 77, r) *
     (noise(x * 0.018, z * 0.018) * 11 + noise(x * 0.05, z * 0.05) * 3.5 - 4);
-  let height = smoothBetween(41, 47, r) * (rim + Math.max(hills, -2));
+  let height =
+    smoothBetween(MOON_FLOOR_RADIUS, MOON_FLOOR_RADIUS + 6, r) * (rim + Math.max(hills, -2));
   for (const { x: cx, z: cz, size, depth } of CRATERS) {
     const d = Math.hypot(x - cx, z - cz) / size;
     if (d > 1.6) continue;
     height += d < 1 ? -depth * (1 - d * d) : 0;
     height += depth * 0.45 * Math.exp(-(((d - 1) / 0.22) ** 2));
   }
-  return height;
+  return height * keep;
 }
-function terrain() {
+function terrain(districts = NO_DISTRICTS) {
   const g = new THREE.Group();
   g.name = 'Moon crater';
   // A polar grid: fine near the settlement, coarser toward the horizon.
@@ -235,7 +310,7 @@ function terrain() {
       const a = (j / segments) * TAU,
         x = Math.cos(a) * r,
         z = Math.sin(a) * r,
-        y = moonHeight(x, z);
+        y = moonHeight(x, z, districts);
       positions.push(x, y, z);
       // Darker maria and crater floors, lighter rims and ridges.
       const tone = noise(x * 0.012 + 40, z * 0.012 - 17);
@@ -263,21 +338,37 @@ function terrain() {
   );
   ground.receiveShadow = true;
   g.add(ground);
-  // A pale ring road joins the lots around the landing.
+  g.add(roads());
+  return g;
+}
+// Pale ring roads round the landing and the spokes between them, as one mesh.
+export function roads(layout = MOON_ROADS) {
+  const half = MOON_ROAD_WIDTH / 2;
+  const parts = layout.rings.map((ring) => new THREE.RingGeometry(ring - half, ring + half, 96));
+  for (const [[ax, az], [bx, bz]] of moonSpokes(layout)) {
+    // A spoke runs from the outer edge of one ring to the inner edge of the next.
+    const length = Math.hypot(bx - ax, bz - az) - MOON_ROAD_WIDTH;
+    const spoke = new THREE.PlaneGeometry(length, MOON_ROAD_WIDTH);
+    // In the ring's plane: x along the spoke, y across it (the scene's -z once laid flat).
+    spoke.rotateZ(-Math.atan2(bz - az, bx - ax));
+    spoke.translate((ax + bx) / 2, -(az + bz) / 2, 0);
+    parts.push(spoke);
+  }
   const road = new THREE.Mesh(
-    new THREE.RingGeometry(MOON_RING_ROAD - 0.8, MOON_RING_ROAD + 0.8, 96),
+    parts.length > 1 ? mergeGeometries(parts.map((part) => part.toNonIndexed())) : parts[0],
     new THREE.MeshStandardMaterial({ color: '#cdcac1', roughness: 1 }),
   );
+  if (parts.length > 1) for (const part of parts) part.dispose();
+  road.name = 'Moon roads';
   road.rotation.x = -Math.PI / 2;
   road.position.y = 0.04;
   road.receiveShadow = true;
-  g.add(road);
-  return g;
+  return road;
 }
 
 // All entrance strips share one mesh/material. The crater floor is level here;
 // sampling moonHeight also keeps the contract safe if terrain evolves later.
-export function moonAccessGeometry(approaches = moonApproaches()) {
+export function moonAccessGeometry(approaches = moonApproaches(), ground = moonHeight) {
   const positions = [],
     indices = [],
     uvs = [],
@@ -288,7 +379,7 @@ export function moonAccessGeometry(approaches = moonApproaches()) {
     const { points, width, pose, rampStart, rampEnd } = route;
     const offset = positions.length / 3;
     // The walkers' path surface (moonApproachHeight), down onto the regolith here.
-    const surface = (x, z) => moonApproachHeight(route, x, z, moonHeight(x, z));
+    const surface = (x, z) => moonApproachHeight(route, x, z, ground(x, z));
     const colorAt = (x, z) => {
       const radius = Math.hypot(x - pose.x, z - pose.z);
       const t = Math.max(0, Math.min(1, (radius - rampStart) / (rampEnd - rampStart)));
@@ -380,10 +471,13 @@ export function moonAccessGeometry(approaches = moonApproaches()) {
 }
 
 const labelPoint = new THREE.Vector3();
+const markerPoint = new THREE.Vector3();
 // Tap targets cover a lot's whole pad, up to its building's roof (this tall until the
 // building is drawn).
 const PICK_HEIGHT = 3;
 const PICK_LAYER = 3;
+// A lot of a later era keeps its tap target here, where no ray looks.
+const HIDDEN_LOT_LAYER = 30;
 const lotBounds = new THREE.Box3();
 /** A lot's roof for its tap target. Sky parts (the ribbon and its halo) are left out. */
 export function moonRoofHeight(lot) {
@@ -399,6 +493,11 @@ export function moonRoofHeight(lot) {
 // construction reveal and presentations draw through it and read its camera, clock and
 // town directly, with no adapter in between.
 const NO_COMPANIONS = Object.freeze({ companions: null });
+// Where the sun stands over what it lights, how far from the landing its shadows reach,
+// and the step in which they follow the camera into a district.
+const SUN_OFFSET = Object.freeze([40, 60, 30]);
+const SHADOW_REACH = 30;
+const SHADOW_STEP = 12;
 export class MoonScene extends TownPrimitives {
   constructor(
     canvas,
@@ -409,6 +508,9 @@ export class MoonScene extends TownPrimitives {
       onVipSpend = () => {},
       onVillagerLabel = () => {},
       onUnavailable = () => {},
+      onFind = () => {},
+      onFindZoom = () => {},
+      onLandmark = () => {},
       reducedMotion = false,
       vipsHidden = false,
     } = {},
@@ -420,10 +522,16 @@ export class MoonScene extends TownPrimitives {
     this.onLabels = onLabels;
     this.onEarth = onEarth;
     this.onSelect = onSelect;
+    // Hidden finds answer taps here as in the valley (`hiddenFindTap`).
+    this.onFind = onFind;
+    this.onFindZoom = onFindZoom;
+    // A fixed landmark (a district's stone) answers a tap with its own quiet label.
+    this.onLandmark = onLandmark;
     // A lost context or a failed draw goes to the owner's shared graphics recovery.
     this.onUnavailable = onUnavailable;
     // The camera floor, focus moves and the unveiling read the Moon's own ground.
     this.terrainHeight = moonHeight;
+    this.districts = NO_DISTRICTS;
     // The valley's VIP contract: purchases go to the shared receipt flow, and a named
     // visitor's tag goes to the valley's label. A shared town has no VIPs at all.
     this.onVipSpend = onVipSpend;
@@ -441,12 +549,12 @@ export class MoonScene extends TownPrimitives {
     Object.assign(this, createTownRenderer(canvas, { exposure: 1.05 }));
     this.scene.add(new THREE.HemisphereLight('#d6e0ff', '#5f5b53', 1.25));
     const sun = new THREE.DirectionalLight('#fff4de', 3.1);
-    sun.position.set(40, 60, 30);
+    sun.position.set(...SUN_OFFSET);
     sun.castShadow = true;
     sun.shadow.mapSize.set(this.renderQuality.shadowSize, this.renderQuality.shadowSize);
     Object.assign(sun.shadow.camera, { left: -55, right: 55, top: 55, bottom: -55, far: 200 });
     sun.shadow.normalBias = 0.03;
-    this.scene.add(sun);
+    this.scene.add(sun, sun.target);
     this.sun = sun;
     // Earthshine: a soft blue fill from the valley above the rim.
     const earthshine = new THREE.DirectionalLight('#9fc4ff', 0.6);
@@ -455,7 +563,8 @@ export class MoonScene extends TownPrimitives {
     this.scene.add(starfield());
     this.earth = earth();
     this.scene.add(this.earth);
-    this.scene.add(terrain());
+    this.ground = terrain();
+    this.scene.add(this.ground);
     this.access = new THREE.Mesh(
       moonAccessGeometry([]),
       new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 1, vertexColors: true }),
@@ -463,6 +572,10 @@ export class MoonScene extends TownPrimitives {
     this.access.name = 'Moon public entrance paths';
     this.access.receiveShadow = true;
     this.scene.add(this.access);
+    // The tram's rails round the outer ring, laid once its stop is built.
+    this.tramRails = moonTramRails();
+    this.tramRails.visible = false;
+    this.scene.add(this.tramRails);
     // The ribbon always arrives from the valley, even before the landing is built.
     const ribbon = this.d.mesh(
       this.scene,
@@ -492,6 +605,8 @@ export class MoonScene extends TownPrimitives {
     this.raycaster.layers.set(PICK_LAYER);
     this.pickTargets = this.d.group(this.scene);
     this.pickTargets.name = 'Moon lot tap targets';
+    // Ground beyond the rim that a later era opens: its level floor, roads and landmark.
+    this.districtLayer = new MoonDistricts(this);
     this.attachInput(surface);
     this.elapsed = 0;
     this.construction = new MoonConstruction(this);
@@ -574,7 +689,23 @@ export class MoonScene extends TownPrimitives {
       )
     )
       this.controls.update();
+    this.aimSun();
     this.requestFrame();
+  }
+  // The sun's shadows cover the crater. A district lies beyond them, so once one is open
+  // they follow the camera's target out there (in steps, so they never crawl) and return
+  // to the crater with it. Without a district they stay exactly where they were.
+  aimSun() {
+    if (!this.sun?.target) return;
+    const { x, z } = this.controls.target;
+    const away = this.districts?.length && Math.hypot(x, z) > SHADOW_REACH;
+    const [cx, cz] = away
+      ? [Math.round(x / SHADOW_STEP) * SHADOW_STEP, Math.round(z / SHADOW_STEP) * SHADOW_STEP]
+      : [0, 0];
+    if (this.sun.target.position.x === cx && this.sun.target.position.z === cz) return;
+    this.sun.target.position.set(cx, 0, cz);
+    this.sun.position.set(cx + SUN_OFFSET[0], SUN_OFFSET[1], cz + SUN_OFFSET[2]);
+    this.sun.target.updateMatrixWorld();
   }
   /** The keyboard's stepped camera moves, shared with the valley; `reset` frames New Hollow. */
   cameraAction(action) {
@@ -588,6 +719,8 @@ export class MoonScene extends TownPrimitives {
   /** Rebuild the lots when the town's Moon buildings change. */
   update(town) {
     this.town = town;
+    this.openDistricts(moonDistrictsShown(town));
+    this.districtLayer?.update(town);
     // VIP tours read the town's finished shops and paths; a tour under way carries on.
     this.vipArrivals?.attach(town);
     syncMoonMonuments(this, town);
@@ -602,11 +735,24 @@ export class MoonScene extends TownPrimitives {
     // A worksite's gantries and crane rise above an empty pad: they answer taps too.
     this.refitLots();
     this.saucer.update(town, this.elapsed, this.reducedMotion);
+    this.placeWanderers(town);
     this.requestFrame();
     // Building lots only: monument sites add labels to this.lots but draw separately.
     const levels = Object.keys(MOON_LOTS).map((id) => town?.buildings?.[id] ?? 0);
+    // A modernized building wears its era's finish (renderMoonBuilding's `finish`).
+    const finishOf = (id) => ({
+      era: town?.buildingEras?.[id],
+      level: town?.buildingEraLevels?.[id] ?? 0,
+    });
     const finishes = Object.keys(MOON_LOTS).map((id) => finishKey(town ?? {}, id));
-    const signature = finishes.join('|');
+    const venues = moonCommissionVenues(town);
+    // An opened monument site's public path, whether or not a monument stands there yet.
+    const sitePaths = moonSiteRoutes(town);
+    // A later era's lots stay off the map: no pad, building or tap target.
+    const shown = new Set(moonLotsShown(town));
+    this.showLotTargets(shown);
+    // A site opened brings its public path; a commission first unveiled brings its visitors.
+    const signature = `${[...shown]}|${finishes.join('|')}|${venues.map(({ id, visits, use }) => [id, visits.settler, visits.willowkin, use.stay, use.carry])}|${sitePaths.map(({ id }) => id)}`;
     if (signature === this.signature) return;
     // A lot finished while the Moon is open settles into place with the valley's
     // construction reveal: drawn on its own until then, outside the merged settlement.
@@ -623,31 +769,76 @@ export class MoonScene extends TownPrimitives {
     this.buildings = this.d.group(this.scene);
     this.buildings.name = 'New Hollow buildings';
     Object.keys(MOON_LOTS).forEach((id, n) => {
+      if (!shown.has(id)) return;
       const { x, z, rotation } = moonLotPose(id);
       const lot = this.d.group(finished.has(id) ? this.scene : this.buildings, x, 0, z);
       lot.rotation.y = rotation;
-      renderMoonBuilding(this.d, lot, id, levels[n]);
+      renderMoonBuilding(this.d, lot, id, levels[n], finishOf(id));
       if (id === 'ribbonLanding') this.climber = lot.getObjectByName(MOON_CLIMBER) ?? null;
       // A tap over a low building reaches the lot behind it, as on screen.
       (this.roofs ??= {})[id] = moonRoofHeight(lot);
-      if (finished.has(id)) this.revealLot(id, lot, this.previousLevels?.[n] ?? 0);
+      if (finished.has(id))
+        this.revealLot(id, lot, this.previousLevels?.[n] ?? 0, this.previousFinishes?.[id]);
     });
+    this.previousFinishes = Object.fromEntries(
+      Object.keys(MOON_LOTS).map((id) => [id, finishOf(id)]),
+    );
     this.access.geometry.dispose();
-    this.access.geometry = moonAccessGeometry(moonApproaches(town?.buildings ?? {}));
+    this.access.geometry = moonAccessGeometry(
+      [...moonApproaches(town?.buildings ?? {}), ...sitePaths],
+      this.terrainHeight,
+    );
     this.previousLevels = levels;
     this.refitLots();
+    // Parts that move (a dish following the stone, a lamp at each pulse) stay out of the
+    // merged mesh and carry their own motion.
+    this.lotMotions = [];
+    this.buildings.traverse((part) => {
+      if (part.userData.moonMotion) this.lotMotions.push(part.userData.moonMotion);
+    });
     // The whole settlement draws as one merged mesh per palette colour.
     this.d.batch(this.buildings);
     this.populate(town);
     this.requestFrame();
   }
+  /**
+   * Opens the districts a town has reached: the ground levels there, and the camera's floor
+   * follows it. A town before those eras keeps today's rim and hills.
+   */
+  openDistricts(districts) {
+    const key = districts.map(({ id }) => id).join();
+    if (key === (this.districtKey ?? '')) return;
+    this.districtKey = key;
+    this.districts = districts;
+    this.terrainHeight = districts.length ? (x, z) => moonHeight(x, z, districts) : moonHeight;
+    this.ground?.removeFromParent();
+    this.ground?.traverse((mesh) => {
+      mesh.geometry?.dispose();
+      mesh.material?.dispose();
+    });
+    this.ground = terrain(districts);
+    this.scene.add(this.ground);
+    this.fitFog();
+    this.aimSun();
+    // The access paths' ramps follow the new ground on the next rebuild.
+    this.signature = '';
+  }
+  // A district lies far beyond the rim. In portrait the camera stands further back to keep
+  // the outer lots on screen, so the haze moves back with it and the district stays clear;
+  // the ground's far edge is still lost in it. Without a district the haze is as it was.
+  fitFog() {
+    if (!this.scene?.fog) return;
+    const back = this.districts?.length ? (this.overviewScale ?? 1) - 1 : 0;
+    this.scene.fog.near = 150 + back * 75;
+    this.scene.fog.far = 250 + back * 130;
+  }
   // The finished lot's new pieces (those its previous model lacked) settle top-down under
   // the swinging hammer, exactly as a finished valley building does.
-  revealLot(id, lot, previousLevel) {
+  revealLot(id, lot, previousLevel, previousFinish = null) {
     const before = new THREE.Group();
     before.position.copy(lot.position);
     before.rotation.copy(lot.rotation);
-    renderMoonBuilding(this.d, before, id, previousLevel);
+    renderMoonBuilding(this.d, before, id, previousLevel, previousFinish);
     const parts = constructionParts(before);
     this.d.clearGroup(before);
     lot.userData.plot = id;
@@ -673,12 +864,17 @@ export class MoonScene extends TownPrimitives {
     this.signature = '';
     this.update(this.town);
   }
-  /** Settlers walk the ring road and rovers circle it; more homes, more neighbors. */
+  /** Settlers walk the ring roads, rovers and the tram circle them; more homes, more neighbors. */
   populate(town) {
     this.d.clearGroup(this.life);
     this.life = this.d.group(this.scene);
     this.walkers = [];
-    this.settlers = createMoonSettlers(this.d, this.life, town?.buildings ?? {});
+    this.settlers = createMoonSettlers(
+      this.d,
+      this.life,
+      town?.buildings ?? {},
+      moonCommissionVenues(town),
+    );
     if (town?.buildings?.roverBarn) {
       for (let n = 0; n < town.buildings.roverBarn; n++) {
         const r = moonRover(this.d, this.life);
@@ -690,22 +886,48 @@ export class MoonScene extends TownPrimitives {
           dir: 1,
         });
       }
+      // A rover depot sends some out on the outer ring, the other way round.
+      for (let n = 0; n < outerRingRovers(town); n++)
+        this.walkers.push({
+          root: moonRover(this.d, this.life),
+          radius: MOON_ROADS.rings.at(-1),
+          speed: OUTER_RING_ROVER.speed,
+          phase: OUTER_RING_ROVER.phase + n * Math.PI,
+          dir: OUTER_RING_ROVER.dir,
+        });
     }
+    // The ring tram runs the outer ring once its stop is built, among the rovers.
+    const tram = createMoonTram(this.d, this.life, town?.buildings);
+    if (tram) this.walkers.push(tram);
+    if (this.tramRails) this.tramRails.visible = !!tram;
     this.move(this.elapsed);
   }
   move(time) {
     this.construction.update(time, this.reducedMotion);
     this.updateLotReveals(time, this.reducedMotion);
     this.saucer.step(time, this.reducedMotion);
+    this.districtLayer?.step(time, this.reducedMotion);
+    for (const motion of this.lotMotions ?? []) motion(this.reducedMotion ? 0 : time);
     this.moveTransports(time);
     this.monuments?.userData.update(this.reducedMotion ? 0 : time);
     for (const settler of this.settlers ?? []) animateMoonSettler(settler, time);
-    // Rovers circle the ring road.
-    for (const w of this.walkers ?? []) {
-      const a = w.phase + w.dir * time * w.speed;
-      w.root.position.set(Math.cos(a) * (w.radius + 0.3), 0, Math.sin(a) * (w.radius + 0.3));
+    if (this.wanderers) animateMoonSettler(this.wanderers, time);
+    // Rovers and the tram circle the ring roads down their middle and wait for anyone
+    // crossing ahead.
+    const people = [
+      ...(this.settlers ?? []),
+      ...(this.wanderers ? [this.wanderers] : []),
+      ...(this.vipArrivals?.actors ?? []),
+    ];
+    const rovers = this.walkers ?? [];
+    const step = moonRoverStep(time, this.roverClock);
+    this.roverClock = time;
+    for (const w of rovers) {
+      const a = moonRoverAngle(w, time, step, people, rovers, settlerAhead);
+      w.root.position.set(Math.cos(a) * w.radius, 0, Math.sin(a) * w.radius);
       w.root.rotation.y = -a - (w.dir > 0 ? 0 : Math.PI);
     }
+    if (rovers.length) rememberWalkers(people);
   }
   /**
    * The climber rides the ribbon; the climber and the saucer publish their arrivals the
@@ -811,6 +1033,12 @@ export class MoonScene extends TownPrimitives {
       this.addPickTarget(parcel);
     }
   }
+  // Only the lots the town sees answer taps; a later era's pads are not there yet.
+  showLotTargets(shown) {
+    for (const target of this.pickTargets?.children ?? [])
+      if (MOON_LOTS[target.userData.lot])
+        target.layers.set(shown.has(target.userData.lot) ? PICK_LAYER : HIDDEN_LOT_LAYER);
+  }
   // An invisible prism over a parcel's pad: taps on the pad or its building select it.
   addPickTarget({ id, x, z, radius, rotation, sides }) {
     this.pickGeometries ??= new Map();
@@ -853,11 +1081,35 @@ export class MoonScene extends TownPrimitives {
    * It never moves the camera.
    */
   tap(event) {
+    // As in the valley: a find wins over people and parcels, and asking to zoom in only
+    // answers a tap nothing else does.
+    const find = hiddenFindTap(this, this.findTargets(), event.clientX, event.clientY);
+    if (find && !find.zoom) {
+      this.onFind(find);
+      return null;
+    }
     if (showVillager(this, event.clientX, event.clientY, true)) return null;
     if (this.hitsEarth(event)) return this.onEarth();
     const id = this.pick(event);
-    if (id) this.onSelect(id);
+    if (id && this.districtLayer?.landmark(id)) this.onLandmark(id);
+    else if (id) this.onSelect(id);
+    else if (find?.zoom) this.onFindZoom(find.find);
     return id;
+  }
+  // Everything on the Moon a hidden find can be mistaken for: the wandering pair.
+  findTargets() {
+    return this.wanderers ? pairTargets(this.wanderers) : [];
+  }
+  /** The wandering pair walk the ring road while this town's completed puzzles put them
+   * on the Moon. They stand apart from the settlers, so a rebuilt settlement keeps them. */
+  placeWanderers(town) {
+    const here = wanderersPlace(town) === MOON_SETTLEMENT,
+      runs = here ? (town.completedRuns ?? 0) : null;
+    if (runs === this.wanderersRuns) return;
+    this.wanderersRuns = runs;
+    if (this.wanderers) this.d.clearGroup(this.wanderers.root);
+    this.wanderers = here ? createMoonWanderers(this.d, this.scene, town) : null;
+    if (this.wanderers) animateMoonSettler(this.wanderers, this.elapsed ?? 0);
   }
   /** The lot or open monument site under a pointer event, nearest first. */
   pick(event) {
@@ -875,7 +1127,8 @@ export class MoonScene extends TownPrimitives {
     this.selected = id;
     this.selectionRoot?.removeFromParent();
     const target = id && this.pickTargets.children.find((mesh) => mesh.userData.lot === id);
-    if (target) {
+    // A landmark keeps its own shape: no parcel outline is drawn round it.
+    if (target && !target.userData.landmark) {
       if (!this.selection) {
         // The shared parcel outline for a unit pad, scaled to each pad below.
         this.selection = parcelOutlineMesh(
@@ -959,10 +1212,18 @@ export class MoonScene extends TownPrimitives {
   }
   projectLabels() {
     const point = labelPoint;
+    const view = this.canvas.clientHeight || 1;
     const labels = this.lots.map(({ id, position }) => {
+      // The place's action icon (a finish hammer, a collection) is anchored in the world,
+      // as the valley's are: just above what stands on the pad, and sized by how large
+      // the place is drawn.
+      const radius = this.parcels?.get(id)?.radius ?? moonPadRadius(id);
+      markerPoint.set(position.x, this.markerHeight(id), position.z);
+      const marker = projectMarker(this.camera, markerPoint, radius * 2, view, point);
       point.copy(position).project(this.camera);
       return {
         id,
+        marker,
         action: this.labelActions?.has(id) ?? false,
         depth: point.z,
         x: (point.x + 1) * 50,
@@ -976,11 +1237,47 @@ export class MoonScene extends TownPrimitives {
     const key =
       `${this.canvas.clientWidth}x${this.canvas.clientHeight}:${Math.round(distance * 10)}:` +
       labels
-        .map((l) => `${l.id}${Math.round(l.x * 10)},${Math.round(l.y * 10)}${l.visible}`)
+        .map(
+          (l) =>
+            `${l.id}${Math.round(l.x * 10)},${Math.round(l.y * 10)}${l.visible}` +
+            `${Math.round(l.marker.y * 10)},${Math.round(l.marker.span / 4)}`,
+        )
         .join();
     if (key === this.labelKey) return;
     this.labelKey = key;
-    this.onLabels(labels, distance);
+    this.onLabels(labels, distance, this.projectObstacles());
+  }
+  // Where a place's action icon hangs: a little above its building or worksite (its tap
+  // target reaches that roof), and never higher than a tall landing's first storeys.
+  markerHeight(id) {
+    const target = this.pickTargets?.children.find((mesh) => mesh.userData.lot === id);
+    return markerHeight(target?.scale.y ?? PICK_HEIGHT);
+  }
+  // What names keep clear of, as rectangles in percent of the view about their centres.
+  // A landmark behind the camera or off the view asks for nothing.
+  projectObstacles() {
+    const boxes = [];
+    for (const { id, corners } of this.labelObstacles ?? []) {
+      let [left, top, right, bottom] = [Infinity, Infinity, -Infinity, -Infinity];
+      let ahead = true;
+      for (const corner of corners) {
+        labelPoint.copy(corner).project(this.camera);
+        if (labelPoint.z <= -1 || labelPoint.z >= 1) ahead = false;
+        left = Math.min(left, (labelPoint.x + 1) * 50);
+        right = Math.max(right, (labelPoint.x + 1) * 50);
+        top = Math.min(top, (1 - labelPoint.y) * 50);
+        bottom = Math.max(bottom, (1 - labelPoint.y) * 50);
+      }
+      if (ahead && right > 0 && left < 100 && bottom > 0 && top < 100)
+        boxes.push({
+          id,
+          x: (left + right) / 2,
+          y: (top + bottom) / 2,
+          width: right - left,
+          height: bottom - top,
+        });
+    }
+    return boxes;
   }
   // Points the raycaster through a pointer event; false when the canvas has no size.
   aim(event) {
@@ -1008,6 +1305,7 @@ export class MoonScene extends TownPrimitives {
       .multiplyScalar(overviewScale / (this.overviewScale ?? 1))
       .add(this.controls.target);
     this.overviewScale = overviewScale;
+    this.fitFog();
     this.controls.maxDistance = Math.max(115, overviewScale * 90);
     this.controls.update();
     this.camera.updateProjectionMatrix();
@@ -1029,6 +1327,7 @@ export class MoonScene extends TownPrimitives {
     cancelAnimationFrame(this.hoverFrame);
     this.presentation?.dispose();
     this.saucer.dispose();
+    this.districtLayer?.dispose();
     this.vipArrivals?.dispose();
     this.renderer.setAnimationLoop(null);
     cancelAnimationFrame(this.cameraFrame);

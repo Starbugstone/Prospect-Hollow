@@ -100,6 +100,27 @@ const ROAD_STYLES = Object.freeze(
         crossing: 'pavers',
         crossingColor: '#d9b866',
       },
+      // New Hollow Rising: the Moon's second ring road, inlaid as two faint Earthlight rails.
+      'ring-lane': {
+        color: '#a9abab',
+        edge: '#efece3',
+        line: 'dash',
+        paint: '#f0c45a',
+        inlay: '#7fa6da',
+        crossing: 'pavers',
+        crossingColor: '#86a6cf',
+      },
+      // The Quiet Signal: a quiet grey lane with one thin, unbroken line of light down each
+      // side of the centre, and night-blue crossings.
+      'signal-lane': {
+        color: '#9fa3a8',
+        edge: '#efece3',
+        line: 'dash',
+        paint: '#e9e2d2',
+        inlay: '#fff3d2',
+        crossing: 'pavers',
+        crossingColor: '#56648a',
+      },
       'glow-lane': {
         color: '#a2aba6',
         edge: '#dcd6c4',

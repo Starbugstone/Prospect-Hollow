@@ -10,7 +10,8 @@ scripts run with `blender --background --python <script>`.
 | -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
 | `split-mesh-catalogs.mjs`                                | Splits the Blender mesh exports into bounded lazy chunks before dev/test/build.                           |
 | `generate-footprints.mjs`, `footprint-generator.js`      | Builds building footprints; `--check` fails on drift (`npm run check:footprints`).                        |
-| `check-bundle-budget.mjs`                                | Fails the build when a JavaScript chunk exceeds its budget.                                               |
+| `check-bundle-budget.mjs`                                | Fails the build when a JavaScript chunk or the gzipped first download exceeds its budget.                 |
+| `check-models.sh`                                        | Model-checks `docs/models` with TLC in Docker: every model holds and every deliberate break is caught.    |
 | `create-era-demo.mjs`                                    | Writes disposable demo saves for each era (`npm run demo:eras`).                                          |
 | `export-public-content.mjs`                              | Writes the public-town allowlist and the honours and distinctions catalog the server verifies.            |
 | `export-honour-levels.mjs`                               | Writes the mine elements each level uses for the museum's honour icons; `--check` detects drift.          |
@@ -64,6 +65,7 @@ touch a save.
 | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
 | `town-actor-review.html`, `town-actor-review.js`                                               | Villager outfit and construction review page.                                                           |
 | `cozy-building-review.html`, `cozy-building-review.js`                                         | The six cozy-era landmarks with their geometry budgets.                                                 |
+| `era-character-sheet.html`, `era-character-sheet.js`                                           | Any era's villagers, animals and Willowkin in a line (`?eras=`, `?cast=animals`).                       |
 | `cozy-character-review.html`, `cozy-character-review.js`                                       | Canopy and Riverlight villagers and animals.                                                            |
 | `era-art-review.html`, `era-art-review.js`, `era-art-fixtures.js`, `package-era-art-review.py` | Era review galleries built from review towns (`era-art-fixtures.js`), archived under ignored `output/`. |
 

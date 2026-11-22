@@ -164,7 +164,7 @@ $adminAudit = 'honours-test-' . bin2hex(random_bytes(4));
 try {
     // ---------- Shared definitions ----------
     check(
-        $schema['honours']['version'] === 5 &&
+        $schema['honours']['version'] === 9 &&
             $schema['honours']['showcaseSlots'] === 3 &&
             $schema['honours']['counters'] === [
                 'gems' => 'map',
@@ -192,6 +192,8 @@ try {
         'buildingLevels',
         'resource',
         'landmarks',
+        'found',
+        'level',
     ];
     foreach ($definitions as $id => $definition) {
         check(
@@ -292,7 +294,36 @@ try {
         'visitors see the verified monument distinction',
     );
 
+    // Every commission sponsored: the server replays each purchase, the Glade opening from
+    // the Moon's, and verifies Commissioner's later ranks on their own five-site measure.
+    $f = flow('every commission sponsored, the Willowkin Glade opened from the Moon');
+    $base = $validator->accept($f->before, null, $f->serverNow, false, [], 'all-commissions');
+    $saved = $catalog->keep(
+        $validator->accept($f->after, $base, $f->serverNow, false, [], 'all-commissions'),
+        null,
+        $noSocial,
+    );
+    foreach (['bronze', 'silver', 'gold', 'diamond'] as $metal) {
+        check(
+            in_array('commissioner-' . $metal, $saved->honours->verified, true),
+            'five validated commissions verify Commissioner ' . $metal,
+        );
+    }
+    check(
+        $definitions['commissioner-gold']['measure'] ===
+            $definitions['commissioner-diamond']['measure'] &&
+            count($definitions['commissioner-gold']['measure']['areas']) === 5 &&
+            $definitions['commissioner-silver']['measure']['areas'] === [
+                'earthlight-conservatory',
+                'homecoming-commons',
+            ],
+        'Commissioner gold and diamond count all five 1.3.0 sites; silver keeps its shipped two',
+    );
     foreach ($schema['personalisation']['areas'] as $area) {
+        // A site of an era still being built has no playable town, so no fixture yet.
+        if (!$rules['eras'][$area['era']]['enabled']) {
+            continue;
+        }
         $f = flow('optional landmark ' . $area['id'] . ': construction and upgrades');
         $base = $validator->accept(
             $f->before,
@@ -311,9 +342,26 @@ try {
             'site-' . $area['id'],
         );
         $saved = $catalog->keep($saved, null, $noSocial);
+        // Landmark Patron's sites are fixed; a site added later earns it no credit.
         check(
-            in_array('landmark-patron-bronze', $saved->honours->verified, true),
-            'a validated purchase at ' . $area['id'] . ' verifies the shared site measure',
+            in_array('landmark-patron-bronze', $saved->honours->verified, true) ===
+                in_array(
+                    $area['id'],
+                    $definitions['landmark-patron-bronze']['measure']['areas'],
+                    true,
+                ),
+            'a validated purchase at ' . $area['id'] . ' follows the shared site measure',
+        );
+        // Commissions count for Commissioner alone, from the same validated purchase. A site
+        // that waits for another commission is bought after a first stage at that one.
+        $bought = [$area['id'], ...array_slice($area['opens']['sites'] ?? [], 0, 1)];
+        check(
+            in_array('commissioner-bronze', $saved->honours->verified, true) ===
+                (bool) array_intersect(
+                    $bought,
+                    $definitions['commissioner-bronze']['measure']['areas'],
+                ),
+            'a validated purchase at ' . $area['id'] . ' follows the commission measure',
         );
         if ($area['id'] === 'earthrise-plaza') {
             check(
@@ -329,6 +377,164 @@ try {
             );
         }
     }
+    // Hidden finds verify from the validated town: the replay saves `XRun` for an owner's
+    // own find. A find while visiting, or a run uploaded without the replay, proves nothing.
+    $findFlow = flow('space helmet found once for its completed puzzle');
+    $findTown = '11111111-1111-4111-8111-000000000950';
+    // The fixture town found the helmet on an earlier puzzle; this one has found nothing yet.
+    $findBefore = asArray($findFlow->before);
+    $findBefore['town']['helmetRun'] = 0;
+    $findBefore = asObject($findBefore);
+    $withHonours = function (object $profile): object {
+        $profile->honours ??= asObject(['version' => 9, 'earned' => (object) []]);
+        return $profile;
+    };
+    $findStart = $catalog->keep(
+        $withHonours(
+            $validator->accept($findBefore, null, $findFlow->serverNow, false, [], $findTown),
+        ),
+        null,
+        $noSocial,
+    );
+    check(
+        !in_array('keen-eye-bronze', $findStart->honours->verified, true),
+        'no find, no Keen Eye',
+    );
+    $helmetFound = $catalog->keep(
+        $withHonours(
+            $validator->accept(
+                $findFlow->after,
+                $findStart,
+                $findFlow->serverNow,
+                false,
+                [],
+                $findTown,
+            ),
+        ),
+        $findStart,
+        $noSocial,
+    );
+    check(
+        $helmetFound->town->helmetRun > 0 &&
+            in_array('keen-eye-bronze', $helmetFound->honours->verified, true) &&
+            !in_array('keen-eye-silver', $helmetFound->honours->verified, true),
+        'the replayed helmet find verifies Keen Eye bronze, and only bronze',
+    );
+    // The pair's debut is brought forward so the helmet's fixture town has both finds out.
+    $pairRules = $rules;
+    $pairRules['economy']['hiddenFinds']['wanderers']['debut'] = 'tomorrow';
+    $pairValidator = new SaveIntegrity($pairRules);
+    $both = asArray($findFlow->after);
+    $both['integrity']['actions'][] = array_replace($both['integrity']['actions'][0], [
+        'sequence' => $both['integrity']['actions'][0]['sequence'] + 1,
+        'id' => '11111111-1111-4111-8111-000000000951',
+        'kind' => 'wanderers-find',
+    ]);
+    $both['town']['coins'] += $both['town']['coins'] - $findBefore->town->coins;
+    $both['town']['wanderersRun'] = $both['town']['helmetRun'];
+    $pairStart = $catalog->keep(
+        $withHonours(
+            $pairValidator->accept($findBefore, null, $findFlow->serverNow, false, [], $findTown),
+        ),
+        null,
+        $noSocial,
+    );
+    $bothFound = $catalog->keep(
+        $withHonours(
+            $pairValidator->accept(
+                asObject($both),
+                $pairStart,
+                $findFlow->serverNow,
+                false,
+                [],
+                $findTown,
+            ),
+        ),
+        $pairStart,
+        $noSocial,
+    );
+    check(
+        in_array('keen-eye-silver', $bothFound->honours->verified, true),
+        'the replayed helmet and wandering pair finds verify Keen Eye silver',
+    );
+    $claimed = asObject([
+        'schemaVersion' => 2,
+        'town' => ['helmetRun' => 9, 'wanderersRun' => 9],
+        'honours' => [
+            'version' => 9,
+            'earned' => ['keen-eye-silver' => earnedEntry(), 'keen-eye-bronze' => earnedEntry()],
+        ],
+    ]);
+    check(
+        $catalog->keep($claimed, null, $noSocial)->honours->verified === [] &&
+            !isset(published($claimed)['earned']['keen-eye-bronze']),
+        'finds uploaded without the replay verify and publish nothing',
+    );
+    $visiting = asObject(asArray($findStart));
+    $visiting->town->wanderersVisitAt = 1_700_000_000_000;
+    $visiting->town->helmetVisitAt = 1_700_000_000_000;
+    check(
+        !in_array(
+            'keen-eye-bronze',
+            $catalog->keep($visiting, null, $noSocial)->honours->verified,
+            true,
+        ),
+        'finds made while visiting other towns are not finds in this town',
+    );
+
+    // Far Seam Prospector reads the highest completed level in the replayed records.
+    $farSeam = function (array $records) use ($catalog, $noSocial): array {
+        $profile = asObject([
+            'schemaVersion' => 2,
+            'records' => $records,
+            'integrity' => ['version' => 1, 'context' => ['honours' => replayed()]],
+            'honours' => ['version' => 9, 'earned' => (object) []],
+        ]);
+        return $catalog->keep($profile, null, $noSocial)->honours->verified;
+    };
+    check(
+        !array_filter(
+            $farSeam(['551' => ['score' => 1, 'stars' => 1]]),
+            fn($id) => str_starts_with($id, 'far-seam'),
+        ) &&
+            in_array('far-seam-bronze', $farSeam(['552' => ['score' => 1, 'stars' => 1]]), true) &&
+            in_array('far-seam-gold', $farSeam(['606' => ['score' => 1, 'stars' => 1]]), true) &&
+            !in_array(
+                'far-seam-bronze',
+                $farSeam(['606' => 'x', 'level-606' => ['score' => 1]]),
+                true,
+            ),
+        'Far Seam Prospector verifies from the highest completed level in the records',
+    );
+    // Its goals are the real last levels of chapters 92, 97 and 101, which the replay knows.
+    check(
+        array_map(fn($metal) => $definitions['far-seam-' . $metal]['goal'], [
+            'bronze',
+            'silver',
+            'gold',
+        ]) === [552, 582, 606] &&
+            !array_filter(
+                [552 => 91, 582 => 96, 606 => 100],
+                fn($chapter, $id) => ($rules['levels'][$id]['chapterIndex'] ?? null) !== $chapter ||
+                    (isset($rules['levels'][$id + 1]) &&
+                        $rules['levels'][$id + 1]['chapterIndex'] === $chapter) ||
+                    $validator->starScoreTarget($id) === null,
+                ARRAY_FILTER_USE_BOTH,
+            ),
+        'Far Seam Prospector names the last levels of chapters 92, 97 and 101 in the exported rules',
+    );
+    // The replay credits the crystal elements from each level's authored pieces.
+    check(
+        ($rules['levels'][548]['honourElements']['traceTwins'] ?? null) === 1 &&
+            ($rules['levels'][554]['honourElements']['crossgrain'] ?? null) === 3 &&
+            ($rules['levels'][560]['honourElements']['chords'] ?? null) === 2,
+        'the save rules export the crystal pieces of their teaching boards',
+    );
+    check(
+        !in_array('far-seam-bronze', $farSeam([]), true),
+        'a town with no records verifies no level milestone',
+    );
+
     $continuousFlow = flow('continuous honours grow beyond the coin allowance without a victory');
     $continuousBase = $validator->accept(
         $continuousFlow->before,
@@ -1064,7 +1270,7 @@ try {
         check(
             str_contains(
                 $public->projection($odd, 'Odd', 'honours'),
-                '"honours":{"version":5,"earned":{},"showcase":[]}',
+                '"honours":{"version":9,"earned":{},"showcase":[]}',
             ),
             'garbage still projects an empty object',
         );

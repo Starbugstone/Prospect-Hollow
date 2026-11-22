@@ -1,8 +1,9 @@
-import { Vector3 } from 'three';
 import { SPACE_HELMET, TOWN_ANIMALS } from '../../data/townAnimals';
 import { spaceHelmetOut } from './TownRules';
 import { animalModel } from './TownAnimalModels';
 import { smooth01 } from './TownMath';
+import { placeWanderers } from './TownWanderers';
+import { FIND_HINT_SCALE, FIND_SCALE, findHash as hash, hiddenFindTap } from './TownHiddenFinds';
 
 const COSTUME = 'space-helmet',
   // Seconds to shrink the old outfit away, then to grow the new one back.
@@ -10,12 +11,6 @@ const COSTUME = 'space-helmet',
   // Seconds for a wild wearer to come out, or to go back to its own visits.
   STAY = 2;
 
-// An integer hash, so the owner's and every visitor's browser agree exactly.
-function hash(n) {
-  let x = Math.imul(n ^ 0x9e3779b9, 0x85ebca6b);
-  x = Math.imul(x ^ (x >>> 13), 0xc2b2ae35);
-  return (x ^ (x >>> 16)) >>> 0;
-}
 function shuffled(list, round) {
   const order = [...list];
   for (let n = order.length - 1; n > 0; n--) {
@@ -63,74 +58,32 @@ export function helmetStay(animal, dt) {
   return smooth01(animal.helmetStay);
 }
 
-// Screen pixels a world unit must span at an animal before its helmet can be found.
-// Farther out every animal is a speck, and tapping across the town would find the
-// wearer by chance. The helmet is an easter egg, so a far-off animal answers nothing;
-// only just short of the find zoom (`HELMET_HINT_SCALE`) may a tap ask to zoom in.
-export const HELMET_FIND_SCALE = 40,
-  HELMET_HINT_SCALE = 30;
+export { FIND_SCALE as HELMET_FIND_SCALE, FIND_HINT_SCALE as HELMET_HINT_SCALE };
 
-const feet = new Vector3(),
-  head = new Vector3(),
-  view = new Vector3();
-// An animal's middle on the screen and how far the tap is from it, or null when
-// hidden or off screen. `scale` is the pixels per world unit at its feet.
-function animalOnScreen(d, animal, rect, clientX, clientY) {
-  const root = animal.root;
-  if (!root?.visible || root.scale.x < 0.5) return null;
-  const toScreen = (p) => [
-    rect.left + ((p.x + 1) * rect.width) / 2,
-    rect.top + ((1 - p.y) * rect.height) / 2,
-  ];
-  feet.copy(root.position).project(d.camera);
-  head.copy(root.position);
-  head.y += (TOWN_ANIMALS[animal.species]?.height ?? 1) * root.scale.y;
-  head.project(d.camera);
-  if (feet.z < -1 || feet.z > 1) return null;
-  const [fx, fy] = toScreen(feet),
-    [hx, hy] = toScreen(head);
-  const x = (fx + hx) / 2,
-    y = (fy + hy) / 2,
-    depth = -view.copy(root.position).applyMatrix4(d.camera.matrixWorldInverse).z;
-  return {
-    x,
-    y,
-    size: Math.hypot(hx - fx, hy - fy),
-    gap: Math.hypot(clientX - x, clientY - y),
-    scale: (rect.height / 2) * (d.camera.projectionMatrix.elements[5] / depth),
-  };
+/**
+ * The valley's tap targets for the space helmet: every animal can be mistaken for the
+ * wearer, and only the wearer is the find. An animal changing outfits or hidden on its
+ * wild visits cannot be found, and Willowkin are not animals.
+ */
+export function spaceHelmetTargets(d) {
+  if (!spaceHelmetOut(d.helmetTown ?? d.town)) return [];
+  return (d.animals ?? [])
+    .filter((animal) => !animal.companion && !animal.townsfolk)
+    .map((animal) => ({
+      root: animal.root,
+      height: TOWN_ANIMALS[animal.species]?.height ?? 1,
+      find: animal.costume === COSTUME && !animal.dressing ? 'helmet' : null,
+      hint: 'helmet',
+    }));
 }
 
 /**
- * What a click means for the space-helmet game, or null when it is not for it. Close
- * enough (`HELMET_FIND_SCALE`), a click on the wearer finds it and gives its place on
- * the canvas in percent; the hit area reaches past the body because animals are small
- * and keep moving. Just short of that zoom, a click on the body of any animal, wearer
- * or not, gives `{ zoom: true }`, so taps cannot tell the wearer apart; the caller
- * shows it only when nothing else answers the click. Farther out it gives nothing. An
- * animal changing outfits or hidden on its wild visits cannot be found, and Willowkin
- * are not animals.
+ * What a click means for the space-helmet game alone (see `hiddenFindTap`): the wearer's
+ * place on the canvas in percent, `{ zoom: true }` just short of the find zoom, or null.
  */
 export function spaceHelmetTap(d, clientX, clientY) {
-  if (!spaceHelmetOut(d.helmetTown ?? d.town)) return null;
-  const rect = d.canvas.getBoundingClientRect();
-  let near = false;
-  for (const animal of d.animals ?? []) {
-    if (animal.companion) continue;
-    const spot = animalOnScreen(d, animal, rect, clientX, clientY);
-    if (!spot || spot.scale < HELMET_HINT_SCALE) continue;
-    if (spot.scale < HELMET_FIND_SCALE) {
-      near ||= spot.gap <= Math.max(12, spot.size / 2 + 6);
-      continue;
-    }
-    if (animal.costume !== COSTUME || animal.dressing) continue;
-    if (spot.gap <= Math.max(28, spot.size / 2 + 14))
-      return {
-        x: ((spot.x - rect.left) / rect.width) * 100,
-        y: ((spot.y - rect.top) / rect.height) * 100,
-      };
-  }
-  return near ? { zoom: true } : null;
+  const tap = hiddenFindTap(d, spaceHelmetTargets(d), clientX, clientY);
+  return tap && (tap.zoom ? { zoom: true } : { x: tap.x, y: tap.y });
 }
 
 // Rebuilds one animal's model with or without the costume, in place on its walk.
@@ -157,6 +110,7 @@ export function dressSpaceHelmet(d, town, { animate = false, rebuild = true } = 
   // A finished puzzle changes no building, so the scene can keep an older town object;
   // later animal refreshes dress for this latest one instead.
   d.helmetTown = town;
+  placeWanderers(d, town);
   const animals = d.animals ?? [];
   const species = spaceHelmetWearer(town, new Set(animals.map((a) => a.species)));
   const candidates = animals.filter((a) => a.species === species);

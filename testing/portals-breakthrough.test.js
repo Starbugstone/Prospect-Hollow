@@ -176,4 +176,31 @@ describe('breakthrough chambers', () => {
     expect(state.tiles.some((tile) => tile.sealed)).toBe(false);
     expect(result.board.every(Boolean)).toBe(true);
   });
+
+  // Levels 595–598 and 600 chain cells inside a cellar. A chain holds a gem, so each
+  // empty chained cell receives one ordinary gem where it stands, under either gravity.
+  it.each([
+    ['column', {}],
+    ['shaped', { [at(0, 0)]: voidCell }],
+  ])('give an empty chained cell one ordinary gem as it opens (%s gravity)', (_, extra) => {
+    const state = cavern();
+    Object.assign(state.tiles[at(4, 2)], { chainHealth: 1, maxChainHealth: 1 });
+    Object.assign(state.tiles, extra);
+    state.board[at(0, 0)] = extra[at(0, 0)] ? null : state.board[at(0, 0)];
+    expect(state.board[at(4, 2)]).toBeNull();
+    clear(state, [at(2, 1)]);
+    const result = clear(state, [at(2, 3)]);
+    expect(result.steps[0].breakthroughs).toEqual(['a']);
+    const spawn = result.steps[0].spawns.find(({ index }) => index === at(4, 2));
+    expect(spawn).toMatchObject({ appear: true });
+    expect(COLORS).toContain(result.board[at(4, 2)].type);
+    expect(result.board[at(4, 2)]).toBe(spawn.gem);
+    // The chain still holds it: nothing fell into, out of or past it.
+    expect(state.tiles[at(4, 2)].chainHealth).toBe(1);
+    for (const step of result.steps)
+      for (const drop of step.drops) expect([drop.from, drop.to]).not.toContain(at(4, 2));
+    expect(result.steps.flatMap((step) => step.spawns).filter((s) => s.index === at(4, 2))).toEqual(
+      [spawn],
+    );
+  });
 });

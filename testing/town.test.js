@@ -1,4 +1,5 @@
 import * as chestRewards from '../src/data/rewards';
+import { SAVE_SCHEMA_VERSION } from '../src/data/saveFormat';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 import { BUILDINGS, BANDIT_EVENT, createTown } from '../src/data/town';
@@ -263,7 +264,7 @@ describe('Profile and reward integrity', () => {
     const reloaded = useCampaignStore();
     expect(reloaded.nextLevel).toBe(2);
     expect(reloaded.town.coins).toBe(27);
-    expect(JSON.parse(saved.get(SAVE_KEY)).schemaVersion).toBe(4);
+    expect(JSON.parse(saved.get(SAVE_KEY)).schemaVersion).toBe(SAVE_SCHEMA_VERSION);
   });
   it('saves coins, chests, progress and settlement together; duplicate calls and reloads never pay twice', () => {
     const campaign = useCampaignStore();

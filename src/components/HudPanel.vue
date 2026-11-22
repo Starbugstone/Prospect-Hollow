@@ -11,16 +11,16 @@
       </div>
     </dl>
     <template v-if="game.playMode !== 'continuous'">
-      <p>{{ t('A chest when you finish') }}</p>
+      <p>{{ t('Finish for one chest. Meet both the score and time targets for two.') }}</p>
       <p :class="{ qualified: game.score >= target }">
-        {{ t('Score {score} for a bonus chest', { score: number(target) }) }}
+        {{ t('Score target: {score}', { score: number(target) }) }}
         <span v-if="game.score >= target">✓</span>
       </p>
       <p>
-        {{ t('Finish within {time} for a bonus chest', { time: formatTime(game.speedTargetMs) }) }}
+        {{ t('Time target: {time}', { time: formatTime(game.speedTargetMs) }) }}
       </p>
       <p v-if="game.elapsedMs > game.speedTargetMs">
-        {{ t('Speed bonus missed. You can still finish and earn your other chests.') }}
+        {{ t('Time target missed. You can still finish for one chest.') }}
       </p>
       <StarRatingGuide :target="game.starScoreTarget" />
     </template>

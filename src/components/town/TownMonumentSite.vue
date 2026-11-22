@@ -2,7 +2,9 @@
   <section class="town-monument" aria-labelledby="monument-title">
     <div class="town-detail-title">
       <div>
-        <p class="town-kicker">{{ t('Monument site') }} · {{ t(era.label) }}</p>
+        <p class="town-kicker">
+          {{ t(commission ? 'Commission' : 'Monument site') }} · {{ t(era.label) }}
+        </p>
         <h2 id="monument-title">{{ t(built ? LANDMARK_BY_ID[built].label : area.label) }}</h2>
       </div>
       <span class="town-level-badge">{{ badge }}</span>
@@ -13,9 +15,16 @@
     </p>
     <p v-if="!unlocked" class="monument-note">
       <TownIcon name="lock" />{{
-        t('This site opens in {era}. Monuments are optional and never block progress.', {
-          era: t(era.label),
-        })
+        t(
+          {
+            sites:
+              'This site opens once you commission {sites}. Monuments are optional and never block progress.',
+            building:
+              'This site opens at {building} level {level}. Monuments are optional and never block progress.',
+            era: 'This site opens in {era}. Monuments are optional and never block progress.',
+          }[monumentOpening(area).kind],
+          monumentOpening(area),
+        )
       }}
     </p>
 
@@ -146,10 +155,29 @@
     </template>
 
     <template v-else>
+      <p v-if="commission" class="monument-intro" data-commission-request>
+        {{ t(commission.request) }}
+        <small class="monument-writer">{{ t(commission.writer) }}</small>
+      </p>
       <p class="monument-intro">
         {{
           t(
-            'Choose one monument for this site. It is optional and never needed to reach the next era.',
+            commission
+              ? 'Choose what this place becomes. Your choice is permanent, and it is never needed to reach the next era.'
+              : 'Choose one monument for this site. It is optional and never needed to reach the next era.',
+          )
+        }}
+      </p>
+      <!-- One price buys one stage of several: the letter says so before the choice. -->
+      <p v-if="stagePrices" class="monument-intro" data-commission-stages>
+        {{
+          t(
+            'The first stage costs {price} coins: stage 1 of {count}. All {count} stages cost {total} coins.',
+            {
+              price: number(stagePrices.first),
+              count: stagePrices.count,
+              total: number(stagePrices.total),
+            },
           )
         }}
       </p>
@@ -257,8 +285,10 @@ import {
   landmarkPayment,
   landmarkLevel,
   monumentWork,
+  sharedStagePrices,
 } from '../../data/townLandmarks';
-import { monumentStatus } from '../../game/town/TownBuildingFeedback';
+import { commissionFor } from '../../data/commissions';
+import { monumentOpening, monumentStatus } from '../../game/town/TownBuildingFeedback';
 import TownIcon from './TownIcon.vue';
 import TownLandmarkPreview from './TownLandmarkPreview.vue';
 
@@ -275,6 +305,12 @@ const emit = defineEmits(['preview', 'unveil', 'replay']);
 const area = computed(() => AREA_BY_ID[props.id]);
 const era = computed(() => ERA_BY_ID[area.value.era]);
 const unlocked = computed(() => areaUnlocked(props.town, area.value));
+const commission = computed(() => commissionFor(props.id));
+// A commission's designs share one schedule of coin stages, read from the site.
+const stagePrices = computed(() => {
+  const prices = commission.value && sharedStagePrices(area.value);
+  return prices && prices.count > 1 && payment(0).currency === 'coins' ? prices : null;
+});
 const built = computed(() => areaChoice(props.town, area.value));
 const stage = computed(() => areaStage(props.town, area.value));
 const work = computed(() => monumentWork(props.town, area.value));
@@ -364,6 +400,17 @@ onBeforeUnmount(() => emit('preview', null));
   color: #5f6d5f;
   font-size: 13px;
   line-height: 1.5;
+}
+/* A letter is signed on its own line, not run on after its last sentence. */
+.monument-writer {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  font-style: italic;
+  text-align: right;
+}
+.monument-writer::before {
+  content: '— ';
 }
 .monument-note {
   display: flex;

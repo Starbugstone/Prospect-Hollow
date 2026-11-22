@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { useGameStore } from '../src/stores/gameStore';
 import { createPinia, setActivePinia } from 'pinia';
 import { createGem } from '../src/game/engine/GemFactory';
+import { BOARD_PRESENTERS } from '../src/game/phaser/boardPresenters';
 
 describe('GameStore - Frozen Tiles', () => {
   let gameStore;
@@ -12,6 +13,7 @@ describe('GameStore - Frozen Tiles', () => {
 
     // Mock minimal renderer for testing attachRenderer
     gameStore.attachRenderer({
+      presenters: BOARD_PRESENTERS,
       scene: {}, // Mock scene
       boardContainer: { add: () => {}, removeAll: () => {} },
       backgroundLayer: { add: () => {}, removeAll: () => {} },

@@ -545,3 +545,12 @@ export function createTownStorage({
   return api;
 }
 export const townStorage = createTownStorage();
+// The selected town's id, as an optional default (a share-link visit, the public profile
+// preview): no local save, a damaged one or refused storage reads as no town.
+export function activeTownId() {
+  try {
+    return townStorage.activeMeta()?.id ?? null;
+  } catch {
+    return null;
+  }
+}

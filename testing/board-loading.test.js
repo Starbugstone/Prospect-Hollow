@@ -6,6 +6,7 @@ import { preloadSpriteAssets } from '../src/game/phaser/SpriteLoader';
 import { spriteRef } from '../src/game/phaser/spriteRefs';
 import { sharedLoader } from '../src/game/phaser/loadBoard';
 import frames from '../src/assets/board/frames.json';
+import { BOARD_PRESENTERS } from '../src/game/phaser/boardPresenters';
 let game;
 beforeEach(() => {
   setActivePinia(createPinia());
@@ -216,7 +217,7 @@ it.each(['atlas', 'svg'])(
   },
 );
 function attach() {
-  game.attachRenderer({ scene: {}, boardContainer: {} });
+  game.attachRenderer({ scene: {}, boardContainer: {}, presenters: BOARD_PRESENTERS });
 }
 function session() {
   game.sessionActive = true;

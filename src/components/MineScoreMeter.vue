@@ -36,9 +36,7 @@
         v-if="speedLeft > 0"
         class="meter-speed"
         :class="{ closing: speedLeft < 15000 }"
-        :title="
-          t('Finish within {time} for a bonus chest', { time: formatTime(game.speedTargetMs) })
-        "
+        :title="t('Time target: {time}', { time: formatTime(game.speedTargetMs) })"
       >
         <GameIcon name="clock" />{{ formatTime(speedLeft) }}
       </span>
@@ -76,11 +74,13 @@ const starHint = computed(() =>
         score: number(stars.value < 2 ? goals.value.score : goals.value.bonusScore),
       }),
 );
+// Leads with how many chests finishing now earns, then which ones, so a fast start does
+// not read as a speed chest already won.
 const chestLabel = computed(
   () =>
-    chests.value.map((chest) => t(chest.label)).join(' · ') +
+    `${t(chests.value.length > 1 ? 'Two chests if you finish now' : 'One chest if you finish now')} (${chests.value.map((chest) => t(chest.label)).join(' · ')})` +
     (chestTarget.value
-      ? ` — ${t('Score {score} for a bonus chest', { score: number(chestTarget.value) })}`
+      ? ` — ${t('Finish for one chest. Meet both the score and time targets for two.')} ${t('Score target: {score}', { score: number(chestTarget.value) })}`
       : ''),
 );
 const popped = ref(0);

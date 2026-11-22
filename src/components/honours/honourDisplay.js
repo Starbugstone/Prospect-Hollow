@@ -59,12 +59,13 @@ const honourParams = (definition) =>
     ]),
   );
 const requirementText = (definition) => t(definition.requirement, honourParams(definition));
+const scopeText = (definition) => (definition.scope ? t(definition.scope) : '');
 export const popupText = (definition) => t(definition.popup, honourParams(definition));
 const formatDate = (at) => new Date(at).toLocaleDateString(locale.value, { dateStyle: 'medium' });
 export const earnedText = (entry) =>
   entry.at
     ? t('Earned {date}', { date: formatDate(entry.at) })
-    : t('Earned before honours were introduced');
+    : t('Earned before this honour was added');
 // Score evidence only: other ranks record no public evidence.
 export const evidenceText = (evidence) =>
   evidence?.levelId && Number.isFinite(evidence.score) && Number.isFinite(evidence.target)
@@ -254,7 +255,9 @@ export function describeFamily(
     metal: earned ? definition.metal : null,
     difficulty: difficultyLabel(definition),
     kicker: mine ? `${difficultyLabel(definition)} · ${mine.element}` : difficultyLabel(definition),
-    requirement: requirementText(definition),
+    // A card shows the family's scope with its requirement; the detail shows it once.
+    requirement: [requirementText(definition), scopeText(definition)].filter(Boolean).join(' '),
+    scope: scopeText(definition),
     track: rankTrack(
       family.ranks.map((rank) => rank.definition),
       (rank) => family.ranks[rank.rank - 1]?.earned,

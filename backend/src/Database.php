@@ -15,6 +15,8 @@ final class Database
      * and never drop, rename or retype anything an earlier release reads. An earlier
      * release therefore still runs on a database a later one migrated, which keeps
      * `rollback RELEASE_ID` working. backend/tests/release-health.php checks the rule.
+     * New kinds of data get their own table or column, never rows an earlier release would
+     * read as something else (migration 26; backend/tests/visitors.php checks it).
      */
     private const MIGRATIONS = [
         10 => '/schema',
@@ -43,6 +45,12 @@ final class Database
         // Sync events: corrected uploads beside rejected ones, with their findings and the
         // client build, and the correction the owner's game adopts from the cloud save.
         24 => '/schema-sync-corrections',
+        // Which hidden find a `helmet_finds` row is; every earlier row is a space helmet.
+        25 => '/schema-find-kinds',
+        // Every hidden find but the space helmet moves to `hidden_finds`, so `helmet_finds`
+        // holds only astronaut finds and release 1.2, which reads it without a kind,
+        // never takes a wandering pair for one (see PublicTown::findTable()).
+        26 => '/schema-hidden-finds',
     ];
     /** Tries of one outermost transaction, the first included, before a deadlock surfaces. */
     public const DEADLOCK_ATTEMPTS = 4;

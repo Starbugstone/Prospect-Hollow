@@ -142,7 +142,7 @@ final class PublicTown
         $row = $this->database
             ->get()
             ->fetchAssociative(
-                'SELECT t.id,t.player_id,t.appearance,s.collected_at,(SELECT MAX(h.found_at) FROM helmet_finds h WHERE h.host_town_id=t.id) AS helmet_at FROM towns t LEFT JOIN saloon_collections s ON s.town_id=t.id WHERE t.public_id=? AND t.listed=1 AND t.deleted_at IS NULL',
+                'SELECT t.id,t.player_id,t.appearance,s.collected_at FROM towns t LEFT JOIN saloon_collections s ON s.town_id=t.id WHERE t.public_id=? AND t.listed=1 AND t.deleted_at IS NULL',
                 [$id],
             );
         if (!$row) {
@@ -174,7 +174,13 @@ final class PublicTown
             );
         }
         $village->saloonReadyAt = $this->saloonReadyAt($row['collected_at']);
-        $village->helmetReadyAt = self::restedAt($row['helmet_at'], self::HELMET_REST);
+        // Each hidden find's rest for this host: `helmetReadyAt`, `wanderersReadyAt`, ...
+        foreach ($this->hiddenFinds() as $find) {
+            $village->{$find . 'ReadyAt'} = self::restedAt(
+                self::lastFind($this->database->get(), $find, 'host_town_id', $row['id']),
+                self::FIND_REST,
+            );
+        }
         return $this->distinguish(self::published($village), $row['player_id']);
     }
     // A showcased player distinction belongs to the owner, not the saved town: it is checked
@@ -196,7 +202,9 @@ final class PublicTown
             $village->appearance->plaqueDistinctions = new \stdClass();
             foreach ($playerPlaques as $building => $id) {
                 if (isset($received[$owner][$id])) {
-                    $village->appearance->plaqueDistinctions->$id = $received[$owner][$id];
+                    $village->appearance->plaqueDistinctions->$id = PlayerDistinctions::published(
+                        $received[$owner][$id],
+                    );
                 } else {
                     unset($plaques->$building);
                 }
@@ -239,84 +247,150 @@ final class PublicTown
             return ['readyAt' => $now + self::SALOON_REST];
         });
     }
-    // A player finds a space helmet in another town at most once per 12 hours, and each town's
-    // helmet is found by one visitor per 12 hours however many visit. The find is redeemed in
+    // Hidden finds (the space-helmet animal, the wandering pair) share these rules, each on its
+    // own: a player makes a find in another town at most once per 12 hours, and each town's
+    // find is made by one visitor per 12 hours however many visit. The find is redeemed in
     // the town the finder visits as, for half an hour of that town's own saloon takings, so
     // visiting richer towns pays no more. Unredeemed finds are kept for 30 days.
-    public const HELMET_REST = 43200;
-    public const HELMET_KEEP = 30 * 86400;
-    public function findHelmet(Request $r, string $id, array $b): array
+    public const FIND_REST = 43200;
+    public const FIND_KEEP = 30 * 86400;
+    // What the API's messages call each find. Codes use the find's ID (`helmet_taken`).
+    private const FIND_NAMES = ['helmet' => 'astronaut', 'wanderers' => 'wandering pair'];
+    /**
+     * Where a find's rows are kept. Space-helmet finds stay alone in `helmet_finds`, which
+     * release 1.2 reads without a kind, so rolling back never turns another find into an
+     * astronaut receipt or rest. Every other find is a `hidden_finds` row of its kind. Both
+     * tables have a `kind` column (`helmet` in `helmet_finds`) and every query names the
+     * kind, so a release ignores the finds it does not know.
+     */
+    public static function findTable(string $find): string
     {
+        return $find === 'helmet' ? 'helmet_finds' : 'hidden_finds';
+    }
+    /**
+     * Moves other finds out of `helmet_finds`, as migration 26 did. While a deploy migrates
+     * before its code switches, the earlier preprod release can still store a wandering
+     * pair there. Only rows already copied are deleted, so a find written meanwhile stays
+     * for the next run. Returns the rows moved.
+     */
+    public static function moveStrayFinds(\Doctrine\DBAL\Connection $db): int
+    {
+        $match = 'f.player_id=h.player_id AND f.kind=h.kind AND f.found_at=h.found_at';
+        $moved = $db->executeStatement(
+            'INSERT INTO hidden_finds(player_id,kind,found_at,town_id,host_town_id) ' .
+                'SELECT h.player_id,h.kind,h.found_at,h.town_id,h.host_town_id FROM helmet_finds h ' .
+                "WHERE h.kind<>'helmet' AND NOT EXISTS (SELECT 1 FROM hidden_finds f WHERE $match)",
+        );
+        $mysql =
+            $db->getDatabasePlatform() instanceof \Doctrine\DBAL\Platforms\AbstractMySQLPlatform;
+        $db->executeStatement(
+            ($mysql ? 'DELETE h FROM helmet_finds h' : 'DELETE FROM helmet_finds h') .
+                " WHERE h.kind<>'helmet' AND EXISTS (SELECT 1 FROM hidden_finds f WHERE $match)",
+        );
+        return (int) $moved;
+    }
+    /** The latest find of a kind by a player (`player_id`) or in a host town (`host_town_id`). */
+    private static function lastFind(
+        \Doctrine\DBAL\Connection $db,
+        string $find,
+        string $column,
+        string $id,
+    ): mixed {
+        return $db->fetchOne(
+            'SELECT MAX(found_at) FROM ' . self::findTable($find) . " WHERE $column=? AND kind=?",
+            [$id, $find],
+        );
+    }
+    /** @return list<string> the hidden finds a visitor can make, by ID */
+    public function hiddenFinds(): array
+    {
+        return array_map(
+            'strval',
+            array_keys(($this->rules ??= new SaveIntegrity())->hiddenFinds()),
+        );
+    }
+    public function findHidden(Request $r, string $id, string $find, array $b): array
+    {
+        $rules = $this->rules ??= new SaveIntegrity();
+        if (!isset($rules->hiddenFinds()[$find])) {
+            throw new ApiError(404, 'Not found.');
+        }
+        $name = self::FIND_NAMES[$find] ?? 'hidden find';
         $session = $this->auth->session($r, true);
-        $this->auth->limit('helmet:' . $session['player_id'], 30, 3600);
+        $this->auth->limit($find . ':' . $session['player_id'], 30, 3600);
         $home = SaveService::uuid($b['townId'] ?? null);
-        return $this->database->get()->transactional(function ($db) use ($session, $id, $home) {
-            // The player row lock keeps two tabs from both finding within one rest, and the host
-            // row lock keeps two visitors from both finding one town's helmet.
-            $db->fetchOne('SELECT id FROM players WHERE id=? FOR UPDATE', [$session['player_id']]);
-            $this->auth->recheck($session);
-            $host = $db->fetchAssociative(
-                'SELECT id,player_id,appearance FROM towns WHERE public_id=? AND listed=1 AND deleted_at IS NULL FOR UPDATE',
-                [$id],
-            );
-            if (!$host) {
-                throw new ApiError(404, 'Town unavailable.');
-            }
-            if ($host['player_id'] === $session['player_id']) {
-                throw new ApiError(422, 'Find the astronaut in your own town from your game.', [
-                    'code' => 'own_town',
-                ]);
-            }
-            $era = json_decode($host['appearance'])->appearance->era ?? null;
-            if (!($this->rules ??= new SaveIntegrity())->spaceHelmetOut($era)) {
-                throw new ApiError(409, 'This town has no astronaut yet.', [
-                    'code' => 'no_helmet',
-                ]);
-            }
-            if (
-                !$db->fetchOne(
-                    'SELECT id FROM towns WHERE id=? AND player_id=? AND deleted_at IS NULL',
-                    [$home, $session['player_id']],
-                )
-            ) {
-                throw new ApiError(422, 'Choose one of your towns to receive the reward.', [
-                    'code' => 'no_home_town',
-                ]);
-            }
-            $now = time();
-            $taken = self::restedAt(
-                $db->fetchOne('SELECT MAX(found_at) FROM helmet_finds WHERE host_town_id=?', [
-                    $host['id'],
-                ]),
-                self::HELMET_REST,
-            );
-            if ($taken > $now) {
-                throw new ApiError(
-                    409,
-                    'A visitor found this town\'s astronaut recently. Come back later.',
-                    ['code' => 'helmet_taken', 'readyAt' => $taken],
-                );
-            }
-            $resting = self::restedAt(
-                $db->fetchOne('SELECT MAX(found_at) FROM helmet_finds WHERE player_id=?', [
+        return $this->database
+            ->get()
+            ->transactional(function ($db) use ($session, $id, $home, $find, $name, $rules) {
+                // The player row lock keeps two tabs from both finding within one rest, and the
+                // host row lock keeps two visitors from both making one town's find.
+                $db->fetchOne('SELECT id FROM players WHERE id=? FOR UPDATE', [
                     $session['player_id'],
-                ]),
-                self::HELMET_REST,
-            );
-            if ($resting > $now) {
-                throw new ApiError(409, 'You found an astronaut recently. Come back later.', [
-                    'code' => 'helmet_resting',
-                    'readyAt' => $resting,
                 ]);
-            }
-            $db->insert('helmet_finds', [
-                'player_id' => $session['player_id'],
-                'found_at' => $now,
-                'town_id' => $home,
-                'host_town_id' => $host['id'],
-            ]);
-            return ['readyAt' => $now + self::HELMET_REST];
-        });
+                $this->auth->recheck($session);
+                $host = $db->fetchAssociative(
+                    'SELECT id,player_id,appearance FROM towns WHERE public_id=? AND listed=1 AND deleted_at IS NULL FOR UPDATE',
+                    [$id],
+                );
+                if (!$host) {
+                    throw new ApiError(404, 'Town unavailable.');
+                }
+                if ($host['player_id'] === $session['player_id']) {
+                    throw new ApiError(422, "Find the $name in your own town from your game.", [
+                        'code' => 'own_town',
+                    ]);
+                }
+                $era = json_decode($host['appearance'])->appearance->era ?? null;
+                if (!$rules->hiddenFindOut($find, $era)) {
+                    throw new ApiError(409, "This town has no $name yet.", [
+                        'code' => 'no_' . $find,
+                    ]);
+                }
+                if (
+                    !$db->fetchOne(
+                        'SELECT id FROM towns WHERE id=? AND player_id=? AND deleted_at IS NULL',
+                        [$home, $session['player_id']],
+                    )
+                ) {
+                    throw new ApiError(422, 'Choose one of your towns to receive the reward.', [
+                        'code' => 'no_home_town',
+                    ]);
+                }
+                $now = time();
+                $taken = self::restedAt(
+                    self::lastFind($db, $find, 'host_town_id', $host['id']),
+                    self::FIND_REST,
+                );
+                if ($taken > $now) {
+                    throw new ApiError(
+                        409,
+                        "A visitor found this town's $name recently. Come back later.",
+                        ['code' => $find . '_taken', 'readyAt' => $taken],
+                    );
+                }
+                $resting = self::restedAt(
+                    self::lastFind($db, $find, 'player_id', $session['player_id']),
+                    self::FIND_REST,
+                );
+                if ($resting > $now) {
+                    throw new ApiError(
+                        409,
+                        "You found another town's $name recently. Come back later.",
+                        ['code' => $find . '_resting', 'readyAt' => $resting],
+                    );
+                }
+                // A row is one player's find of one kind at one second: its rest keeps the
+                // player from another of that kind for 12 hours, under the player lock
+                // above. Finds of other kinds have keys or tables of their own.
+                $db->insert(self::findTable($find), [
+                    'player_id' => $session['player_id'],
+                    'found_at' => $now,
+                    'town_id' => $home,
+                    'host_town_id' => $host['id'],
+                    'kind' => $find,
+                ]);
+                return ['readyAt' => $now + self::FIND_REST];
+            });
     }
     public static function saloonReadyAt(mixed $at): int
     {

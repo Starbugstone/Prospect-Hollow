@@ -1,4 +1,5 @@
 import {
+  AREA_BY_ID,
   PERSONAL_AREAS,
   landmarkOffer,
   areaMaximum,
@@ -9,7 +10,8 @@ import { createPinia, setActivePinia } from 'pinia';
 import { freshProfile, useCampaignStore } from '../src/stores/campaignStore.js';
 import { useGameStore } from '../src/stores/gameStore.js';
 import { useInventoryStore } from '../src/stores/inventoryStore.js';
-import { generateLevelConfigs } from '../src/game/engine/LevelGenerator.js';
+import { generateLevelConfigs, levelConfig } from '../src/game/engine/LevelGenerator.js';
+import { miningDepthBonus } from '../src/data/economy.js';
 import { BUILDINGS, BANDIT_EVENT } from '../src/data/town.js';
 import { SPACE_HELMET } from '../src/data/townAnimals.js';
 import { ERAS } from '../src/data/eras.js';
@@ -135,7 +137,8 @@ export function createIntegrityFixtures() {
       (campaign) => {
         const game = useGameStore();
         game.bootstrap();
-        expectSuccess(game.startLevel(1), 'long victory start');
+        // A given seed, so starting the level doesn't draw from the flow's own random sequence.
+        expectSuccess(game.startLevel(1, 'normal', { seed: 1 }), 'long victory start');
         game.moves = 175;
         game.remainingLayers = 0;
         game.playClock.started = true;
@@ -465,6 +468,46 @@ export function createIntegrityFixtures() {
           throw new Error('VIP did not spend at mine depth.');
       },
     );
+    // Chapters 92–101: the server accepts their chests and VIP depth from the exported rules.
+    const finished = (profile, last) => {
+      for (let id = 1; id <= last; id++) profile.records[id] = { score: 1000, stars: 1 };
+    };
+    fixture(
+      'first victory on level 547 after a finished 546-level campaign',
+      (profile) => finished(profile, 546),
+      (campaign) => {
+        if (campaign.nextLevel !== 547) throw new Error('Level 547 was not offered.');
+        const [chest] = victory(campaign, { chooseRewards: true }, levelConfig(547));
+        expectSuccess(campaign.claimChest(chest.id, 'coins'), 'level 547 coin chest');
+      },
+    );
+    fixture(
+      'coin chest on level 606, the last of chapter 101',
+      (profile) => finished(profile, 605),
+      (campaign) => {
+        const [chest] = victory(campaign, { chooseRewards: true }, levelConfig(606));
+        expectSuccess(campaign.claimChest(chest.id, 'coins'), 'level 606 coin chest');
+      },
+    );
+    fixture(
+      'VIP purchase at chapter 101',
+      (profile) => {
+        saloon(profile);
+        profile.records[606] = { score: 1000, stars: 1 };
+      },
+      (campaign) => {
+        if (
+          campaign.collectVipSpending({
+            tour: 'deepest-fixture-tour',
+            stop: 0,
+            building: 'saloon',
+            visitor: { vip: true },
+          }) !==
+          10 + miningDepthBonus(10, 606)
+        )
+          throw new Error('VIP did not spend at the depth of chapter 101.');
+      },
+    );
     fixture(
       'space helmet found once for its completed puzzle',
       (profile) => {
@@ -473,8 +516,8 @@ export function createIntegrityFixtures() {
         profile.town.helmetRun = 11;
       },
       (campaign) => {
-        if (!(campaign.findSpaceHelmet() > 0)) throw new Error('The helmet paid nothing.');
-        if (campaign.findSpaceHelmet() !== null) throw new Error('The helmet paid twice.');
+        if (!(campaign.findHidden('helmet') > 0)) throw new Error('The helmet paid nothing.');
+        if (campaign.findHidden('helmet') !== null) throw new Error('The helmet paid twice.');
       },
     );
     fixture(
@@ -669,7 +712,12 @@ export function createIntegrityFixtures() {
         );
       },
     );
-    for (const { area, oldFoundation } of PERSONAL_AREAS.flatMap((area) => [
+    // A site of an era still being built has no playable town to stand in yet: the server
+    // refuses that era's saves, so its fixture joins once the era is enabled.
+    const playable = PERSONAL_AREAS.filter(
+      (area) => ERAS.find((era) => era.id === area.era)?.enabled,
+    );
+    for (const { area, oldFoundation } of playable.flatMap((area) => [
       { area, oldFoundation: false },
       ...(area.currency === 'moonstones' ? [{ area, oldFoundation: true }] : []),
     ]))
@@ -710,6 +758,24 @@ export function createIntegrityFixtures() {
             for (let n = work.wins; n < work.required; n++) victory(campaign);
             expectSuccess(campaign.unveilMonument(area.id, work.level), 'monument unveiling');
           };
+          // A site that waits for a commission elsewhere opens with the first stage there.
+          const opener = area.opens?.sites && AREA_BY_ID[area.opens.sites[0]];
+          if (opener) {
+            const offer = landmarkOffer(campaign.town, opener, opener.choices[0]);
+            expectSuccess(
+              campaign.personalise([
+                {
+                  kind: 'area',
+                  id: opener.id,
+                  slot: 0,
+                  value: opener.choices[0],
+                  expectedChoice: offer.expectedChoice,
+                  expectedLevel: offer.expectedLevel,
+                },
+              ]),
+              'opening commission purchase',
+            );
+          }
           buy(area.choices[0]);
           build();
           while (areaStage(campaign.town, area) < areaMaximum(campaign.town, area)) {
@@ -785,6 +851,40 @@ export function createIntegrityFixtures() {
         );
         if (campaign.continuousRecords[1].moonstoneGems !== 300)
           throw new Error('Unbuilt gems became workshop production.');
+      },
+    );
+    // Every 1.3.0 commission sponsored, Moon first, so the server verifies Commissioner's
+    // later ranks from its own replay of the purchases.
+    fixture(
+      'every commission sponsored, the Willowkin Glade opened from the Moon',
+      (profile) => {
+        develop(profile, 'hollow-rising');
+        profile.town.coins = 10000000;
+      },
+      (campaign) => {
+        for (const id of [
+          'earthlight-conservatory',
+          'willowkin-glade',
+          'schoolyard-court',
+          'crew-yard',
+          'homecoming-commons',
+        ]) {
+          const area = AREA_BY_ID[id];
+          const offer = landmarkOffer(campaign.town, area, area.choices[0]);
+          expectSuccess(
+            campaign.personalise([
+              {
+                kind: 'area',
+                id,
+                slot: 0,
+                value: area.choices[0],
+                expectedChoice: offer.expectedChoice,
+                expectedLevel: offer.expectedLevel,
+              },
+            ]),
+            `commission purchase at ${id}`,
+          );
+        }
       },
     );
     return { version: 1, fixtures };

@@ -20,7 +20,10 @@
       </button>
     </header>
     <p v-if="!introduction">
-      {{ t('Complete every pictured goal. The score and clock earn extra chests.') }}
+      {{ t('Complete every pictured goal.') }}
+      <template v-if="!continuous">{{
+        t('Finish for one chest. Meet both the score and time targets for two.')
+      }}</template>
     </p>
     <ul>
       <li v-for="obstacle in obstacles" :key="obstacle.id">
@@ -113,6 +116,27 @@
                 >✓</b
               >
             </template>
+            <template v-else-if="obstacle.id === 'trace-twins'">
+              <span class="demo-matches"
+                ><img src="/art/ruby.svg" alt="" /><img :src="obstacle.art" alt="" /><img
+                  src="/art/ruby.svg"
+                  alt=""
+              /></span>
+              <b>◇ → ◇</b><img src="/art/obstacles/blast-gate.svg" alt="" />
+            </template>
+            <template v-else-if="obstacle.id === 'crossgrain'">
+              <img :src="obstacle.art" alt="" /><b>→</b
+              ><img src="/art/obstacles/crossgrain-vertical.svg" alt="" /><b>→</b
+              ><img src="/art/ruby.svg" alt="" />
+            </template>
+            <template v-else-if="obstacle.id === 'chord'">
+              <img :src="obstacle.art" alt="" /><b>+</b
+              ><span class="demo-matches"
+                ><img src="/art/ruby.svg" alt="" /><img src="/art/sapphire.svg" alt="" /><img
+                  src="/art/emerald.svg"
+                  alt="" /></span
+              ><b>→</b><img src="/art/moonstone.svg" alt="" />
+            </template>
             <template v-else>
               <span class="demo-matches"
                 ><span
@@ -160,10 +184,15 @@
   </dialog>
 </template>
 <script setup>
+import { computed } from 'vue';
 import { t } from '../i18n';
+import { useGameStore } from '../stores/gameStore';
 import GameIcon from './GameIcon.vue';
 import { useNativeDialog } from '../composables/useNativeDialog';
 defineProps({ obstacles: Array, introduction: Boolean });
+// Continuous play earns no chests (HudPanel says so), so the guide makes no chest promise.
+const game = useGameStore();
+const continuous = computed(() => game.playMode === 'continuous');
 const emit = defineEmits(['close']);
 const { dialog, closeButton, dismissBackdrop } = useNativeDialog(() => emit('close'));
 </script>

@@ -23,7 +23,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { loadVisitorProfile, joinVillage, leaveVillage } from '../../services/visitorApi';
 import { createVisitorPresence, visitorBrowserToken } from '../../services/visitorPresence';
-import { townStorage, ACCOUNT_KEY } from '../../services/townStorage';
+import { activeTownId, ACCOUNT_KEY } from '../../services/townStorage';
 import { cloud } from '../../services/cloudProfile';
 import { visitorLabel } from '../../data/liveVisitors';
 import { t } from '../../i18n';
@@ -38,12 +38,16 @@ const profile = ref(null),
   loading = ref(true),
   error = ref('');
 const ownTown = computed(() => towns.value.some((town) => town.publicId === props.villageId));
-const identity = computed(() => ({
-  name: profile.value?.displayName ?? '',
-  townName: towns.value.find((town) => town.townId === townId.value)?.name,
-}));
+const townName = computed(() => towns.value.find((town) => town.townId === townId.value)?.name);
+// A private visit is published without name or town, so the visitor reads it that way too;
+// the chosen town still receives the visit's rewards.
+const identity = computed(() =>
+  profile.value?.anonymousVisits
+    ? {}
+    : { name: profile.value?.displayName ?? '', townName: townName.value },
+);
 watch(
-  () => [ownTown.value, townId.value, identity.value.townName],
+  () => [ownTown.value, townId.value, townName.value],
   ([own, id, name]) => emit('town', own ? { own } : id ? { townId: id, name } : null),
   { immediate: true },
 );
@@ -83,7 +87,7 @@ async function initialize() {
     if (disposed || generation !== current) return;
     profile.value = result.profile;
     towns.value = result.towns ?? [];
-    const preferred = result.profile?.visitingTownId || townStorage.activeMeta().id;
+    const preferred = result.profile?.visitingTownId || activeTownId();
     townId.value =
       (towns.value.find((town) => town.townId === preferred) ?? towns.value[0])?.townId ?? null;
   } catch {

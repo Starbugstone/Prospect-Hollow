@@ -527,11 +527,31 @@ try {
         'only the visitor\'s own town can receive the reward',
     );
     $found = status(200, $findHelmet($guest, $originId), 'visitor finds helmet');
-    $foundAt = ($found['readyAt'] - PublicTown::HELMET_REST) * 1000;
+    $foundAt = ($found['readyAt'] - PublicTown::FIND_REST) * 1000;
     check(
-        $found['readyAt'] - time() > PublicTown::HELMET_REST - 60,
+        $found['readyAt'] - time() > PublicTown::FIND_REST - 60,
         'the next helmet reward rests 12 hours',
     );
+    // Rows from before migration 25, and rows an earlier release still writes after a
+    // rollback, carry no kind: they are space helmets and rest the helmet as before.
+    check(
+        $db->get()->fetchOne('SELECT kind FROM helmet_finds WHERE player_id=?', [$guest['id']]) ===
+            'helmet',
+        'a helmet find is stored as a helmet',
+    );
+    $db->get()->executeStatement(
+        'INSERT INTO helmet_finds(player_id,found_at,town_id,host_town_id) VALUES (?,?,?,?)',
+        [$guest['id'], 1, $originId, $hostId],
+    );
+    check(
+        $db
+            ->get()
+            ->fetchOne('SELECT kind FROM helmet_finds WHERE player_id=? AND found_at=1', [
+                $guest['id'],
+            ]) === 'helmet',
+        'a find stored without a kind is a space helmet',
+    );
+    $db->get()->delete('helmet_finds', ['player_id' => $guest['id'], 'found_at' => 1]);
     $taken = status(409, $findHelmet($guest, $originId), 'helmet taken');
     check(
         $taken['code'] === 'helmet_taken' && $taken['readyAt'] === $found['readyAt'],
@@ -587,13 +607,13 @@ try {
     );
     $db->get()->update(
         'helmet_finds',
-        ['found_at' => time() - PublicTown::HELMET_REST, 'host_town_id' => $hostId],
+        ['found_at' => time() - PublicTown::FIND_REST, 'host_town_id' => $hostId],
         ['player_id' => $guest['id']],
     );
     status(200, $findHelmet($guest, $originId), 'a find after the rest');
     $db->get()->executeStatement(
         'UPDATE helmet_finds SET found_at=? WHERE player_id=? AND found_at<?',
-        [time() - PublicTown::HELMET_KEEP - 1, $guest['id'], time() - 3600],
+        [time() - PublicTown::FIND_KEEP - 1, $guest['id'], time() - 3600],
     );
     check(
         count(
@@ -604,6 +624,144 @@ try {
             )['helmetFinds'],
         ) === 1,
         'finds older than 30 days are no longer offered',
+    );
+    // The wandering pair is a second hidden find under the same rules, counted on its own:
+    // the helmet this visitor just found neither rests it nor is rested by it.
+    $pair = fn(array $session, string $townId) => visitorApi(
+        'POST',
+        'villages/' . $publicId . '/wanderers',
+        ['townId' => $townId],
+        $session,
+    );
+    check(
+        status(409, $pair($guest, $originId), 'pair before its era')['code'] === 'no_wanderers',
+        'a town before New Hollow Rising has no wandering pair to find',
+    );
+    status(
+        404,
+        visitorApi(
+            'POST',
+            'villages/' . $publicId . '/nosuchfind',
+            ['townId' => $originId],
+            $guest,
+        ),
+        'unknown find',
+    );
+    $rising = json_decode($appearance);
+    $rising->appearance->era = 'hollow-rising';
+    $db->get()->update('towns', ['appearance' => json_encode($rising)], ['id' => $hostId]);
+    $helmetRows = (int) $db
+        ->get()
+        ->fetchOne("SELECT COUNT(*) FROM helmet_finds WHERE kind='helmet'");
+    $pairFound = status(200, $pair($guest, $originId), 'visitor finds the pair');
+    $pairAt = (int) $db
+        ->get()
+        ->fetchOne("SELECT found_at FROM hidden_finds WHERE player_id=? AND kind='wanderers'", [
+            $guest['id'],
+        ]);
+    check(
+        $pairFound['readyAt'] >= time() + PublicTown::FIND_REST - 2 &&
+            $pairAt > 0 &&
+            (int) $db->get()->fetchOne("SELECT COUNT(*) FROM helmet_finds WHERE kind='helmet'") ===
+                $helmetRows,
+        'the pair is found while the helmet rests, as a row of its own kind',
+    );
+    // Rolling back to release 1.2 stays safe: it reads `helmet_finds` with no kind, so the
+    // table holds astronaut finds only. Its own queries see no wandering pair.
+    check(
+        (int) $db->get()->fetchOne("SELECT COUNT(*) FROM helmet_finds WHERE kind<>'helmet'") ===
+            0 &&
+            (int) $db->get()->fetchOne('SELECT COUNT(*) FROM helmet_finds') === $helmetRows &&
+            $db
+                ->get()
+                ->fetchFirstColumn(
+                    'SELECT found_at FROM helmet_finds WHERE town_id=? AND found_at>=? ORDER BY found_at',
+                    [$originId, 0],
+                ) ===
+                $db
+                    ->get()
+                    ->fetchFirstColumn(
+                        "SELECT found_at FROM helmet_finds WHERE town_id=? AND kind='helmet' ORDER BY found_at",
+                        [$originId],
+                    ),
+        'helmet_finds holds no wandering pair, so a 1.2 rollback signs no pair as an astronaut',
+    );
+    // While a deploy migrates before its code switches, the earlier preprod release can still
+    // store a pair among astronaut finds. The cleanup job moves it across, once, keeping the
+    // find; a row already copied is only removed.
+    foreach ([7, 8] as $at) {
+        $db->get()->insert('helmet_finds', [
+            'player_id' => $other['id'],
+            'found_at' => $at,
+            'town_id' => $otherHome,
+            'host_town_id' => $hostId,
+            'kind' => 'wanderers',
+        ]);
+    }
+    $db->get()->insert('hidden_finds', [
+        'player_id' => $other['id'],
+        'kind' => 'wanderers',
+        'found_at' => 8,
+        'town_id' => $otherHome,
+        'host_town_id' => $hostId,
+    ]);
+    $strays = fn(string $table) => array_map(
+        'intval',
+        $db
+            ->get()
+            ->fetchFirstColumn(
+                "SELECT found_at FROM $table WHERE player_id=? AND kind='wanderers' AND found_at<10 ORDER BY found_at",
+                [$other['id']],
+            ),
+    );
+    check(
+        PublicTown::moveStrayFinds($db->get()) === 1 &&
+            PublicTown::moveStrayFinds($db->get()) === 0 &&
+            $strays('helmet_finds') === [] &&
+            $strays('hidden_finds') === [7, 8],
+        'cleanup moves a pair left among astronaut finds to its own table, once',
+    );
+    $db->get()->executeStatement(
+        "DELETE FROM hidden_finds WHERE player_id=? AND kind='wanderers' AND found_at<10",
+        [$other['id']],
+    );
+    foreach ([[$guest, $originId], [$other, $otherHome]] as [$session, $townId]) {
+        $again = status(409, $pair($session, $townId), 'pair taken');
+        check(
+            $again['code'] === 'wanderers_taken' && $again['readyAt'] === $pairFound['readyAt'],
+            'each town\'s pair is found by one visitor per 12 hours',
+        );
+    }
+    $db->get()->update('hidden_finds', ['host_town_id' => null], ['kind' => 'wanderers']);
+    check(
+        status(409, $pair($guest, $originId), 'pair resting')['code'] === 'wanderers_resting',
+        'a player finds one wandering pair per 12 hours',
+    );
+    $latest = status(200, visitorApi('GET', 'villages/' . $publicId . '/latest'), 'pair rest');
+    check(
+        $latest['wanderersReadyAt'] === 0 && $latest['helmetReadyAt'] > time(),
+        'the shared town tells each find\'s rest apart',
+    );
+    $pairBook = status(
+        200,
+        visitorApi('GET', 'towns/' . $originId . '/visitors', null, $guest),
+        'visitor home poll with both finds',
+    );
+    check(
+        $pairBook['wanderersFinds'] === [
+            [
+                'at' => $pairAt * 1000,
+                'receipt' => SaveIntegrity::hiddenFindReceipt(
+                    'wanderers',
+                    $originId,
+                    $pairAt * 1000,
+                ),
+            ],
+        ] &&
+            count($pairBook['helmetFinds']) === 1 &&
+            $pairBook['wanderersFinds'][0]['receipt'] !==
+                SaveIntegrity::helmetReceipt($originId, $pairAt * 1000),
+        'each find arrives in its own list with a receipt signed for its kind',
     );
     $db->get()->update('towns', ['appearance' => $appearance], ['id' => $hostId]);
     $retryExpiry = time() + 10;
@@ -916,6 +1074,135 @@ try {
         );
     }
     check($book()['present'] === [], 'last concurrent tab departure closes presence');
+    // A home town whose name the guestbook cannot publish ("O'B" cleans to two letters)
+    // still earns its travel, for a private visit and for a public one.
+    $traveled = fn(string $origin) => $db
+        ->get()
+        ->fetchOne('SELECT COUNT(*) FROM town_travels WHERE origin_town_id=? AND host_town_id=?', [
+            $origin,
+            $hostId,
+        ]);
+    foreach ([true, false] as $private) {
+        $traveller = account();
+        $shortTown = status(
+            200,
+            visitorApi('POST', 'towns', townBody("O'B"), $traveller),
+            'unpublishable home town',
+        )['townId'];
+        status(
+            200,
+            visitorApi(
+                'PATCH',
+                'towns/' . $shortTown . '/settings',
+                ['baseRevision' => 1, 'name' => "O'B", 'isPublic' => true],
+                $traveller,
+            ),
+            'share unpublishable home town',
+        );
+        status(
+            200,
+            visitorApi(
+                'PATCH',
+                'account/profile',
+                [
+                    'displayName' => 'Quiet Ona',
+                    'visitingTownId' => $shortTown,
+                    'anonymousVisits' => $private,
+                ],
+                $traveller,
+            ),
+            'traveller profile',
+        );
+        $tab = bin2hex(random_bytes(32));
+        $arrival = status(
+            200,
+            visitorApi(
+                'POST',
+                $presence,
+                ['token' => $tab, 'browserToken' => bin2hex(random_bytes(32)), 'sequence' => 1],
+                $traveller,
+            ),
+            'unpublishable town visit',
+        );
+        $entry = array_values(
+            array_filter($book()['present'], fn($row) => $row['id'] === $arrival['visitId']),
+        )[0];
+        check(
+            (int) $traveled($shortTown) === 1,
+            ($private ? 'private' : 'public') . ' visit from an unpublishable town earns travel',
+        );
+        check(
+            $entry['townName'] === null &&
+                $entry['publicId'] === null &&
+                !$entry['townGone'] &&
+                $entry['name'] === ($private ? '' : 'Quiet Ona'),
+            'guestbook omits an unpublishable home town and its link',
+        );
+        status(
+            200,
+            visitorApi('DELETE', $presence, ['token' => $tab, 'sequence' => 2]),
+            'unpublishable town departs',
+        );
+    }
+    // A private visit shows no home town, so with no town chosen it travels from the
+    // player's first town even when only an older one has a publishable name.
+    $traveller = account();
+    $firstTown = status(
+        200,
+        visitorApi('POST', 'towns', townBody("O'B"), $traveller),
+        'unpublishable first town',
+    )['townId'];
+    status(
+        200,
+        visitorApi(
+            'PATCH',
+            'towns/' . $firstTown . '/settings',
+            ['baseRevision' => 1, 'name' => "O'B", 'isPublic' => true],
+            $traveller,
+        ),
+        'share the unpublishable first town',
+    );
+    $namedTown = status(
+        200,
+        visitorApi('POST', 'towns', townBody('Silver Gulch'), $traveller),
+        'publishable second town',
+    )['townId'];
+    status(
+        200,
+        visitorApi(
+            'PATCH',
+            'account/profile',
+            ['displayName' => 'Quiet Ona', 'anonymousVisits' => true],
+            $traveller,
+        ),
+        'private traveller without a visiting town',
+    );
+    $tab = bin2hex(random_bytes(32));
+    $arrival = status(
+        200,
+        visitorApi(
+            'POST',
+            $presence,
+            ['token' => $tab, 'browserToken' => bin2hex(random_bytes(32)), 'sequence' => 1],
+            $traveller,
+        ),
+        'private visit without a chosen town',
+    );
+    check(
+        $db
+            ->get()
+            ->fetchOne('SELECT origin_town_id FROM visitor_visits WHERE id=?', [
+                $arrival['visitId'],
+            ]) === $firstTown &&
+            (int) $traveled($firstTown) === 1 &&
+            (int) $traveled($namedTown) === 0,
+        'a private visit without a chosen town travels from the first town',
+    );
+    status(
+        200,
+        visitorApi('DELETE', $presence, ['token' => $tab, 'sequence' => 2]),
+        'private first-town visit departs',
+    );
     status(
         200,
         visitorApi(

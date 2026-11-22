@@ -22,6 +22,7 @@ import { CITY_FAMILIES, CITY_BUILDINGS } from '../src/data/city';
 import { ERAS, ERA_BY_ID, eraEvolution } from '../src/data/eras';
 import { defineEra } from '../src/data/eraDefinitions';
 import { createTown, BUILDING_BY_ID } from '../src/data/town';
+import { townFauna } from '../src/data/townAnimals';
 import {
   FUTURE_ARCHITECTURES,
   FUTURE_LANDMARKS,
@@ -97,13 +98,19 @@ afterEach(() => delete ERA_BY_ID['future-successor']);
 describe('Skysail, Stargazer and Moonward eras', () => {
   it('follow Riverlight in order, each with its own architecture and story', () => {
     const ids = ERAS.map(({ id }) => id);
-    expect(ids.slice(ids.indexOf('riverlight'))).toEqual(['riverlight', ...FUTURE_ERAS]);
+    expect(ids.slice(ids.indexOf('riverlight'), ids.indexOf('twin-hollows') + 1)).toEqual([
+      'riverlight',
+      ...FUTURE_ERAS,
+    ]);
     expect(FUTURE_ERAS.map((era) => eraEvolution(era).architecture)).toEqual(FUTURE_ARCHITECTURES);
     for (const era of FUTURE_ERAS) {
       expect(isFutureEra(era)).toBe(true);
       expect(ERA_BY_ID[era].story).toContain('Willowkin');
       // The Willowkin keep walking the streets in every later era.
-      expect(eraEvolution(era).wildlife).toBe('garden-town');
+      expect(townFauna(eraEvolution(era)).companions).toEqual({
+        species: 'willowkinResident',
+        mode: 'street',
+      });
     }
     expect(isFutureEra('riverlight')).toBe(false);
     expect(isFutureEra('unknown-save-era')).toBe(false);

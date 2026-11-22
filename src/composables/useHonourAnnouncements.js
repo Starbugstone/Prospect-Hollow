@@ -3,6 +3,7 @@ import { HONOURS, RANK_METALS, normalizeHonours, pendingAnnouncements } from '..
 import { distinctionBadge, distinctionKey } from '../data/playerDistinctions';
 import { BANDIT_EVENT } from '../data/town';
 import { pendingPresentation } from '../data/townPresentations';
+import { presentedTown } from '../game/town/TownEventSettlement';
 import { useCampaignStore } from '../stores/campaignStore';
 import { useGameStore } from '../stores/gameStore';
 import { useSettingsStore } from '../stores/settingsStore';
@@ -127,7 +128,8 @@ export function useHonourAnnouncements(
     return next;
   });
   const storeBusy = computed(() => {
-    const town = campaign.town;
+    // A saved event held after a failed save no longer covers the village (presentedTown).
+    const town = presentedTown(campaign.town, campaign.heldAcknowledgements);
     const incident = town.events?.[BANDIT_EVENT];
     return (
       settings.isSettingsOpen ||

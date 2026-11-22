@@ -67,6 +67,9 @@ several shipped gold goals, so these ranks were appended (shipped goals are unch
 | Core Engineer            | 10     | 50     | 125    | 190           |
 | Gate Breaker             | 10     | 50     | 130    | 300           |
 
+Trail Surveyor gained a diamond, 75 trails, with levels 547–606 (honours version 8, see
+[Levels 547–606](#levels-547606-2026-11-11)).
+
 Floatstones count as relics; starglass, lenses, phase seals, portals, cracked walls and the
 moon lock and dial are `NON_MASTERY_ELEMENTS`.
 
@@ -247,7 +250,8 @@ qualifies(state)`. Display strings are English keys for `t()`.
   `complete`; two steps per era), `count` (`counter`, optional `key`; a map without a key sums),
   `distinct` (`counter`, `keys`), `powers` (`quantity`) and `social` (`counter`: `visitors` or
   `travels`), `buildingLevels` (a fixed building list), `resource` (a named lifetime earned
-  field), and `landmarks` (a fixed list of paid monument sites). A rank qualifies when the
+  field), `landmarks` (a fixed list of paid monument sites) and `found` (a fixed list of hidden
+  finds the owner found in this town: `town.XRun` above zero). A rank qualifies when the
   value reaches its goal. Public descriptors export the requirement `version` too.
 - `evaluateHonours(state, { at, backfill, catalog })`, `backfillHonours(state)`,
   `seedCounts(honours, town)`, `createRunTally()`, `normalizeRunTally(saved)`,
@@ -334,7 +338,11 @@ Screenshots (a seeded mid-campaign town in the dev build, 2026-10-05):
   measure or `NON_RESOURCE_HONOURS` decision. Coins are deliberately excluded: no lifetime
   earned-coin field exists. Inventory powers remain covered by Master Quartermaster.
 - Every monument site needs a named landmark measure, a fixed-list landmarks measure or
-  `NON_MONUMENT_HONOURS` decision (currently empty).
+  `NON_MONUMENT_HONOURS` decision (currently Voyagers' Court). Every commission must count toward
+  a Commissioner rank (`testing/commissions.test.js`); a later commission joins a later rank's own
+  site list, never a shipped one.
+- Every hidden find (`src/data/hiddenFinds.js`) needs a `found` measure or a `NON_FIND_HONOURS`
+  decision.
 - Every rank must match `testing/fixtures/shipped-honour-ranks.json`.
 
 To add a rank: append it to its family with the next metal, set `since` to a raised
@@ -632,3 +640,317 @@ cumulative run checkpoints, and commit together. Continuous honours keep countin
 both the per-level workshop credit and coin allowances are exhausted. With the integrated
 workshop, currency silver is reached at normal runs 981 / 979 / 965 and gold at
 1101 / 1087 / 1011 (normal / one visit / three visits). Goals remain 10 / 60 / 180.
+
+## Moon eras: honours generations 6 and 7 (2026-11-11)
+
+Two eras build only on the Moon. Each gets a town family of its own, counted like New Hollow
+Pioneer: completed building levels over a fixed list, so a later building never changes a
+shipped measure.
+
+| Content                                            | Decision                                                                                 |
+| -------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| New Hollow Rising, its twelve outer-ring buildings | Outer Ring Builder: 1 / 15 / 30 of 36 levels, `since = 6`                                |
+| The Quiet Signal, its seven Far Rim buildings      | Far Rim Listener: 1 / 9 / 18 of 21 levels, `since = 7`                                   |
+| Both eras as era milestones                        | `NON_MILESTONE_ERAS`: Through the Ages still ends on its diamond, Two Towns, One Sky     |
+| Voyagers' Court, The Quiet Signal's monument site  | `NON_MONUMENT_HONOURS`: Landmark Patron's eleven sites shipped fixed, so it adds no rank |
+| The Quiet Stone                                    | No honour. It is a fixed landmark: nothing is bought, built or counted there             |
+| The wandering pair (hidden find)                   | No honour in generation 7; Keen Eye counts it from generation 8 (see below)              |
+
+| Rank ID           | Metal  | Goal | Name               | Measure                                       |
+| ----------------- | ------ | ---: | ------------------ | --------------------------------------------- |
+| outer-ring-bronze | Bronze |    1 | Outer Ring Builder | buildingLevels: 12 fixed outer-ring buildings |
+| outer-ring-silver | Silver |   15 | Outer Ring Builder | same                                          |
+| outer-ring-gold   | Gold   |   30 | Outer Ring Builder | same                                          |
+| far-rim-bronze    | Bronze |    1 | Far Rim Listener   | buildingLevels: 7 fixed Far Rim buildings     |
+| far-rim-silver    | Silver |    9 | Far Rim Listener   | same                                          |
+| far-rim-gold      | Gold   |   18 | Far Rim Listener   | same                                          |
+
+Outer Ring Builder gold is 30 levels: the ten required buildings earn it without the two
+optional ones. Far Rim Listener gold is 18 levels: the six required buildings earn it without
+the optional Pattern Garden, and a player who builds the garden reaches it three levels
+sooner. Neither asks for "all" buildings. Honours gate nothing: the era, its letters and the
+ribbon of light follow building levels alone.
+
+### Calibration (2026-11-11)
+
+Measured with the method of the calibration above: the actual engine, seeds 1–3, all 546
+levels, a 20-move continuous visit, and the conservative mining-only town that buys recommended
+progression first. `scripts/measure-honours.mjs` now reports every rank with `since >= 5`.
+
+```sh
+node scripts/measure-campaign.mjs . 3 546 > campaign.json
+CONTINUOUS_VISIT_MOVES=20 node scripts/measure-campaign.mjs . 3 546 > continuous.json
+node scripts/measure-honours.mjs campaign.json continuous.json
+```
+
+Median normal run at which each rank is earned, with the range over the three seeds. Numbers
+above 546 include normal replays.
+
+| Family             | Goals B / S / G | Normal only                                            | +1 continuous visit / level | +3 continuous visits / level |
+| ------------------ | --------------- | ------------------------------------------------------ | --------------------------- | ---------------------------- |
+| New Hollow Pioneer | 1 / 15 / 30     | 939 / 952 / 966                                        | 938 / 952 / 966             | 938 / 952 / 966              |
+| Outer Ring Builder | 1 / 15 / 30     | 974 (974–991) / 985 (985–1001) / 997 (997–1012)        | 974 / 985 / 997             | 974 / 985 / 997              |
+| Far Rim Listener   | 1 / 9 / 18      | 1007 (1005–1022) / 1012 (1009–1026) / 1018 (1015–1031) | 1007 / 1013 / 1018          | 1007 / 1013 / 1018           |
+
+**Assessment.** The three Moon families arrive in era order and never overlap: New Hollow
+Pioneer gold at run 966, Outer Ring Builder from 974 to 997, Far Rim Listener from 1007 to 1018. Far Rim Listener's bronze comes about ten runs after Outer Ring Builder's gold, which
+is the cost of finishing New Hollow Rising and opening the era. Its three ranks span 11 runs,
+against 23 for the outer ring: the Far Rim has six required buildings where the outer ring
+has ten, so the spacing follows the size of the era. Every rank is reached in all three seeds
+and all three patterns. Continuous visits barely move them, because continuous play never
+advances construction. The goals stay at 1, 9 and 18.
+
+Two cautions. The model is a mining-only town with no chests, hammers, saloon or visitors, so
+real towns reach these ranks earlier; it shows order and spacing, not dates. And it buys
+recommended progression only, so it never builds the optional Pattern Garden: the measured
+gold is the required-buildings path.
+
+## Release 1.3.0: honours generation 8 (2026-11-11)
+
+Release 1.3.0 adds two Moon eras (New Hollow Rising and The Quiet Signal), commissions, a hidden
+raccoon-and-Willowkin pair and 60 mine levels (547–606, chapters 92–101) with three crystal
+mechanics. Generations 6 and 7 already added Outer Ring Builder and Far Rim Listener. This
+generation rewards the rest of what is new and worth chasing, with a few ladders that stop well
+short of a grind.
+
+### What each piece of content gets
+
+| Content                                        | Decision                                                                                                  |
+| ---------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| Commissions (two now, a third planned)         | **Commissioner**: 1 / 2 commissions sponsored now; gold, 3, joins with the third commission's site        |
+| The wandering pair and the space helmet        | **Keen Eye**: find 1, then both, of the hidden finds in your own town                                     |
+| Trace twins, Crossgrain crystal, Chord crystal | Mastery families: Twin Tracer, Crossgrain Mender, Crystal Harmonist (see below)                           |
+| Levels 547–606                                 | **Far Seam Prospector**: complete levels 552, 582 and 606; Trail Surveyor gains a diamond (see below)     |
+| New Hollow Rising, The Quiet Signal            | Unchanged: Outer Ring Builder and Far Rim Listener (generations 6 and 7); both stay in NON_MILESTONE_ERAS |
+| Voyagers' Court                                | Unchanged: `NON_MONUMENT_HONOURS`, since Landmark Patron's eleven sites shipped fixed                     |
+
+`HONOURS_VERSION` rises from 7 to 8. Every new rank has `since: 8` and requirement version 1, so
+existing saves catch up once (a commission already paid for, a find already made) and show the
+new ranks as new.
+
+| Rank ID             | Metal  | Goal | Name             | Measure                                                         |
+| ------------------- | ------ | ---: | ---------------- | --------------------------------------------------------------- |
+| commissioner-bronze | Bronze |    1 | First Commission | landmarks: `earthlight-conservatory`, `homecoming-commons`      |
+| commissioner-silver | Silver |    2 | Commissioner     | same                                                            |
+| keen-eye-bronze     | Bronze |    1 | Sharp Eyes       | found: `helmet`, `wanderers` (`town.helmetRun`, `wanderersRun`) |
+| keen-eye-silver     | Silver |    2 | Keen Eye         | same                                                            |
+
+**Commissioner** counts a commission once its design is chosen and its first stage paid, before
+it is built, as Landmark Patron counts a monument. Its sites are fixed (`COMMISSION_HONOUR_SITES`)
+and count for nothing in Landmark Patron, whose list shipped without them. The server already
+evaluates the `landmarks` measure from the validated purchase. Gold waits for the third
+commission: its site ID is not chosen yet, and a shipped list cannot gain a site later. When the
+site lands, append `{ metal: 'gold', goal: 3, measure: { kind: 'landmarks', areas: [the two
+sites, the new one] }, since: 8 }` (or the raised `HONOURS_VERSION` if 1.3.0 has already
+shipped). `testing/commissions.test.js` fails until every commission counts toward a
+Commissioner rank, so the third one cannot ship without its rank.
+
+**Keen Eye** reverses the generation 7 decision ("no honour, like the space helmet"). A find is a
+deliberate act of looking, the most playful thing New Hollow Rising adds, and it is saved for good:
+the owner's find sets `town.XRun` (the completed puzzle it was found at), a protected field the
+server's integrity replay checks against the `X-find` journal action. So the new `found` measure
+needs no new counter on either side. The family counts the space helmet too: it shares the
+hidden-find contract, and one ladder over both finds grows by appending a rank when a third find
+arrives, where a family per find would not. The requirement names what to look for, as the
+visitor invitation already does. Only finds in your own town count: a find while visiting belongs
+to another town, and counting it would make Keen Eye a reason to farm other players' towns.
+
+### Considered and rejected
+
+- **Each commission design, or all three designs of a site.** A commission's choice is permanent
+  in a town, so an honour for another design would punish the choice or demand a second town.
+- **Finishing a commission's five stages.** That is 1.6M more coins after the first stage: a coin
+  grind with nothing new to see between stages that construction does not already show.
+- **Finding the pair many times.** The pair moves after every puzzle, so a count would be a
+  repetitive chore, and the server keeps only the last find's puzzle, not a count.
+- **A rank for the Quiet Stone's answer (Signal Terrace level 3).** Far Rim Listener's gold
+  needs every required Far Rim level, so it arrives with the answer or a few levels later, and the
+  answer has its own finale on the map.
+- **Through the Ages ranks for the two Moon eras.** Its diamond, Two Towns, One Sky, is the end of
+  that ladder; the Moon families already celebrate each era by its buildings.
+- **Rover expeditions, the tram and child settlers.** They are not built yet; each gets its
+  decision when it ships.
+
+### Calibration (2026-11-11)
+
+Measured on this branch with the method above: the actual engine, seeds 1–3, all 546 levels, a
+20-move continuous visit, and the conservative mining-only town that buys recommended progression
+first and then one foundation per open site as funds allow. `scripts/measure-honours.mjs` now
+also models hidden finds: each find is taken on the first village visit after it is out, which
+is the earliest a player can find it. Real players find it later, or never.
+
+```sh
+FIRST_SEED=1 node scripts/measure-campaign.mjs . 1 546 > normal-1.json   # and seeds 2, 3
+FIRST_SEED=1 CONTINUOUS_VISIT_MOVES=20 node scripts/measure-campaign.mjs . 1 546 > cont-1.json
+node scripts/measure-honours.mjs normal.json cont.json   # the three seeds' results merged
+```
+
+Median normal run at which each rank is earned, with the range over the three seeds. Numbers
+above 546 include normal replays.
+
+| Family           | Goals B / S | Normal only                                 | +1 continuous visit / level | +3 continuous visits / level |
+| ---------------- | ----------- | ------------------------------------------- | --------------------------- | ---------------------------- |
+| Commissioner     | 1 / 2       | 1028 (1024–1042) / 1034 (1031–1048)         | 1027 / 1034                 | 1027 / 1034                  |
+| Keen Eye         | 1 / 2       | 329 (328–336) / 973 (973–990)               | 328 / 973                   | 328 / 973                    |
+| Far Rim Listener | 1 / 9 / 18  | 1007 / 1012 / 1018 (unchanged, for context) | 1007 / 1013 / 1018          | 1007 / 1013 / 1018           |
+| Landmark Patron  | 1 / 5 / 9   | 26 / 331 / 957 (unchanged)                  | 25 / 331 / 958              | 25 / 331 / 958               |
+
+Twin Hollows began at runs 936–952, as before, and every rank was reached in all three seeds and
+patterns.
+
+**Assessment.** Both commissions open during Twin Hollows (Greenhouse and Homecoming Hall level
+3), but this model buys every required building of the two Moon eras before any optional site,
+so its first commission comes about ten runs after Far Rim Listener's gold, at run 1028, and the
+second six runs later. That is the endgame commissions were made for: a reason to keep playing
+once the town is done. A player who prefers a commission to the next required building reaches
+bronze during Twin Hollows instead. Continuous visits barely move it, because a 400,000-coin stage
+is paid in mine coins and continuous play adds only its per-level coin allowance.
+
+Keen Eye's bronze is the earliest helmet find, on Tomorrow City's first visits (run 329), and
+silver the earliest pair find, on New Hollow Rising's first visit
+(run 973, as Outer Ring Builder's bronze). Both are lower bounds, since finding takes looking.
+Neither depends on puzzle play, so the continuous patterns change nothing.
+
+Two cautions, as before: the model is a mining-only town with no chests, hammers, saloon or
+visitors, so real towns get there earlier, and it shows order and spacing rather than dates.
+
+### Levels 547–606 (2026-11-11)
+
+Chapters 92–101 merged at `c8b62696`. The three crystal elements left `NON_MASTERY_ELEMENTS` and
+their families ship with Far Seam Prospector, all with `since: 8` (1.3.0 has not reached `main`,
+which is still at honours version 5).
+
+| Family              | Element or measure                | Per campaign                    | Bronze / silver / gold  | Counts                            |
+| ------------------- | --------------------------------- | ------------------------------- | ----------------------- | --------------------------------- |
+| Twin Tracer         | `traceTwins` (`trace-twins`)      | 10 pairs, 8 levels (ch. 92–101) | 1 / 8 / 15              | Pairs of trace stamps fired       |
+| Crossgrain Mender   | `crossgrain`                      | 35, 9 levels (ch. 93–98)        | 3 / 25 / 50             | Crossgrain crystals sealed        |
+| Crystal Harmonist   | `chords` (`chord`)                | 30, 10 levels (ch. 94–99)       | 2 / 20 / 45             | Chord crystals completed          |
+| Far Seam Prospector | `level` (highest completed level) | —                               | 552 / 582 / 606         | Levels 552, 582 and 606 completed |
+| Trail Surveyor      | `surveys`, new diamond            | 50, 50 levels (ch. 44–95)       | 5 / 20 / 60, diamond 75 | Survey trails completed           |
+
+The rule for the crystal goals: bronze is the element's teaching board (548 holds one trace pair,
+554 three crossgrain crystals, 560 two chords), silver falls within one campaign, and gold at
+about 1.5 campaigns (1.5, 1.43 and 1.5). Far Seam Prospector's goals are the last levels of
+chapters 92, 97 and 101, never "all levels". A later pack appends a rank with its own level. The
+`level` measure reads the highest level with a completion record, on both sides, so the server
+verifies it from the replayed records.
+
+Twin Tracer's bronze has its own singular text ("Fire a pair of trace twins"). Far Seam
+Prospector has its own badge, `public/art/rewards/far-seam.svg`: the Endless Seam tunnel with a
+flag at its far end instead of the infinity sign, since it is a fixed milestone, not endless play.
+The museum's "For an honour" tags name each crystal element ("3 chord crystals"). On a
+collection card that shows "New rank", the markers now take a row of their own above the title:
+long French names ("Prospecteur de la veine lointaine") ran under the wide "Nouveau rang" pill.
+
+**Two test decisions.**
+
+1. _The level element index pin._ `testing/honours.test.js` pinned lanterns at 183 pieces in
+   chapters 42–90. Chapter 94 adds lanterns, so the generated index now has 198 in chapters 42–94.
+   The pin is a sample of the generated index, not a requirement, so it now reads 198 and 42–94.
+   Lamplighter's ranks are unchanged; its diamond (275) is 1.39 campaigns.
+2. _Mine families and longer campaigns._ The new levels lower three top ranks under the 1.3
+   campaigns the test required: Trail Surveyor's gold (60 of 50 trails, 1.2 campaigns), Ore
+   Merchant's diamond (340 of 275, 1.24) and Gate Breaker's diamond (300 of 237, 1.27). The test
+   stopped at the first, so the chapters merge reported only surveys. Shipped goals never move,
+   and every new pack lowers these ratios again, so the test now separates two things:
+   - A top rank is **set** at 1.3–1.7 campaigns. This applies to ranks added in the current
+     generation (`since === HONOURS_VERSION`), such as the crystal families and the new diamond.
+   - A top rank **stays** above 1.2 campaigns, and below 1.7. At 1.2 or less, the family gets a
+     new rank at the end, calibrated at about 1.5.
+
+   Trail Surveyor had room for that rank, so it gains **diamond, 75 trails** (1.5 campaigns,
+   `since: 8`), as the floating seam gave diamonds to the families gold had outgrown. Ore Merchant
+   and Gate Breaker keep their diamonds: they still need more than a fifth of a campaign in
+   replays (normal-only diamond at runs 968 and 999, against 606 levels). Their next rank would be
+   a metal after diamond, which has no frame, colour or name yet. That is a design for the owner,
+   due with the next pack that adds ore orders or blast gates. Reverting either rule fails the
+   test: without the survey diamond it reports "surveys: expected 1.2 to be greater than 1.2", and
+   a new gold set at 1.27 campaigns fails "set at 1.3 campaigns or more".
+
+**Calibration.** Measured as above, now over all 606 levels: seeds 1–3, every normal run
+complete, 20-move continuous visits. `scripts/measure-honours.mjs` now keeps completion
+records, so level milestones are measured too. Median normal run at which each rank is earned
+(range over three seeds where it differs). Runs above 606 are normal replays, which the model
+takes in level order; a player would pick the element's levels in the museum instead.
+
+| Family              | Goals               | Normal only                         | +1 continuous visit / level | +3 continuous visits / level |
+| ------------------- | ------------------- | ----------------------------------- | --------------------------- | ---------------------------- |
+| Twin Tracer         | 1 / 8 / 15          | 548 / 605 / 1208                    | 548 / 601 / 605             | 548 / 551 / 601              |
+| Crossgrain Mender   | 3 / 25 / 50         | 554 / 586 / 1190                    | 554 / 583 / 586             | 554 / 558 / 583              |
+| Crystal Harmonist   | 2 / 20 / 45         | 560 / 592 / 1197                    | 560 / 589 / 594             | 560 / 562 / 590              |
+| Far Seam Prospector | 552 / 582 / 606     | 552 / 582 / 606                     | 552 / 582 / 606             | 552 / 582 / 606              |
+| Trail Surveyor      | 5 / 20 / 60 / 75    | 263 / 302 / 886 / 920               | 261 / 280 / 321 / 353       | 260 / 263 / 291 / 301        |
+| Ore Merchant        | 10 / 40 / 110 / 340 | 254 / 308 / 438 / 968               | 245 / 268 / 342 / 564       | 243 / 254 / 274 / 428        |
+| Gate Breaker        | 10 / 50 / 130 / 300 | 376 / 388 / 437 / 999               | 375 / 382 / 398 / 504       | 374 / 378 / 386 / 408        |
+| Commissioner        | 1 / 2               | 1026 (1024–1044) / 1034 (1032–1052) | 1026 / 1033                 | 1026 / 1033                  |
+| Keen Eye            | 1 / 2               | 329 (328–336) / 948 (944–971)       | 328 / 948                   | 328 / 948                    |
+
+**Assessment.** Each crystal bronze arrives on its teaching board and silver late in the same
+pass (trace pairs on level 605, crossgrain 586, chords 592), so a player meets every rank but gold
+in a straight run. Gold then needs the element's own levels again: about five more trace pairs
+(levels 601–606), fifteen crossgrain crystals (four boards of chapter 98) or fifteen chords (four
+boards of chapter 99). With continuous visits, gold arrives within the first pass, as it does for
+the lanterns and cores, because those visits are extra play on the same boards. Far Seam
+Prospector arrives on its three levels in every seed. Twin Hollows now begins at runs 877–908,
+so Keen Eye's silver (the pair's debut) moves from 973 to 948; Commissioner barely moves. No
+level data, star target or reward changed, so `npm run test:levels` was not needed.
+
+## Hollowborn Square (2026-11-17)
+
+| Content                                               | Decision                                                                                 |
+| ----------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Hollowborn Square, New Hollow Rising's moonstone site | `NON_MONUMENT_HONOURS`: Landmark Patron's eleven sites shipped fixed, so it adds no rank |
+
+No rank changes and `HONOURS_VERSION` stays as it is. Lunar Keepsake Collector counts moonstones
+earned, not spent, so the new site does not change it either.
+
+## Release 1.3.0: honours generation 9 (2026-11-17)
+
+The last three commissions of 1.3.0 landed: the Willowkin Glade in the valley (it opens once the
+Earthlight Conservatory or the Homecoming Commons is commissioned) and, on New Hollow Rising's
+outer ring, Schoolyard Court (Crater School 3) and Crew Yard (Expedition Garage 3). Each costs 2M
+coins in five stages, like the first two.
+
+| Rank ID              | Metal   | Goal | Measure                                                                      |
+| -------------------- | ------- | ---: | ---------------------------------------------------------------------------- |
+| commissioner-bronze  | Bronze  |    1 | Unchanged: `earthlight-conservatory`, `homecoming-commons`                   |
+| commissioner-silver  | Silver  |    2 | Unchanged: same                                                              |
+| commissioner-gold    | Gold    |    3 | landmarks: the two above, `willowkin-glade`, `schoolyard-court`, `crew-yard` |
+| commissioner-diamond | Diamond |    5 | same                                                                         |
+
+`HONOURS_VERSION` rises from 8 to 9 and both new ranks have `since: 9` and requirement version 1,
+so a save that already sponsored three commissions catches up once and shows Commissioner's new
+rank as new. The five sites are `COMMISSION_HONOUR_SITES_1_3`, fixed like the shipped pair: a
+commission added later gets a later rank whose own list names it. The server needed no new code:
+`Honours.php` already evaluates `landmarks` from each rank's exported area list, and
+`backend/tests/honours.php` replays a flow that sponsors all five (the Glade opened from the
+Moon's purchase) and verifies all four ranks from the server's own replay.
+
+**Why gold 3 and diamond 5.** Three is the plan's gold: one more than the shipped pair. Five is
+every 1.3.0 commission. Bronze and silver keep their shipped two-site list, so two quirks follow,
+both accepted rather than changing shipped ranks: a player who sponsors only Moon commissions
+first earns no bronze until the Conservatory or the Commons, and a player with three commissions
+but not both shipped ones holds gold without silver. Silver arrives with the missing one.
+
+Considered and rejected: a new Commissioner family for the later sites (one ladder is clearer,
+and Commissioner already reads "{goal} commissions sponsored"), and a rank per settlement
+(the valley and the Moon share one count by design).
+
+**Calibration.** Same method as generation 8 on this branch: seeds 1–3, all 606 levels,
+20-move continuous visits, the mining-only town that buys recommended progression first and
+then one foundation per open site as funds allow. Measurements in `output/honours-1-3-gen9/`
+(git-ignored).
+
+| Family       | Goals B / S / G / D | Normal only                                                               | +1 continuous visit / level | +3 continuous visits / level |
+| ------------ | ------------------- | ------------------------------------------------------------------------- | --------------------------- | ---------------------------- |
+| Commissioner | 1 / 2 / 3 / 5       | 1026 (1024–1044) / 1034 (1032–1052) / 1044 (1042–1060) / 1057 (1056–1074) | 1026 / 1033 / 1043 / 1057   | 1026 / 1033 / 1043 / 1057    |
+
+Twin Hollows began at runs 877–908 as before, and Keen Eye's silver stayed at 948 (944–971).
+Bronze and silver did not move.
+
+**Assessment.** Gold comes about ten runs after silver and diamond thirteen after gold, at the
+same coin pace as the first two: each first stage is 400,000 coins, about five boards of late
+mining. The model buys every required Moon building first, so in it the Moon commissions open
+with the last New Hollow Rising buildings and all five first stages fall in the endgame; a player
+who prefers a commission to the next building reaches gold sooner. Continuous visits change
+nothing, as before, because a stage is paid in mine coins.

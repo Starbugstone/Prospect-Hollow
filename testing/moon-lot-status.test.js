@@ -1,9 +1,12 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { createTown } from '../src/data/town';
-import { MOON_LOTS } from '../src/data/moonSettlement';
+import { MOON_LOTS, moonLotsShown } from '../src/data/moonSettlement';
+import { BUILDING_BY_ID, createTown } from '../src/data/town';
+import { ERAS, ERA_BY_ID } from '../src/data/eras';
 import {
   AREA_BY_ID,
+  LANDMARK_BY_ID,
   advanceMonumentWorks,
+  areaUnlocked,
   areasForSettlement,
   landmarkOffer,
   monumentWork,
@@ -36,13 +39,26 @@ const chooseSite = (town) => {
 
 afterEach(() => setLocale('en'));
 describe('New Hollow lot status, read through the valley’s shared status contracts', () => {
-  it('labels every Moon lot, then only the monument sites the town has opened', () => {
+  it('labels every Moon lot of the town’s era, then only the monument sites it has opened', () => {
     const ids = (town) => moonLabelAnchors(town).map(({ id }) => id);
-    expect(ids({ ...createTown(), era: 'frontier' })).toEqual(Object.keys(MOON_LOTS));
-    expect(ids()).toEqual(Object.keys(MOON_LOTS));
+    // A lot belongs to its building's era: a later era's lots stay off the map, as the
+    // valley's future plots do, and so does every lot of an era not yet playable.
+    const twinLots = Object.keys(MOON_LOTS).filter(
+      (id) => BUILDING_BY_ID[id].introducedEra === 'twin-hollows',
+    );
+    expect(twinLots.length).toBeGreaterThan(0);
+    expect(ids({ ...createTown(), era: 'frontier' })).toEqual([]);
+    expect(moonLotsShown(moonTown())).toEqual(twinLots);
+    const playable = Object.keys(MOON_LOTS).filter(
+      (id) => ERA_BY_ID[BUILDING_BY_ID[id].introducedEra].enabled,
+    );
+    expect(ids()).toEqual(playable);
+    expect(moonLotsShown({ ...moonTown(), era: ERAS.findLast((era) => era.enabled).id })).toEqual(
+      playable,
+    );
     expect(moonLabelAnchors(moonTown()).find(({ id }) => id === site.id).position.y).toBe(2);
     const opened = ids(moonTown());
-    expect(opened.slice(0, Object.keys(MOON_LOTS).length)).toEqual(Object.keys(MOON_LOTS));
+    expect(opened.slice(0, twinLots.length)).toEqual(twinLots);
     expect(opened).toContain(site.id);
     expect(opened.every((id) => MOON_LOTS[id] || AREA_BY_ID[id]?.settlement === 'moon')).toBe(true);
   });
@@ -116,6 +132,22 @@ describe('New Hollow lot status, read through the valley’s shared status contr
     while (!monumentWork(town, site).ready) town = advanceMonumentWorks(town);
     expect(moonLotStatus(town, site.id)).toBe('ready');
     expect(moonLotDetail(town, site.id)).toBe('Ready to unveil');
+  });
+
+  it('names every site by the building on it once one is chosen', () => {
+    const open = areasForSettlement('moon').filter((area) => areaUnlocked(moonTown(), area));
+    expect(open.length).toBeGreaterThan(0);
+    for (const area of open) {
+      expect(moonLotName(area.id, moonTown())).toBe(area.label);
+      for (const choice of area.choices) {
+        const town = moonTown();
+        town.personalisation = { ...town.personalisation, areas: { [area.id]: [choice] } };
+        expect(moonLotName(area.id, town)).toBe(LANDMARK_BY_ID[choice].label);
+        expect(moonLotLabel(town, area.id, {})).toMatch(
+          new RegExp(`^${LANDMARK_BY_ID[choice].label} · `),
+        );
+      }
+    }
   });
 
   it('uses the player language', () => {

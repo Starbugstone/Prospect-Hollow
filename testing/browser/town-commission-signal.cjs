@@ -1,0 +1,300 @@
+// A player can see a commission from the moment it arrives until it stands, in the real game
+// at desktop and phone sizes, in English and French, with all five commissions open (a New
+// Hollow Rising town; the Willowkin Glade opens with the first one chosen). One real puzzle is won on the way. Needs `npm run demo:eras` first, then the
+// Docker Vite/Playwright setup of moon-input.cjs. PH_SCREENSHOT_DIR saves captures.
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const { chromium, SOFTWARE_WEBGL, testOrigin, pageErrors } = require('./helpers.cjs');
+
+const shots = process.env.PH_SCREENSHOT_DIR;
+if (shots) fs.mkdirSync(shots, { recursive: true });
+const save = (page, name) =>
+  shots ? page.screenshot({ path: path.join(shots, `${name}.png`), timeout: 60000 }) : null;
+const PILL = '.town-map-frame .town-commission-goal';
+const overlap = (a, b) =>
+  a.x < b.x + b.width - 0.5 &&
+  b.x < a.x + a.width - 0.5 &&
+  a.y < b.y + b.height - 0.5 &&
+  b.y < a.y + a.height - 0.5;
+
+const closeDialog = (page) => page.locator('.town-dialog-close').first().click();
+
+async function openTown(browser, viewport) {
+  const page = await browser.newPage({ viewport, locale: 'en-US' });
+  page.setDefaultTimeout(120000);
+  const errors = pageErrors(page);
+  await page.addInitScript(() =>
+    localStorage.setItem('crystal-cascade-town-menu-introduced', 'true'),
+  );
+  await page.goto(`${testOrigin()}/play`);
+  await page.waitForFunction(
+    () => document.querySelector('.town-scene')?.__vueParentComponent.setupState.scene,
+  );
+  await page.evaluate(async () => {
+    const { createSaveFile } = await import('/src/services/saveTransfer.js');
+    const pinia = document.querySelector('#app').__vue_app__.config.globalProperties.$pinia;
+    const campaign = pinia._s.get('campaign');
+    const profile = await (await fetch('/output/era-demo/hollow-rising-complete.json')).json();
+    profile.town.coins = 1e7;
+    campaign.importSave(createSaveFile({ ...campaign.profile(), ...profile }));
+    window.campaign = campaign;
+    const setup = document.querySelector('.town-scene').__vueParentComponent.setupState;
+    await setup.update();
+    while (!setup.scene.lifeReady || setup.scene.cameraFrame)
+      await new Promise(requestAnimationFrame);
+    setup.scene.setMotion(false);
+    setup.scene.render();
+  });
+  return { page, errors };
+}
+// Chooses an outcome the way a player does, from the site's own card.
+async function choose(page, site, design) {
+  await page.evaluate(
+    (site) =>
+      document.querySelector('.town-view').__vueParentComponent.setupState.openMonument(site),
+    site,
+  );
+  await page.locator('.monument-choices button', { hasText: design }).click();
+  await page.locator('.monument-build .town-purchase').click();
+  await page.locator('.monument-confirm .town-purchase').click();
+  await page.locator('.monument-works').waitFor();
+  await closeDialog(page);
+}
+// A town whose work has reached its last puzzle, loaded as a player's save would be.
+const finishWork = (page, site) =>
+  page.evaluate(async (site) => {
+    const { createSaveFile } = await import('/src/services/saveTransfer.js');
+    const { landmarkLevel } = await import('/src/data/townLandmarks.js');
+    const profile = JSON.parse(JSON.stringify(window.campaign.profile()));
+    const work = profile.town.personalisation.construction[site];
+    work.wins = landmarkLevel(work.level).puzzles;
+    window.campaign.importSave(createSaveFile(profile));
+  }, site);
+// Wins the next level in the real mine, taking the hint each move as the level simulations do.
+// Moves stay unlimited: the count below only stops a broken run from hanging the check.
+async function winPuzzle(page) {
+  await page.evaluate(() => {
+    const stores = document.querySelector('#app').__vue_app__.config.globalProperties.$pinia._s;
+    window.game = stores.get('game');
+    return window.game.startLevel(window.campaign.nextLevel, 'normal');
+  });
+  await page.waitForFunction(() => window.game.renderer && !window.game.animationInProgress);
+  const guide = page.locator('dialog[open].obstacle-guide');
+  if (await guide.count()) await guide.locator('.icon-button').click();
+  for (let moves = 0; moves < 600;) {
+    const step = await page.evaluate(async () => {
+      const game = window.game;
+      if (game.levelCleared) return 'cleared';
+      if (game.animationInProgress || game.inputPaused) return 'busy';
+      game.computeHintMove();
+      const hint = game.hintMove;
+      if (!hint) return 'busy';
+      if (hint.activateInPlace) await game.activateBonusGem(hint.swap.aIndex);
+      else await game.resolveSwap(hint.swap.aIndex, hint.swap.bIndex);
+      return 'moved';
+    });
+    if (step === 'cleared') break;
+    if (step === 'moved') moves++;
+    else await page.waitForTimeout(200);
+  }
+  assert.ok(await page.evaluate(() => window.game.levelCleared), 'the puzzle was won');
+  await page.evaluate(() => window.game.exitLevel());
+  await page.locator(PILL).waitFor();
+}
+// Taps the pill of a finished work and sees its unveiling through.
+async function unveil(page) {
+  const before = await page.locator(PILL).getAttribute('aria-label');
+  await page.locator(PILL).click();
+  await page.waitForFunction(
+    ({ pill, before }) => {
+      [...document.querySelectorAll('button')]
+        .find((button) => button.textContent.trim() === 'Skip cinematic')
+        ?.click();
+      const now = document.querySelector(pill)?.getAttribute('aria-label');
+      return !!now && now !== before;
+    },
+    { pill: PILL, before },
+    { polling: 500 },
+  );
+}
+const count = (page) => page.locator(`${PILL} b`).innerText();
+const state = (page, expected) =>
+  page.locator(`${PILL}[data-commission-state="${expected}"]`).waitFor({ timeout: 20000 });
+async function assertPillClear(page, viewport, label) {
+  // An honours toast slides over the foot of the map for a few seconds; a player closes it
+  // or waits. Several commissions bought in a row earn several ranks, so another may follow.
+  // The layout below is what stays on screen.
+  for (let toasts = 0; toasts < 6; toasts++) {
+    for (const close of await page.locator('.honour-toast-close').all())
+      await close.click().catch(() => {});
+    await page
+      .locator('.honour-toast')
+      .waitFor({ state: 'detached', timeout: 15000 })
+      .catch(() => {});
+    await page.waitForTimeout(800);
+    if (!(await page.locator('.honour-toast').count())) break;
+  }
+  const box = await page.locator(PILL).boundingBox();
+  assert.ok(box.x >= 0 && box.x + box.width <= viewport.width, `${label}: within the width`);
+  assert.ok(box.height >= 44, `${label}: large enough to tap`);
+  if (viewport.width < 600) {
+    // A phone has no spare row at the top: the pill is one line in the lower-left corner,
+    // short of the event inset's column (eventInsetRect) and of the Moon's Earth.
+    const frame = await page.locator('.town-map-frame').boundingBox();
+    assert.ok(box.height <= 48, `${label}: one line on a phone (${box.height}px)`);
+    assert.ok(box.y > frame.y + frame.height / 2, `${label}: in the lower half on a phone`);
+    const tabs = await page.locator('.town-tab-bar').boundingBox();
+    if (tabs) assert.ok(box.y + box.height <= tabs.y, `${label}: above the tab bar`);
+    const inset = Math.floor(Math.min(320, Math.max(156, frame.width * 0.4), frame.width * 0.46));
+    assert.ok(
+      box.x + box.width <= frame.x + frame.width - inset - 12,
+      `${label}: left of the event inset`,
+    );
+  }
+  // The pill draws over the map's other controls, so "nothing covers the pill" cannot see it
+  // hiding one of them: the Moon's header wraps to a second row on a phone.
+  for (const selector of [
+    '.town-project-goal:not(.town-commission-goal)',
+    '.town-map-notice',
+    '.town-settlement-notice',
+    '.town-map-wallet',
+    '.town-moon-back',
+    '.town-moon-title',
+  ]) {
+    const other = page.locator(`.town-map-frame ${selector}`);
+    if (await other.count()) {
+      const bounds = await other.first().boundingBox();
+      if (bounds) assert.ok(!overlap(box, bounds), `${label}: clear of ${selector}`);
+    }
+  }
+  const cover = await page.locator(PILL).evaluate((element) => {
+    const rect = element.getBoundingClientRect();
+    const hit = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+    return element.contains(hit) ? null : `${hit?.tagName}.${hit?.className}`;
+  });
+  assert.equal(cover, null, `${label}: nothing covers the pill`);
+  const overflow = await page
+    .locator(`${PILL} small:visible`)
+    .evaluate((small) => small.getBoundingClientRect().right);
+  assert.ok(overflow <= viewport.width, `${label}: the words stay on screen`);
+}
+
+async function run(browser, viewport, name) {
+  const { page, errors } = await openTown(browser, viewport);
+  await state(page, 'request');
+  await assertPillClear(page, viewport, `${name} request`);
+  await save(page, `${name}-request`);
+
+  // The pill opens the waiting commission, on whichever settlement it is.
+  await page.locator(PILL).click();
+  await page.locator('[data-commission-request]').waitFor();
+  await save(page, `${name}-letter`);
+  await closeDialog(page);
+
+  // The Moon's letter hangs over its site, and tapping it opens the same request.
+  await page.waitForFunction(() => document.querySelector('.moon-view, [data-moon-action]'));
+  for (const site of ['earthlight-conservatory', 'schoolyard-court', 'crew-yard']) {
+    // The outer ring's front sites lie behind the overview camera: the player turns the view
+    // toward the site, as the camera gestures do, before tapping its letter.
+    await page.evaluate(async (site) => {
+      const { AREA_BY_ID } = await import('/src/data/townLandmarks.js');
+      const moon = document.querySelector('.town-moon-view').__vueParentComponent.setupState.scene;
+      const [x, z] = AREA_BY_ID[site].positions[0];
+      moon.controls.target.set(x, 0, z);
+      moon.camera.position.set(x + 4, 22, z + (z > 0 ? -26 : 26));
+      moon.controls.update();
+    }, site);
+    const letter = page.locator(`[data-moon-action="${site}"]`).first();
+    await letter.waitFor();
+    await letter.click();
+    await page.locator('[data-commission-request]').waitFor();
+    if (site !== 'earthlight-conservatory') await save(page, `${name}-letter-${site}`);
+    await closeDialog(page);
+  }
+  await page.evaluate(async () => {
+    const { locale, loadFrench } = await import('/src/i18n/index.js');
+    await loadFrench();
+    locale.value = 'fr';
+  });
+  await assertPillClear(page, viewport, `${name} French request`);
+  await save(page, `${name}-request-fr`);
+  await page.evaluate(async () => {
+    const { locale } = await import('/src/i18n/index.js');
+    locale.value = 'en';
+  });
+
+  // Choosing one takes its letter down and starts the progress; the others wait behind it,
+  // and the first choice opens the Willowkin Glade.
+  const choices = [
+    ['earthlight-conservatory', 'Earthlight Bakehouse'],
+    ['homecoming-commons', 'Homecoming Bandstand'],
+    ['willowkin-glade', 'Story Tree'],
+    ['schoolyard-court', 'Lamplit Library'],
+    ['crew-yard', 'Little Rover Track'],
+  ];
+  for (const [n, [site, design]] of choices.entries()) {
+    await choose(page, site, design);
+    await state(page, n < choices.length - 1 ? 'request' : 'work');
+    if (!n) await save(page, `${name}-glade-request`);
+  }
+  await page
+    .locator(`${PILL} progress`)
+    .waitFor({ state: viewport.width < 600 ? 'attached' : 'visible' });
+  await assertPillClear(page, viewport, `${name} work`);
+  await save(page, `${name}-work`);
+  // The same pill on the Moon, under its header.
+  await page.evaluate(() =>
+    document
+      .querySelector('.town-view')
+      .__vueParentComponent.setupState.townScene.showSettlement('moon'),
+  );
+  await page.locator('.town-moon-header').waitFor();
+  await assertPillClear(page, viewport, `${name} Moon work`);
+  await save(page, `${name}-moon-work`);
+  await page.locator('.town-moon-back').click();
+  await page.locator('.town-moon-header').waitFor({ state: 'detached' });
+
+  // A real puzzle, won in the mine, builds both commissions and moves the pill on.
+  assert.match(await count(page), /^0\//, `${name}: no puzzle built yet`);
+  await winPuzzle(page);
+  await state(page, 'work');
+  assert.match(await count(page), /^1\//, `${name}: one won puzzle shows on the pill`);
+
+  await finishWork(page, 'earthlight-conservatory');
+  await state(page, 'ready');
+  await page.locator(`${PILL} img[src*="builder-hammer"]`).waitFor();
+  await assertPillClear(page, viewport, `${name} ready`);
+  await save(page, `${name}-ready`);
+
+  // Unveiled, each commission has four more stages to pay for: the pill counts them.
+  for (const [site] of choices.slice(1)) await finishWork(page, site);
+  for (let n = 1; n < choices.length; n++) {
+    await unveil(page);
+    await state(page, 'ready');
+  }
+  await unveil(page);
+  await state(page, 'funding');
+  assert.equal(await count(page), '1/5', `${name}: one stage of five stands`);
+  await assertPillClear(page, viewport, `${name} funding`);
+  await save(page, `${name}-funding`);
+
+  assert.deepEqual(errors, [], `${name}: page errors`);
+  await page.close();
+}
+
+(async () => {
+  const browser = await chromium.launch({ headless: true, args: SOFTWARE_WEBGL });
+  try {
+    await run(browser, { width: 1440, height: 900 }, 'desktop');
+    await run(browser, { width: 375, height: 740 }, 'phone');
+    console.log(
+      'The commission signal is clear on desktop and phone, in English and French, with five commissions.',
+    );
+  } finally {
+    await browser.close();
+  }
+})().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});

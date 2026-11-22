@@ -85,7 +85,16 @@ it('every plot begins in its own era, advances through every later playable era,
           kind = b.kind;
         const stage = buildingServiceLevel(b.id, town.buildings[b.id]);
         const service = b.introducedEra === era.id && era.id !== 'frontier' ? level : stage;
-        if (b.settlement === 'moon') renderMoonBuilding(d, root, kind, level);
+        // A Moon building is built through its own era's levels, then modernized in a later
+        // era: its full building wearing that era's finish.
+        if (b.settlement === 'moon')
+          renderMoonBuilding(
+            d,
+            root,
+            kind,
+            b.introducedEra === era.id ? level : town.buildings[b.id],
+            b.introducedEra === era.id ? null : { era: era.id, level },
+          );
         else if (kind === 'bridge') {
           renderBuilding({ town: d, parent: root, kind, level: service, label: b.name });
           renderModernization(d, root, kind, era.id, level);
@@ -126,7 +135,10 @@ it('every plot begins in its own era, advances through every later playable era,
       town.transition.pending = false;
     }
   }
-  expect(signatures.size).toBe(BUILDINGS.length);
+  // Every building of a playable era; an era still being built joins once it is enabled.
+  expect(signatures.size).toBe(
+    BUILDINGS.filter((b) => ERAS.find(({ id }) => id === b.introducedEra)?.enabled).length,
+  );
   for (const g of new Set(Object.values(d.geometries))) g.dispose();
   d.materials.forEach((m) => m.dispose());
   d.contactShadowMaterial.dispose();

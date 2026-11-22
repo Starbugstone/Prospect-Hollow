@@ -9,7 +9,8 @@ Unknown save identifiers fall back to the Frontier profile.
 
 Road appearance uses the `roadStyle` capability and `data/roadStyles.js`.
 The styles progress from worn dirt and gravel through brick, concrete and marked
-asphalt to contemporary paved crossings. `roadColor` remains an optional tint
+asphalt to contemporary paved crossings. A style may add an `inlay` colour: two thin
+rails down the lanes, as New Hollow Rising's `ring-lane` does. `roadColor` remains an optional tint
 override. `RoadDetails` prepares flat surface strips once per topology/era change;
 WebGL merges them into the existing static scenery batch. Junctions and short building approaches remain unmarked.
 The bridge owns its raised surface: `roadBridge` enables a continuous road deck
@@ -238,7 +239,7 @@ equipment within the same reserved envelope. Pots, lamps, rails and nameboards
 do not count as either paid step. Native construction keeps its original tier
 sequence. Regression coverage checks semantic counterparts across handovers,
 structural volume, fixed envelopes, actual frontage/operation grade changes and
-per-building geometry ceilings across all fifteen eras.
+per-building geometry ceilings across all seventeen eras.
 
 One narrow replacement exception is the River & Rail well reservoir: the old
 pitched canopy physically intersects the new tank's frame, and the tank takes
@@ -272,6 +273,44 @@ lounge, airport grounds and bridge hooks, so a new architecture registers once
 instead of adding conditionals. Large parcels may declare an `access` road instead
 of joining the garden lane; shadow coverage grows only with the clearings that
 hold a visible parcel. See [the future eras guide](future-eras.md).
+
+### Roof tones and plot variants
+
+Each era keeps one palette, but a building's purpose picks its roof tone from it
+(`data/roofTones.js`): homes keep the era's roof, civic buildings take a deeper tone, shops
+a warm one and working buildings a plain one. `toneRoof()` repaints a finished plot's roof
+colours after its renderer has drawn it, so every renderer and the imported shells get the
+same rule and no geometry, footprint or sign mount changes. Styles are keyed by the era's
+capabilities (`cozyStyle`, `architecture`, `cityAssets`, `style`), so a successor inherits
+its architecture's tones. An era with a new architecture needs a `ROOF_STYLES` entry or a
+place in `OWN_ROOF_COLOURS`; `testing/roof-tones.test.js` fails otherwise. The 2D drawings
+read the same tone through `roofPaint()`: the frontier gables, the 1920–2005 shells, the
+garden cottages and the four future kits. The River & Rail, Industrial, Motor Age and
+Tomorrow drawings hard-code their roof and keep one colour.
+
+Plots that share a kind are told apart. `plotVariant(id, kind)` numbers them, `buildPlot`
+exposes it to renderers as `d.plotVariant`, and `plotShade` shifts the roof tone a little.
+Frontier homes add a cupola, a ridge walk, an attic window or a fieldstone chimney above
+the shared cabin, and farms a weathervane or a hay hoist. In the Skysail, Stargazer,
+Moonward and Twin Hollows architectures each home takes its own massing inside the first
+home's width: one block, a main house with a side room, a tall narrow house or twin
+gables. Tomorrow's dome homes (`rounded.js`) and the garden cottages (`cozy.js`) rearrange
+their own family of shapes: a side dome or glasshouse, a tall narrow house, a lantern room
+or pergola, a pair. The imported 1920–2005 shell is one model, so `addHomeCharacter` in
+`city.js` adds a garden room, a roof room, a chimney and hedge or a shed and tree against
+the measured house, in the era's wall and roof colours. The first home always stays as
+authored. Regenerate footprints after changing a variant (`npm run assets:footprints`).
+
+Working buildings are told apart by purpose too. In those four architectures a hall, shop,
+workshop, station or culture house takes the massing of its `identity`
+(`cityBuildingStyles.json`) from `buildings/future/purposeMassing.js`: the bank a columned
+portico, the school a long range and a bell tower, the fire station a hose tower, the market
+an open hall between two kiosks. An identity without an entry keeps its family's plain form;
+`testing/purpose-massing.test.js` fails when two kinds of a family share a shape and when a
+new identity has not been decided.
+The garden eras (`cozy.js`) keep their round cottages and tell halls, shops and workshops
+apart with a feature on the side away from the service annex: the school's bell tower, the
+fire station's hose tower, the diner's terrace, the mill's silo. The same test covers them.
 
 ### Partial modernization: `modernizes`
 
@@ -314,6 +353,50 @@ map (TownScene's `guidance`; a visit derives its own). Every Build row is
 `TownBuildRow.vue`, whose tap and look follow one rule, `parcelAction`: finish, buy with
 coins or build with a hammer. `testing/town-guidance.test.js` and
 `testing/build-list.test.js` cover both.
+
+### The Moon map: lots, roads and districts as data
+
+New Hollow grows by adding data in `src/data/moonSettlement.js`; no map, path or walker is
+edited for a new lot.
+
+- **`MOON_LOT_TABLE`** holds every lot: `at`, `pad`, the `arrival` path in the lot's own
+  frame, `face` ('out', 'in' or a turn), the `ring` its path joins and, beyond the crater,
+  its `district`. `gather` marks an open place nobody steps inside: visitors stand where its
+  path begins and face the middle of its ring.
+- **`MOON_ROADS`** lists ring radii and spoke angles. The road mesh, the SVG map, the crater
+  scatter, `moonApproach` (the path search) and `moonRoadWalk` (the settlers' walk) all read it.
+- **`moonLotsShown(town)`** gives the lots a town sees: those of its era and every earlier
+  enabled one. The scene, the labels, the SVG map and tap targets use it, so a later era's
+  lots do not exist for an earlier town.
+- **`MOON_DISTRICTS`** adds ground beyond the rim for a later era: a `centre`, the radius of
+  its level `floor`, how far it takes to `blend` back into the hills, its own `ring` road, one
+  straight `road` from the crater's outer ring, and an optional fixed landmark (`stone`).
+  `moonDistrictsShown(town)` lists those a town has reached.
+- **Ground is gated by era.** `moonHeight(x, z, districts)` multiplies the natural ground by
+  what a district leaves of it; without districts it is the crater every earlier town sees.
+  `MoonScene.openDistricts` rebuilds the terrain once when the list changes, and the crater
+  scatter reads only the crater's own lots, sites and paths, so a district never moves a
+  crater elsewhere. `MoonDistricts.js` draws a district's roads, its landmark and what the
+  landmark does once the town's story is told.
+- **A second district** is one more entry: its lots name it, 'in' faces its centre, paths join
+  its ring and `moonDistrictWalk` routes settlers by its road. The SVG map widens its box to
+  hold it (`moonMapBox`).
+
+A modernized Moon building is its form plus a finish. `renderMoonBuilding(d, parent, kind,
+level, finish)` takes `{ era, level }` and adds that era's pieces from `MOON_FINISHES`
+(`buildings/moonFinishes.js`); a finish never changes the building beneath it, its hatch or
+its path. `src/data/moonModernizations.js` gives the offer its words (a name and three step
+lines per era and building) and any behaviour a step brings, such as rovers on the outer ring.
+Parts that move carry `userData.moonMotion` and stay out of the merged settlement mesh.
+
+An era whose new buildings all stand on one other settlement hands its cinematic over to that
+settlement's map: `eraSettlement(era)` in `TownEventSettlement.js` returns it, or null for an
+era that builds in the valley or in several places. New Hollow Rising and The Quiet Signal both
+return the Moon.
+
+Checks: `testing/moon-access.test.js` (paths), `testing/moon-parcels.test.js` (pads, taps),
+`testing/moon-settlers.test.js` (walks), `testing/moon-finishes.test.js` (finishes) and
+`testing/quiet-signal.test.js` (districts, era-gated ground and the crater snapshot).
 
 ## Regression evidence
 
@@ -390,6 +473,21 @@ saved receipts, future milestone definitions, visual disposal and this final hol
 To reproduce a silent video, generate era demos and run
 `scripts/capture-completion-fireworks.js` through Playwright CLI in a disposable
 browser. Encode `output/playwright/completion-fireworks-frames/%05d.jpg` at 24 fps.
+
+#### The era cinematic's camera
+
+`TownEraShots.js` owns the era cinematic's camera as one continuous move: the town from
+the south, a crane to the mine, a slow circle of the works with the crew close by, a lift
+as the builders leave, and a closing wide shot that leans toward the valley plots the new
+era introduces (`eraNewGround`; an era that builds only on the Moon closes on the town's
+heart). No two eras play the same move, and none needs authoring: the opening leans toward
+the ground the departing era opened (bounded by `ERA_OPENING_LEAN`, never north), and the
+circle round the works runs the other way in every second era (`eraOrbitMirrored`). An
+unknown era gets the plain film. `eraShot(time, { from, to, aspect })` is pure: keys are data, the path passes each key
+without stopping, and a portrait screen stands farther back. `TownMineEraConstruction`
+supplies the scene and `TownPresentation` still owns the approach, terrain clearance and
+return. `testing/era-cinematic-shots.test.js` samples every era in landscape and portrait
+for ground clearance, an unobstructed subject, speed and stalls.
 
 ### Incident scripts
 
@@ -542,6 +640,25 @@ images (96 character comparisons, 288 village scenes and 84 inset close-ups),
 writes an offline gallery and image manifest, and creates `output/vip-review.zip`.
 Additional overview captures already in the folder are preserved in the archive.
 
+#### Bodies and period silhouettes
+
+`villagerBody(seed, ages)` (`data/villagers.js`) fixes each villager's age, height, build
+and hairstyle. Only ordinary residents come as children or elders; workers, visitors, the
+sheriff and scripted actors stay adult, and a scripted actor keeps the standard figure its
+props were made for. The figure scales under a `Villager figure` node, so `root` remains
+free for doorway fades and the contact shadow.
+
+Each wardrobe in `data/townWardrobes.js` lists `looks` for both genders: sets of parts
+from `TownOutfitParts.js` (bonnet, overalls, cloche, headphones, sail cape and so on).
+`periodOutfit(profile, seed, gender)` picks the palette and look. Parts are a few shared
+primitives each, live in `appearance.silhouette` and hide under a named VIP's outfit, so
+VIP recolouring is unchanged. A new era needs a wardrobe with looks;
+`testing/era-characters.test.js` fails without them and holds the per-figure part and
+triangle budget. Unknown wardrobes, genders and part names dress plainly.
+
+Review any era with `scripts/era-character-sheet.html?eras=frontier,aviation` on the dev
+server (`&cast=animals` for the animals, `&species=dog,cat&each=4` to narrow them).
+
 ### NPC obstacle avoidance
 
 `TownNavigation` supplies cached pedestrian detours for residents, VIPs, mounted
@@ -654,6 +771,40 @@ disturbances, frozen clocks and a long simulation without scene growth.
 and final building tiers in every era and checks both prepared segments and
 animated animal positions, plus thin unmarked fences, covered landings, solid
 interiors, moving scenery reservations and traffic displacement.
+
+#### Era newcomers
+
+Every era after the first brings one species the valley has not seen: crow, duck, tortoise,
+heron, peacock, gull, owl, crane, swan, goat and lynx join the deer, otter, hedgehog,
+bluebird and Willowkin that earlier eras introduced. Each era names its fauna profile
+(`wildlife`), and a profile is the previous one `joinedBy` a species in `townAnimals.js`,
+so a successor era inherits the cast it follows and an unknown profile falls back to
+`standard`. The cast stays bounded: an era keeps the newest `PASSING_NEIGHBORS` ground
+newcomers and one newcomer bird species (one or two birds), and earlier newcomers move on.
+The long-standing animals, which include every space-helmet wearer, never leave.
+
+A ground newcomer needs a `TOWN_ANIMALS` entry with `model: 'garden'`, a `home` patch on
+the southern verge or a `riverbank` offset downstream of the town, a builder in
+`NewcomerAnimalModels.js` and at least two `ANIMAL_LOOKS`. A bird needs `flying: true` and
+looks (`neck`, `bars` and `form` shape the shared bird body). Ground newcomers are
+space-helmet wearers while they live in the valley (add one to `SPACE_HELMET.wearers`, and
+to `suits` if its coat would hide the white suit); birds are not. `testing/town-animals.test.js` ("Era newcomers") checks one arrival per era, the
+bound, the fallbacks and a planned route or flight for each newcomer in a full town.
+
+#### Looks, generations and Willowkin stages
+
+`ANIMAL_LOOKS` (`data/townAnimals.js`) gives each species several coats and, where it has
+them, builds: hound, terrier and collie dogs, a rooster among the hens, a stag and a fawn
+among the deer. `animalLook(species, seed, generation)` picks one; a new generation is born
+every second era, so the cast changes over the centuries while an animal stays itself
+within an era. A look may recolour, reshape or shrink the authored model, never outgrow
+its navigation envelope. Horses take one of five coats from where they stand.
+
+Willowkin neighbors have their own crown (umbrella, blossom or plume) and leaf colour.
+Their scarf and satchel take the current era's palette, each period adds a keepsake
+(`WILLOWKIN_KEEPSAKES`, by wardrobe), and from the Stargazer Age one in three is an elder
+with a staff, moss and long fronds. Saplings include smaller seedlings.
+`testing/era-characters.test.js` covers the envelopes, budgets and fallbacks.
 
 ### Loading and renderer ownership
 
@@ -976,6 +1127,13 @@ Coin and moonstone payments are implemented through the shared currency contract
 and `TownPersonalisation::purchase`. Moonstone Garden and Moonrock Court use
 moonstones; Earthrise Plaza uses coins. Unsupported currencies fail closed.
 Regenerate public content after adding sites, IDs, prices or currency metadata.
+
+A site's `opens` is the one opening contract beyond its era, evaluated by `areaOpensMet()` and
+mirrored by `TownPersonalisation::opens` from the exported catalog: `{ building, level }` waits
+for a finished building level, `{ sites, level }` for a stage paid at any listed site (the
+Willowkin Glade waits for either earlier commission). Both read values that only rise, so a site
+never closes, and an unknown kind stays closed on both sides. A new kind is added to both
+functions and to `testing/helpers/siteOpening.js`, which every test that opens all sites uses.
 `testing/moon-monument.test.js` checks the lunar layout, the shared lifecycle,
 price export, fallback art, unsupported-currency rejection, geometry budgets and
 Moon camera restoration. `testing/moonstone-monuments.test.js` covers the
@@ -987,6 +1145,13 @@ flows through `landmarkPayment` into `townCurrency.payPrice` in the atomic
 personalisation commit; the server's shared `landmark-buy` replay applies that
 same catalog currency together with ownership. `TownMoonstoneLandmarks.js` owns
 six mineral silhouettes without expanding the main renderer's form switch.
+Later sites with designs of their own register a renderer module the same way
+(`moon/MoonSignalLandmarks.js` for Voyagers' Court, `moon/MoonHollowbornLandmarks.js` for
+Hollowborn Square): the module exports its forms and a builder that draws its own octagonal
+base, and `buildLandmark` skips the shared pedestal, flanking court and fountain for them. A
+Moon site that stands off the roads gets a public path through one entry in
+`MOON_SITE_PATHS` (`moonSiteRoute`, the same route search as a lot's); the Moon scene, the SVG
+map and the crater scatter read `moonSiteRoutes(town)`.
 `TownMapLabel.vue` renders names, quiet markers and `TownLabelStatus` on every
 settlement map. Its text containment applies to translated names and statuses;
 map-specific styles choose a row or stacked layout. `TownActionIcon.vue` renders
@@ -1002,3 +1167,64 @@ their cabin and wheel axles therefore agree with the heading sampled by the map.
 using the canvas/container dimensions and fixed label widths to keep lot and
 monument controls separate. Neither settlement creates its own purchase,
 construction or unveiling state machine for these new sites.
+
+### Commissions
+
+A commission is a settlement asking for something: the player chooses what it becomes, and its
+residents use the result. Release 1.3.0 ships five: the Earthlight Conservatory, Schoolyard
+Court and Crew Yard on the Moon, and the Homecoming Commons and Willowkin Glade in the valley.
+Each is an ordinary monument site in `townLandmarks.js` (position, designs, `commissionLevelPrices`,
+`opens`) plus one entry in `COMMISSIONS` (`src/data/commissions.js`): who writes, the request, and
+each outcome's thanks, `visits` and `use`. Everything else is derived from the saved site, so a
+commission saves nothing new:
+
+- `commissionStatus()` gives one signal, most pressing first (`ready`, `request`, `work`,
+  `funding`); the map pill, the Build sheet pill and the letter over the site read it.
+- `commissionLetters()` sends the request once the site opens and the thanks once the first stage
+  stands. `finishedCommissions()` and `commissionUse()` tell residents where to go: valley
+  villagers through `TownCommissionResidents.js`, Moon settlers through `MoonSettlers.js`
+  (`young: true` sends the town's children; Moon children come from the Crater School).
+- Purchases, construction and unveiling are the shared monument lifecycle, replayed by the server
+  from the exported catalog.
+
+To add a commission: add its site (with an `opens` the server already understands, or a new kind
+added to both sides as above), its designs, 3D and SVG art and previews, its `COMMISSIONS` entry,
+French text and an honours decision. A commission joins no shipped Commissioner list: it gets a
+later rank whose own list names it (`COMMISSION_HONOUR_SITES_1_3` holds the five of 1.3.0), and
+`testing/commissions.test.js` fails until it counts toward one. Commissions never gate an era, a
+puzzle or a reward, and the choice is permanent. `testing/commissions.test.js`,
+`testing/commission-residents.test.js`, `testing/browser/town-commission-signal.cjs` and
+`testing/browser/commission-residents.cjs` cover the contract on both maps.
+
+## Hidden finds
+
+The space-helmet animal is one definition of a shared hidden-find contract
+(`src/data/hiddenFinds.js`); a later find is another definition, never a second copy of
+the helmet's state, persistence or server code.
+
+- A find `X` is out from its `debut` era on and is placed from the public town alone
+  (`completedRuns`), so the owner and every visitor agree with nothing stored.
+- It saves `XRun` and `XVisitAt` on the town, journals `X-find` and `X-visitor`, is found by
+  a visitor through `POST /villages/{publicId}/X`, rests until `XReadyAt` on a shared town
+  and arrives on the owner poll as `XFinds`. The helmet's saves, journals, receipts and
+  API predate the contract and already have this shape, so nothing was migrated.
+- Rules: `hiddenFindOut`, `hiddenFindable` and `hiddenFindReward` (`TownRules.js`); the
+  store's `findHidden` and `redeemHiddenFind`; the shared tap test `hiddenFindTap`
+  (`TownHiddenFinds.js`: find distance, zoom hint, never moving the camera); words in
+  `HIDDEN_FIND_WORDS`.
+- Server: the definitions are exported as `economy.hiddenFinds` in the save rules.
+  `SaveIntegrity` replays every find's commands and signs receipts with the find's ID;
+  `PublicTown::findHidden` keeps each find's limits (one per host town and one per player
+  per 12 hours, per kind). Space-helmet finds stay in `helmet_finds`, which release 1.2
+  reads without a kind; every other find is a `hidden_finds` row of its kind (migration
+  26), chosen by `PublicTown::findTable()`. A new find needs no new table or migration.
+- The wandering pair (`wanderers`, from New Hollow Rising) is the second definition: an
+  upright raccoon and its Willowkin (`TownWanderers.js`). `wanderersPlace` puts them in the
+  valley or on the Moon from `completedRuns`; the valley casts them as one sidewalk walker
+  that `placeWanderers` hides while they are away, and `MoonScene.placeWanderers` walks
+  them round the ring road in suits. The raccoon's head and wrap-around markings live in
+  `TownRaccoonGeometries.js`; `uprightRaccoon` merges each rigid part into one mesh per
+  colour, and its own touches (tail sway, ear flick, a look up at the Willowkin) rest under
+  reduced motion. `testing/wanderers.test.js` covers both maps, the draw budget and that rest.
+- Each find is separate: finding one never uses up another.
+  `testing/hidden-finds.test.js` runs the contract for every definition.

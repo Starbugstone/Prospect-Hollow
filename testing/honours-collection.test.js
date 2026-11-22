@@ -140,6 +140,13 @@ describe('The honours collection', () => {
     expect(seam).toContain(text);
   });
 
+  it('names the sites Landmark Patron counts on its card', async () => {
+    const patron = card(await collection(townState(), { tab: 'town' }), 'landmark-patron');
+    expect(patron).toContain('Sponsor monuments at 1 of the listed sites.');
+    expect(patron).toContain('Founders’ Meadow');
+    expect(patron).toContain('Moonrock Court');
+  });
+
   it('frames earned families in their best metal with a rank track and their date', async () => {
     const html = await collection(townState());
     const score = card(html, 'score');
@@ -160,7 +167,7 @@ describe('The honours collection', () => {
     expect(score).toContain('honour-progress-next');
     expect(score).toContain('>New<');
     expect(card(html, 'stars')).toContain('honour-card-bronze');
-    expect(card(html, 'stars')).toContain('Earned before honours were introduced');
+    expect(card(html, 'stars')).toContain('Earned before this honour was added');
     expect(card(html, 'stars')).not.toContain('>New<');
     // Earned families lead the grid.
     const earned = ['stars', 'score', 'fusion', 'mine-lanterns'];
@@ -471,6 +478,17 @@ describe('The honour detail', () => {
     expect(rungs(html)[0]).toContain('role="progressbar"');
   });
 
+  it('names the sites Landmark Patron counts once, not on every rank', async () => {
+    const html = await detail('landmark-patron');
+    // Each site appears once in the detail; the ladder keeps one short line per rank.
+    expect(html.split('Founders’ Meadow')).toHaveLength(2);
+    expect(html.split('Moonrock Court')).toHaveLength(2);
+    const ladder = rungs(html);
+    expect(ladder).toHaveLength(3);
+    for (const rung of ladder) expect(rung).not.toContain('Founders’ Meadow');
+    expect(ladder[1]).toContain('Sponsor monuments at 5 of the listed sites.');
+  });
+
   it('keeps a locked honour off the showcase', async () => {
     const html = await detail('gem-sapphire');
     expect(html).toContain('honour-badge-locked');
@@ -660,7 +678,7 @@ describe('Visiting a town’s honours', () => {
     expect(html).toContain('Silver · 2 of 3');
     expect(html).toContain('honour-kicker-silver');
     expect(html).toContain('61,400 on level 88 (target 30,600)');
-    expect(html).toContain('Earned before honours were introduced');
+    expect(html).toContain('Earned before this honour was added');
     // Earned only: no locked badges, progress or goals a visitor cannot see.
     expect(html).not.toContain('honour-badge-locked');
     expect(html).not.toContain('Lamplighter');

@@ -1,3 +1,4 @@
+import { applyCrystalSpec } from './CrystalMechanics.js';
 import { createGem } from './GemFactory.js';
 import { MatchEngine } from './MatchEngine.js';
 import { LEVEL_COUNT, CHAPTERS, getLevelGemTypes } from '../../data/campaign.js';
@@ -189,6 +190,8 @@ const scoreObjective = (id, target) => ({
   progress: 0,
 });
 // Field order is part of the saved and hashed level contract.
+// A prototype board (`trial`) names its own chapter, theme and pace: it sits outside the
+// campaign's numbering and has no authored star target.
 const assembleLevelConfig = ({
   id,
   chapter,
@@ -196,17 +199,20 @@ const assembleLevelConfig = ({
   oreOrders,
   chestTarget,
   speedTargetMs,
+  trial,
   ...board
 }) => ({
   id,
   chapter,
-  chapterName: CHAPTERS[chapter].name,
-  theme: CHAPTERS[chapter].theme,
-  pace: levelPace(id),
+  chapterName: trial?.chapterName ?? CHAPTERS[chapter].name,
+  theme: trial?.theme ?? CHAPTERS[chapter].theme,
+  pace: trial?.pace ?? levelPace(id),
   tip,
   ...(oreOrders ? { oreOrders } : {}),
   chestTarget,
-  starScoreTarget: getLevelStarTarget(id, chestTarget),
+  starScoreTarget: trial
+    ? (trial.starScoreTarget ?? chestTarget)
+    : getLevelStarTarget(id, chestTarget),
   speedTargetMs,
   boardCols: board.cols,
   boardRows: board.rows,
@@ -218,13 +224,22 @@ const assembleLevelConfig = ({
   summary: board.summary,
 });
 
-const createExpansionLevel = (id) => {
-  const spec = EXPANSION_LEVELS[id - EARLY_LEVEL_COUNT - 1];
-  const chapter = chapterIndexOf(id);
-  const { cols, rows } = CHAPTERS[chapter];
+const createExpansionLevel = (id) =>
+  buildExpansionLevel(id, EXPANSION_LEVELS[id - EARLY_LEVEL_COUNT - 1]);
+
+// `trial` builds a prototype board outside the campaign: it brings its own size, colors and
+// chapter details instead of reading them from the level's place in CHAPTERS.
+function buildExpansionLevel(id, spec, trial) {
+  const chapter = trial?.chapter ?? chapterIndexOf(id);
+  const { cols, rows } = trial ?? CHAPTERS[chapter];
   const cellAt = (index) => ({ x: index % cols, y: Math.floor(index / cols) });
   const rng = createSeededRng(id * 1337);
-  const layout = new BoardLayout(`level_${id}`, 'RECTANGLE', { cols, rows }, getLevelGemTypes(id));
+  const layout = new BoardLayout(
+    `level_${id}`,
+    'RECTANGLE',
+    { cols, rows },
+    trial?.gemTypes ?? getLevelGemTypes(id),
+  );
   const seals = { r: 'ruby', b: 'sapphire', g: 'emerald' };
   const tiles = [...spec.map.replaceAll('/', '')].map((symbol, index) => {
     const tile = { type: 'standard', health: 0, maxHealth: 0 };
@@ -275,11 +290,14 @@ const createExpansionLevel = (id) => {
   for (const index of spec.relics ?? [])
     layout.initialTilePlacements.push({ ...cellAt(index), type: 'relic' });
   // Sealed chambers: every cell in the listed rows (and columns) waits behind its wall.
+  // A route chamber is one of several ways in: its wall counts toward no goal, so the
+  // player may break it or leave it standing.
   for (const {
     id = 'a',
     rows: [first, last],
     cols: [left, right] = [0, cols - 1],
-  } of spec.chambers ?? [])
+    route = false,
+  } of spec.chambers ?? []) {
     for (let index = first * cols; index < (last + 1) * cols; index++) {
       const tile = tiles[index];
       if (index % cols < left || index % cols > right) continue;
@@ -287,6 +305,8 @@ const createExpansionLevel = (id) => {
       Object.assign(tile, { sealed: true, chamber: id });
       layout.blockedCells.push(cellAt(index));
     }
+    if (route) for (const tile of tiles) if (tile.waist === id) tile.routeWall = true;
+  }
   // Portal pads fill their cells. A gem falling into the entrance pad (`from`) drops
   // out of the exit pad (`to`) at the top of the board, into the cell below it.
   for (const [pair, { from, to }] of (spec.portals ?? []).entries()) {
@@ -332,6 +352,12 @@ const createExpansionLevel = (id) => {
       if (tiles[index] && isPlayableCell(tiles[index])) layout.blockedCells.push(cellAt(index));
   }
   const sporeCells = new Set((spec.spores ?? []).map((spore) => spore.index));
+  // Crystals take their matches on a bare floor, like spore relays: no ice under them.
+  const crystalCells = new Set([
+    ...(spec.chords ?? []),
+    ...(spec.crossgrains ?? []),
+    ...(spec.tracePairs ?? []).flatMap((pair) => pair.cells),
+  ]);
   if (spec.orders?.length) tiles[0].oreOrderGuide = true;
   const iceCells = tiles.flatMap((tile, index) =>
     tile.type === 'standard' &&
@@ -340,6 +366,7 @@ const createExpansionLevel = (id) => {
     !isCellFixture(tile) &&
     !fossilCells.has(index) &&
     !sporeCells.has(index) &&
+    !crystalCells.has(index) &&
     (!spec.openExitRows || index < cols * (rows - spec.openExitRows)) &&
     ![0, cols - 1, cols * (rows - 1), cols * rows - 1].includes(index) &&
     !tile.exit &&
@@ -353,6 +380,7 @@ const createExpansionLevel = (id) => {
   const iceCellCount = Math.min(iceCells.length, Math.ceil(spec.ice * 0.75));
   layIce(tiles, iceCells, rng, (cell) => iceRank(cell, cols, rows, motif), iceCellCount, spec);
   applyDeepMineSpec(tiles, spec);
+  applyCrystalSpec(tiles, spec);
   if (spec.gravity === 'funnel') {
     for (let row = 0; row < rows - 1; row++) {
       const nextCols = Array.from({ length: cols }, (_, col) => col).filter((col) =>
@@ -377,6 +405,19 @@ const createExpansionLevel = (id) => {
         (spec.gravity === 'up' || Math.floor(index / cols) < (spec.seam ?? Math.floor(rows / 2)))
       )
         tile.fall = 'up';
+  // A route may be left closed, so nothing behind its wall may count toward the goal.
+  // Cargo waiting there, or the exit it must reach, would make that route required too.
+  const routes = new Set(tiles.flatMap((tile) => (tile.routeWall ? [tile.waist] : [])));
+  const cargo = new Set(layout.initialTilePlacements.map((cell) => cell.y * cols + cell.x));
+  if (
+    tiles.some(
+      (tile, index) =>
+        tile.sealed &&
+        routes.has(tile.chamber) &&
+        (layerCount(tile) > 0 || tile.exit || cargo.has(index)),
+    )
+  )
+    throw new Error(`Level ${id}: a route chamber must hold nothing the goal counts`);
   const totalLayers = tiles.reduce((sum, tile) => sum + layerCount(tile), 0);
   const relicCount = layout.initialTilePlacements.length;
   const floatCount = layout.initialTilePlacements.filter((cell) => cell.float).length;
@@ -446,8 +487,9 @@ const createExpansionLevel = (id) => {
       scoreObjective(id, chestTarget),
     ],
     summary: `Clear ${totalLayers} obstacle layers${relicCount ? ` and collect ${relicCount} relics` : ''}. Earn a chest at ${chestTarget.toLocaleString()} points.`,
+    ...(trial ? { trial } : {}),
   });
-};
+}
 
 // Chapter boundaries own size and palette count; individual puzzles vary
 // workload and geometry without adding more colors mid-chapter.
@@ -509,6 +551,12 @@ export function levelConfig(id) {
   if (!generated.has(id)) generated.set(id, createLevel(id));
   return generated.get(id);
 }
+
+/**
+ * A prototype board outside the campaign (see src/data/prototypeBoards.js). `id` only seeds
+ * its layout; `trial` gives its size, colors and chapter details.
+ */
+export const prototypeLevelConfig = ({ id, spec, trial }) => buildExpansionLevel(id, spec, trial);
 
 /** Fresh configurations for levels 1..count, for tests and authoring scripts. */
 export const generateLevelConfigs = (count = LEVEL_COUNT) =>

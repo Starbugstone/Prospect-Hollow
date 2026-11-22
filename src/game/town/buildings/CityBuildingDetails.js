@@ -304,7 +304,7 @@ function addOccupiedBalcony(d, structure, parent, x, base, roof, wall, grade, ca
     'Terrace canopy front beam';
   const frontage = modulePart(d, parent, 'frontage');
   const fasciaHeight = grade >= 2 ? 0.24 : 0.08;
-  d.box(frontage, 1.27, fasciaHeight, 0.12, x, postTop + fasciaHeight / 2, 1.715, roof).name =
+  d.box(frontage, 1.31, fasciaHeight, 0.12, x, postTop + fasciaHeight / 2, 1.715, roof).name =
     'Working terrace weather fascia';
   const operation = modulePart(d, parent, 'operation');
   operation.name = 'Occupied terrace seating';
@@ -351,7 +351,7 @@ function addOccupiedBalcony(d, structure, parent, x, base, roof, wall, grade, ca
       // ventilation and the visible roof profile inside the same reservation.
       blade.rotation.z = grade >= 3 ? (35 * Math.PI) / 180 : 0;
     }
-    d.box(operation, 0.9, 0.4, 0.1, x - 0.12, deckTop + 0.56, 1.04, roof).name =
+    d.box(operation, 0.9, 0.4, 0.1, x - 0.12, deckTop + 0.56, 1.07, roof).name =
       'Terrace bench back';
     d.box(operation, 0.1, 0.48, 0.1, x + 0.46, deckTop + 0.24, 1.5, wall);
     d.box(operation, 0.3, 0.08, 0.35, x + 0.46, deckTop + 0.52, 1.5, roof).name =

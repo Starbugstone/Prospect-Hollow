@@ -148,7 +148,8 @@ function protectedRaid(campaign, overrides = {}) {
 describe('The run tally', () => {
   it('counts committed swaps, powers and post-shuffle matches, never the rescue sweep', async () => {
     const game = gameStore();
-    expect(game.startLevel(1)).toBe(true);
+    // A fixed seed: on about 2% of random boards boardWithMatch can't make its match.
+    expect(game.startLevel(1, undefined, { seed: 1 })).toBe(true);
     const committed = vi.spyOn(game, 'commitResolution');
     await swap(game);
     const afterSwap = total(game.honourTally.gems);
@@ -481,7 +482,7 @@ describe('Evaluation at save', () => {
     expect(campaign.honours.earned['fusion-bronze'].at).toBeGreaterThan(0);
     expect(stored().earned['fusion-bronze']).toBeTruthy();
 
-    const profile = { ...freshProfile(), schemaVersion: 5 };
+    const profile = { ...freshProfile(), schemaVersion: 6 };
     profile.records[1] = { score: 1, stars: 3 };
     profile.honours = { ...createHonours(), backfilled: 1 };
     const readOnly = open(profile);

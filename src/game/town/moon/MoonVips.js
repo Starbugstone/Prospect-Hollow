@@ -155,6 +155,29 @@ export function animateMoonVip(d, actor, time) {
   strideMoonFigure(actor, motion.routeDistance, !actor.routeResting);
 }
 
+/**
+ * Where a touring VIP will be at `time`, a moment ahead, if they keep walking: rovers read
+ * it to stop before a visitor steps into the road. A VIP who is resting, indoors or has no
+ * route stays where they are; the itinerary may still stop them sooner.
+ */
+export function moonVipAhead(actor, time, out = {}) {
+  const { motion, walkPath: path, root } = actor ?? {};
+  if (!root) return null;
+  out.visible = root.visible;
+  out.x = root.position.x;
+  out.z = root.position.z;
+  if (!motion || !path?.total || actor.routeResting || !Number.isFinite(time)) return out;
+  const distance = Math.min(
+    actor.routeLimit ?? Infinity,
+    path.total,
+    motion.routeDistance + MOON_WALK_SPEED * Math.max(0, time - (motion.time ?? time)),
+  );
+  walkPose(path, distance / path.total, pose);
+  out.x = pose.x;
+  out.z = pose.z;
+  return out;
+}
+
 /** New Hollow's VIP arrivals: the valley's arrival rules on the Moon's own transports. */
 export class MoonVipArrivals extends TownVipArrivals {
   constructor(scene, seed) {

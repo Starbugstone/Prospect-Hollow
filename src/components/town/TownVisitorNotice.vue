@@ -16,34 +16,37 @@
 import { computed } from 'vue';
 import GameIcon from '../GameIcon.vue';
 import { visitorLabel } from '../../data/liveVisitors';
+import { HIDDEN_FIND_IDS, HIDDEN_FIND_WORDS } from '../../data/hiddenFinds';
 import { t, number } from '../../i18n';
 const props = defineProps({ notice: Object });
 defineEmits(['dismiss', 'find']);
-const coinNotice = computed(() =>
-  ['collection', 'helmet', 'helmet-found', 'helmet-empty'].includes(props.notice?.kind),
+// A hidden find's notices are named after it: `helmet` (a visiting find redeemed),
+// `helmet-found` (already found), `helmet-empty`, `helmet-zoom` and `helmet-visit`.
+const FIND_NOTICES = { '': 'redeemed', '-found': 'already', '-empty': 'empty', '-zoom': 'zoom' };
+function findNotice(kind = '') {
+  for (const id of HIDDEN_FIND_IDS)
+    if (kind === id || kind.startsWith(`${id}-`)) return { id, role: kind.slice(id.length) };
+  return null;
+}
+const coinNotice = computed(
+  () =>
+    props.notice?.kind === 'collection' ||
+    ['', '-found', '-empty'].includes(findNotice(props.notice?.kind)?.role),
 );
 const message = computed(() => {
   const notice = props.notice;
   if (!notice) return '';
+  const find = findNotice(notice.kind);
+  if (find?.role === '-visit') return notice.message;
+  if (find && FIND_NOTICES[find.role])
+    return t(HIDDEN_FIND_WORDS[find.id][FIND_NOTICES[find.role]], {
+      coins: number(notice.coins ?? 0),
+    });
   switch (notice.kind) {
     case 'collection':
       return t('A visitor collected {coins} coins from your saloon for you.', {
         coins: number(notice.coins),
       });
-    case 'helmet':
-      return t('You found an astronaut while visiting another town: {coins} coins.', {
-        coins: number(notice.coins),
-      });
-    case 'helmet-found':
-      return t(
-        'You already found the astronaut. It moves to another animal after your next puzzle.',
-      );
-    case 'helmet-empty':
-      return t('You found the astronaut! Its reward is an hour of your saloon takings.');
-    case 'helmet-zoom':
-      return t('Zoom in closer to the animals to find the astronaut.');
-    case 'helmet-visit':
-      return notice.message;
     case 'unavailable':
       return t(
         'This visitor is no longer visible. Check the guestbook for the latest visit details.',

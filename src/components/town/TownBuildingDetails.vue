@@ -6,11 +6,18 @@
         <h2 id="building-title">{{ t(building.name) }}</h2>
       </div>
       <span class="town-level-badge">{{
-        t(town.era !== 'frontier' ? '{era} · Level {level} of {max}' : 'Level {level} / {max}', {
-          era: t(ERA_BY_ID[keptFinish ? town.buildingEras[id] : town.era].label),
-          level: keptFinish ? town.buildingEraLevels[id] || 3 : eraBuildingLevel(town, id),
-          max: town.era !== 'frontier' ? 3 : building.upgrades.length,
-        })
+        unbuiltEarlier
+          ? t('Unbuilt')
+          : t(
+              town.era !== 'frontier' ? '{era} · Level {level} of {max}' : 'Level {level} / {max}',
+              {
+                era: t(ERA_BY_ID[keptFinish ? town.buildingEras[id] : town.era].label),
+                level: keptFinish
+                  ? town.buildingEraLevels[id] || eraBuildingLevel(town, id)
+                  : eraBuildingLevel(town, id),
+                max: town.era !== 'frontier' ? 3 : building.upgrades.length,
+              },
+            )
       }}</span>
     </div>
     <TownMoonstoneWorkshop
@@ -20,7 +27,8 @@
       :cooldown-seconds="cooldownSeconds"
       @collect="$emit('collect-moonstones')"
     />
-    <p v-if="id === 'homecomingHall'">
+    <!-- The owner's own counter: a shared village's public payload does not carry it. -->
+    <p v-if="id === 'homecomingHall' && !readOnly">
       {{ t('Lifetime moonstones earned: {count}', { count: town.moonstonesEarned ?? 0 }) }}
     </p>
     <div class="town-detail-hero">
@@ -45,9 +53,7 @@
             "
           />
         </svg>
-        <small>{{
-          t(project ? 'Under construction' : offer ? 'After building' : building.stages[stage])
-        }}</small>
+        <small>{{ caption }}</small>
       </div>
       <div v-if="offer || project" class="town-benefit-preview">
         <div
@@ -426,6 +432,19 @@ const cooldownSeconds = computed(() =>
   ),
 );
 const building = computed(() => BUILDING_BY_ID[props.id]);
+// Buildings whose stages are named by era and level ("River & Rail · Level 3"), from the
+// River & Rail Age on; Frontier buildings name each stage instead.
+const ERA_STAGE = / · Level \d+$/;
+const eraCaptioned = (definition) =>
+  definition.stages.length > 1 && definition.stages.slice(1).every((name) => ERA_STAGE.test(name));
+// An optional building of an earlier era that was never built (the Saucer Pad later on)
+// has no level of this era to show.
+const unbuiltEarlier = computed(
+  () =>
+    props.town.era !== 'frontier' &&
+    !stage.value &&
+    building.value.introducedEra !== props.town.era,
+);
 // A building this era leaves alone keeps showing the era of its finish.
 const keptFinish = computed(
   () =>
@@ -434,6 +453,20 @@ const keptFinish = computed(
     !modernizesInEra(props.town.era, props.id) &&
     !!props.town.buildingEras[props.id],
 );
+// The caption under the drawing. A building whose stages name an era and level names the
+// era and level the drawing shows, as the badge does, rather than the era that introduced
+// it; other buildings keep their stage's name.
+const caption = computed(() => {
+  if (project.value) return t('Under construction');
+  if (offer.value) return t('After building');
+  const era = props.town.buildingEras[props.id];
+  if (stage.value && eraCaptioned(building.value) && ERA_BY_ID[era])
+    return t('{era} · Level {level}', {
+      era: t(ERA_BY_ID[era].label),
+      level: props.town.buildingEraLevels[props.id] || stage.value,
+    });
+  return t(building.value.stages[stage.value]);
+});
 const requirement = computed(() => plotRequirement(props.town, props.id));
 const needs = computed(() => townNeeds(props.town));
 const stage = computed(() => props.town.buildings[props.id]);

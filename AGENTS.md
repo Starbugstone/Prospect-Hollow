@@ -1,5 +1,29 @@
 # Prospect Hollow contributor rules
 
+## Default development workflow
+
+Follow [the game development workflow](docs/development-workflow.md) for changes.
+Use the stages relevant to the task; documentation changes need content, link and
+formatting checks rather than a gameplay run. All local checks still run in Docker.
+
+For in-game cinematic videos, camera shots, monument unveilings and incident or VIP
+insets, use [the shared cinematic skill](.agents/skills/prospect-hollow-cinematics/SKILL.md).
+It applies to every agent working on these scenes, on the valley, Moon and future maps.
+
+- Define the player-visible result and a check that can fail before implementing.
+- When fixing a recurring mistake or protecting a permanent rule, add the smallest
+  useful lint rule, shared contract or regression check. Demonstrate that it rejects
+  the failure and accepts valid behavior; prefer behavioral checks over source-text matching.
+- Reproduce puzzle bugs from a run log (seed and moves; Settings on preprod copies one) and keep it as the regression. Puzzle rules roll `gameRandom`, never `Math.random`; ESLint enforces it.
+- For consequential state transitions, write the invariant and check relevant
+  interleavings. Major state machines get a checked model in `docs/models/` (run
+  `bash scripts/check-models.sh`); update it with the transitions it covers, and replay
+  counterexamples against the implementation before calling them game bugs.
+- Profile before optimizing frame code. Preserve build budgets, including the gzipped
+  first download, and `testing/browser/frame-budget.cjs`. Browser measurements are not
+  phone measurements. Use the project's browser verification recipes for changed
+  journeys, and report checks actually run.
+
 ## Permanent gameplay rule: no move limits
 
 The user has explicitly required unlimited puzzle moves. All contributors and

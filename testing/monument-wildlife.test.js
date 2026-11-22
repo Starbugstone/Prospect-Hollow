@@ -68,7 +68,8 @@ describe('Wildlife across the growing town', () => {
     }
     const latest = monumentCast({ era: ERAS.at(-1).id }, townFauna(eraEvolution(ERAS.at(-1).id)));
     expect(new Set(latest.filter((a) => a.wild).map((a) => a.species))).toEqual(
-      new Set([...MONUMENT_WILDLIFE, 'fox', 'raccoon', 'deer', 'hedgehog']),
+      // The latest era's newcomers that live away from the river visit the sites too.
+      new Set([...MONUMENT_WILDLIFE, 'fox', 'raccoon', 'deer', 'hedgehog', 'goat', 'lynx']),
     );
     expect(monumentCast({ era: 'unknown' }, townFauna(null))).toEqual([]);
     expect(

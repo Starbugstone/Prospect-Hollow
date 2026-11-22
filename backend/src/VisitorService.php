@@ -378,18 +378,24 @@ final class VisitorService
                 $rows = $chosen;
             }
         }
+        // A private visit shows no home town, so it travels from the chosen or first town.
+        if ($private) {
+            $identity['origin_town_id'] = $rows[0]['id'] ?? null;
+            return $identity;
+        }
+        // A public visit travels from the chosen town, or else the first one the guestbook
+        // can name. The name only decides what the guestbook shows, never the travel credit.
         foreach ($rows as $town) {
             $name = $this->public->guestName($town['name']);
             if (!$name) {
                 continue;
             }
             $identity['origin_town_id'] = $town['id'];
-            if (!$private) {
-                $identity['town_name'] = $name;
-                $identity['era'] = $this->era(json_decode($town['profile'])->town->era ?? null);
-            }
-            break;
+            $identity['town_name'] = $name;
+            $identity['era'] = $this->era(json_decode($town['profile'])->town->era ?? null);
+            return $identity;
         }
+        $identity['origin_town_id'] = $rows[0]['id'] ?? null;
         return $identity;
     }
 
@@ -513,18 +519,28 @@ final class VisitorService
                         'SELECT collected_at FROM saloon_collections WHERE town_id=?',
                         [$town],
                     ) * 1000;
-                // Space helmets the owner found while visiting as this town, oldest first,
-                // each with the receipt its save replay checks. The town redeems newer ones.
-                $result['helmetFinds'] = array_map(
-                    fn($at) => [
-                        'at' => (int) $at * 1000,
-                        'receipt' => SaveIntegrity::helmetReceipt($town, (int) $at * 1000),
-                    ],
-                    $db->fetchFirstColumn(
-                        'SELECT found_at FROM helmet_finds WHERE town_id=? AND found_at>=? ORDER BY found_at',
-                        [$town, $now - PublicTown::HELMET_KEEP],
-                    ),
-                );
+                // Hidden finds the owner made while visiting as this town, oldest first, each
+                // with the receipt its save replay checks: `helmetFinds`, `wanderersFinds`, ...
+                // The town redeems newer ones.
+                foreach (array_keys((new SaveIntegrity())->hiddenFinds()) as $find) {
+                    $find = (string) $find;
+                    $result[$find . 'Finds'] = array_map(
+                        fn($at) => [
+                            'at' => (int) $at * 1000,
+                            'receipt' => SaveIntegrity::hiddenFindReceipt(
+                                $find,
+                                $town,
+                                (int) $at * 1000,
+                            ),
+                        ],
+                        $db->fetchFirstColumn(
+                            'SELECT found_at FROM ' .
+                                PublicTown::findTable($find) .
+                                ' WHERE town_id=? AND kind=? AND found_at>=? ORDER BY found_at',
+                            [$town, $find, $now - PublicTown::FIND_KEEP],
+                        ),
+                    );
+                }
             }
             return $result;
         });

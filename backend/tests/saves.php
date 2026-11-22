@@ -911,6 +911,375 @@ try {
         ),
         'native origin allowlist',
     );
+    // A town that owns a monument and commissions restores from its cloud history and
+    // keeps a preserved save on conflict ("Keep preserved save"), then syncs as usual.
+    $flows = json_decode(
+        file_get_contents(__DIR__ . '/fixtures/integrity-flows.json'),
+        false,
+        64,
+        JSON_THROW_ON_ERROR,
+    )->fixtures;
+    $landmarked = account(['REMOTE_ADDR' => '127.0.0.31']);
+    foreach (
+        [
+            'optional landmark monument: construction and upgrades',
+            'every commission sponsored, the Willowkin Glade opened from the Moon',
+        ]
+        as $flowIndex => $flowName
+    ) {
+        $flow = array_values(array_filter($flows, fn($f) => $f->name === $flowName))[0];
+        // The API reply decodes to arrays: give the save's maps back their object shape.
+        $upload = function (array $profile): object {
+            $profile = json_decode(json_encode($profile), false, 64, JSON_THROW_ON_ERROR);
+            foreach (['records', 'continuousRecords'] as $map) {
+                $profile->$map = (object) $profile->$map;
+            }
+            return $profile;
+        };
+        $areasOf = fn(array $view) => [
+            $view['profile']['town']['personalisation']['areas'],
+            $view['profile']['town']['personalisation']['areaLevels'],
+        ];
+        $body = townBody('Monument Hollow ' . ['A', 'B'][$flowIndex]);
+        $body['profile'] = $flow->before;
+        $townId = status(
+            200,
+            callApi('POST', 'towns', $body, $landmarked),
+            $flowName . ': baseline',
+        )['townId'];
+        $owned = status(
+            200,
+            callApi(
+                'PUT',
+                'towns/' . $townId,
+                ['baseRevision' => 1, 'uploadId' => uuid(), 'profile' => $flow->after],
+                $landmarked,
+            ),
+            $flowName . ': landmarks bought',
+        );
+        check($areasOf($owned)[0] !== [], $flowName . ': the cloud save owns landmarks');
+        // Another device moves the cloud save on by one puzzle start.
+        $ahead = $upload($owned['profile']);
+        $sequence = $owned['integrity']['ackSequence'];
+        $ahead->issuedRun++;
+        $ahead->integrity->actions = [
+            (object) [
+                'sequence' => $sequence + 1,
+                'id' => uuid(),
+                'kind' => 'run-start',
+                'data' => (object) [
+                    'runId' => $ahead->issuedRun,
+                    'mode' => 'normal',
+                    'levelId' => 1,
+                    'at' => time() * 1000,
+                ],
+            ],
+        ];
+        $cloud = status(
+            200,
+            callApi(
+                'PUT',
+                'towns/' . $townId,
+                ['baseRevision' => 2, 'uploadId' => uuid(), 'profile' => $ahead],
+                $landmarked,
+            ),
+            $flowName . ': another device plays on',
+        );
+        check(
+            $cloud['integrity']['ackSequence'] === $sequence + 1,
+            $flowName . ': the cloud save moves past the landmark purchase',
+        );
+        $older = array_values(
+            array_filter(
+                status(
+                    200,
+                    callApi('GET', 'towns/' . $townId . '/history', null, $landmarked),
+                    $flowName . ': history',
+                )['revisions'],
+                fn($entry) => $entry['revision'] === 2,
+            ),
+        )[0]['profile'];
+        $restored = status(
+            200,
+            callApi(
+                'PUT',
+                'towns/' . $townId . '/resolve',
+                ['baseRevision' => 3, 'uploadId' => uuid(), 'profile' => $upload($older)],
+                $landmarked,
+            ),
+            $flowName . ': cloud history restore',
+        );
+        check(
+            $areasOf($restored) === $areasOf($owned) &&
+                $restored['integrity']['ackSequence'] === $sequence,
+            $flowName . ': the restored save keeps its landmarks',
+        );
+        // The first device kept its pre-restore copy, at the newer cloud sequence.
+        $kept = status(
+            200,
+            callApi(
+                'PUT',
+                'towns/' . $townId . '/resolve',
+                [
+                    'baseRevision' => 4,
+                    'uploadId' => uuid(),
+                    'profile' => $upload($cloud['profile']),
+                ],
+                $landmarked,
+            ),
+            $flowName . ': keep preserved save',
+        );
+        check(
+            $areasOf($kept) === $areasOf($owned),
+            $flowName . ': conflict recovery keeps the landmarks',
+        );
+        $synced = status(
+            200,
+            callApi(
+                'PUT',
+                'towns/' . $townId,
+                ['baseRevision' => 5, 'uploadId' => uuid(), 'profile' => $upload($kept['profile'])],
+                $landmarked,
+            ),
+            $flowName . ': normal sync afterwards',
+        );
+        check(
+            $synced['revision'] === 6 &&
+                $areasOf($synced) === $areasOf($owned) &&
+                $synced['integrity']['status'] === 'tracked' &&
+                (int) $db
+                    ->get()
+                    ->fetchOne('SELECT COUNT(*) FROM town_sync_rejections WHERE town_id=?', [
+                        $townId,
+                    ]) === 0,
+            $flowName . ': no step of the restore or the next sync is corrected or refused',
+        );
+    }
+    // A save from before the game moved to schema 5 stays restorable from cloud history
+    // once the town has synced under schema 5; an unknown older-schema save does not.
+    $upgraded = account(['REMOTE_ADDR' => '127.0.0.32']);
+    $schemaFour = json_decode(json_encode($trackedProfile));
+    $schemaFour->schemaVersion = 4;
+    $schemaFour->integrity->epoch = uuid();
+    $upgradedBody = townBody('Upgraded Gulch');
+    $upgradedBody['profile'] = $schemaFour;
+    $first = status(200, callApi('POST', 'towns', $upgradedBody, $upgraded), 'schema 4 town');
+    $upgradedId = $first['townId'];
+    check($first['profile']['schemaVersion'] === 4, 'the town starts on schema 4');
+    $next = $upload($first['profile']);
+    $next->schemaVersion = 5;
+    $fifth = status(
+        200,
+        callApi(
+            'PUT',
+            'towns/' . $upgradedId,
+            ['baseRevision' => 1, 'uploadId' => uuid(), 'profile' => $next],
+            $upgraded,
+        ),
+        'schema 5 sync',
+    );
+    check($fifth['profile']['schemaVersion'] === 5, 'the town now saves under schema 5');
+    $preUpgrade = status(
+        200,
+        callApi('GET', 'towns/' . $upgradedId . '/history', null, $upgraded),
+        'pre-upgrade history',
+    )['revisions'][0];
+    check(
+        $preUpgrade['revision'] === 1 && $preUpgrade['profile']['schemaVersion'] === 4,
+        'cloud history keeps the schema 4 save',
+    );
+    $unknown = $upload($preUpgrade['profile']);
+    unset($unknown->integrity->checkpoint);
+    $unknown->builderHammers = $unknown->builderHammers + 1;
+    check(
+        status(
+            422,
+            callApi(
+                'PUT',
+                'towns/' . $upgradedId . '/resolve',
+                ['baseRevision' => 2, 'uploadId' => uuid(), 'profile' => $unknown],
+                $upgraded,
+            ),
+            'unverified schema 4 restore',
+        )['code'] === 'save_rules_unsupported',
+        'a schema 4 restore that matches no stored save is refused',
+    );
+    check(
+        status(
+            422,
+            callApi(
+                'PUT',
+                'towns/' . $upgradedId,
+                [
+                    'baseRevision' => 2,
+                    'uploadId' => uuid(),
+                    'profile' => $upload($preUpgrade['profile']),
+                ],
+                $upgraded,
+            ),
+            'schema 4 ordinary sync',
+        )['code'] === 'save_rules_unsupported',
+        'an ordinary schema 4 sync still cannot overwrite a schema 5 town',
+    );
+    $restoredFour = status(
+        200,
+        callApi(
+            'PUT',
+            'towns/' . $upgradedId . '/resolve',
+            [
+                'baseRevision' => 2,
+                'uploadId' => uuid(),
+                'profile' => $upload($preUpgrade['profile']),
+            ],
+            $upgraded,
+        ),
+        'schema 4 history restore',
+    );
+    check($restoredFour['revision'] === 3, 'the pre-upgrade save is restored');
+    $afterRestore = $upload($restoredFour['profile']);
+    $afterRestore->schemaVersion = 5;
+    $resumed = status(
+        200,
+        callApi(
+            'PUT',
+            'towns/' . $upgradedId,
+            ['baseRevision' => 3, 'uploadId' => uuid(), 'profile' => $afterRestore],
+            $upgraded,
+        ),
+        'sync after the schema 4 restore',
+    );
+    check(
+        $resumed['revision'] === 4 && !isset($resumed['correction']),
+        'the next ordinary sync after the restore is accepted as is',
+    );
+    // A schema 4 copy of a schema 5 snapshot is not a save this town held under schema 4:
+    // accepting it would write the newer town back under the older schema.
+    $startRun = function (array $saved, int $base) use ($upload, $upgradedId, $upgraded): array {
+        $started = $upload($saved['profile']);
+        $started->issuedRun++;
+        $started->integrity->actions = [
+            (object) [
+                'sequence' => $saved['integrity']['ackSequence'] + 1,
+                'id' => uuid(),
+                'kind' => 'run-start',
+                'data' => (object) [
+                    'runId' => $started->issuedRun,
+                    'mode' => 'normal',
+                    'levelId' => 1,
+                    'at' => time() * 1000,
+                ],
+            ],
+        ];
+        $synced = status(
+            200,
+            callApi(
+                'PUT',
+                'towns/' . $upgradedId,
+                ['baseRevision' => $base, 'uploadId' => uuid(), 'profile' => $started],
+                $upgraded,
+            ),
+            'schema 5 puzzle start',
+        );
+        check(
+            $synced['revision'] === $base + 1 && !isset($synced['correction']),
+            'a schema 5 puzzle start syncs as is',
+        );
+        return $synced;
+    };
+    // Revision 5 has state only schema 5 ever held; revision 6 moves it into history.
+    $fifthOnly = $startRun($resumed, 4);
+    $startRun($fifthOnly, 5);
+    $relabelled = $upload($fifthOnly['profile']);
+    $relabelled->schemaVersion = 4;
+    unset($relabelled->integrity->checkpoint);
+    check(
+        status(
+            422,
+            callApi(
+                'PUT',
+                'towns/' . $upgradedId . '/resolve',
+                ['baseRevision' => 6, 'uploadId' => uuid(), 'profile' => $relabelled],
+                $upgraded,
+            ),
+            'schema 4 copy of a schema 5 snapshot',
+        )['code'] === 'save_rules_unsupported',
+        'a schema 4 restore matching only a schema 5 snapshot is refused',
+    );
+    check(
+        (int) $db->get()->fetchOne('SELECT revision FROM towns WHERE id=?', [$upgradedId]) === 6 &&
+            json_decode(
+                (string) $db
+                    ->get()
+                    ->fetchOne('SELECT profile FROM towns WHERE id=?', [$upgradedId]),
+            )->schemaVersion === 5,
+        'the town keeps its schema 5 save',
+    );
+    // A legacy modernization asking three puzzles syncs as the game loads it: normalizeTown()
+    // clamps required and wins to the offer's two runs, and the server agrees.
+    $legacyProfile = json_decode(json_encode($saveRules->defaultProfile));
+    $legacyProfile->town->era = 'river-rail';
+    $legacyProfile->town->buildings->well = 3;
+    $legacyProfile->town->buildingEras->well = 'frontier';
+    $legacyProfile->town->buildingEraLevels->well = 0;
+    $legacyProfile->town->projects = (object) [
+        'well' => (object) [
+            'id' => 'well',
+            'type' => 'modernization',
+            'stage' => 3,
+            'fromEra' => 'frontier',
+            'targetEra' => 'river-rail',
+            'eraLevel' => 1,
+            'wins' => 3,
+            'required' => 3,
+            'cost' => 100,
+        ],
+    ];
+    $legacyProfile->integrity = (object) [
+        'version' => 1,
+        'epoch' => uuid(),
+        'baseSequence' => 0,
+        'clientAt' => time() * 1000,
+        'actions' => [],
+    ];
+    $legacyBody = townBody('Legacy Works');
+    $legacyBody['profile'] = $legacyProfile;
+    $legacy = status(200, callApi('POST', 'towns', $legacyBody, $upgraded), 'legacy project town');
+    $loaded = $upload($legacy['profile']);
+    $loaded->town->projects->well->required = 2;
+    $loaded->town->projects->well->wins = 2;
+    $legacySync = status(
+        200,
+        callApi(
+            'PUT',
+            'towns/' . $legacy['townId'],
+            ['baseRevision' => 1, 'uploadId' => uuid(), 'profile' => $loaded],
+            $upgraded,
+        ),
+        'legacy project sync',
+    );
+    check(
+        !isset($legacySync['correction']) &&
+            $legacySync['profile']['town']['projects']['well']['required'] === 2 &&
+            $legacySync['profile']['town']['projects']['well']['wins'] === 2,
+        'a legacy project clamped by the game syncs without a correction ' .
+            json_encode($legacySync['correction'] ?? null),
+    );
+    // Without its checkpoint, an exact copy of a stored snapshot is proof enough.
+    $copy = $upload($preUpgrade['profile']);
+    unset($copy->integrity->checkpoint);
+    check(
+        status(
+            200,
+            callApi(
+                'PUT',
+                'towns/' . $upgradedId . '/resolve',
+                ['baseRevision' => 6, 'uploadId' => uuid(), 'profile' => $copy],
+                $upgraded,
+            ),
+            'schema 4 snapshot restore without checkpoint',
+        )['revision'] === 7,
+        'a schema 4 restore matching a stored snapshot is accepted',
+    );
     status(200, callApi('POST', 'auth/revoke-all', (object) [], $a), 'revoke all');
     status(401, callApi('GET', 'account', null, $a), 'revoked session');
     status(

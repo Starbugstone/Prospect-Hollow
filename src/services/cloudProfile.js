@@ -10,6 +10,7 @@ import { waitForSyncIdle } from './syncIdle';
 import { fetchCloudReply } from './backgroundTransport';
 const native = Capacitor.isNativePlatform();
 const base = (import.meta.env.VITE_API_BASE ?? '/api/v1').replace(/\/$/, '');
+const unreadableAuth = Symbol('unreadable account record');
 let bearer = '',
   epoch = 0,
   service,
@@ -44,12 +45,27 @@ export async function request(
   if (!cloud.account && !authentication) throw new Error('Sign in to use cloud features.');
   if (native && !base.startsWith('https://'))
     throw new Error('Cloud saving needs an HTTPS server configured for this app.');
+  // The stored generation fences replies after another tab changes the account. A public
+  // read that answers the same for everyone (a shared village, the privacy contact) still
+  // goes out when local storage is denied; every other request, including the visitor
+  // profile with the account's towns and CSRF token, needs that fence and fails with the
+  // storage error.
+  const publicRead =
+    authentication && method === 'GET' && (path.startsWith('villages/') || path === 'privacy');
+  const storedAuth = () => {
+    try {
+      return townStorage.auth().generation;
+    } catch (error) {
+      if (publicRead) return unreadableAuth;
+      throw error;
+    }
+  };
   const generation = epoch,
-    storedGeneration = townStorage.auth().generation;
+    storedGeneration = storedAuth();
   const townId = path.match(/^towns\/([^/]+)/)?.[1] ?? (path === 'towns' ? body?.townId : null);
   if (!authentication) await waitForSyncIdle();
   const serialized = body === undefined ? undefined : await backgroundJson.stringify(body);
-  if (generation !== epoch || storedGeneration !== townStorage.auth().generation)
+  if (generation !== epoch || storedGeneration !== storedAuth())
     throw new Error('The account changed while this request was in progress.');
   // Relative API bases resolve against the page, including when fetch executes
   // from an assets-directory worker or a Capacitor document origin.
@@ -87,7 +103,7 @@ export async function request(
           : `Cloud saving failed (HTTP ${response.status}). Your local progress is kept.`,
     };
   });
-  if (generation !== epoch || storedGeneration !== townStorage.auth().generation)
+  if (generation !== epoch || storedGeneration !== storedAuth())
     throw new Error('The account changed while this request was in progress.');
   if (
     townId &&
@@ -154,8 +170,9 @@ export const tapSaloon = (id) =>
   request(`villages/${encodeURIComponent(id)}/saloon`, {}, 'POST', true);
 // Direct share links do not initialize account sync. The visit profile supplies CSRF;
 // the server checks the session and that `townId` belongs to the finder.
-export const tapHelmet = (id, townId) =>
-  request(`villages/${encodeURIComponent(id)}/helmet`, { townId }, 'POST', true);
+// A hidden find (`helmet`, ...) made in a shared town, for one of the visitor's own towns.
+export const tapHiddenFind = (id, find, townId) =>
+  request(`villages/${encodeURIComponent(id)}/${find}`, { townId }, 'POST', true);
 export function refreshAccount() {
   const generation = townStorage.auth().generation;
   if (accountRefresh?.generation === generation) return accountRefresh.promise;

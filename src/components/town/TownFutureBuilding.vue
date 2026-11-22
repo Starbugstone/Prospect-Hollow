@@ -291,6 +291,8 @@
   </g>
 </template>
 <script setup>
+import { roofPaint } from '../../data/roofTones';
+import { eraEvolution } from '../../data/eras';
 import { computed, h } from 'vue';
 import {
   futureAppearance,
@@ -309,6 +311,7 @@ import TownTowerGallery from './TownTowerGallery.vue';
 import { TOWER_GALLERIES } from '../../data/towerRefinements';
 
 const props = defineProps({
+  id: String,
   kind: String,
   era: String,
   level: Number,
@@ -319,7 +322,13 @@ const stages = computed(() =>
 );
 const appearance = computed(() => futureAppearance(props.era));
 const style = computed(() => appearance.value.style);
-const p = computed(() => appearance.value.palette);
+const p = computed(() => {
+  const palette = appearance.value.palette;
+  return {
+    ...palette,
+    roof: roofPaint(eraEvolution(props.era), props.id, props.kind, palette.roof),
+  };
+});
 const form = computed(() => futureForm(props.kind) ?? props.kind);
 const purpose = computed(() => heritageUpgrade(props.kind));
 const landmark = computed(() => !!FUTURE_LANDMARKS[props.kind]);

@@ -1,7 +1,8 @@
 import { expect, it } from 'vitest';
 import { ERAS } from '../src/data/eras';
 import { MINE_PROFILES, mineProfile, validateMineProfiles } from '../src/data/mineEvolution';
-import { mineGrowth, CART_GEMS } from '../src/data/mineGrowth';
+import { mineGrowth, CART_FULL_LEVELS, CART_GEMS } from '../src/data/mineGrowth';
+import { LEVEL_COUNT } from '../src/data/campaign';
 import { MINE_FEATURES } from '../src/game/town/mine/MineFeatures';
 import { haulCycle } from '../src/game/town/mine/MineRollingStock';
 it('resolves every era through supported feature definitions and safe inherited substitutes', () => {
@@ -90,6 +91,13 @@ it.each([54, 324, 600])('fills bounded cart cargo across a %s level campaign', (
   expect(mineGrowth(total, total).gems).toHaveLength(CART_GEMS.length);
   expect(mineGrowth(total * 2, total)).toEqual(mineGrowth(total, total));
   expect(mineGrowth(-10, total)).toEqual(mineGrowth(0, total));
+});
+it('never takes gems out of a cart when the campaign grows', () => {
+  // A player who finished level 546 before chapters 92–101 keeps a full cart.
+  expect(LEVEL_COUNT).toBeGreaterThan(CART_FULL_LEVELS);
+  expect(mineGrowth(546).gems).toHaveLength(CART_GEMS.length);
+  expect(mineGrowth(LEVEL_COUNT)).toEqual(mineGrowth(546));
+  for (const level of [0, 100, 300, 545]) expect(mineGrowth(level)).toEqual(mineGrowth(level, 546));
 });
 it('shares an explicit load, travel, unload and return clock', () => {
   expect([0, 3, 8, 12].map((t) => haulCycle(t).state)).toEqual([

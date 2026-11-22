@@ -26,7 +26,8 @@ try {
     let total = 0;
     return levels.map((price) => (total += price));
   });
-  const bothTotal = totals.reduce((sum, levels) => sum + levels.at(-1), 0);
+  // Every moonstone site's five levels together, whichever era opens it.
+  const allSitesTotal = totals.reduce((sum, levels) => sum + levels.at(-1), 0);
   const targets = [
     ...new Set([
       30,
@@ -56,7 +57,8 @@ try {
         earnedAtTwin = 0,
         first100 = null;
       const workshop = [],
-        milestones = [];
+        milestones = [],
+        eras = [];
       function visit() {
         for (const project of Object.values(town.projects).filter(rules.constructionReady)) {
           town = rules.finishConstruction(town, project.id, project.stage);
@@ -88,6 +90,7 @@ try {
         if (gate.available) {
           town = advanceEra(town, town.era);
           town.transition.pending = false;
+          eras.push({ era: town.era, at: town.completedRuns });
           if (town.era === 'twin-hollows') {
             twinAt = town.completedRuns;
             earnedAtTwin = town.moonstonesEarned;
@@ -145,6 +148,7 @@ try {
         workshop,
         first100,
         milestones,
+        eras,
         atEnd: town.completedRuns,
         balance: town.moonstones,
       };
@@ -168,7 +172,7 @@ try {
       town = moon.earnMoonstones(town, town.moonstoneProduction.stored);
       town.moonstoneProduction = { ...town.moonstoneProduction, stored: 0 };
     }
-    const continuousTargets = totals[0].concat(bothTotal).map((price) => {
+    const continuousTargets = totals[0].concat(allSitesTotal).map((price) => {
       const levels = Math.ceil(price / maxLevel);
       return { price, levels, gems: levels * gemsPerLevel, stones: levels * maxLevel };
     });
@@ -189,7 +193,8 @@ try {
       saleCoins: moon.MOONSTONE_ECONOMY.saleCoins,
       prices: prices[0],
       cumulativePrices: totals[0],
-      bothTotal,
+      sites: sites.map((area) => ({ id: area.id, era: area.era })),
+      allSitesTotal,
       scenarios,
       continuous: {
         beforeStones: 0,

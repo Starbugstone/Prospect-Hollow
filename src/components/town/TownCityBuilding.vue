@@ -470,8 +470,9 @@
   </g>
 </template>
 <script setup>
-import { computed } from 'vue';
+import { roofPaint } from '../../data/roofTones';
 import { eraEvolution } from '../../data/eras';
+import { computed } from 'vue';
 import { CITY_FAMILIES } from '../../data/city';
 import { airportAppearance } from '../../data/airport';
 import { cityAppearance } from '../../data/cityAppearance';
@@ -480,6 +481,7 @@ import { heritageUpgrade } from '../../data/heritageUpgrades';
 import TownLeisureBuilding from './TownLeisureBuilding.vue';
 import TownSquare from './TownSquare.vue';
 const props = defineProps({
+  id: String,
   kind: String,
   era: String,
   lifecycleEra: String,
@@ -488,7 +490,10 @@ const props = defineProps({
 });
 const family = computed(() => CITY_FAMILIES[props.kind]);
 const airport = computed(() => airportAppearance(props.era));
-const city = computed(() => cityAppearance(props.era, props.kind));
+const city = computed(() => {
+  const drawn = cityAppearance(props.era, props.kind);
+  return { ...drawn, roof: roofPaint(eraEvolution(props.era), props.id, props.kind, drawn.roof) };
+});
 const feature = computed(() => heritageUpgrade(props.kind));
 const structureLevel = computed(
   () =>

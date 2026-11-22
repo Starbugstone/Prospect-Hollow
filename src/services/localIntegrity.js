@@ -24,8 +24,8 @@ const NORMAL_ACTIONS = new Set([
   'collectVipSpending',
   'collectSaloonIncome',
   'collectSaloonForVisitor',
-  'findSpaceHelmet',
-  'redeemHelmetVisit',
+  'findHidden',
+  'redeemHiddenFind',
   'markGuestSeen',
   'upgradeBuilding',
   'personalise',
@@ -51,6 +51,7 @@ const NORMAL_ACTIONS = new Set([
 const INTERNAL_ACTIONS = new Set([
   'transaction',
   'commit',
+  'acknowledge',
   'recordAction',
   'completeProject',
   'rewardProjects',

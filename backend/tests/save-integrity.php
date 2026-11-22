@@ -111,6 +111,21 @@ integrityDenied(
     'old-schema uploads cannot bypass resource shape validation',
 );
 $moonBase = $validator->accept($moonLegacy, null, $now);
+// A 1.2 client writes schema 4 and folds an era it does not know back to the frontier, so it
+// may never overwrite a schema 5 town; the same client may still update its own schema 4 save.
+$schemaFive = $validator->accept(integrityProfile($rules, $now), null, $now);
+assertIntegrity($schemaFive->schemaVersion === 5, 'the game writes schema 5');
+$schemaFour = integrityData($schemaFive);
+$schemaFour['schemaVersion'] = 4;
+integrityDenied(
+    fn() => $validator->accept(integrityObject($schemaFour), $schemaFive, $now),
+    'save_rules_unsupported',
+    'a schema 4 client cannot overwrite a schema 5 town',
+);
+assertIntegrity(
+    $validator->accept(integrityObject($schemaFour), null, $now)->schemaVersion === 4,
+    'a schema 4 save is still accepted on its own',
+);
 $moonMigrated = integrityData($moonBase);
 $moonMigrated['schemaVersion'] = 3;
 $moonMigrated['town']['moonstoneVersion'] = 1;
@@ -692,8 +707,18 @@ assertIntegrity(
     'a paid fifth service stage from version 1 refunds once during recovery',
 );
 $extended = $rules;
-$lastEra = end($rules['eraOrder']);
-$extended['eraOrder'][] = 'orbital';
+// The last playable era: an era still being built is in the catalog but not enabled.
+$playableEras = array_values(
+    array_filter(
+        $rules['eraOrder'],
+        static fn(string $era): bool => $rules['eras'][$era]['enabled'],
+    ),
+);
+$lastEra = $playableEras[count($playableEras) - 1];
+$extended['eraOrder'] = array_merge(
+    array_slice($rules['eraOrder'], 0, array_search($lastEra, $rules['eraOrder'], true) + 1),
+    ['orbital'],
+);
 $extended['eras']['orbital'] = $rules['eras'][$lastEra];
 $extendedValidator = new SaveIntegrity($extended);
 $future = integrityData($before);
@@ -716,7 +741,7 @@ assertIntegrity(
 );
 // An era with a `modernizes` list leaves its other buildings in their earlier finish.
 $modernizes = $rules['eras'][$lastEra]['modernizes'] ?? null;
-$previousEra = $rules['eraOrder'][count($rules['eraOrder']) - 2];
+$previousEra = $playableEras[count($playableEras) - 2];
 assertIntegrity(
     is_array($modernizes) && in_array('square', $modernizes, true),
     'the latest era lists the landmarks it modernizes',
@@ -928,6 +953,38 @@ foreach ($fixtures->fixtures as $fixture) {
                 'continuous claim rejects ' . $label,
             );
         }
+        // A bomb or line blast can break an authored obstacle on a gemless tile, so the
+        // mine tally may lead the jewel count: only its per-element authored count bounds it.
+        $mineFirst = function (array $mine) use ($fixture) {
+            $flow = integrityData($fixture->after);
+            $actions = $flow['integrity']['actions'];
+            $early = [
+                'runId' => $actions[1]['data']['runId'],
+                'levelId' => $actions[1]['data']['levelId'],
+                'jewels' => 0,
+                'score' => 0,
+                'at' => $actions[1]['data']['at'],
+                'honours' => ['version' => 1, 'gems' => [], 'fusions' => [], 'mine' => $mine],
+            ];
+            array_splice($actions, 1, 0, [integrityAction(2, 'continuous', $early)]);
+            foreach ($actions as $index => &$action) {
+                $action['sequence'] = $index + 1;
+                $action['id'] = integrityUuid(9100 + $index);
+            }
+            $flow['integrity']['actions'] = $actions;
+            return integrityObject($flow);
+        };
+        $gateFirst = $validator->accept($mineFirst(['relics' => 1]), $starting, $clock);
+        assertIntegrity(
+            SaveIntegrity::receipt($gateFirst)['status'] === 'tracked' &&
+                $gateFirst->integrity->context->honours == $result->integrity->context->honours,
+            'an obstacle broken before any jewel keeps its continuous mine tally',
+        );
+        integrityDenied(
+            fn() => $validator->accept($mineFirst(['relics' => 3]), $starting, $clock),
+            'save_integrity_mismatch',
+            'a zero-jewel mine tally above the authored count',
+        );
         $enrolled = $validator->accept($fixture->after, null, $clock);
         $continued = integrityData($enrolled);
         // Enrollment captures the cumulative claim. Repeating it at a fresh
@@ -1392,6 +1449,121 @@ integrityDenied(
     fn() => $validator->accept(integrityObject($again), $redeemed, $clock, false, [], $helmetTown),
     'save_integrity_mismatch',
     'a redeemed find cannot be redeemed again later',
+);
+
+// The wandering pair replays through the same contract as the helmet, on its own fields:
+// one find never uses up the other, and a receipt only redeems the find it was signed for.
+// These rules bring its debut forward so the helmet's fixture town has both finds out.
+$pairRules = $rules;
+$pairRules['economy']['hiddenFinds']['wanderers']['debut'] = 'tomorrow';
+$pairValidator = new SaveIntegrity($pairRules);
+assertIntegrity(
+    isset($rules['economy']['hiddenFinds']['wanderers']) &&
+        $rules['economy']['hiddenFinds']['wanderers']['rewardHours'] ===
+            $rules['economy']['hiddenFinds']['helmet']['rewardHours'] &&
+        $validator->hiddenFindOut('wanderers', 'hollow-rising') &&
+        !$validator->hiddenFindOut('wanderers', 'tomorrow') &&
+        !$validator->hiddenFindOut('no-such-find', 'hollow-rising'),
+    'the wandering pair pays what the helmet pays, from New Hollow Rising on',
+);
+$pairStart = $pairValidator->accept($helmet->before, null, $clock, false, [], $helmetTown);
+$both = $helmetFound;
+$both['integrity']['actions'][] = [
+    'sequence' => 2,
+    'id' => integrityUuid(930),
+    'kind' => 'wanderers-find',
+    'data' => $helmetAction['data'],
+];
+$both['town']['coins'] += $hourOfTakings;
+$both['town']['wanderersRun'] = 12;
+$bothFound = $pairValidator->accept(
+    integrityObject($both),
+    $pairStart,
+    $clock,
+    false,
+    [],
+    $helmetTown,
+);
+assertIntegrity(
+    $bothFound->town->helmetRun === 12 &&
+        $bothFound->town->wanderersRun === 12 &&
+        $bothFound->town->coins === $helmet->before->town->coins + 2 * $hourOfTakings,
+    'the helmet and the pair are each found once for the same completed puzzle',
+);
+$pairTwice = $both;
+$pairTwice['integrity']['actions'][] = array_replace($both['integrity']['actions'][1], [
+    'sequence' => 3,
+    'id' => integrityUuid(931),
+]);
+$pairTwice['town']['coins'] += $hourOfTakings;
+integrityDenied(
+    fn() => $pairValidator->accept(
+        integrityObject($pairTwice),
+        $pairStart,
+        $clock,
+        false,
+        [],
+        $helmetTown,
+    ),
+    'save_integrity_mismatch',
+    'the pair pays once per completed puzzle',
+);
+integrityDenied(
+    fn() => $validator->accept(
+        integrityObject($both),
+        $helmetStart,
+        $clock,
+        false,
+        [],
+        $helmetTown,
+    ),
+    'save_integrity_mismatch',
+    'the pair cannot be found before its debut era',
+);
+$pairVisit = function (string $receipt) use ($helmet, $helmetAction, $halfHour, $foundAt): object {
+    $profile = integrityData($helmet->before);
+    $profile['integrity']['actions'] = [
+        [
+            'sequence' => 1,
+            'id' => integrityUuid(932),
+            'kind' => 'wanderers-visitor',
+            'data' => [
+                'at' => $helmetAction['data']['at'],
+                'foundAt' => $foundAt,
+                'receipt' => $receipt,
+            ],
+        ],
+    ];
+    $profile['town']['coins'] += $halfHour;
+    $profile['town']['wanderersVisitAt'] = $foundAt;
+    return integrityObject($profile);
+};
+$pairRedeemed = $validator->accept(
+    $pairVisit(SaveIntegrity::hiddenFindReceipt('wanderers', $helmetTown, $foundAt)),
+    $helmetStart,
+    $clock,
+    false,
+    [],
+    $helmetTown,
+);
+assertIntegrity(
+    $pairRedeemed->town->wanderersVisitAt === $foundAt && $pairRedeemed->town->helmetVisitAt === 0,
+    'a visiting find of the pair redeems on its own field, in any era of the finder\'s town',
+);
+integrityDenied(
+    fn() => $validator->accept($pairVisit($receipt), $helmetStart, $clock, false, [], $helmetTown),
+    'save_integrity_mismatch',
+    'a helmet receipt redeems no wandering pair',
+);
+// A save from before the pair has none of its fields: it is accepted and they start at 0.
+$legacy = integrityData($helmet->before);
+unset($legacy['town']['wanderersRun'], $legacy['town']['wanderersVisitAt']);
+$legacyStart = $validator->accept(integrityObject($legacy), null, $clock, false, [], $helmetTown);
+assertIntegrity(
+    $legacyStart->town->helmetRun === 11 &&
+        $validator->accept($helmet->after, $legacyStart, $clock, false, [], $helmetTown)->town
+            ->helmetRun === 12,
+    'a save from before the pair keeps its helmet state and replays its helmet find',
 );
 
 // A signed older checkpoint authenticates the economic branch, while an archived
@@ -2008,7 +2180,7 @@ assertIntegrity(
 );
 
 // Version 3 chests follow the town era, while queued older receipts keep version 2.
-$latestEra = end($rules['eraOrder']);
+$latestEra = $lastEra;
 $eraChest = $chestCoins($deepLevel, 3, $latestEra);
 $frontierChest = $chestCoins($deepLevel, 3, $overflowBefore['town']['era']);
 assertIntegrity(
@@ -2471,6 +2643,134 @@ integrityDenied(
     'save_integrity_mismatch',
     'direct coin injection after an override baseline',
 );
+// Cloud history restore and conflict recovery ("Keep preserved save") of a town that owns a
+// monument or commissions. The restored save's signed checkpoint carries the landmarks the
+// replay protects; one signed before it did takes them from the matching cloud history.
+function integrityWithoutLandmarks(object $save): object
+{
+    $profile = integrityData($save);
+    [$body] = explode('.', $profile['integrity']['checkpoint']);
+    $payload = json_decode(
+        gzuncompress(base64_decode(strtr($body, '-_', '+/'))),
+        true,
+        64,
+        JSON_THROW_ON_ERROR,
+    );
+    unset($payload['state']['town']['personalisation']);
+    $body = rtrim(
+        strtr(base64_encode(gzcompress(json_encode($payload, JSON_THROW_ON_ERROR), 6)), '+/', '-_'),
+        '=',
+    );
+    $profile['integrity']['checkpoint'] =
+        $body .
+        '.' .
+        hash_hmac('sha256', 'prospect-hollow:save-checkpoint:v1:' . $body, $_ENV['APP_SECRET']);
+    return integrityObject($profile);
+}
+$landmarkFlows = [
+    'optional landmark monument: construction and upgrades',
+    'every commission sponsored, the Willowkin Glade opened from the Moon',
+];
+foreach ($fixtures->fixtures as $fixture) {
+    if (!in_array($fixture->name, $landmarkFlows, true)) {
+        continue;
+    }
+    $landmarksOf = fn(object $save) => [
+        integrityData($save)['town']['personalisation']['areas'],
+        integrityData($save)['town']['personalisation']['areaLevels'],
+    ];
+    $clock = $fixture->serverNow;
+    $starting = $validator->accept($fixture->before, null, $fixture->baselineServerNow ?? $clock);
+    $owned = $validator->accept($fixture->after, $starting, $clock);
+    $sequence = SaveIntegrity::receipt($owned)['ackSequence'];
+    // Another device moves the cloud save on by one journalled puzzle start.
+    $ahead = integrityData($owned);
+    $ahead['integrity']['actions'] = [
+        integrityAction($sequence + 1, 'run-start', [
+            'runId' => $ahead['issuedRun'] + 1,
+            'mode' => 'normal',
+            'levelId' => 1,
+            'at' => $clock + 1000,
+        ]),
+    ];
+    $cloud = $validator->reconcile(integrityObject($ahead), $owned, $clock + 1000);
+    assertIntegrity(
+        SaveIntegrity::receipt($cloud)['ackSequence'] === $sequence + 1 &&
+            $landmarksOf($cloud) === $landmarksOf($owned) &&
+            $landmarksOf($owned)[0] !== [],
+        $fixture->name . ': the cloud save moves past the owned landmarks',
+    );
+    $older = fn() => json_decode(json_encode($owned), false, 64, JSON_THROW_ON_ERROR);
+    $restored = $validator->accept($older(), $cloud, $clock + 2000, true, [
+        $cloud,
+        $owned,
+        $starting,
+    ]);
+    assertIntegrity(
+        $landmarksOf($restored) === $landmarksOf($owned) &&
+            SaveIntegrity::receipt($restored)['ackSequence'] === $sequence,
+        $fixture->name . ': cloud history restores the town with its landmarks',
+    );
+    $kept = $validator->accept($older(), $cloud, $clock + 2000, true);
+    assertIntegrity(
+        $landmarksOf($kept) === $landmarksOf($owned),
+        $fixture->name . ': conflict recovery keeps the preserved save with its landmarks',
+    );
+    $next = $validator->accept(
+        json_decode(json_encode($restored), false, 64, JSON_THROW_ON_ERROR),
+        $restored,
+        $clock + 3000,
+    );
+    assertIntegrity(
+        SaveIntegrity::receipt($next)['status'] === 'tracked' &&
+            $landmarksOf($next) === $landmarksOf($owned),
+        $fixture->name . ': a normal sync continues from the restored save',
+    );
+    $raised = integrityData($owned);
+    $raised['town']['personalisation']['areas']['meadow'] = ['headframe'];
+    $raised['town']['personalisation']['areaLevels']['meadow'] = 1;
+    integrityDenied(
+        fn() => $validator->accept(integrityObject($raised), $cloud, $clock + 2000, true, [
+            $cloud,
+            $owned,
+        ]),
+        'save_integrity_mismatch',
+        $fixture->name . ': a restore cannot add a landmark its checkpoint did not sign',
+    );
+    // A save sealed before checkpoints carried landmarks stores the very checkpoint its
+    // client later sends back.
+    $legacy = integrityWithoutLandmarks($owned);
+    assertIntegrity(
+        $landmarksOf(
+            $validator->accept($legacy, $cloud, $clock + 2000, true, [$cloud, $legacy]),
+        ) === $landmarksOf($owned),
+        $fixture->name . ': an older checkpoint recovers its landmarks from the matching history',
+    );
+    // A restore re-seals another save at the same epoch and sequence: a newer save in
+    // history with other landmarks and its own checkpoint must not stand in for this one.
+    $reused = integrityData($owned);
+    $reused['town']['personalisation']['areas'] = [];
+    $reused['town']['personalisation']['areaLevels'] = [];
+    $reused['integrity']['checkpoint'] = integrityData(integrityWithoutLandmarks($starting))[
+        'integrity'
+    ]['checkpoint'];
+    assertIntegrity(
+        $landmarksOf(
+            $validator->accept($legacy, $cloud, $clock + 2000, true, [
+                $cloud,
+                integrityObject($reused),
+                $legacy,
+            ]),
+        ) === $landmarksOf($owned),
+        $fixture->name . ': an older checkpoint takes its landmarks from the save it sealed',
+    );
+    integrityDenied(
+        fn() => $validator->accept($legacy, $cloud, $clock + 2000, true, [$cloud, $starting]),
+        'save_integrity_mismatch',
+        $fixture->name .
+            ': an older checkpoint without matching history cannot vouch for landmarks',
+    );
+}
 if ($origin === null) {
     unset($_ENV['APP_ORIGIN']);
 } else {

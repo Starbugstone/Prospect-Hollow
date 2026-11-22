@@ -39,10 +39,15 @@ $db->executeStatement('DELETE FROM admin_sessions WHERE expires_at<? OR used_at<
     time(),
     time() - 3600,
 ]);
-// Space-helmet finds are redeemed within this window and only rest the finder for 12 hours.
-$db->executeStatement('DELETE FROM helmet_finds WHERE found_at<?', [
-    time() - App\PublicTown::HELMET_KEEP,
-]);
+// A wandering pair an earlier preprod release stored among astronaut finds moves to its own
+// table, where this release reads it and release 1.2 never does.
+App\PublicTown::moveStrayFinds($db);
+// Hidden finds are redeemed within this window and only rest the finder for 12 hours.
+foreach (['helmet_finds', 'hidden_finds'] as $table) {
+    $db->executeStatement("DELETE FROM $table WHERE found_at<?", [
+        time() - App\PublicTown::FIND_KEEP,
+    ]);
+}
 // Blocked uploads kept for the admin sync log; each town also keeps only its latest few.
 App\SyncRejections::expire($db);
 // Daily active-player marks feed the admin charts; keep 90 days.

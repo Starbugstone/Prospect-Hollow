@@ -168,11 +168,22 @@ final class PlayerDistinctions
         $honours->showcase = $showcase;
         unset($honours->distinction);
         if ($shown !== null) {
-            $public = ['id' => $shown] + $received[$shown];
-            unset($public['tenure']['next']);
-            $honours->distinction = json_decode(json_encode($public, JSON_THROW_ON_ERROR));
+            $honours->distinction = self::published(['id' => $shown] + $received[$shown]);
         }
         return $honours;
+    }
+
+    /**
+     * One held distinction, from received(), as visitors may see it: its date and, for the
+     * time distinction, the current step. The next step stays the owner's, since it gives
+     * away when the account was created. Every public payload (showcases, plaques) uses it.
+     *
+     * @param array<string, mixed> $held
+     */
+    public static function published(array $held): \stdClass
+    {
+        unset($held['tenure']['next']);
+        return json_decode(json_encode($held, JSON_THROW_ON_ERROR));
     }
 
     /** Whether a public honours block shows a distinction, so its owner must be looked up. */

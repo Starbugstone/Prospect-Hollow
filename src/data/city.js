@@ -429,6 +429,229 @@ const twinBuildings = [
 }));
 for (const building of twinBuildings) CITY_FAMILIES[building.kind] = building.family;
 
+// New Hollow Rising: New Hollow grows into a town of its own on the crater's outer ring.
+// The valley keeps its Twin Hollows look; every new building stands on the Moon.
+const risingBuildings = [
+  {
+    id: 'ringTram',
+    name: 'Ring tram stop',
+    shortName: 'Tram stop',
+    purpose: 'A little tram that circles the new streets, never late',
+    family: 'station',
+    effects: { visitors: 4, comfort: 1 },
+  },
+  {
+    id: 'dewfallCistern',
+    name: 'Dewfall cistern',
+    shortName: 'Cistern',
+    purpose: 'Water for the new streets, drawn from frost the night leaves behind',
+    family: 'water',
+    effects: { water: 12, comfort: 1 },
+  },
+  {
+    id: 'orchardVaults',
+    name: 'Orchard vaults',
+    shortName: 'Orchard vaults',
+    purpose: 'Willowkin-tended fruit trees under long glass vaults',
+    family: 'farm',
+    effects: { food: 12, comfort: 1 },
+  },
+  {
+    id: 'lanternRow',
+    name: 'Lantern Row',
+    shortName: 'Lantern Row',
+    purpose: 'Family homes along a glazed street, a lantern at every door',
+    family: 'residence',
+    effects: { housing: 6, comfort: 1 },
+    unlock: [{ id: 'ringTram', level: 1 }],
+  },
+  {
+    id: 'ringMarket',
+    name: 'Ring market',
+    shortName: 'Market',
+    purpose: 'Stalls full of crater-grown produce',
+    family: 'retail',
+    effects: { visitors: 4, comfort: 2 },
+    unlock: [
+      { id: 'ringTram', level: 1 },
+      { id: 'orchardVaults', level: 1 },
+    ],
+  },
+  {
+    id: 'craterSchool',
+    name: 'Crater school',
+    shortName: 'School',
+    purpose: 'Where the first children born on the Moon learn their letters',
+    family: 'civic',
+    effects: { visitors: 2, comfort: 3 },
+    unlock: [{ id: 'lanternRow', level: 1 }],
+  },
+  {
+    id: 'earthviewTerraces',
+    name: 'Earthview terraces',
+    shortName: 'Terraces',
+    purpose: 'Stepped homes with a window on the valley',
+    family: 'residence',
+    effects: { housing: 6, comfort: 1 },
+    unlock: [
+      { id: 'lanternRow', level: 2 },
+      { id: 'dewfallCistern', level: 1 },
+    ],
+  },
+  {
+    id: 'expeditionGarage',
+    name: 'Expedition garage',
+    shortName: 'Garage',
+    purpose: 'Long-range rovers that explore beyond the crater rim',
+    family: 'depot',
+    effects: { comfort: 2 },
+    unlock: [{ id: 'ringTram', level: 2 }],
+  },
+  {
+    id: 'craterInn',
+    name: 'Crater inn',
+    shortName: 'Inn',
+    purpose: 'Warm beds for guests off the ribbon and the saucer',
+    family: 'culture',
+    effects: { visitors: 4, comfort: 2 },
+    unlock: [{ id: 'ringMarket', level: 1 }],
+  },
+  {
+    id: 'starwatchDish',
+    name: 'Starwatch dish',
+    shortName: 'Starwatch',
+    purpose: 'Listens past the rim while the Willowkin elders name the stars',
+    family: 'research',
+    effects: { visitors: 2, comfort: 3 },
+    unlock: [
+      { id: 'craterSchool', level: 1 },
+      { id: 'expeditionGarage', level: 1 },
+    ],
+  },
+  {
+    id: 'moonballField',
+    name: 'Moonball field',
+    shortName: 'Moonball field',
+    purpose: 'Low-gravity games where the whole crater comes to cheer',
+    family: 'park',
+    effects: { comfort: 3 },
+    requiredForEraCompletion: false,
+    unlock: [
+      { id: 'craterSchool', level: 1 },
+      { id: 'ringMarket', level: 1 },
+    ],
+  },
+  {
+    id: 'craterPondGarden',
+    name: 'Crater pond garden',
+    shortName: 'Pond garden',
+    purpose: 'A Willowkin pond with reeds and stepping stones under open glass',
+    family: 'park',
+    effects: { comfort: 3 },
+    requiredForEraCompletion: false,
+    unlock: [
+      { id: 'dewfallCistern', level: 2 },
+      { id: 'orchardVaults', level: 2 },
+    ],
+  },
+].map(({ id, ...building }) => ({
+  id,
+  kind: id,
+  introducedEra: 'hollow-rising',
+  color: '#a9b8c9',
+  settlement: MOON_SETTLEMENT,
+  // The outer ring opens once New Hollow's first landing stands.
+  unlock: [{ id: 'ribbonLanding', level: 1 }],
+  ...building,
+}));
+for (const building of risingBuildings) CITY_FAMILIES[building.kind] = building.family;
+
+// The Quiet Signal: a neighbourhood beyond the crater rim, gathered round a black stone
+// that nobody built. Every building stands in the Far Rim district on the Moon. The stone
+// itself is a fixed landmark (moonSettlement.js), never a building.
+const signalBuildings = [
+  {
+    id: 'listeningHouse',
+    name: 'Listening house',
+    shortName: 'Listening house',
+    purpose: 'Instruments that measure the stone’s pulse, and dishes that follow it',
+    family: 'research',
+    effects: { visitors: 2, comfort: 3 },
+  },
+  {
+    id: 'stillwaterBasin',
+    name: 'Stillwater basin',
+    shortName: 'Stillwater',
+    purpose: 'Water for the Far Rim, kept so still that each pulse draws a ring on it',
+    family: 'water',
+    effects: { water: 14, comfort: 1 },
+  },
+  {
+    id: 'tonewoodConservatory',
+    name: 'Tonewood conservatory',
+    shortName: 'Conservatory',
+    purpose: 'Willowkin-grown food and tonewood, every leaf leaning toward the stone',
+    family: 'farm',
+    effects: { food: 14, comfort: 1 },
+  },
+  {
+    id: 'farRimHomes',
+    name: 'Far Rim homes',
+    shortName: 'Far Rim homes',
+    purpose: 'Homes for researchers, craftspeople and families, their windows facing the stone',
+    family: 'residence',
+    effects: { housing: 6, comfort: 1 },
+    unlock: [{ id: 'listeningHouse', level: 1 }],
+  },
+  {
+    id: 'resonanceWorkshop',
+    name: 'Resonance workshop',
+    shortName: 'Workshop',
+    purpose: 'Lenses, tuning frames and wooden resonators, made by hand',
+    family: 'depot',
+    effects: { visitors: 2, comfort: 2 },
+    unlock: [
+      { id: 'listeningHouse', level: 1 },
+      { id: 'tonewoodConservatory', level: 1 },
+    ],
+  },
+  {
+    id: 'signalTerrace',
+    name: 'Signal terrace',
+    shortName: 'Signal terrace',
+    purpose: 'Where New Hollow gathers before the stone, and where its answer is sent',
+    family: 'culture',
+    effects: { visitors: 4, comfort: 2 },
+    unlock: [
+      { id: 'resonanceWorkshop', level: 2 },
+      { id: 'farRimHomes', level: 1 },
+    ],
+  },
+  {
+    id: 'patternGarden',
+    name: 'Pattern garden',
+    shortName: 'Pattern garden',
+    purpose: 'A Willowkin root garden, where the roots grow in shapes that repeat',
+    family: 'park',
+    effects: { comfort: 3 },
+    requiredForEraCompletion: false,
+    unlock: [
+      { id: 'tonewoodConservatory', level: 2 },
+      { id: 'stillwaterBasin', level: 1 },
+    ],
+  },
+].map(({ id, ...building }) => ({
+  id,
+  kind: id,
+  introducedEra: 'quiet-signal',
+  color: '#8d97ad',
+  settlement: MOON_SETTLEMENT,
+  // The Far Rim road leaves from New Hollow's first landing.
+  unlock: [{ id: 'ribbonLanding', level: 1 }],
+  ...building,
+}));
+for (const building of signalBuildings) CITY_FAMILIES[building.kind] = building.family;
+
 // Each level's benefit line follows the building's effects, so a balance change
 // can never leave an outdated number in the text.
 export function cityBenefit({ housing, visitors, food, water, comfort }, level) {
@@ -685,6 +908,8 @@ export const CITY_BUILDINGS = [
   },
   ...skywardBuildings,
   ...twinBuildings,
+  ...risingBuildings,
+  ...signalBuildings,
 ].map((building) => ({
   ...building,
   stages: [

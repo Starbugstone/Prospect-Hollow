@@ -40,6 +40,7 @@
 </template>
 <script setup>
 import { computed, onMounted, onBeforeUnmount } from 'vue';
+import { HIDDEN_FIND_WORDS } from '../../data/hiddenFinds';
 import { t, number } from '../../i18n';
 import TownIcon from './TownIcon.vue';
 const props = defineProps({
@@ -61,14 +62,6 @@ const resources = {
     particles: 10,
     cue: 'coin',
     message: 'Collected {coins} coins from the saloon!',
-    suffix: '',
-  },
-  'helmet-coins': {
-    icon: 'coin',
-    particles: 10,
-    cue: 'coin',
-    message: 'Found the astronaut: {coins} coins!',
-    unknown: 'Found the astronaut: coins for your town!',
     suffix: '',
   },
   'vip-coins': {
@@ -93,6 +86,16 @@ const resources = {
     suffix: ' TNT',
   },
 };
+// A hidden find's coins (`helmet-coins`, ...) burst from where it was found.
+for (const [id, words] of Object.entries(HIDDEN_FIND_WORDS))
+  resources[`${id}-coins`] = {
+    icon: 'coin',
+    particles: 10,
+    cue: 'coin',
+    message: words.collected,
+    unknown: words.collectedUnknown,
+    suffix: '',
+  };
 const appearance = computed(() => resources[props.resource] ?? resources.coins);
 // Every map hands over where its place sits on screen (in percent); the collection
 // rises from there, kept clear of the map's edges.

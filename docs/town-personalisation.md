@@ -35,25 +35,71 @@ tapping the plaque names the honour or distinction above it until the next tap.
 
 ## Monument sites
 
-`townLandmarks.js` owns eleven spacious monument sites: nine in the valley and two on the Moon. Coin sites open every other era
+`townLandmarks.js` owns thirteen spacious monument sites: ten in the valley and three on the Moon. Coin sites open every other era
 (Frontier, Industrial, Motor Age, Music & Television, Tomorrow City, Riverlight,
 Stargazer and Twin Hollows),
 so the town gets variety without a monument for every era. Two additional resource
 sites open in Twin Hollows for saved moonstones. Each era site offers
 three designs drawn from what that era brings to the town:
 
-| Era                 | Site             | Designs                                                       |
-| ------------------- | ---------------- | ------------------------------------------------------------- |
-| Frontier            | Founders' Meadow | Prospectors' Headframe, Wind Garden, Founders' Longhall       |
-| Motor Age           | Promenade        | Sunburst Filling Station, Chrome Diner, Terminus Clock        |
-| Music & Television  | Arts Quarter     | Music Shell, Big Screen, Signal Spire                         |
-| Tomorrow City       | Horizon Park     | Orbit House, Solar Crown, Maglev Loop                         |
-| Riverlight          | Riverlight Court | Warm Spring Terraces, Garden of Light, Lotus Pavilion         |
-| Stargazer           | Stargazers’ Lawn | Orrery Garden, Comet Arch, Aurora Dome                        |
-| Twin Hollows        | Homecoming Green | Twin-lantern Walk, Earth and Moon Garden, Family Welcome Arch |
-| Twin Hollows        | Moonstone Garden | Moonstone Fountain, Homeward Obelisk, Lunar Crystal Pavilion  |
-| Twin Hollows (Moon) | Moonrock Court   | Moonstone Henge, Earthlight Spire, Crater Amphitheatre        |
-| Twin Hollows (Moon) | Earthrise Plaza  | First Footprints, Earthrise Arch, Orbital Beacon              |
+| Era                 | Site                    | Designs                                                       |
+| ------------------- | ----------------------- | ------------------------------------------------------------- |
+| Frontier            | Founders' Meadow        | Prospectors' Headframe, Wind Garden, Founders' Longhall       |
+| Motor Age           | Promenade               | Sunburst Filling Station, Chrome Diner, Terminus Clock        |
+| Music & Television  | Arts Quarter            | Music Shell, Big Screen, Signal Spire                         |
+| Tomorrow City       | Horizon Park            | Orbit House, Solar Crown, Maglev Loop                         |
+| Riverlight          | Riverlight Court        | Warm Spring Terraces, Garden of Light, Lotus Pavilion         |
+| Stargazer           | Stargazers’ Lawn        | Orrery Garden, Comet Arch, Aurora Dome                        |
+| Twin Hollows        | Homecoming Green        | Twin-lantern Walk, Earth and Moon Garden, Family Welcome Arch |
+| Twin Hollows        | Moonstone Garden        | Moonstone Fountain, Homeward Obelisk, Lunar Crystal Pavilion  |
+| Twin Hollows (Moon) | Moonrock Court          | Moonstone Henge, Earthlight Spire, Crater Amphitheatre        |
+| Twin Hollows (Moon) | Earthrise Plaza         | First Footprints, Earthrise Arch, Orbital Beacon              |
+| Twin Hollows (Moon) | Earthlight Conservatory | Earthlight Orchard, Crystal Nursery, Earthlight Bakehouse     |
+| Twin Hollows        | Homecoming Commons      | Story Hall, Homecoming Bandstand, Wild Meadow                 |
+| Twin Hollows        | Willowkin Glade         | Seedling Grove, Lantern Orchard, Story Tree                   |
+| New Hollow Rising   | Schoolyard Court (Moon) | Lamplit Library, Little Planetarium, Earthview Studio         |
+| New Hollow Rising   | Crew Yard (Moon)        | Crew Canteen, Mapmakers’ Hall, Little Rover Track             |
+
+The Earthlight Conservatory, the Homecoming Commons, the Willowkin Glade, Schoolyard Court and
+Crew Yard are commissions (`src/data/commissions.js`). A letter asks what to build, and the
+permanent outcome sets who visits and what they do there. Each costs five even stages of 400,000
+coins and never gates an era or puzzle.
+
+A site opens with its era and its `opens`, read by `areaOpensMet` on the client and
+`TownPersonalisation::opens` on the server from the same exported catalog:
+
+- `{ building, level }`: a finished building level. The Conservatory opens at Earthlight
+  Greenhouse 3, the Commons at Homecoming Hall 3, Schoolyard Court at Crater School 3 and Crew
+  Yard at Expedition Garage 3.
+- `{ sites, level }`: a stage paid for at any one of those sites (`areaBoughtLevel`: a valid
+  saved design and its paid level). The Willowkin Glade waits for the Conservatory or the
+  Commons, so a player who began on the Moon and one who began in the valley both reach it.
+
+Both read levels that only rise, so an open site never closes. An opening of an unknown kind keeps
+the site closed on both sides. Tests open every site through `testing/helpers/siteOpening.js`.
+The two Moon commissions stand on outer-ring slots 3 and 10, turned to face the outer ring road
+(`north`, `south-east`); their path joins the outermost ring inside the site (`moonSiteRing`).
+The Glade, behind Riverlight Court, has a footpath from the west end of the Mission Homesteads'
+street, laid with the era (`SITE_FOOTPATHS` in `TownLayout.js`), so a purchase that opens it
+changes no street. `commissionStatus()` drives the one signal that a commission
+is active: a light pill beside the town project (`TownCommissionGoal`), the same pill in the Build
+sheet and a letter action icon over a site awaiting its choice. `testing/browser/town-commission-signal.cjs`
+checks every state in the real game, on desktop and phone, in English and French.
+
+Residents use a finished commission (stage 1 unveiled) as its outcome's `use` says, read through
+`commissionUse()` in both settlements: `stay` is `enter` (in through the door and out later),
+`gather` (an audience before it) or `roam` (wandering its grounds), `carry` is what they bring
+home and `young` sends children. Nothing is saved: the outcome and stage decide it. The shared
+day and pose (`TownCommissionUse.js`) serve both maps. On the Moon, `visits` trips of each settler's
+day go to the commission's door along its public path. In the valley, `visits.villager` townsfolk
+(`TownCommissionResidents.js`) leave the nearest homes by their doors, walk the streets to the
+edge of the monument field, cross it on a navigation-checked walk and climb the pedestal to the
+place their form's `VALLEY_COMMISSION_GROUNDS` gives: the Story Hall's door, the Bandstand's
+and the Story Tree's audience arcs, the yards of the Wild Meadow, the Seedling Grove and the
+Lantern Orchard. A commission without `use`, or a form without grounds for
+its stay, has its visitors gather before the site. `testing/commission-residents.test.js` checks
+every outcome against its art at every stage; `testing/browser/commission-residents.cjs` checks
+the walks in the real game and films each outcome at phone size.
 
 Every design has its own silhouette (`form`) and card artwork; no two designs share
 one. A later era with a valley site skips at least one era after the previous valley site, and its
@@ -128,8 +174,25 @@ Monument sites follow the same interaction as every other building:
   remain specific to the design (winding wheels, solar petals, pods, planets, etc.).
 - Existing paid stage numbers stay in saves and verified receipts; models above
   five display the complete wonder. No purchased choice or honour is removed.
-  New receipts carry `monumentVersion: 2`; unversioned receipts replay the old
-  era ceilings and prices, preserving offline purchases and existing checkpoints.
+  Receipts carry the price terms they were bought on (`monumentVersion`, 3 today;
+  2 for older outbox entries). Unversioned receipts replay the original linear
+  prices and era ceilings, preserving offline purchases and existing checkpoints,
+  with two limits on the server (`TownPersonalisation::purchase()`):
+  - No terms raise a site past its five levels. An unversioned receipt once
+    allowed one level per era since the site opened (the meadow up to 17); that
+    is now capped at five. Levels above five already paid stay in the save. Only
+    a preprod receipt from those days for a sixth level, never synced since,
+    would now be dropped, keeping its coins.
+  - Only the eight sites sold before receipts carried terms (meadow, monument,
+    motor-court, arts-court, horizon, light-court, stargazer-lawn and
+    homecoming-green, sold on preprod from 6 to 8 October 2026) accept
+    unversioned receipts. Every later site refuses them. Production never sold a
+    monument without terms, so this refuses no genuine receipt.
+
+  Those eight sites still accept the cheaper linear prices up to level five,
+  since a receipt cannot prove when it was queued. Version 2 terms are kept as
+  they were: on every site they cost at least as much as current terms.
+
 - The Build tab lists every unlocked site under **Monuments** (open sites with their
   starting price, built ones with their stage, construction progress or next upgrade
   price) and names the next site to open. Monument purchases are separate from

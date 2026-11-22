@@ -7,6 +7,7 @@
     />
     <h2>{{ model.name }}</h2>
     <HonourRankTrack class="honour-detail-track" :track="model.track" />
+    <p v-if="model.scope" class="honour-detail-note">{{ model.scope }}</p>
     <!-- The ladder: every rank, its date once earned, progress on the next one. -->
     <ol class="honour-detail-ranks" :aria-label="t('Ranks')">
       <li

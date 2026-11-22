@@ -12,6 +12,7 @@ import { FUSION_STYLES } from '../game/engine/BonusFusion';
 import { isEraComplete } from '../game/town/TownEras';
 import { LEVEL_COUNT } from './campaign';
 import { ERAS } from './eras';
+import { HIDDEN_FIND_IDS, hiddenFindFields } from './hiddenFinds';
 import { OBSTACLES } from './obstacles';
 import { isPlayerDistinction } from './playerDistinctions';
 import { wholeNumberOrZero } from './saveFormat';
@@ -22,7 +23,7 @@ import { PERSONAL_AREAS } from './townLandmarks';
 // The saved block's shape and the catch-up generation: saves from an older generation
 // are re-evaluated once on load. It is not a requirement version (see `version` on a
 // rank) and a new rank or family raises it so existing saves earn what they prove.
-export const HONOURS_VERSION = 5;
+export const HONOURS_VERSION = 9;
 // Ranks in ladder order. A family may stop early; new ranks only ever append.
 export const RANK_METALS = Object.freeze(['bronze', 'silver', 'gold', 'diamond']);
 const METAL_DIFFICULTY = Object.freeze({
@@ -164,6 +165,8 @@ export const MINE_ELEMENTS = Object.freeze([
     id: 'surveys',
     name: 'Trail Surveyor',
     goals: [5, 20, 60],
+    // Chapter 95 (levels 565–570) took a campaign to 50 trails, so gold fell to 1.2 campaigns.
+    diamond: { goal: 75, since: 8 },
     obstacle: 'survey',
     label: 'Survey trails',
     requirement: 'Complete {goal} survey trails.',
@@ -201,6 +204,44 @@ export const MINE_ELEMENTS = Object.freeze([
     label: 'Blast gates',
     requirement: 'Break {goal} blast gates.',
     popup: '{goal} blast gates broken',
+  },
+  // The crystal mechanics of levels 547–606 (honours generation 8), calibrated on the authored
+  // chapters: bronze is the teaching board, silver within one campaign, gold about 1.5.
+  {
+    id: 'traceTwins',
+    name: 'Twin Tracer',
+    goals: [1, 8, 15],
+    since: 8,
+    obstacle: 'trace-twins',
+    label: 'Trace twins',
+    requirement: 'Fire {goal} pairs of trace twins.',
+    popup: '{goal} pairs of trace twins fired',
+    // Bronze asks for one pair, in the singular.
+    first: { requirement: 'Fire a pair of trace twins.', popup: 'A pair of trace twins fired' },
+    // Both stamps of a pair vanish together when either fires. Rounding up the stamps left
+    // means a pair is never credited while one of its stamps still stands.
+    count: (config, tiles) =>
+      Math.ceil(tiles.filter((tile) => obstacle('trace-twins').present(tile)).length / 2),
+  },
+  {
+    id: 'crossgrain',
+    name: 'Crossgrain Mender',
+    goals: [3, 25, 50],
+    since: 8,
+    obstacle: 'crossgrain',
+    label: 'Crossgrain crystals',
+    requirement: 'Seal {goal} crossgrain crystals.',
+    popup: '{goal} crossgrain crystals sealed',
+  },
+  {
+    id: 'chords',
+    name: 'Crystal Harmonist',
+    goals: [2, 20, 45],
+    since: 8,
+    obstacle: 'chord',
+    label: 'Chord crystals',
+    requirement: 'Complete {goal} chord crystals.',
+    popup: '{goal} chord crystals completed',
   },
 ]);
 // Every other mine element is deliberately not a mastery family: common obstacles, or
@@ -248,6 +289,10 @@ export const NON_MILESTONE_ERAS = Object.freeze([
   'skysail',
   'stargazer',
   'moonward',
+  // Through the Ages ends on its diamond rank, "Two Towns, One Sky", for now.
+  'hollow-rising',
+  // The Far Rim has its own family, Far Rim Listener.
+  'quiet-signal',
 ]);
 // Fixed membership is part of a shipped measure. Future content extends the
 // collection through another rank/family, never by silently changing these lists.
@@ -264,6 +309,33 @@ const MOON_HONOUR_BUILDINGS = Object.freeze([
   'saucerPad',
   'earthriseLookout',
 ]);
+// New Hollow Rising's buildings on the crater's outer ring: a list of its own, since New
+// Hollow Pioneer's is fixed.
+const OUTER_RING_HONOUR_BUILDINGS = Object.freeze([
+  'ringTram',
+  'dewfallCistern',
+  'orchardVaults',
+  'lanternRow',
+  'ringMarket',
+  'craterSchool',
+  'earthviewTerraces',
+  'expeditionGarage',
+  'craterInn',
+  'starwatchDish',
+  'moonballField',
+  'craterPondGarden',
+]);
+// The Quiet Signal's buildings round the Quiet Stone: a list of its own, as the outer
+// ring's is. The stone is a fixed landmark and counts for nothing.
+const FAR_RIM_HONOUR_BUILDINGS = Object.freeze([
+  'listeningHouse',
+  'stillwaterBasin',
+  'tonewoodConservatory',
+  'farRimHomes',
+  'resonanceWorkshop',
+  'signalTerrace',
+  'patternGarden',
+]);
 const HONOUR_MONUMENT_SITES = Object.freeze([
   'meadow',
   'monument',
@@ -277,6 +349,20 @@ const HONOUR_MONUMENT_SITES = Object.freeze([
   'moonstone-garden',
   'moonrock-court',
 ]);
+// Commissioner's sites, fixed when it shipped. A later commission joins a new rank whose
+// own measure lists every site so far, never this list.
+const COMMISSION_HONOUR_SITES = Object.freeze(['earthlight-conservatory', 'homecoming-commons']);
+// Every commission of release 1.3.0, for the ranks added with the third, fourth and fifth
+// (generation 9). Fixed too: a later commission joins a later rank's own list.
+const COMMISSION_HONOUR_SITES_1_3 = Object.freeze([
+  ...COMMISSION_HONOUR_SITES,
+  'willowkin-glade',
+  'schoolyard-court',
+  'crew-yard',
+]);
+// Keen Eye's hidden finds (src/data/hiddenFinds.js), fixed when it shipped. A later find
+// joins a new rank or NON_FIND_HONOURS, never this list.
+const HONOUR_FINDS = Object.freeze(['helmet', 'wanderers']);
 // Explicit coverage decisions, with reasons for features without a separate tally.
 export const NON_SETTLEMENT_HONOURS = Object.freeze({
   valley: 'Through the Ages covers valley construction and modernization.',
@@ -284,7 +370,13 @@ export const NON_SETTLEMENT_HONOURS = Object.freeze({
 export const NON_RESOURCE_HONOURS = Object.freeze({
   coins: 'Coins fund progression; no lifetime coin collection counter is saved.',
 });
-export const NON_MONUMENT_HONOURS = Object.freeze({});
+export const NON_MONUMENT_HONOURS = Object.freeze({
+  // Commission sites count for Commissioner, not Landmark Patron. Landmark Patron's site list shipped fixed, so a later site cannot join it.
+  'voyagers-court': 'Landmark Patron’s shipped sites are fixed; a later site adds no rank yet.',
+  'hollowborn-square': 'Landmark Patron’s shipped sites are fixed; a later site adds no rank yet.',
+});
+// Every hidden find is counted by Keen Eye; a later one needs a rank or a reason here.
+export const NON_FIND_HONOURS = Object.freeze({});
 function obstacle(id) {
   return OBSTACLES.find((entry) => entry.id === id) ?? { present: () => false };
 }
@@ -353,6 +445,26 @@ const MEASURES = Object.freeze({
     value: (state, measure) =>
       measure.areas.reduce((total, area) => total + MEASURES.landmark.value(state, { area }), 0),
   },
+  // The highest level with a completion record: a fixed level number is a named milestone.
+  level: {
+    value: (state) =>
+      Object.entries(state.records ?? {}).reduce(
+        (best, [id, record]) =>
+          /^[1-9]\d{0,5}$/.test(id) && record && typeof record === 'object'
+            ? Math.max(best, Number(id))
+            : best,
+        0,
+      ),
+  },
+  // How many of the listed hidden finds the owner has found in this town at least once:
+  // a find saves the completed puzzle count it was found at (`XRun`), which only rises.
+  found: {
+    value: (state, measure) =>
+      measure.finds.filter(
+        (find) =>
+          HIDDEN_FIND_IDS.includes(find) && safeCount(state.town?.[hiddenFindFields(find).run]) > 0,
+      ).length,
+  },
   // One counter, or the total of a counter map when no key is named.
   count: {
     value: (state, measure) => {
@@ -376,7 +488,8 @@ const MEASURES = Object.freeze({
 
 // ---------- Families ----------
 // Every family's ranks from the content. Ranks list `metal`, `goal` and, when they
-// differ from the family, `measure`, `name`, `requirement` and `popup`.
+// differ from the family, `measure`, `name`, `requirement` and `popup`. A family's
+// optional `scope` (a long list of what counts) is shown once, not on every rank.
 export function honourFamilies({
   eras = ERAS,
   gemTypes = GEM_TYPES,
@@ -506,12 +619,34 @@ export function honourFamilies({
       // Diamond ranks arrived with the floating seam (levels 403–546), when the longer
       // campaign passed the shipped gold goals. Shipped goals never change.
       ranks: [
-        ...element.goals.map((goal, index) => ({ metal: RANK_METALS[index], goal })),
+        ...element.goals.map((goal, index) => ({
+          metal: RANK_METALS[index],
+          goal,
+          ...(element.since ? { since: element.since } : {}),
+          ...(index === 0 ? element.first : {}),
+        })),
         ...(element.diamond
           ? [{ metal: 'diamond', goal: element.diamond.goal, since: element.diamond.since }]
           : []),
       ],
     })),
+    {
+      id: 'far-seam',
+      tab: 'mine',
+      name: 'Far Seam Prospector',
+      art: { image: '/art/rewards/far-seam.svg' },
+      measure: { kind: 'level' },
+      requirement: 'Complete level {goal}.',
+      popup: 'Level {goal} completed',
+      progress: 'Furthest level {value} of {goal}',
+      // Fixed level numbers, never "all levels": the first new chapter's last level, act V's
+      // finale and the pack's finale. A later pack appends a rank with its own level.
+      ranks: [
+        { metal: 'bronze', goal: 552, since: 8 },
+        { metal: 'silver', goal: 582, since: 8 },
+        { metal: 'gold', goal: 606, name: 'The Far Seam', since: 8 },
+      ],
+    },
     {
       id: 'ages',
       tab: 'town',
@@ -651,6 +786,36 @@ export function honourFamilies({
       ranks: [1, 15, 30].map((goal, index) => ({ metal: RANK_METALS[index], goal, since: 5 })),
     },
     {
+      id: 'outer-ring',
+      tab: 'town',
+      name: 'Outer Ring Builder',
+      art: { image: '/art/rewards/moon-homestead.svg' },
+      measure: {
+        kind: 'buildingLevels',
+        settlement: 'moon',
+        buildings: OUTER_RING_HONOUR_BUILDINGS,
+      },
+      requirement: 'Complete {goal} building levels on New Hollow’s outer ring.',
+      popup: '{goal} outer ring building levels completed',
+      progress: '{value} / {goal} outer ring building levels',
+      ranks: [1, 15, 30].map((goal, index) => ({ metal: RANK_METALS[index], goal, since: 6 })),
+    },
+    {
+      id: 'far-rim',
+      tab: 'town',
+      name: 'Far Rim Listener',
+      art: { image: '/art/rewards/moon-homestead.svg' },
+      measure: {
+        kind: 'buildingLevels',
+        settlement: 'moon',
+        buildings: FAR_RIM_HONOUR_BUILDINGS,
+      },
+      requirement: 'Complete {goal} building levels in the Far Rim, beside the Quiet Stone.',
+      popup: '{goal} Far Rim building levels completed',
+      progress: '{value} / {goal} Far Rim building levels',
+      ranks: [1, 9, 18].map((goal, index) => ({ metal: RANK_METALS[index], goal, since: 7 })),
+    },
+    {
       id: 'saucer-welcome',
       tab: 'town',
       name: 'Shuttle Host',
@@ -678,10 +843,73 @@ export function honourFamilies({
       name: 'Landmark Patron',
       art: { image: '/art/rewards/monument.svg' },
       measure: { kind: 'landmarks', areas: HONOUR_MONUMENT_SITES },
-      requirement: 'Sponsor monuments at {goal} different sites in the valley or on the Moon.',
+      requirement: 'Sponsor monuments at {goal} of the listed sites.',
+      // Shown once for the family, not on every rank of the ladder.
+      scope:
+        'Listed sites: Founders’ Meadow, Monument Square, the Promenade, the Arts Quarter, Horizon Park, Riverlight Court, Stargazers’ Lawn, Homecoming Green, Earthrise Plaza, Moonstone Garden and Moonrock Court.',
       popup: '{goal} monument sites sponsored',
       progress: '{value} / {goal} monument sites sponsored',
       ranks: [1, 5, 9].map((goal, index) => ({ metal: RANK_METALS[index], goal, since: 5 })),
+    },
+    {
+      id: 'commissioner',
+      tab: 'town',
+      name: 'Commissioner',
+      art: { image: '/art/rewards/commission-letter.svg' },
+      measure: { kind: 'landmarks', areas: COMMISSION_HONOUR_SITES },
+      requirement: 'Sponsor {goal} commissions, in the valley or on the Moon.',
+      popup: '{goal} commissions sponsored',
+      progress: '{value} / {goal} commissions sponsored',
+      ranks: [
+        {
+          metal: 'bronze',
+          goal: 1,
+          name: 'First Commission',
+          requirement: 'Choose the design of a commission and pay for its first stage.',
+          popup: 'Your first commission is under way',
+          since: 8,
+        },
+        { metal: 'silver', goal: 2, since: 8 },
+        {
+          metal: 'gold',
+          goal: 3,
+          measure: { kind: 'landmarks', areas: COMMISSION_HONOUR_SITES_1_3 },
+          since: 9,
+        },
+        {
+          metal: 'diamond',
+          goal: 5,
+          measure: { kind: 'landmarks', areas: COMMISSION_HONOUR_SITES_1_3 },
+          since: 9,
+        },
+      ],
+    },
+    {
+      id: 'keen-eye',
+      tab: 'town',
+      name: 'Keen Eye',
+      art: { image: '/art/rewards/wandering-pair.svg' },
+      measure: { kind: 'found', finds: HONOUR_FINDS },
+      progress: '{value} / {goal} hidden finds found',
+      ranks: [
+        {
+          metal: 'bronze',
+          goal: 1,
+          name: 'Sharp Eyes',
+          requirement:
+            'In your own town, find the animal in a space helmet or the raccoon out walking with its Willowkin.',
+          popup: 'Your first hidden find',
+          since: 8,
+        },
+        {
+          metal: 'silver',
+          goal: 2,
+          requirement:
+            'In your own town, find both the animal in a space helmet and the raccoon out walking with its Willowkin.',
+          popup: 'Both hidden finds found',
+          since: 8,
+        },
+      ],
     },
     {
       id: 'endless-seam',
@@ -708,7 +936,7 @@ export function honourFamilies({
         counter: 'continuousLevels',
         keys: Array.from({ length: 546 }, (_, i) => `level-${i + 1}`),
       },
-      requirement: 'Collect at least one gem in continuous play on {goal} different levels.',
+      requirement: 'Collect at least one gem in continuous play on {goal} of levels 1–546.',
       popup: '{goal} different continuous seams explored',
       progress: '{value} / {goal} continuous seams explored',
       ranks: [12, 90, 300].map((goal, index) => ({ metal: RANK_METALS[index], goal, since: 5 })),
@@ -762,6 +990,7 @@ function defineRank(family, rank, index, content) {
     since: rank.since ?? 1,
     name: rank.name ?? family.name,
     requirement: rank.requirement ?? family.requirement,
+    scope: family.scope ?? null,
     popup: rank.popup ?? family.popup,
     progressText: rank.progress ?? family.progress ?? null,
     goal: rank.goal,

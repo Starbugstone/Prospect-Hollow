@@ -11,7 +11,7 @@ namespace App;
 final class SaveIntegrity
 {
     private array $rules;
-    // The town being replayed: a space-helmet receipt is only valid for its own town.
+    // The town being replayed: a hidden-find receipt is only valid for its own town.
     private string $townId = '';
     // The replayed state a rejected or corrected upload was compared with, for the admin sync log.
     private ?array $expected = null;
@@ -56,8 +56,6 @@ final class SaveIntegrity
         'completedRuns',
         'forge',
         'saloonVisitAt',
-        'helmetRun',
-        'helmetVisitAt',
         'income',
         'lastCollections',
         'events',
@@ -485,7 +483,7 @@ final class SaveIntegrity
         if (($p['settledRun'] ?? 0) > ($p['issuedRun'] ?? 0)) {
             self::invalid('settledRun');
         }
-        foreach (['completedRuns', 'saloonVisitAt', 'helmetRun', 'helmetVisitAt'] as $key) {
+        foreach (['completedRuns', 'saloonVisitAt', ...$this->hiddenFindFields()] as $key) {
             if (array_key_exists($key, $town) && !self::integer($town[$key])) {
                 self::invalid('town.' . $key);
             }
@@ -737,6 +735,15 @@ final class SaveIntegrity
                 unset($p['town']['projects'][$id]);
             }
         }
+        // Mirrors normalizeTown(): an older project never waits for more puzzles than the
+        // offer it belongs to, and its wins are clamped with it.
+        foreach ($p['town']['projects'] as $id => $project) {
+            $runs = $this->projectRuns($p['town'], $id, $project);
+            if ($runs !== null) {
+                $p['town']['projects'][$id]['required'] = min($project['required'], $runs);
+                $p['town']['projects'][$id]['wins'] = min($project['wins'], $runs);
+            }
+        }
         $p['town']['progressionVersion'] = $defaults['town']['progressionVersion'];
         if (!in_array($profile['town']['moonstoneVersion'] ?? null, [1, 2], true)) {
             $credit = $this->moonBuildingCredit($p['town']);
@@ -766,6 +773,25 @@ final class SaveIntegrity
         $p['chestsWithoutBuilderHammer'] = min(9, $p['chestsWithoutBuilderHammer']);
         $this->settleForge($p['town']);
         return $p;
+    }
+    /**
+     * The puzzles a project's offer asks, as projectRuns() and the modernization offer give
+     * them to normalizeTown(); null when the game has no offer to clamp the project to.
+     */
+    private function projectRuns(array $town, string $id, array $project): ?int
+    {
+        if (($project['type'] ?? null) === 'modernization') {
+            unset($town['projects'][$id]);
+            $offer = $this->offer($town, $id);
+            return ($offer['type'] ?? null) === 'modernization' &&
+                $offer['stage'] === $project['stage'] &&
+                $offer['targetEra'] === $project['targetEra'] &&
+                $offer['runs'] > 0
+                ? $offer['runs']
+                : null;
+        }
+        $runs = $this->rules['buildings'][$id]['upgrades'][$project['stage'] - 1]['runs'] ?? 1;
+        return $runs > 0 ? min($this->rules['maxConstructionRuns'], $runs) : null;
     }
     private function protected(array $p): array
     {
@@ -801,7 +827,7 @@ final class SaveIntegrity
             ],
             $p['pendingChests'],
         );
-        foreach (self::PROTECTED_TOWN as $key) {
+        foreach ($this->protectedTown() as $key) {
             $result['town'][$key] = $p['town'][$key];
         }
         $result['town']['landmarks'] = [
@@ -928,8 +954,9 @@ final class SaveIntegrity
                 'town',
             ]),
         );
+        $town = $state['town'];
         $state['town'] = array_intersect_key(
-            $state['town'],
+            $town,
             array_flip([
                 'coins',
                 'moonstoneVersion',
@@ -944,8 +971,7 @@ final class SaveIntegrity
                 'completedRuns',
                 'forge',
                 'saloonVisitAt',
-                'helmetRun',
-                'helmetVisitAt',
+                ...$this->hiddenFindFields(),
                 'income',
                 'lastCollections',
                 'events',
@@ -953,6 +979,13 @@ final class SaveIntegrity
                 'transition',
             ]),
         );
+        // The landmarks the replay protects (protected(): town.landmarks), so a restore of
+        // this checkpoint compares monuments and commissions with what was signed. Older
+        // checkpoints lack the key; landmarks() recovers theirs from the cloud history.
+        $state['town']['personalisation'] = [
+            'areas' => $town['personalisation']['areas'] ?? [],
+            'areaLevels' => $town['personalisation']['areaLevels'] ?? [],
+        ];
         $payload = json_encode(
             [
                 'version' => 1,
@@ -974,6 +1007,50 @@ final class SaveIntegrity
         return $body .
             '.' .
             hash_hmac('sha256', 'prospect-hollow:save-checkpoint:v1:' . $body, Env::appSecret());
+    }
+    /**
+     * A signed checkpoint's state with its protected landmarks. A checkpoint signed before
+     * they were carried takes them from the cloud save sealed with that same checkpoint,
+     * which recorded the same town. A restore can seal another save at the same epoch and
+     * sequence, so that pair alone decides only for a save stored without its checkpoint.
+     * Without either, the checkpoint vouches for no landmarks, as before.
+     *
+     * @param array<string, mixed> $signed From readCheckpoint().
+     * @param string $token The checkpoint as the client sent it.
+     * @param list<object|null> $saves The current cloud save and its history.
+     * @return array<string, mixed>
+     */
+    private function landmarks(array $signed, string $token, array $saves): array
+    {
+        $state = $signed['state'];
+        if (is_array($state['town']['personalisation'] ?? null)) {
+            return $state;
+        }
+        $sealed = null;
+        foreach ($saves as $save) {
+            $data = $save ? self::arrayOf($save) : null;
+            $integrity = $data['integrity'] ?? null;
+            if (
+                ($integrity['epoch'] ?? null) !== $signed['epoch'] ||
+                ($integrity['baseSequence'] ?? null) !== $signed['sequence']
+            ) {
+                continue;
+            }
+            if (($integrity['checkpoint'] ?? null) === $token) {
+                $sealed = $data;
+                break;
+            }
+            if (!isset($integrity['checkpoint'])) {
+                $sealed ??= $data;
+            }
+        }
+        if ($sealed) {
+            $state['town']['personalisation'] = [
+                'areas' => $sealed['town']['personalisation']['areas'] ?? [],
+                'areaLevels' => $sealed['town']['personalisation']['areaLevels'] ?? [],
+            ];
+        }
+        return $state;
     }
     private function readCheckpoint(mixed $token, string $townId): ?array
     {
@@ -1268,6 +1345,38 @@ final class SaveIntegrity
     {
         return $this->changed;
     }
+    /** Whether a restore matches a stored history snapshot or carries this town's checkpoint. */
+    private function knownRestore(
+        array $incoming,
+        ?array $journal,
+        array $history,
+        string $townId,
+    ): bool {
+        if ($journal && isset($journal['checkpoint'])) {
+            $signed = $this->readCheckpoint($journal['checkpoint'], $townId);
+            if (
+                $signed &&
+                $signed['epoch'] === $journal['epoch'] &&
+                $signed['sequence'] === $journal['baseSequence']
+            ) {
+                return true;
+            }
+        }
+        // A snapshot saved under a newer schema is not a save this town held under the
+        // incoming one, so matching its protected state must not write it back older.
+        $schema = $incoming['schemaVersion'] ?? 2;
+        $restored = $this->protected($this->normalized($incoming));
+        foreach ($history as $entry) {
+            $snapshot = self::arrayOf($entry);
+            if (
+                ($snapshot['schemaVersion'] ?? 2) <= $schema &&
+                self::same($this->protected($this->normalized($snapshot)), $restored)
+            ) {
+                return true;
+            }
+        }
+        return false;
+    }
     /** Whether the last reconciled upload claimed more than the replay in any resource. */
     public function favourable(): bool
     {
@@ -1287,9 +1396,16 @@ final class SaveIntegrity
         $incoming = self::arrayOf($profile);
         $journal = $this->journal($incoming['integrity'] ?? null);
         $old = $previous ? self::arrayOf($previous) : null;
+        // A client that writes an older format than the stored save cannot understand it (from
+        // schema 3: Moon resources, 4: stored production, 5: eras a 1.2 client does not know),
+        // so its upload would fold the town back. Schema 2 saves predate the guard.
+        // A restore the player chose is the exception once it proves to be a save this town
+        // already held: a stored history snapshot or a signed checkpoint of this town.
+        $oldSchema = $old['schemaVersion'] ?? 2;
         if (
-            (($old['schemaVersion'] ?? 2) >= 3 && ($incoming['schemaVersion'] ?? 2) < 3) ||
-            (($old['schemaVersion'] ?? 2) >= 4 && ($incoming['schemaVersion'] ?? 2) < 4)
+            $oldSchema >= 3 &&
+            ($incoming['schemaVersion'] ?? 2) < $oldSchema &&
+            !($resolve && $this->knownRestore($incoming, $journal, $history, $townId))
         ) {
             self::incompatible();
         }
@@ -1366,7 +1482,10 @@ final class SaveIntegrity
             ) {
                 self::mismatch('recovery.checkpoint');
             }
-            $signedProfile = $signed['state'];
+            $signedProfile = $this->landmarks($signed, (string) $journal['checkpoint'], [
+                $previous,
+                ...$history,
+            ]);
             $signedProfile['powers'] = array_map(
                 fn($id, $quantity) => ['id' => $id, 'quantity' => $quantity],
                 array_keys($signedProfile['powers']),
@@ -1748,7 +1867,7 @@ final class SaveIntegrity
             }
             $target[$key] = $merged;
         }
-        foreach (self::PROTECTED_TOWN as $key) {
+        foreach ($this->protectedTown() as $key) {
             $target['town'][$key] = $state['town'][$key];
         }
         foreach (['areas', 'areaLevels'] as $key) {
@@ -2014,18 +2133,8 @@ final class SaveIntegrity
         $cost = 0.0;
         $multiplier = 1;
         if (
-            in_array(
-                $kind,
-                [
-                    'victory',
-                    'continuous',
-                    'vip-spend',
-                    'helmet-find',
-                    'helmet-visitor',
-                    'moonstone-sell',
-                ],
-                true,
-            )
+            in_array($kind, ['victory', 'continuous', 'vip-spend', 'moonstone-sell'], true) ||
+            $this->hiddenFindCommand($kind)
         ) {
             if (in_array($kind, ['victory', 'continuous'], true)) {
                 $multiplier = max(1, $this->rules['levels'][$data['levelId']]['miningMultiplier']);
@@ -2224,8 +2333,7 @@ final class SaveIntegrity
             'chest-claim' => ['chestId'],
             'vip-spend' => ['key', 'buildingId'],
             'era-advance' => ['expectedEra'],
-            'helmet-visitor' => ['receipt'],
-            default => [],
+            default => ($this->hiddenFindCommand($kind)[1] ?? '') === 'visitor' ? ['receipt'] : [],
         };
         foreach ($stringFields as $key) {
             if (!is_string($d[$key] ?? null)) {
@@ -2253,6 +2361,11 @@ final class SaveIntegrity
             if (isset($d['chooseRewards']) && !is_bool($d['chooseRewards'])) {
                 self::mismatch('chooseRewards');
             }
+        }
+        $find = $this->hiddenFindCommand($kind);
+        if ($find) {
+            $this->applyHiddenFind($s, $context, $kind, $find[0], $find[1], $d, $now);
+            return;
         }
         switch ($kind) {
             case 'landmark-buy':
@@ -2553,34 +2666,6 @@ final class SaveIntegrity
                     $s['town']['income']['stored'] -= $coins;
                 }
                 $s['town']['saloonVisitAt'] = $visit;
-                break;
-            case 'helmet-find':
-                // Once per completed puzzle, the run that moved the helmet to its wearer.
-                $this->clock($d['at'] ?? null, $context, $now);
-                $run = $this->count($d['run'] ?? null, 'run');
-                if (
-                    !$this->spaceHelmetOut($s['town']['era']) ||
-                    $run !== $s['town']['completedRuns'] ||
-                    $run <= $s['town']['helmetRun']
-                ) {
-                    self::mismatch('helmet-find');
-                }
-                $this->addCoins($s, $this->helmetReward($s['town'], 'owner'));
-                $s['town']['helmetRun'] = $run;
-                break;
-            case 'helmet-visitor':
-                // A find in another town: only the server's receipt for this town proves it.
-                $this->clock($d['at'] ?? null, $context, $now);
-                $found = $this->count($d['foundAt'] ?? null, 'foundAt');
-                if (
-                    $found <= $s['town']['helmetVisitAt'] ||
-                    $this->townId === '' ||
-                    !hash_equals(self::helmetReceipt($this->townId, $found), $d['receipt'])
-                ) {
-                    self::mismatch('helmet-visitor');
-                }
-                $this->addCoins($s, $this->helmetReward($s['town'], 'visitor'));
-                $s['town']['helmetVisitAt'] = $found;
                 break;
             case 'vip-spend':
                 $key = $d['key'] ?? null;
@@ -2952,7 +3037,8 @@ final class SaveIntegrity
                     }
                 }
             }
-            if (array_sum($map) > $jewels) {
+            // A blast can break an obstacle on a gemless tile, so mine is bounded per element.
+            if ($counter !== 'mine' && array_sum($map) > $jewels) {
                 self::mismatch('continuous.honours.' . $counter);
             }
         }
@@ -3089,33 +3175,117 @@ final class SaveIntegrity
                 100,
         );
     }
-    /** Whether a town in this era has a space-helmet wearer to find. */
-    public function spaceHelmetOut(mixed $era): bool
+    /**
+     * Hidden finds (the space-helmet animal, the wandering pair): one contract, defined in
+     * src/data/hiddenFinds.js and exported as `economy.hiddenFinds`. A find `X` keeps the town
+     * fields `XRun` and `XVisitAt`, journals `X-find` and `X-visitor`, and signs its visitor
+     * receipts with its own ID, so the helmet's saves, journals and receipts stay as shipped.
+     * @return array<string, array{debut: string, rewardHours: array<string, int|float>}>
+     */
+    public function hiddenFinds(): array
     {
-        $debut = $this->rules['economy']['spaceHelmetDebut'] ?? null;
+        return $this->rules['economy']['hiddenFinds'] ?? [];
+    }
+    /** @return list<string> every find's saved town fields */
+    private function hiddenFindFields(): array
+    {
+        $fields = [];
+        foreach (array_keys($this->hiddenFinds()) as $id) {
+            array_push($fields, $id . 'Run', $id . 'VisitAt');
+        }
+        return $fields;
+    }
+    /** @return list<string> */
+    private function protectedTown(): array
+    {
+        return [...self::PROTECTED_TOWN, ...$this->hiddenFindFields()];
+    }
+    /** @return array{string, string}|null the find and `find` or `visitor` a journal kind names */
+    private function hiddenFindCommand(string $kind): ?array
+    {
+        foreach (array_keys($this->hiddenFinds()) as $id) {
+            foreach (['find', 'visitor'] as $role) {
+                if ($kind === $id . '-' . $role) {
+                    return [(string) $id, $role];
+                }
+            }
+        }
+        return null;
+    }
+    private function applyHiddenFind(
+        array &$s,
+        array &$context,
+        string $kind,
+        string $id,
+        string $role,
+        array $d,
+        int $now,
+    ): void {
+        $this->clock($d['at'] ?? null, $context, $now);
+        if ($role === 'find') {
+            // Once per completed puzzle, the run that moved the find.
+            $run = $this->count($d['run'] ?? null, 'run');
+            if (
+                !$this->hiddenFindOut($id, $s['town']['era']) ||
+                $run !== $s['town']['completedRuns'] ||
+                $run <= $s['town'][$id . 'Run']
+            ) {
+                self::mismatch($kind);
+            }
+            $this->addCoins($s, $this->hiddenFindReward($id, $s['town'], 'owner'));
+            $s['town'][$id . 'Run'] = $run;
+            return;
+        }
+        // A find in another town: only the server's receipt for this town proves it.
+        $found = $this->count($d['foundAt'] ?? null, 'foundAt');
+        if (
+            $found <= $s['town'][$id . 'VisitAt'] ||
+            $this->townId === '' ||
+            !hash_equals(self::hiddenFindReceipt($id, $this->townId, $found), $d['receipt'])
+        ) {
+            self::mismatch($kind);
+        }
+        $this->addCoins($s, $this->hiddenFindReward($id, $s['town'], 'visitor'));
+        $s['town'][$id . 'VisitAt'] = $found;
+    }
+    /** Whether a town in this era has this hidden find out to be found. */
+    public function hiddenFindOut(string $id, mixed $era): bool
+    {
+        $debut = $this->hiddenFinds()[$id]['debut'] ?? null;
         $index = is_string($era) ? $this->eraIndex($era) : -1;
         return is_string($debut) && $index >= 0 && $index >= $this->eraIndex($debut);
     }
-    /** Mirrors spaceHelmetReward(): the finder's share of an hour of saloon takings. */
-    private function helmetReward(array $town, string $finder): int
+    /** Whether a town in this era has a space-helmet wearer to find. */
+    public function spaceHelmetOut(mixed $era): bool
     {
-        $hours = $this->rules['economy']['spaceHelmetRewardHours'][$finder] ?? null;
+        return $this->hiddenFindOut('helmet', $era);
+    }
+    /** Mirrors hiddenFindReward(): the finder's share of an hour of saloon takings. */
+    private function hiddenFindReward(string $id, array $town, string $finder): int
+    {
+        $hours = $this->hiddenFinds()[$id]['rewardHours'][$finder] ?? null;
         if (!JsonNumber::finite($hours)) {
             self::incompatible();
         }
         return (int) floor($this->incomeRate($town) * $hours);
     }
     /**
-     * Proof that a player found a space helmet while visiting, for the town they visited
-     * as, at a server time in Unix milliseconds. The owner poll hands it to that town.
+     * Proof that a player made a hidden find while visiting, for the town they visited as,
+     * at a server time in Unix milliseconds. The owner poll hands it to that town. The
+     * find's ID is part of the signed text, so one find's receipt never redeems another.
      */
-    public static function helmetReceipt(string $townId, int $foundAt): string
+    public static function hiddenFindReceipt(string $id, string $townId, int $foundAt): string
     {
         return hash_hmac(
             'sha256',
-            'prospect-hollow:helmet-find:v1:' . $townId . ':' . $foundAt,
+            'prospect-hollow:' . $id . '-find:v1:' . $townId . ':' . $foundAt,
             Env::appSecret(),
         );
+    }
+    /** The space helmet's receipt, as signed since its first release. */
+    public static function helmetReceipt(string $townId, int $foundAt): string
+    {
+        return self::hiddenFindReceipt('helmet', $townId, $foundAt);
     }
     private function cooldown(array $town, string $id, int $at): bool
     {

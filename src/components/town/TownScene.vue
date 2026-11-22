@@ -13,7 +13,9 @@
     @pointercancel="cancelPointer"
     @lostpointercapture="cancelPointer"
   >
-    <div v-if="unavailable" class="town-graphics-unavailable" role="alert">
+    <!-- While another settlement's map covers the valley, the valley's own controls are
+         inert: Tab and Enter reach only the map on screen. -->
+    <div v-if="unavailable" class="town-graphics-unavailable" role="alert" :inert="covered">
       <p>{{ t('The village needs 3D graphics, which could not start on this device.') }}</p>
       <span>
         <button type="button" @click="retryGraphics">{{ t('Try again') }}</button>
@@ -25,12 +27,14 @@
     <GameViewStatus
       v-else-if="!graphicsReady"
       class="town-graphics-loading"
+      :inert="covered"
       label="Preparing your village…"
     />
     <canvas
       :key="canvasVersion"
       ref="canvas"
       tabindex="0"
+      :inert="covered"
       :aria-label="t('Town camera. Arrow keys rotate, plus and minus zoom, Home resets the view.')"
       @keydown="cameraKey"
     />
@@ -38,6 +42,7 @@
       v-if="eventInset && !reducedMotion"
       class="town-event-inset"
       :class="{ 'passive-arrival-inset': eventInset.passive }"
+      :inert="covered"
       :role="eventInset.passive ? 'button' : 'img'"
       :tabindex="eventInset.passive ? 0 : undefined"
       :aria-label="eventInset.passive ? t('Show visitor nametag') : t(eventInset.label)"
@@ -66,6 +71,7 @@
       v-if="villagerLabel"
       ref="villagerElement"
       class="villager-name"
+      :inert="covered"
       role="status"
       :style="{ left: `${villagerLabel.x}%`, top: `${villagerLabel.y}%` }"
       ><template v-if="!villagerLabel.live">{{ t('VIP visitor') }} · </template
@@ -75,11 +81,12 @@
       v-if="plaqueLabel"
       ref="plaqueElement"
       class="villager-name"
+      :inert="covered"
       role="status"
       :style="{ left: `${plaqueLabel.x}%`, top: `${plaqueLabel.y}%` }"
       >{{ t(plaqueLabel.name) }}</span
     >
-    <div class="town-action-icons">
+    <div class="town-action-icons" :inert="covered">
       <TownActionIcon
         v-for="anchor in actionAnchors"
         :key="anchor.id"
@@ -87,6 +94,7 @@
         :indicator="indicators[anchor.id]"
         :label="actionLabel(anchor.id)"
         :class="{ 'raid-defense-ready': raidDefenseIds.includes(anchor.id) }"
+        :size="anchor.collection.size ?? 1"
         :data-town-plot="anchor.id"
         :style="{ translate: labelTranslate(anchor.collection) }"
         @focus="anchor.id === 'mine' && prefetchBoard()"
@@ -97,6 +105,7 @@
     </div>
     <div
       class="town-scene-labels"
+      :inert="covered"
       role="group"
       :aria-label="t(readOnly ? 'Village buildings' : 'Choose a plot or enter the mine')"
     >
@@ -135,6 +144,7 @@
     <div
       v-if="needChips.length || moon.homesteads"
       class="town-map-needs"
+      :inert="covered"
       role="group"
       :aria-label="t('Basic town needs')"
       @pointerdown.stop
@@ -195,6 +205,8 @@
       @close="closeSettlement"
       @vip-spend="emit('vip-spend', $event)"
       @villager-label="showSettlementVillagerLabel"
+      @find="emit('find', $event)"
+      @find-zoom="emit('find-zoom', $event)"
     />
   </div>
 </template>
@@ -273,11 +285,16 @@ const props = defineProps({
   reducedMotion: Boolean,
   paused: Boolean,
   nextLevel: Number,
+  // Every level is done: the mine's label offers replays instead of naming the last level.
+  replays: Boolean,
   raid: Object,
   raidDefenseIds: { type: Array, default: () => [] },
   construction: Object,
   // Water, food and happiness against the town's size, always visible on the map.
   needChips: { type: Array, default: () => [] },
+  // The goal pills TownView draws down the map's right, `{ project, commission }`: names
+  // keep clear of them (TownMapHud.js).
+  goalPills: { type: Object, default: () => ({}) },
   // The town's open offers and next goal, `{ offers, goal }`, when the owner's village
   // already has them (the campaign store); a visit or the admin viewer derives its own.
   guidance: Object,
@@ -306,6 +323,7 @@ const moonLabel = computed(() =>
 const shown = ref(HOME_SETTLEMENT);
 const settlementView = ref(null);
 const settlementMap = computed(() => mapOf(shown.value));
+const covered = computed(() => !!settlementMap.value);
 const presentationSettlement = computed(() => eventSettlement(props.presentation));
 const valleyPresentation = computed(() =>
   props.presentation && presentationSettlement.value === HOME_SETTLEMENT
@@ -335,6 +353,39 @@ function openMoon() {
   if (canLeaveValley() && !reachable(MOON_SETTLEMENT)) return emit('locate', 'spaceElevator');
   showSettlement(MOON_SETTLEMENT);
 }
+// Focus follows the map on screen when it would otherwise be lost under the covered valley
+// or with a closed map: into a settlement's map as it opens (its canvas or, drawn without
+// WebGL, its first button), and back to what opened it, or the valley's canvas, as it
+// closes. Focus elsewhere on the page (a Build row, say) stays where it is.
+let opener = null;
+const focusLost = (element) =>
+  !element ||
+  element === document.body ||
+  !element.isConnected ||
+  !!sceneElement.value?.contains?.(element);
+watch(
+  covered,
+  (now, before) => {
+    if (now && !before) opener = document.activeElement;
+  },
+  { flush: 'sync' },
+);
+watch(
+  covered,
+  (now) => {
+    const lost = focusLost(now ? opener : document.activeElement);
+    // The page body is no place to return to: the valley's canvas takes focus instead.
+    const back =
+      opener !== document.body && opener?.isConnected && !opener.closest?.('[inert]')
+        ? opener
+        : canvas.value;
+    if (!now) opener = null;
+    if (!lost) return;
+    const target = now ? settlementView.value?.$el?.querySelector?.('canvas, button') : back;
+    target?.focus?.({ preventScroll: true });
+  },
+  { flush: 'post' },
+);
 watch(
   shown,
   (id) => {
@@ -401,10 +452,10 @@ const emit = defineEmits([
   'camera-distance',
   'vip-spend',
   'guest-vip',
-  // The space-helmet wearer was tapped, with its position on the map in percent.
-  'helmet',
-  // An animal was tapped from too far away to tell whether it wears the helmet.
-  'helmet-zoom',
+  // A hidden find was tapped: `{ find, x, y }`, its ID and position on the map in percent.
+  'find',
+  // A possible hidden find was tapped from too far away to tell; carries the find's ID.
+  'find-zoom',
   'presentation-ready',
   'presentation-unavailable',
   'cinematic-ready',
@@ -457,7 +508,7 @@ const labelStatus = computed(() =>
       id,
       buildingStatus(props.town, id, {
         readOnly: props.readOnly,
-        nextLevel: props.nextLevel,
+        nextLevel: props.replays ? null : props.nextLevel,
         indicator: indicators.value[id],
         available: availableIds.value.includes(id),
         need: needHints.value[id],
@@ -479,9 +530,10 @@ const actionLabel = (id) =>
 const placeName = (id) => (id === 'mine' ? t('Mine') : buildingName(id));
 const plotLabel = (id) => {
   if (props.readOnly) return t(id === 'mine' ? 'Mine' : BUILDING_BY_ID[id].name);
-  return id === 'mine'
-    ? t('Enter the mine: play level {level}', { level: props.nextLevel })
-    : t('Choose {building}', { building: t(BUILDING_BY_ID[id].name) });
+  if (id !== 'mine') return t('Choose {building}', { building: t(BUILDING_BY_ID[id].name) });
+  return props.replays
+    ? t('Enter the mine: replay levels')
+    : t('Enter the mine: play level {level}', { level: props.nextLevel });
 };
 // Labels sit at the scene's top-left corner and move with `translate`, which the
 // browser composites without laying out the page on every camera frame.
@@ -514,10 +566,18 @@ async function focusPlace(id) {
 }
 // Camera buttons are gone: drag, pinch, wheel and keys move the view; Village resets it.
 const resetView = () => camera()?.cameraAction('reset');
+// Find visitor / Find me: the visitor walks the valley, so a settlement's map covering it
+// closes first. A visitor who has left keeps the map on screen, as does a presentation
+// playing on it (the valley's own presentations refuse the camera too).
+function findVisitor(id) {
+  if (shownPresentation.value || !scene?.canFindVisitor(id)) return false;
+  closeSettlement();
+  return scene.findVisitor(id);
+}
 defineExpose({
   focusPlace,
   showSettlement,
-  findVisitor: (id) => scene?.findVisitor(id) ?? false,
+  findVisitor,
   resetView,
   collectionOrigin,
   cinematicFrame: (progress) => {
@@ -688,6 +748,7 @@ async function update() {
     emit('cinematic-ready');
   }
   updateLabelActions();
+  scene.setHud(hud.value);
   scene.setAvailable([...availableIds.value, ...(props.town.income.stored > 0 ? ['saloon'] : [])]);
   scene.setUpgradeable(props.cinematic ? [] : upgradeIds.value);
   scene.select(props.selected);
@@ -776,8 +837,8 @@ async function initialize() {
       onUnavailable: recoverGraphics,
       onVipSpend: (receipt) => emit('vip-spend', receipt),
       onGuestVip: (at) => emit('guest-vip', at),
-      onHelmet: (origin) => emit('helmet', origin),
-      onHelmetZoom: () => emit('helmet-zoom'),
+      onFind: (tap) => emit('find', tap),
+      onFindZoom: (find) => emit('find-zoom', find),
       onVillagerLabel: showValleyVillagerLabel,
       onPlaqueLabel: showPlaqueLabel,
       onEventInset: (view) => {
@@ -896,6 +957,13 @@ watch(
     scene?.setUpgradeable(value ? [] : upgradeIds.value);
   },
 );
+// The chrome over the valley's map: the needs row and the goal pills.
+const hud = computed(() => ({
+  needs: props.needChips.length > 0 || !!moon.value.homesteads,
+  project: !!props.goalPills.project,
+  commission: !!props.goalPills.commission,
+}));
+watch(hud, (value) => scene?.setHud(value));
 function updateLabelActions() {
   scene?.setLabelActions(
     Object.keys(indicators.value).filter((id) => TOWN_ACTIONS[indicators.value[id]]),
