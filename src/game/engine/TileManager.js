@@ -340,7 +340,8 @@ export class TileManager {
       });
       if (hasRoots) totalLayersCleared += releaseCutRoots(tiles, step);
       if (hasFossils) collectFinishedFossils(tiles, step);
-      if (hasSealedChambers(tiles)) openBreakthroughs(tiles, step);
+      if (hasSealedChambers(tiles))
+        openBreakthroughs(tiles, step, workingBoard, () => createGem(randomGemType(gemTypes)));
       if (switchIndex !== undefined) {
         flipped = true;
         flipGravity(tiles, switchIndex, step);

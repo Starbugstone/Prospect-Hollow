@@ -4511,6 +4511,11 @@
     ],
     "595": [
       {
+        "chestTarget": 30500,
+        "starScoreTarget": 39800,
+        "speedTargetMs": 91000
+      },
+      {
         "chestTarget": 35000,
         "starScoreTarget": 43800,
         "speedTargetMs": 91000
@@ -4521,6 +4526,11 @@
         "chestTarget": 38000,
         "starScoreTarget": 48000,
         "speedTargetMs": 128000
+      },
+      {
+        "chestTarget": 38000,
+        "starScoreTarget": 49000,
+        "speedTargetMs": 163000
       },
       {
         "chestTarget": 48000,
@@ -4540,12 +4550,22 @@
         "speedTargetMs": 169000
       },
       {
+        "chestTarget": 38500,
+        "starScoreTarget": 50400,
+        "speedTargetMs": 205000
+      },
+      {
         "chestTarget": 46000,
         "starScoreTarget": 57800,
         "speedTargetMs": 205000
       }
     ],
     "598": [
+      {
+        "chestTarget": 42500,
+        "starScoreTarget": 53600,
+        "speedTargetMs": 160000
+      },
       {
         "chestTarget": 53000,
         "starScoreTarget": 68600,
@@ -4578,6 +4598,11 @@
       {
         "chestTarget": 60000,
         "starScoreTarget": 80600,
+        "speedTargetMs": 210000
+      },
+      {
+        "chestTarget": 61000,
+        "starScoreTarget": 77400,
         "speedTargetMs": 210000
       }
     ],

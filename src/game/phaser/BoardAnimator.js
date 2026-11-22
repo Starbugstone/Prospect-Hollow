@@ -552,8 +552,8 @@ export class BoardAnimator {
         else falls.push(this.fall(sprite, to, Math.ceil((to - from) / this.boardCols)));
       }
       const columnCounts = new Map();
-      for (const { index, path } of step.spawns)
-        if (!path)
+      for (const { index, path, appear } of step.spawns)
+        if (!path && !appear)
           columnCounts.set(
             index % this.boardCols,
             (columnCounts.get(index % this.boardCols) ?? 0) + 1,
@@ -561,9 +561,17 @@ export class BoardAnimator {
       // Shaped-board refills queue above their entry cell one cell apart, deepest first,
       // as a rectangular column does, so they never start stacked on each other.
       const queued = new Map();
-      for (const { index, gem, path, rise, frame } of step.spawns) {
+      for (const { index, gem, path, rise, frame, appear } of step.spawns) {
         const sprite = this.createGem(gem, index);
         this.indexToGemId[index] = gem.id;
+        // A chained gem in a chamber just broken into fades in under its chain.
+        if (appear) {
+          if (!this.reducedMotion) {
+            sprite.setAlpha(0);
+            falls.push(this.tween(sprite, { alpha: 1, duration: 220, ease: 'Quad.easeOut' }));
+          }
+          continue;
+        }
         if (path) {
           const lead = (queued.get(path[0]) ?? 0) + 1;
           queued.set(path[0], lead);

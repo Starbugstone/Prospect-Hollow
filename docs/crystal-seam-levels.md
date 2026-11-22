@@ -20,7 +20,7 @@ The board grammar, rules and engine modules are those of
 | 97      | 577–582 | Buried routes    | Dust and encased fossils, route chambers (act V finale)            |           31 |                    55% |
 | 98      | 583–588 | Frost relays     | Frozen gems, spore relays, Crossgrain crystals                     |           25 |                    55% |
 | 99      | 589–594 | Tidal pearls     | Pearls, ore orders, Chord crystals                                 |           31 |                    47% |
-| 100     | 595–600 | Rooted vault     | Root knots, breakthrough chambers, chains                          |           30 |                    54% |
+| 100     | 595–600 | Rooted vault     | Root knots, breakthrough chambers, chains                          |           24 |                    57% |
 | 101     | 601–606 | The far seam     | Route chambers, Trace twins, moon dials (the pack's finale)        |           32 |                    48% |
 
 Median moves are over 30 hint-led seeds per level (180 runs per chapter); three stars are
@@ -62,9 +62,9 @@ the same seeds as `testing/helpers/campaignSimulation.js`. Raw results are local
   500, as for the floating seam. `testing/levels/crystal-seam-calibration.test.js` replays
   the 30 seeds and holds every target to this.
 - **Star targets** came from `node scripts/calibrate-star-targets.mjs <file> 547 606`.
-- **Held-out seeds 101–120:** all 1,200 runs finish. Three stars came in 597 of them (50%),
+- **Held-out seeds 101–120:** all 1,200 runs finish, and 600 of them (50%) earned three stars,
   within the late-campaign band. 593, a rest board, left 4 of 20 runs with three stars and
-  was lowered to 8 (target 32,400). 556, 564, 567, 600 and 604 keep 5 or 6 of 20 (25–30%)
+  was lowered to 8 (target 32,400). 556, 564, 567 and 604 keep 5 or 6 of 20 (25–30%)
   as three-star challenges.
 - **Moves:** median 29, 90th percentile 52, maximum 114; 6 of 1,800 calibration runs went
   beyond 100 moves (three on 606, the pack's finale, two on 576 and one on 556). Free
@@ -105,6 +105,30 @@ so levels 547–606 paid 3.47M coins over the economy probe's three seeds, again
   70 sent a run to 120 moves.
 - **Result:** median 29 moves; each chapter's finale is still its longest board. Chest and
   star targets were recalibrated from the new seeds 1–30.
+
+### Chained gems in the rooted vault's cellars (22 November 2026)
+
+Levels 595–598 and 600 put chains inside a sealed cellar. The cellar's cells start empty,
+so those chains held no gem: a match could not reach them and only a bonus blast freed
+them, while the guide says a chained gem is freed by a match. Now each empty chained cell
+receives one ordinary gem as its cellar opens (`openBreakthroughs` in
+`src/game/engine/Breakthroughs.js`), rolled with `gameRandom` and held by its chain, under
+column and shaped gravity alike. `testing/chamber-chains.test.js` replays a seeded level
+595 run that opens the cellar, frees a chained gem with a plain match and leaves an
+ordinary cell.
+
+Freeing the chains with matches shortens the chapter: over seeds 1–30 its median falls from
+30 to 24 moves (595: 27 → 23, 596: 32 → 23, 597: 26 → 19, 598: 37 → 27, 600: 43 → 44; 599
+has no cellar chain and is unchanged). 600 is still the chapter's longest board. Chest and
+star targets of 595–598 and 600 were recalibrated with the rules above:
+
+| Level | Chest target    | Star target     | Three stars (held out) |
+| ----: | --------------- | --------------- | ---------------------- |
+|   595 | 35,000 → 30,500 | 43,800 → 39,800 | 10 → 7 of 20           |
+|   596 | 48,000 → 38,000 | 61,000 → 49,000 | 12 → 12 of 20          |
+|   597 | 46,000 → 38,500 | 57,800 → 50,400 | 12 → 15 of 20          |
+|   598 | 53,000 → 42,500 | 68,600 → 53,600 | 11 → 12 of 20          |
+|   600 | 60,000 → 61,000 | 80,600 → 77,400 | 6 → 8 of 20            |
 
 ## What else changed with the append
 

@@ -560,14 +560,14 @@ export const CRYSTAL_SEAM_PLANS = [
         board: '......./......./......./......./.M.K.N./MmKkKnN/__WWW__/......./.c.c.c./.......',
         chambers: [{ rows: [7, 9] }],
         ice: 0,
-        chestTarget: 35000,
+        chestTarget: 30500,
         tip: 'Roots grip the row above the cracked wall of a sealed chamber, pinning every gem there. Cut the three knots with matches beside them, then blast the wall with bonuses to break in and free the chained gems below.',
       },
       {
         board: '......./......./......./......./......./..KkK../__WWW__/......./..c.c../.......',
         chambers: [{ rows: [7, 9] }],
         ice: 80,
-        chestTarget: 48000,
+        chestTarget: 38000,
         tip: 'One knot and its vines pin the gems above a cracked wall. Cut the knot with a match beside it, then break the wall with bonus blasts to open the cellar and free the two chained gems inside. Clear the ice as you go.',
       },
       {
@@ -577,7 +577,7 @@ export const CRYSTAL_SEAM_PLANS = [
           { id: 'b', rows: [7, 9], cols: [4, 6] },
         ],
         ice: 140,
-        chestTarget: 46000,
+        chestTarget: 38500,
         tip: 'Two cellars, each with its own cracked wall and a root above it. Cut both knots, break both walls with bonuses and free the chained gem in each cellar. Clear the ice as you go.',
       },
       {
@@ -585,7 +585,7 @@ export const CRYSTAL_SEAM_PLANS = [
         chambers: [{ rows: [7, 9] }],
         knotHealth: 2,
         ice: 62,
-        chestTarget: 53000,
+        chestTarget: 42500,
         tip: 'Thick roots: each knot takes two matches beside it before it is cut. They grip the whole row above a long cracked wall with a thick block in the middle. Cut them, break in and free the chained gems, five below and two above. Clear the ice as you go.',
       },
       {
@@ -603,7 +603,7 @@ export const CRYSTAL_SEAM_PLANS = [
         ],
         knotHealth: 2,
         ice: 110,
-        chestTarget: 60000,
+        chestTarget: 61000,
         tip: 'The vault itself. Three thick knots grip the row above two sealed cellars, and the left wall has a thick block in it. Cut the roots, break into both cellars and free every chained gem, inside and out. Clear the ice as you go.',
       },
     ],

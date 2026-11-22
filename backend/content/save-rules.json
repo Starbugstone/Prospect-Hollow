@@ -58833,9 +58833,16 @@
     "595": {
       "id": 595,
       "chapterIndex": 99,
-      "chestTarget": 35000,
-      "starScoreTarget": 43800,
+      "chestTarget": 30500,
+      "starScoreTarget": 39800,
       "speedTargetMs": 91000,
+      "compatibleTargets": [
+        {
+          "chestTarget": 35000,
+          "starScoreTarget": 43800,
+          "speedTargetMs": 91000
+        }
+      ],
       "miningMultiplier": 100,
       "chestCoins": {
         "1": 50000,
@@ -58846,14 +58853,19 @@
     "596": {
       "id": 596,
       "chapterIndex": 99,
-      "chestTarget": 48000,
-      "starScoreTarget": 61000,
+      "chestTarget": 38000,
+      "starScoreTarget": 49000,
       "speedTargetMs": 163000,
       "compatibleTargets": [
         {
           "chestTarget": 38000,
           "starScoreTarget": 48000,
           "speedTargetMs": 128000
+        },
+        {
+          "chestTarget": 48000,
+          "starScoreTarget": 61000,
+          "speedTargetMs": 163000
         },
         {
           "chestTarget": 50500,
@@ -58871,14 +58883,19 @@
     "597": {
       "id": 597,
       "chapterIndex": 99,
-      "chestTarget": 46000,
-      "starScoreTarget": 57800,
+      "chestTarget": 38500,
+      "starScoreTarget": 50400,
       "speedTargetMs": 205000,
       "compatibleTargets": [
         {
           "chestTarget": 32500,
           "starScoreTarget": 36400,
           "speedTargetMs": 169000
+        },
+        {
+          "chestTarget": 46000,
+          "starScoreTarget": 57800,
+          "speedTargetMs": 205000
         }
       ],
       "miningMultiplier": 100,
@@ -58891,10 +58908,15 @@
     "598": {
       "id": 598,
       "chapterIndex": 99,
-      "chestTarget": 53000,
-      "starScoreTarget": 68600,
+      "chestTarget": 42500,
+      "starScoreTarget": 53600,
       "speedTargetMs": 160000,
       "compatibleTargets": [
+        {
+          "chestTarget": 53000,
+          "starScoreTarget": 68600,
+          "speedTargetMs": 160000
+        },
         {
           "chestTarget": 53500,
           "starScoreTarget": 67800,
@@ -58931,14 +58953,19 @@
     "600": {
       "id": 600,
       "chapterIndex": 99,
-      "chestTarget": 60000,
-      "starScoreTarget": 80600,
+      "chestTarget": 61000,
+      "starScoreTarget": 77400,
       "speedTargetMs": 210000,
       "compatibleTargets": [
         {
           "chestTarget": 58000,
           "starScoreTarget": 72400,
           "speedTargetMs": 200000
+        },
+        {
+          "chestTarget": 60000,
+          "starScoreTarget": 80600,
+          "speedTargetMs": 210000
         }
       ],
       "miningMultiplier": 100,
@@ -61147,5 +61174,5 @@
       "seenGeneration": 9
     }
   },
-  "contentDigest": "ef4454d4f892063548852fbb652578f18431dbdb3bd46a105e17850ce57ea66c"
+  "contentDigest": "462b485956556786f7906b5d67b62aae915e2da356cbc3bb0ce5f8bc594d112e"
 }
