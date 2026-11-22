@@ -288,12 +288,19 @@ it('explains when an account town is offered another town’s backup', async () 
 
 // 1.2 wrote backups pretty-printed and refused its own files above 5 MiB.
 const OLD_LIMIT = 5 * 1024 * 1024;
+// About 3,400 victories pass OLD_LIMIT today. The cap ends the loop if receipts shrink, and
+// the size assertion below then fails instead of the loop running forever.
+const MAX_JOURNAL_VICTORIES = 6000;
 it('round-trips a long offline journal, and still loads its pretty-printed 1.2 backup', async () => {
   const campaign = useCampaignStore();
   campaign.integrity = { ...createIntegrity(), checkpoint: 'synthetic-signed-checkpoint' };
   vi.spyOn(campaign, 'save').mockReturnValue(true);
   const pretty = () => JSON.stringify(JSON.parse(campaign.exportSave()), null, 2);
-  for (let i = 0; i % 100 || new Blob([pretty()]).size <= OLD_LIMIT; i++) {
+  for (
+    let i = 0;
+    i < MAX_JOURNAL_VICTORIES && (i % 100 || new Blob([pretty()]).size <= OLD_LIMIT);
+    i++
+  ) {
     const runId = campaign.beginRun('normal', 1);
     const chests = campaign.recordVictory({
       id: 1,
