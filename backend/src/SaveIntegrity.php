@@ -2971,7 +2971,8 @@ final class SaveIntegrity
                     }
                 }
             }
-            if (array_sum($map) > $jewels) {
+            // A blast can break an obstacle on a gemless tile, so mine is bounded per element.
+            if ($counter !== 'mine' && array_sum($map) > $jewels) {
                 self::mismatch('continuous.honours.' . $counter);
             }
         }

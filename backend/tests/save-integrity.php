@@ -953,6 +953,38 @@ foreach ($fixtures->fixtures as $fixture) {
                 'continuous claim rejects ' . $label,
             );
         }
+        // A bomb or line blast can break an authored obstacle on a gemless tile, so the
+        // mine tally may lead the jewel count: only its per-element authored count bounds it.
+        $mineFirst = function (array $mine) use ($fixture) {
+            $flow = integrityData($fixture->after);
+            $actions = $flow['integrity']['actions'];
+            $early = [
+                'runId' => $actions[1]['data']['runId'],
+                'levelId' => $actions[1]['data']['levelId'],
+                'jewels' => 0,
+                'score' => 0,
+                'at' => $actions[1]['data']['at'],
+                'honours' => ['version' => 1, 'gems' => [], 'fusions' => [], 'mine' => $mine],
+            ];
+            array_splice($actions, 1, 0, [integrityAction(2, 'continuous', $early)]);
+            foreach ($actions as $index => &$action) {
+                $action['sequence'] = $index + 1;
+                $action['id'] = integrityUuid(9100 + $index);
+            }
+            $flow['integrity']['actions'] = $actions;
+            return integrityObject($flow);
+        };
+        $gateFirst = $validator->accept($mineFirst(['relics' => 1]), $starting, $clock);
+        assertIntegrity(
+            SaveIntegrity::receipt($gateFirst)['status'] === 'tracked' &&
+                $gateFirst->integrity->context->honours == $result->integrity->context->honours,
+            'an obstacle broken before any jewel keeps its continuous mine tally',
+        );
+        integrityDenied(
+            fn() => $validator->accept($mineFirst(['relics' => 3]), $starting, $clock),
+            'save_integrity_mismatch',
+            'a zero-jewel mine tally above the authored count',
+        );
         $enrolled = $validator->accept($fixture->after, null, $clock);
         $continued = integrityData($enrolled);
         // Enrollment captures the cumulative claim. Repeating it at a fresh
