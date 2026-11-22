@@ -813,6 +813,41 @@ Deferred until after the release:
       tab polish, the Earth clipped by fog on a portrait Moon, the Moon's second moonstone chip,
       a label on the bonus clock
 
+### Council review of existing bugs, 22 November 2026
+
+The same four reviewers then looked for bugs and contradictions anywhere in the game, most of
+them already on `main`, and voted the same way. Fixed before release:
+
+- Server: travel credit from a town whose name the guestbook can't show; the continuous
+  puzzle's mine tally after a blast on a gemless tile; a verified restore of a save from before
+  the schema 5 upgrade; legacy project durations clamped as the game does; the account export
+  and the admin overview reading large rows without sorting or buffering them; an operator
+  deploy command that did nothing now fails.
+- Visits and backups: a first-time visitor joins the live visit, a share link opens before the
+  save gate, private visitors read "Visitor", the visit ends cleanly when sharing stops,
+  backups export compact and older pretty-printed ones still load, and a public page that fails
+  to load offers Reload.
+- Maps: a save that can't be written no longer traps the player in an event or cinematic, the
+  covered valley is out of keyboard reach on the Moon, stale Moon labels after a relock, Find
+  visitor shows the valley, the Saucer Pad's real level, the Moonstone Workshop's label when its
+  upgrade is ready, and no lifetime counter on a visitor's Homecoming Hall card.
+- Puzzles and text: cellar chains on levels 595–598 and 600 get a gem when their chamber opens
+  (star and chest targets recalibrated, [crystal seam levels](../crystal-seam-levels.md)); the
+  chest text says one chest for finishing and two for both targets; Seam Explorer and Landmark
+  Patron name what they count; the update note, the readme and the town demo guide.
+
+Deferred until after the release:
+
+- [ ] A save from a newer version opens the read-only view instead of a startup error
+- [ ] Old visitor leases removed by the daily cleanup, without reopening late heartbeats
+- [ ] The board announces the focused cell to screen readers
+- [ ] A reduced-motion change applies without a reload
+- [ ] English fallback text marked `lang="en"` when the French text fails to load
+- [ ] The monument fanfare on the Moon
+- [ ] A share link emptied while its village loads
+- [ ] Level tips shown again, in the pause panel
+- [ ] Speed targets that count ore orders
+
 ### What to watch afterwards
 
 Use the admin overview, about two weeks after release:
