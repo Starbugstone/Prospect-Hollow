@@ -21,7 +21,9 @@
     </header>
     <p v-if="!introduction">
       {{ t('Complete every pictured goal.') }}
-      {{ t('Finish for one chest. Meet both the score and time targets for two.') }}
+      <template v-if="!continuous">{{
+        t('Finish for one chest. Meet both the score and time targets for two.')
+      }}</template>
     </p>
     <ul>
       <li v-for="obstacle in obstacles" :key="obstacle.id">
@@ -182,10 +184,15 @@
   </dialog>
 </template>
 <script setup>
+import { computed } from 'vue';
 import { t } from '../i18n';
+import { useGameStore } from '../stores/gameStore';
 import GameIcon from './GameIcon.vue';
 import { useNativeDialog } from '../composables/useNativeDialog';
 defineProps({ obstacles: Array, introduction: Boolean });
+// Continuous play earns no chests (HudPanel says so), so the guide makes no chest promise.
+const game = useGameStore();
+const continuous = computed(() => game.playMode === 'continuous');
 const emit = defineEmits(['close']);
 const { dialog, closeButton, dismissBackdrop } = useNativeDialog(() => emit('close'));
 </script>

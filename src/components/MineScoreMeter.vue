@@ -74,9 +74,11 @@ const starHint = computed(() =>
         score: number(stars.value < 2 ? goals.value.score : goals.value.bonusScore),
       }),
 );
+// Leads with how many chests finishing now earns, then which ones, so a fast start does
+// not read as a speed chest already won.
 const chestLabel = computed(
   () =>
-    chests.value.map((chest) => t(chest.label)).join(' · ') +
+    `${t(chests.value.length > 1 ? 'Two chests if you finish now' : 'One chest if you finish now')} (${chests.value.map((chest) => t(chest.label)).join(' · ')})` +
     (chestTarget.value
       ? ` — ${t('Finish for one chest. Meet both the score and time targets for two.')} ${t('Score target: {score}', { score: number(chestTarget.value) })}`
       : ''),
