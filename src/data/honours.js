@@ -842,7 +842,8 @@ export function honourFamilies({
       name: 'Landmark Patron',
       art: { image: '/art/rewards/monument.svg' },
       measure: { kind: 'landmarks', areas: HONOUR_MONUMENT_SITES },
-      requirement: 'Sponsor monuments at {goal} different sites in the valley or on the Moon.',
+      requirement:
+        'Sponsor monuments at {goal} of these sites: Founders’ Meadow, Monument Square, the Promenade, the Arts Quarter, Horizon Park, Riverlight Court, Stargazers’ Lawn, Homecoming Green, Earthrise Plaza, Moonstone Garden and Moonrock Court.',
       popup: '{goal} monument sites sponsored',
       progress: '{value} / {goal} monument sites sponsored',
       ranks: [1, 5, 9].map((goal, index) => ({ metal: RANK_METALS[index], goal, since: 5 })),
@@ -932,7 +933,7 @@ export function honourFamilies({
         counter: 'continuousLevels',
         keys: Array.from({ length: 546 }, (_, i) => `level-${i + 1}`),
       },
-      requirement: 'Collect at least one gem in continuous play on {goal} different levels.',
+      requirement: 'Collect at least one gem in continuous play on {goal} of levels 1–546.',
       popup: '{goal} different continuous seams explored',
       progress: '{value} / {goal} continuous seams explored',
       ranks: [12, 90, 300].map((goal, index) => ({ metal: RANK_METALS[index], goal, since: 5 })),
