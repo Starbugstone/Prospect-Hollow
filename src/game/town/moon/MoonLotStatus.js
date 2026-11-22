@@ -1,6 +1,6 @@
 import { BUILDING_BY_ID } from '../../../data/town';
 import { AREA_BY_ID, areaChoice, areaName, monumentWork } from '../../../data/townLandmarks';
-import { collectionCooldownRemaining, plotUnlocked } from '../TownRules';
+import { collectionCooldownRemaining, constructionReady, plotUnlocked } from '../TownRules';
 import { buildingStatus, monumentStatus } from '../TownBuildingFeedback';
 import { t } from '../../../i18n';
 
@@ -46,7 +46,9 @@ export function moonLotInfo(
 ) {
   if (AREA_BY_ID[id]) return monumentStatus(town, id, { readOnly });
   if (readOnly) return buildingStatus(town, id, { readOnly });
-  if (id === 'moonstoneWorkshop' && collectable)
+  // A tap finishes a ready upgrade before it collects (TownView's selectBuilding), so the
+  // label promises the same.
+  if (id === 'moonstoneWorkshop' && collectable && !constructionReady(town.projects?.[id]))
     return {
       kind: 'coins',
       text: t('Collect {count} moonstones', { count: town.moonstoneProduction.stored }),
